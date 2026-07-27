@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes Agent - Tu Asistente IA Privado en WhatsApp y Telegram</title>
+    <meta name="description" content="Automatiza tareas de 20 horas en 15 segundos. Conecta Excel, Gmail y tu agenda a tu app de mensajería preferida de forma 100% segura.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <i class="fa-solid fa-bolt logo-icon"></i> Hermes<span>Agent</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Características</a></li>
+                <li><a href="#comparison">Humano vs IA</a></li>
+                <li><a href="#demo">Demo Interactiva</a></li>
+                <li><a href="#security">Seguridad</a></li>
+            </ul>
+            <a href="https://wa.me/521234567890?text=Hola,%20quiero%20cotizar%20la%20instalacion%20de%20Hermes%20Agent" target="_blank" class="nav-btn">
+                <i class="fa-brands fa-whatsapp"></i> Probar en WhatsApp
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-bg-gradients">
+            <div class="gradient-ball ball-1"></div>
+            <div class="gradient-ball ball-2"></div>
+        </div>
+        <div class="container hero-container">
+            <div class="hero-content">
+                <span class="badge"><i class="fa-solid fa-shield-halved"></i> Red Privada 100% Segura</span>
+                <h1>Tu negocio en piloto automático desde WhatsApp</h1>
+                <p class="hero-subtitle">Conecta tu <strong>Excel, Correo y Agenda</strong> directamente a WhatsApp o Telegram. <strong>Hermes Agent</strong> hace el trabajo operativo de 20 horas en solo 15 segundos, aprendiendo constantemente de tu forma de trabajar sin tener que repetirle las cosas.</p>
+                <div class="hero-actions">
+                    <a href="#demo" class="btn btn-primary">Probar Demo en Vivo</a>
+                    <a href="#comparison" class="btn btn-secondary">Ver Comparativa</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <h3>20 hrs</h3>
+                        <p>Trabajo humano</p>
+                    </div>
+                    <div class="stat-item">
+                        <h3>15 seg</h3>
+                        <p>Con Hermes Agent</p>
+                    </div>
+                    <div class="stat-item">
+                        <h3>100%</h3>
+                        <p>Red Privada Segura</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Chat Simulator -->
+            <div class="hero-visual" id="demo">
+                <div class="phone-mockup">
+                    <div class="phone-header">
+                        <div class="camera"></div>
+                        <div class="user-info">
+                            <div class="avatar">H</div>
+                            <div>
+                                <h4>Hermes Agent</h4>
+                                <span class="status"><span class="status-dot"></span> Aprendiendo de ti...</span>
+                            </div>
+                        </div>
+                        <div class="phone-actions">
+                            <i class="fa-solid fa-phone"></i>
+                            <i class="fa-solid fa-video"></i>
+                        </div>
+                    </div>
+                    <div class="phone-chat" id="chat-body">
+                        <div class="message received">
+                            ¡Hola! Soy Hermes Agent, tu asistente operativo privado de IA. 🤖 Puedo manejar tu Excel, Gmail y agenda directamente desde aquí. Prueba una instrucción:
+                        </div>
+                        <!-- Options for interaction -->
+                        <div class="chat-options-container" id="chat-options">
+                            <button class="chat-option" onclick="sendQuickMessage('Resumir junta y enviar correo', 1)">📝 Resumir junta y enviar correo</button>
+                            <button class="chat-option" onclick="sendQuickMessage('Buscar en Excel y recordar pendientes', 2)">📊 Buscar en Excel y recordar pendientes</button>
+                            <button class="chat-option" onclick="sendQuickMessage('Agendar cita y buscar un servicio', 3)">📅 Agendar cita y buscar un servicio</button>
+                        </div>
+                    </div>
+                    <div class="phone-footer">
+                        <div class="input-placeholder">Escribe una instrucción simple...</div>
+                        <button class="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Comparison Section -->
+    <section class="comparison-section" id="comparison">
+        <div class="container">
+            <div class="section-title">
+                <h2>El Siguiente Nivel de Productividad</h2>
+                <p>Compara el esfuerzo operativo tradicional de un humano frente al poder inmediato de Hermes Agent.</p>
+            </div>
+            
+            <div class="comparison-grid">
+                <div class="comp-card human">
+                    <h3>Trabajo Humano Tradicional</h3>
+                    <div class="comp-time">~ 20 Horas semanales</div>
+                    <ul class="comp-list">
+                        <li><i class="fa-solid fa-xmark text-danger"></i> Escuchar y resumir notas de juntas de 2 horas.</li>
+                        <li><i class="fa-solid fa-xmark text-danger"></i> Buscar correos importantes antiguos en bandejas saturadas.</li>
+                        <li><i class="fa-solid fa-xmark text-danger"></i> Redactar correos formales de seguimiento uno por uno.</li>
+                        <li><i class="fa-solid fa-xmark text-danger"></i> Entrar a Excel a actualizar stock o registrar leads.</li>
+                        <li><i class="fa-solid fa-xmark text-danger"></i> Recordar manualmente a qué personas debes responder.</li>
+                        <li><i class="fa-solid fa-xmark text-danger"></i> Explicar y repetir instrucciones constantemente al personal.</li>
+                    </ul>
+                </div>
+
+                <div class="comp-card hermes">
+                    <div class="glow-border"></div>
+                    <h3>Hermes Agent (IA Privada)</h3>
+                    <div class="comp-time success">~ 15 Segundos</div>
+                    <ul class="comp-list">
+                        <li><i class="fa-solid fa-check text-success"></i> Resume grabaciones o notas de juntas al instante.</li>
+                        <li><i class="fa-solid fa-check text-success"></i> Localiza y te trae correos importantes con una frase.</li>
+                        <li><i class="fa-solid fa-check text-success"></i> Redacta correos de negocio con tu tono de voz preferido.</li>
+                        <li><i class="fa-solid fa-check text-success"></i> Lee y escribe datos en tu Excel directamente desde el chat.</li>
+                        <li><i class="fa-solid fa-check text-success"></i> Te recuerda proactivamente quién te escribió y está pendiente.</li>
+                        <li><i class="fa-solid fa-check text-success"></i> **Va aprendiendo de tus hábitos** y forma de trabajar solo.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features & Capabilities -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-title">
+                <h2>Conectividad Sin Límites</h2>
+                <p>No necesitas abrir otras aplicaciones. Hermes Agent se conecta a tus herramientas diarias y tú lo controlas todo desde WhatsApp o Telegram.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="icon-wrapper"><i class="fa-regular fa-file-excel"></i></div>
+                    <h3>Control de Excel</h3>
+                    <p>Consulta stocks, registra ventas o busca datos en tus hojas de cálculo enviando un simple mensaje de texto o audio.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon-wrapper"><i class="fa-regular fa-envelope"></i></div>
+                    <h3>Redacción e Hilos de Correo</h3>
+                    <p>Solicita que redacte correos importantes por ti, que busque mensajes de clientes específicos o que envíe minutas automáticamente.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon-wrapper"><i class="fa-regular fa-calendar-days"></i></div>
+                    <h3>Agenda Inteligente</h3>
+                    <p>Vinculado a Google Calendar o Outlook. Organiza reuniones, añade recordatorios y te notifica sobre compromisos pendientes.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon-wrapper"><i class="fa-solid fa-magnifying-glass"></i></div>
+                    <h3>Búsqueda de Servicios</h3>
+                    <p>Pídele buscar proveedores, cotizaciones o servicios externos con instrucciones simples en lenguaje cotidiano.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security Focus -->
+    <section class="security-section" id="security">
+        <div class="container security-container">
+            <div class="security-content">
+                <div class="icon-big"><i class="fa-solid fa-user-shield"></i></div>
+                <h2>Privacidad Absoluta para tu Empresa</h2>
+                <p>A diferencia de las inteligencias artificiales públicas que guardan tus datos corporativos para entrenar modelos, **Hermes Agent** opera en una **red privada dedicada**.</p>
+                <div class="security-features">
+                    <div class="sec-item">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Cifrado de extremo a extremo en tus datos y consultas.</span>
+                    </div>
+                    <div class="sec-item">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Tus correos, agendas y archivos Excel nunca se exponen al público.</span>
+                    </div>
+                    <div class="sec-item">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Infraestructura dedicada y aislada bajo tu control.</span>
+                    </div>
+                </div>
+            </div>
+            <div class="security-visual">
+                <div class="shield-graphic">
+                    <div class="shield-ring ring-1"></div>
+                    <div class="shield-ring ring-2"></div>
+                    <i class="fa-solid fa-shield-halved shield-core"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <p>&copy; 2026 Hermes Agent. Conectividad IA Privada. Todos los derechos reservados.</p>
+            <div class="social-links">
+                <a href="#"><i class="fa-brands fa-whatsapp"></i></a>
+                <a href="#"><i class="fa-brands fa-telegram"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="index.js"></script>
+</body>
+</html>

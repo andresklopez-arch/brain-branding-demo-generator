@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  commander-hub:
+    build: .
+    container_name: alr-saas-commander
+    ports:
+      - "8080:80"
+    restart: unless-stopped

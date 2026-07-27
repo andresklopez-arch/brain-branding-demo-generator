@@ -1,0 +1,33 @@
+﻿{
+    "status":  "SUCCESS",
+    "sizeBytes":  112192,
+    "timestamp":  "2026-07-22 14:48:20",
+    "fileName":  "ALR_SaaS_Backup_2026-07-22_1448.zip.enc",
+    "history":  [
+                    {
+                        "sizeBytes":  112192,
+                        "timestamp":  "2026-07-22 14:48:20",
+                        "fileName":  "ALR_SaaS_Backup_2026-07-22_1448.zip.enc"
+                    },
+                    {
+                        "sizeBytes":  112192,
+                        "timestamp":  "2026-07-02 12:46:11",
+                        "fileName":  "ALR_SaaS_Backup_2026-07-02_1246.zip.enc"
+                    },
+                    {
+                        "sizeBytes":  112176,
+                        "timestamp":  "2026-07-02 12:42:10",
+                        "fileName":  "ALR_SaaS_Backup_2026-07-02_1242.zip.enc"
+                    },
+                    {
+                        "sizeBytes":  112944,
+                        "timestamp":  "2026-07-02 12:32:42",
+                        "fileName":  "ALR_SaaS_Backup_2026-07-02_1232.zip.enc"
+                    },
+                    {
+                        "sizeBytes":  112704,
+                        "timestamp":  "2026-07-02 12:31:08",
+                        "fileName":  "ALR_SaaS_Backup_2026-07-02_1231.zip.enc"
+                    }
+                ]
+}

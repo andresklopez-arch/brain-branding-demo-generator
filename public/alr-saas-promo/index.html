@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="ALR SaaS Campaign Creator - Generador interactivo de video promocional y simulador de comerciales.">
+  <title>ALR SaaS | Campaign Creator</title>
+  
+  <!-- CDNs Redundantes para fuentes e íconos premium -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  
+  <link rel="stylesheet" href="index.css?v=1.1.0">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- 🛠️ PANEL IZQUIERDO: EDITOR DE CAMPANAS -->
+    <aside class="editor-sidebar">
+      <div class="sidebar-header">
+        <div class="brand-title">
+          <i class="ri-video-chat-fill"></i> Campaign <span>Creator</span>
+        </div>
+        <div class="brand-subtitle">ALR SaaS Video Studio</div>
+      </div>
+      
+      <div class="sidebar-scroll">
+        <!-- Controles Generales -->
+        <div class="settings-card">
+          <h3><i class="ri-settings-3-fill"></i> Estética General</h3>
+          <div class="form-group-row">
+            <div class="form-group">
+              <label class="form-label">Color Primario</label>
+              <input type="color" id="cfg-color-primary" value="#00e5ff" onchange="updateThemeColors()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Color Secundario</label>
+              <input type="color" id="cfg-color-secondary" value="#3b82f6" onchange="updateThemeColors()">
+            </div>
+          </div>
+          <div class="form-group" style="margin-top: 10px;">
+            <label class="form-label">Paletas Preconfiguradas</label>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="btn btn-secondary" onclick="window.applyPresetPalette('#00e5ff', '#3b82f6', 'Cyberpunk')" style="flex: 1; height: 26px; font-size: 8px; padding: 0 4px; border-radius: 4px; border: 1px solid var(--border-glass);">Cyberpunk</button>
+              <button class="btn btn-secondary" onclick="window.applyPresetPalette('#ff007f', '#7f00ff', 'Synthwave')" style="flex: 1; height: 26px; font-size: 8px; padding: 0 4px; border-radius: 4px; border: 1px solid var(--border-glass);">Synthwave</button>
+              <button class="btn btn-secondary" onclick="window.applyPresetPalette('#10b981', '#059669', 'Esmeralda')" style="flex: 1; height: 26px; font-size: 8px; padding: 0 4px; border-radius: 4px; border: 1px solid var(--border-glass);">Esmeralda</button>
+              <button class="btn btn-secondary" onclick="window.applyPresetPalette('#eab308', '#ca8a04', 'Oro')" style="flex: 1; height: 26px; font-size: 8px; padding: 0 4px; border-radius: 4px; border: 1px solid var(--border-glass);">Oro</button>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top: 10px;">
+            <label class="form-label">Musicalización IA</label>
+            <select id="cfg-music-style" class="form-input" onchange="updateMusicStyle()" style="width: 100%; background: #000; border: 1px solid var(--border-glass); color: #fff; cursor: pointer;">
+              <option value="none">Ninguna (Silencio)</option>
+              <option value="synthwave" selected>Synthwave Retro (80s)</option>
+              <option value="cyberpunk">Cyberpunk Industrial</option>
+              <option value="glitch">Glitch Inteligente</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Secciones de las Escenas -->
+        <div id="scenes-editor-container">
+          <!-- Dinámico en app.js -->
+        </div>
+      </div>
+
+      <div class="sidebar-footer" style="display: flex; flex-direction: column; gap: 8px;">
+        <button class="btn btn-secondary" onclick="resetDefaultTexts()" style="width: 100%;">
+          <i class="ri-refresh-line"></i> Restaurar Defectos
+        </button>
+        <div style="display: flex; gap: 8px; width: 100%;">
+          <button class="btn btn-outline" onclick="window.exportCampaignJsonFile()" style="flex: 1; font-size: 10px; height: 32px; padding: 0 4px;">
+            <i class="ri-download-2-line"></i> Guardar Fichero
+          </button>
+          <button class="btn btn-outline" onclick="document.getElementById('import-file-input').click()" style="flex: 1; font-size: 10px; height: 32px; padding: 0 4px;">
+            <i class="ri-upload-2-line"></i> Cargar Fichero
+          </button>
+          <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="window.importCampaignJsonFile(event)">
+        </div>
+      </div>
+    </aside>
+
+    <!-- 📺 PANEL DERECHO: SMARTPHONE SIMULATOR & PLAYER -->
+    <main class="preview-workspace">
+      
+       <header class="workspace-header">
+        <div>
+          <h1>Simulador de Campaña en Vivo</h1>
+          <p>Previsualiza cómo luce y se escucha tu comercial en tiempo real en dispositivos móviles.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button onclick="window.buildAndExportVideoCampaign()" class="btn btn-primary" style="height: 36px; display: inline-flex; align-items: center; font-size: 11px; font-weight: 900; background: linear-gradient(135deg, var(--accent), var(--accent-secondary)); border: none; color: #000; box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);">
+            <i class="ri-video-chat-line"></i> Crear Video
+          </button>
+          <a href="../alr-saas/" class="btn btn-outline" style="text-decoration: none; height: 36px; display: inline-flex; align-items: center; font-size: 11px;">
+            <i class="ri-arrow-left-line"></i> Volver a la Consola
+          </a>
+        </div>
+      </header>
+
+      <div class="simulator-stage">
+        
+        <!-- Smart Phone Viewport Container -->
+        <div class="phone-frame">
+          <div class="phone-speaker"></div>
+          <div class="phone-camera"></div>
+          
+          <div id="video-viewport" class="phone-screen">
+            <!-- Capas de Video Animado (Dinámicas) -->
+            <div class="video-overlay-glow"></div>
+            
+            <div id="video-bg" class="video-background-parallax"></div>
+            
+            <div id="scene-container" class="scene-stage">
+              <!-- Renderizado Dinámico de la Escena Activa -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Reference Video Player Side-by-Side -->
+        <div class="reference-video-container" style="display: flex; flex-direction: column; gap: 10px; align-items: center; background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); padding: 15px; border-radius: 20px; width: 320px;">
+          <h3 style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 1px;"><i class="ri-video-line"></i> Video de Referencia</h3>
+          <video id="ref-video-player" src="Screenrecorder-2026-06-07-12-27-43-999.mp4" controls style="width: 100%; border-radius: 12px; aspect-ratio: 9/16; object-fit: cover; background: #000;"></video>
+          <div style="display: flex; gap: 8px; width: 100%;">
+            <button class="btn btn-secondary" onclick="window.syncPlayWithReference()" style="flex: 1; font-size: 9px; height: 28px;">
+              <i class="ri-play-list-add-line"></i> Sincronizar Play
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Barra de Controles del Video -->
+      <footer class="player-controls-bar">
+        <div class="progress-container">
+          <input type="range" id="timeline" min="0" max="100" value="0" oninput="onTimelineSliderInput(this.value)">
+          <div class="progress-bar-fill" id="timeline-fill" style="width: 0%;"></div>
+        </div>
+
+        <div class="controls-layout">
+          <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+            <button class="btn-ctrl" onclick="togglePlay()" id="btn-play" title="Reproducir / Pausar">
+              <i class="ri-play-fill" id="play-icon"></i>
+            </button>
+            <button class="btn-ctrl" onclick="restartVideo()" title="Reiniciar">
+              <i class="ri-restart-line"></i>
+            </button>
+            <div class="time-display">
+              <span id="time-current">0.0</span>s / <span id="time-total">20.0</span>s
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <!-- Control de Audio -->
+            <div class="audio-control">
+              <button class="btn-ctrl" onclick="toggleMute()" id="btn-mute" title="Activar/Desactivar Sonido">
+                <i class="ri-volume-mute-fill" id="mute-icon"></i>
+              </button>
+              <span style="font-size: 9px; opacity: 0.5; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Efectos de Sonido Sintetizados (Web Audio)</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+    </main>
+
+  </div>
+
+  <!-- 📥 TOASTS NOTIFICADORES -->
+  <div id="toast" class="toast">
+    <span id="toast-icon">⚡</span>
+    <span id="toast-message">Notificación del sistema</span>
+  </div>
+
+  <script src="app.js?v=1.0.0"></script>
+</body>
+</html>

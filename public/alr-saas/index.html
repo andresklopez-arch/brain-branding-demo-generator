@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="ALR SaaS Central Commander - Plataforma unificada de aprovisionamiento, licenciamiento y telemetría multi-app.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://unpkg.com; img-src 'self' data: https://quickchart.io; connect-src 'self' https://www.gstatic.com https://*.firestore.googleapis.com https://*.firebaseio.com https://api.telegram.org https://discord.com https://discordapp.com https://hooks.slack.com; worker-src 'self' blob:;">
+  <title>ALR SaaS | Central Commander</title>
+  
+  <script>
+    // Registro de Service Worker para resiliencia offline (Tarea 2)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('[ServiceWorker] Registrado con éxito:', reg.scope))
+          .catch(err => console.warn('[ServiceWorker] Falló el registro:', err));
+      });
+    }
+
+    // Detector de Redundancia para CDNs (Sugerencia 8 / Tarea 9)
+    window.remixIconLoaded = false;
+    function handleCdnError(type) {
+      console.warn(`[CDN WARNING] Falló la carga del CDN de ${type}. Cargando respaldo alternativo...`);
+      if (type === 'remixicon') {
+        const fallback = document.createElement('link');
+        fallback.rel = 'stylesheet';
+        fallback.href = 'https://unpkg.com/remixicon@4.2.0/fonts/remixicon.css';
+        document.head.appendChild(fallback);
+      } else if (type === 'fonts') {
+        const fallback = document.createElement('link');
+        fallback.rel = 'stylesheet';
+        fallback.href = 'https://fonts.googleapis.com/css?family=Open+Sans:400,600,700&display=swap';
+        document.head.appendChild(fallback);
+      }
+    }
+  </script>
+  
+  <!-- CDNs Redundantes para fuentes e íconos premium -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet" onerror="handleCdnError('fonts')">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet" integrity="sha384-6FSSi597BTd6QcnsBNoLclRKxTOyyYqkaucRjFgCNr8wHVCp0COLClSPY4Vy/bjh" crossorigin="anonymous" onload="window.remixIconLoaded = true" onerror="handleCdnError('remixicon')">
+  
+  <link rel="stylesheet" href="index.css?v=1.3.0">
+  
+  <!-- SDKs de Firebase para integración opcional en la nube -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" integrity="sha384-v3Z/Xdw1sCeo6M/geW7sn1Lt9obIm7MhAk8laVV+rvYFmzuWDELOiygx7dVte2dX" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js" integrity="sha384-3LctmFHtNDZwkVOSZ0fvJZJD9XR5Og5ol/MVEfNt36gUUnSYBRJN0iFjIMbFecOg" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js" integrity="sha384-p62xBRve8PdqGDGASZtZMuHgPsyPcT5VsFwgmz2p4zaFdEtt5ZzNqxK+CLzQS7xP" crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <div id="app-root">
+    
+    <!-- 🎛️ SIDEBAR NAVIGATOR (Consola Central de Control) -->
+    <aside class="saas-sidebar">
+      <div class="sidebar-header">
+        <div class="brand-title">
+          <i class="ri-command-fill"></i> ALR <span>SaaS</span>
+        </div>
+        <div class="brand-subtitle">Commander Hub</div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <div class="nav-section">Operaciones</div>
+        <div class="nav-item active" onclick="switchView('dashboard')" id="nav-dashboard">
+          <i class="ri-dashboard-fill"></i> Panel General
+        </div>
+        <div class="nav-item" onclick="switchView('apps')" id="nav-apps">
+          <i class="ri-grid-fill"></i> Portafolio de Apps
+        </div>
+        <div class="nav-item" onclick="switchView('licenses')" id="nav-licenses">
+          <i class="ri-shield-keyhole-fill"></i> Licencias y Clientes
+        </div>
+        
+        <div class="nav-section">Aprovisionamiento</div>
+        <div class="nav-item" onclick="switchView('wizard')" id="nav-wizard">
+          <i class="ri-magic-fill"></i> Clonador / Wizard
+        </div>
+        
+        <div class="nav-section">Administración</div>
+        <div class="nav-item" onclick="switchView('billing')" id="nav-billing">
+          <i class="ri-money-dollar-box-fill"></i> Finanzas / ERP
+        </div>
+        <div class="nav-item" onclick="switchView('telemetry')" id="nav-telemetry">
+          <i class="ri-pulse-fill"></i> Telemetría y Logs
+        </div>
+        <div class="nav-item" onclick="switchView('cleanup')" id="nav-cleanup">
+          <i class="ri-delete-bin-6-fill"></i> Limpieza y Papelera
+        </div>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 12px; background: rgba(0, 229, 255, 0.1); border: 1px solid var(--border-active); display: flex; align-items: center; justify-content: center; font-weight: 900; color: var(--accent); font-size: 11px;">
+            ALR
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 900; letter-spacing: -0.2px;">Super Admin</div>
+            <div style="font-size: 8px; opacity: 0.4; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Control Central</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 🚀 MAIN CONTENT AREA -->
+    <div class="saas-content">
+      
+      <!-- HEADER GLOBAL (Compacto y Premium) -->
+      <header class="saas-header">
+        <div class="header-title-area">
+          <div class="header-indicator"></div>
+          <span class="header-status-text">Consola Principal Online</span>
+          <span id="header-ledger-status" style="display: none; align-items: center; gap: 6px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--danger); font-size: 9px; font-weight: 900; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-left: 16px;"></span>
+        </div>
+        
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-glass); border-radius: 12px; padding: 8px 16px; font-size: 9px; font-weight: 900; letter-spacing: 1px;">
+            VER: v1.0.0
+          </div>
+          <!-- Perfil del Administrador Activo -->
+          <div id="header-profile-badge" style="display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); border-radius: 40px; padding: 4px 12px 4px 4px; cursor: pointer;" onclick="window.openProfileSettingsModal()">
+            <div id="header-avatar-circle" style="width: 28px; height: 28px; border-radius: 50%; background: var(--accent); border: 2.5px solid var(--accent); color: #000; font-weight: 900; font-size: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px var(--accent-glow); transition: all 0.3s ease;">
+              MA
+            </div>
+            <div style="display: flex; flex-direction: column; text-align: left;">
+              <span id="header-profile-name" style="font-size: 10px; font-weight: 900; line-height: 1.1;">Master Admin</span>
+              <span id="header-profile-role" style="font-size: 7.5px; opacity: 0.5; font-weight: 800; text-transform: uppercase;">SUPER_ADMIN</span>
+            </div>
+          </div>
+          <button class="btn btn-secondary" style="height: 38px; width: 38px; border-radius: 50%; padding: 0; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05); color: var(--danger); transition: all 0.3s;" onclick="window.lockConsoleSession(true)" title="Bloquear y Salir" onmouseover="this.style.background='var(--danger)'; this.style.color='#000'; this.style.boxShadow='0 0 15px rgba(239,68,68,0.4)';" onmouseout="this.style.background='rgba(239, 68, 68, 0.05)'; this.style.color='var(--danger)'; this.style.boxShadow='none';">
+            <i class="ri-shut-down-line" style="font-size: 16px;"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- SECCIÓN OPERATIVA CENTRAL -->
+      <main class="saas-main">
+        
+        <!-- ==================== VISTA: PANEL GENERAL ==================== -->
+        <div class="saas-view active" id="view-dashboard">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Panel General</h1>
+              <p class="view-subtitle">Consolidación en tiempo real de aplicaciones y gobernanza de licencias.</p>
+            </div>
+            <button class="btn btn-danger-outline" style="height: 36px; padding: 0 16px; font-size: 10px; font-weight: 800; display: flex; align-items: center; gap: 6px;" onclick="window.clearExampleData()">
+              <i class="ri-delete-bin-3-line"></i> Limpiar Datos de Ejemplo
+            </button>
+          </div>
+
+          <!-- Métrica Grid -->
+          <div class="metric-grid">
+            <div class="metric-card">
+              <div>
+                <div class="metric-title">Apps en Catálogo</div>
+                <div class="metric-value" id="dashboard-total-apps">0</div>
+              </div>
+              <div class="metric-icon"><i class="ri-grid-line"></i></div>
+            </div>
+            <div class="metric-card">
+              <div>
+                <div class="metric-title">Clientes Licenciados</div>
+                <div class="metric-value" id="dashboard-total-clients">0</div>
+              </div>
+              <div class="metric-icon"><i class="ri-team-line"></i></div>
+            </div>
+            <div class="metric-card">
+              <div>
+                <div class="metric-title">Apps Activas (Live)</div>
+                <div class="metric-value" id="dashboard-active-clients" style="color: var(--success);">0</div>
+              </div>
+              <div class="metric-icon" style="color: var(--success);"><i class="ri-flashlight-line"></i></div>
+            </div>
+            <div class="metric-card">
+              <div>
+                <div class="metric-title">MRR Estimado</div>
+                <div class="metric-value" id="dashboard-mrr" style="color: var(--accent);">$--</div>
+              </div>
+              <div class="metric-icon" style="color: var(--accent);"><i class="ri-money-dollar-box-line"></i></div>
+            </div>
+          </div>
+
+          <!-- Grid de Secciones Especiales -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-top: 30px;">
+            
+            <!-- Lista de Clientes Recientes -->
+            <div class="glass-panel">
+              <h2 style="font-size: 16px; font-weight: 900; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.5px;">Monitoreo Reciente de Licencias</h2>
+              <div style="overflow-x: auto;">
+                <table class="saas-table">
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>Aplicación Base</th>
+                      <th>Expiración</th>
+                      <th>Plan</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-recent-table-body">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Distribución de Negocio -->
+            <div class="glass-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <h2 style="font-size: 16px; font-weight: 900; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.5px;">Resumen Operativo</h2>
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                  <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-glass); border-radius: 16px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; font-weight: 900; opacity: 0.5; uppercase">Telemetría Core</span>
+                    <span style="font-size: 11px; font-weight: 900; color: var(--success);">ESTABLE</span>
+                  </div>
+                  <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-glass); border-radius: 16px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; font-weight: 900; opacity: 0.5; uppercase">API Gateway</span>
+                    <span style="font-size: 11px; font-weight: 900; color: var(--accent);">ACTIVO</span>
+                  </div>
+                  <div id="backup-telemetry-widget" style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-glass); border-radius: 16px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; font-weight: 900; opacity: 0.5; uppercase">Último Respaldo</span>
+                    <span id="backup-widget-status" style="font-size: 11px; font-weight: 900; color: var(--text-muted);">CARGANDO...</span>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-top: 30px; text-align: center; border-top: 1px solid var(--border-glass); padding-top: 20px;">
+                <button class="btn btn-primary" style="width: 100%; height: 44px; font-size: 10px;" onclick="switchView('wizard')">
+                  + Aprovisionar Nuevo Cliente
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ==================== VISTA: PORTAFOLIO DE APPS ==================== -->
+        <div class="saas-view" id="view-apps">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Portafolio de Apps</h1>
+              <p class="view-subtitle">Catálogo unificado de productos de software disponibles para clonación.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openRegisterAppModal()">+ Registrar Nueva App</button>
+          </div>
+
+          <!-- Barra de Herramientas y Distribución (Sugerencia 1, 3, 4) -->
+          <div class="glass-panel" style="margin-bottom: 24px; padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px;">
+              <div style="display: flex; gap: 10px; flex: 1; min-width: 250px;">
+                <input type="text" id="portfolio-search" class="form-input" placeholder="🔍 Buscar aplicación por nombre o ID..." oninput="window.filterAppsPortfolio(this.value)" style="height: 36px; font-size: 11px;">
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary" onclick="window.downloadObfuscatedSdk()" style="height: 36px; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;" title="Descargar una versión ofuscada y protegida del SDK de Licencias">
+                  <i class="ri-shield-flash-line"></i> Descargar SDK Ofuscado
+                </button>
+                <button class="btn btn-secondary" onclick="window.exportAllSeedsJson()" style="height: 36px; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;" title="Exportar todas las semillas base cargadas en un solo archivo JSON">
+                  <i class="ri-download-2-line"></i> Exportar Lote JSON
+                </button>
+              </div>
+            </div>
+            
+            <!-- Gráfico rápido de distribución de clientes (Sugerencia 3) -->
+            <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-glass); border-radius: 12px; padding: 12px;">
+              <span style="font-size: 9px; font-weight: 800; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">Distribución de Clientes por App</span>
+              <div style="height: 8px; border-radius: 4px; background: rgba(255,255,255,0.05); display: flex; overflow: hidden;" id="portfolio-distribution-bar">
+                <!-- Dinámico -->
+              </div>
+              <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px;" id="portfolio-distribution-legend">
+                <!-- Dinámico -->
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px;" id="apps-portfolio-container">
+            <!-- Dinámico -->
+          </div>
+        </div>
+
+        <!-- ==================== VISTA: LICENCIAS Y CLIENTES ==================== -->
+        <div class="saas-view" id="view-licenses">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Licencias y Clientes</h1>
+              <p class="view-subtitle">Control integral, activación y suspensiones en tiempo real para todos tus clientes.</p>
+            </div>
+            <button class="btn btn-primary" onclick="switchView('wizard')">+ Nuevo Cliente</button>
+          </div>
+
+          <div class="glass-panel">
+            <div style="overflow-x: auto;">
+              <table class="saas-table">
+                <thead>
+                  <tr>
+                    <th>ID Cliente / Slug</th>
+                    <th>Cliente</th>
+                    <th>Aplicación</th>
+                    <th>API Key (Token)</th>
+                    <th>Expiración</th>
+                    <th>Plan</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="clients-table-body">
+                  <!-- Dinámico -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Papelera de Reciclaje -->
+          <div class="glass-panel" style="margin-top: 30px; border-top: 3px solid var(--danger);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <div>
+                <h3 style="font-size: 11px; font-weight: 900; color: var(--danger); text-transform: uppercase; letter-spacing: 1px;">
+                  <i class="ri-delete-bin-line"></i> Papelera de Reciclaje (Retención de 45 días)
+                </h3>
+                <p style="font-size: 9px; opacity: 0.6; margin-top: 4px;">Las licencias eliminadas se conservan aquí por 45 días antes de ser purgadas permanentemente.</p>
+              </div>
+            </div>
+            
+            <div style="overflow-x: auto;">
+              <table class="saas-table">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Aplicación / ID</th>
+                    <th>Plan / Estado</th>
+                    <th>Eliminado el</th>
+                    <th>Días Restantes</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="recycle-bin-body">
+                  <!-- Dinámico -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== VISTA: WIZARD / CLONADOR ==================== -->
+        <div class="saas-view" id="view-wizard">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Asistente de Aprovisionamiento</h1>
+              <p class="view-subtitle">Asistente automatizado para clonar esquemas y dar de alta licencias de clientes.</p>
+            </div>
+          </div>
+
+          <!-- Contenido: Aprovisionamiento de Apps -->
+          <div style="max-width: 800px; margin: 0 auto;">
+            <div class="glass-panel">
+              <div style="display: flex; flex-direction: column; gap: 30px;">
+                
+                <!-- Sección 1 -->
+                <div>
+                  <h3 style="font-size: 12px; font-weight: 900; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; border-bottom: 1px solid var(--border-glass); padding-bottom: 8px;">
+                    1. Selección del Producto Base
+                  </h3>
+                  <div class="form-group">
+                    <label class="form-label">Aplicación Semilla</label>
+                    <select id="w-app-select" class="form-input" style="background: #000; border: 1px solid var(--border-glass); color: #fff;" onchange="window.onWizardAppChange()">
+                      <!-- Dinámico -->
+                    </select>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                    <div class="form-group">
+                      <label class="form-label" style="font-size: 8px;">Importar desde URL (JSON Semilla / App Link)</label>
+                      <div style="display: flex; gap: 10px;">
+                        <input type="text" id="w-import-url" class="form-input" placeholder="https://ejemplo.com/app-seed.json" style="flex: 1; height: 36px; font-size: 10px;">
+                        <button class="btn btn-secondary" onclick="window.importSeedFromUrl()" style="height: 36px; font-size: 9px; font-weight: 800;">Cargar URL</button>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" style="font-size: 8px;">Cargar Archivo Local (JSON Semilla)</label>
+                      <div style="position: relative; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--border-glass); border-radius: 10px; height: 36px; background: rgba(0,0,0,0.2);">
+                        <input type="file" id="w-import-file" accept=".json" onchange="window.importSeedFromFile(event)" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                        <span id="w-file-label" style="font-size: 9px; opacity: 0.7; font-weight: 800;"><i class="ri-file-upload-line"></i> Subir semilla (.json)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="w-download-progress-container" style="display: none; margin-top: 15px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; border: 1px solid var(--border-glass);">
+                    <div style="display: flex; justify-content: space-between; font-size: 8px; font-weight: 800; margin-bottom: 6px;">
+                      <span id="w-progress-status" style="color: var(--accent);">Descargando...</span>
+                      <span id="w-progress-percent" style="font-family: var(--font-mono);">0%</span>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.4); height: 6px; border-radius: 3px; overflow: hidden;">
+                      <div id="w-progress-bar" style="background: var(--accent); width: 0%; height: 100%; transition: width 0.3s ease;"></div>
+                    </div>
+                  </div>
+
+                  <div id="recent-seeds-container" style="margin-top: 15px;"></div>
+                </div>
+
+                <!-- Sección 2 -->
+                <div>
+                  <h3 style="font-size: 12px; font-weight: 900; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; border-bottom: 1px solid var(--border-glass); padding-bottom: 8px;">
+                    2. Credenciales del Cliente
+                  </h3>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                      <label class="form-label">Nombre del Negocio / Cliente</label>
+                      <input type="text" id="w-client-name" class="form-input" placeholder="Ej: Taquería Don José" oninput="autoGenerateSlug(this.value)">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">ID de Base de Datos (Slug Único)</label>
+                      <input type="text" id="w-client-slug" class="form-input" placeholder="Ej: taqueria_dj_smart" oninput="window.updateAppUrlFromSlug(this.value)">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                      <label class="form-label">Título de la App Desplegada</label>
+                      <input type="text" id="w-app-title" class="form-input" placeholder="Ej: REY Taquería Don José Smart Restaurant">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                      <label class="form-label">URL de Acceso de la App Cliente (Ej: https://rey-smart-wash.web.app/slug)</label>
+                      <input type="text" id="w-app-url" class="form-input" placeholder="https://rey-smart-wash.web.app/slug" style="font-family: var(--font-mono); font-size: 11px;">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Sección 3 -->
+                <div>
+                  <h3 style="font-size: 12px; font-weight: 900; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; border-bottom: 1px solid var(--border-glass); padding-bottom: 8px;">
+                    3. Parámetros de Licencia
+                  </h3>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                      <label class="form-label">Plan de Suscripción</label>
+                      <select id="w-plan-select" class="form-input" style="background: #000; border: 1px solid var(--border-glass); color: #fff;">
+                        <option value="PAGADO">PAGADO (Mensual)</option>
+                        <option value="NO_PAGADO">SIN PAGAR (Suspendido)</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Costo Diario Estimado ($ / Día)</label>
+                      <input type="number" id="w-daily-cost" class="form-input" value="50">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">WhatsApp Contacto (Onboarding)</label>
+                      <input type="text" id="w-contact-phone" class="form-input" placeholder="5256..." value="527712339238">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Monto / Saldo Inicial de Prueba ($)</label>
+                      <input type="number" id="w-initial-amount" class="form-input" value="1500">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                      <label class="form-label">Horas de Gracia por Vencimiento (Horas)</label>
+                      <input type="number" id="w-grace-hours" class="form-input" value="24">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Sección 4: Personalización Activa de la Semilla Base -->
+                <div>
+                  <h3 style="font-size: 12px; font-weight: 900; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; border-bottom: 1px solid var(--border-glass); padding-bottom: 8px;">
+                    4. 🌱 Configuración de la Semilla Base
+                  </h3>
+                  <div style="display: flex; flex-direction: column; gap: 16px; background: rgba(0,229,255,0.02); border: 1px dashed rgba(0,229,255,0.15); border-radius: 20px; padding: 20px;">
+                    <div class="form-group">
+                      <label class="form-label">Nombre Comercial de la Semilla</label>
+                      <input type="text" id="w-seed-biz-name" class="form-input" placeholder="Nombre comercial inicial">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Estructura de Roles y PINs (CSV: Rol,Nombre,PIN)</label>
+                      <textarea id="w-seed-roles" class="form-input" rows="3" style="font-family: var(--font-mono); font-size: 11px; resize: none; padding: 12px; background: #000; color: #fff; border: 1px solid var(--border-glass);" placeholder="admin,Administrador,1111&#10;supervisor,Supervisor,2222"></textarea>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Servicios y Tarifas Base (CSV: Servicio,Costo)</label>
+                      <textarea id="w-seed-services" class="form-input" rows="3" style="font-family: var(--font-mono); font-size: 11px; resize: none; padding: 12px; background: #000; color: #fff; border: 1px solid var(--border-glass);" placeholder="Lavado Sencillo,120&#10;Lavado VIP,220"></textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 16px; margin-top: 10px;">
+                  <button class="btn btn-secondary flex-1" onclick="switchView('dashboard')">Cancelar</button>
+                  <button class="btn btn-primary flex-2" onclick="processAprovisionamiento()">
+                    <i class="ri-rocket-line"></i> Aprovisionar y Activar
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== VISTA: ERP / FINANZAS ==================== -->
+        <div class="saas-view" id="view-billing">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Finanzas y ERP</h1>
+              <p class="view-subtitle">Consolidado general de ingresos recurrentes, recargas y saldos. <span style="display:inline-flex; align-items:center; gap:4px; margin-left:8px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2); color:var(--success); font-size:8px; font-weight:900; padding:2px 8px; border-radius:10px; text-transform:uppercase; animation:pulse 2s infinite;"><i class="ri-pulse-fill"></i> Débito Serverless Activo</span></p>
+            </div>
+            <button class="btn btn-secondary" onclick="window.print()">
+              <i class="ri-printer-line"></i> Exportar Reporte ERP
+            </button>
+          </div>
+
+          <!-- Métrica Grid Financiero -->
+          <div class="metric-grid">
+            <div class="metric-card">
+              <div>
+                <div class="metric-title">MRR Consolidado</div>
+                <div class="metric-value" id="billing-mrr-val" style="color: var(--accent);">$--</div>
+                <div style="font-size: 9px; opacity: 0.5; margin-top: 4px; font-weight: 800;">Ingreso Recurrente Mensual</div>
+              </div>
+              <div class="metric-icon" style="color: var(--accent);"><i class="ri-money-dollar-box-line"></i></div>
+            </div>
+            <div class="metric-card">
+              <div>
+                <div class="metric-title">Tasa de Cancelación (Churn)</div>
+                <div class="metric-value" id="billing-churn-val" style="color: var(--danger);">--%</div>
+                <div style="font-size: 9px; opacity: 0.5; margin-top: 4px; font-weight: 800;">Clientes Fuera de Línea</div>
+              </div>
+              <div class="metric-icon" style="color: var(--danger);"><i class="ri-user-unfollow-line"></i></div>
+            </div>
+            <div class="metric-card">
+              <div>
+                <div class="metric-title">LTV Estimado</div>
+                <div class="metric-value" id="billing-ltv-val" style="color: var(--accent-secondary);">$--</div>
+                <div style="font-size: 9px; opacity: 0.5; margin-top: 4px; font-weight: 800;">Valor de Vida de Cliente</div>
+              </div>
+              <div class="metric-icon" style="color: var(--accent-secondary);"><i class="ri-funds-line"></i></div>
+            </div>
+            <div class="metric-card">
+              <div>
+                <div class="metric-title">Balance en Custodia</div>
+                <div class="metric-value" id="billing-custody-val" style="color: var(--success);">$--</div>
+                <div style="font-size: 9px; opacity: 0.5; margin-top: 4px; font-weight: 800;">Suma de Saldos Clientes</div>
+              </div>
+              <div class="metric-icon" style="color: var(--success);"><i class="ri-bank-line"></i></div>
+            </div>
+          </div>
+
+          <!-- Layout Doble Columna ERP -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+            
+            <!-- Tabla de Saldos -->
+            <div class="glass-panel" style="margin-bottom: 0;">
+              <h2 style="font-size: 14px; font-weight: 900; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.5px;">Saldos Generales de Clientes</h2>
+              <div style="overflow-x: auto;">
+                <table class="saas-table">
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>Plan Activo</th>
+                      <th>Costo Diario</th>
+                      <th>Saldo Disponible</th>
+                      <th>Vence</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="billing-table-body">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Analítica de Suscripciones & Simulador -->
+            <div style="display: flex; flex-direction: column; gap: 30px;">
+              <!-- Distribución de Planes -->
+              <div class="glass-panel">
+                <h2 style="font-size: 14px; font-weight: 900; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px;">Distribución de Planes</h2>
+                
+                <div style="display: flex; flex-direction: column; gap: 16px;" id="billing-plan-share-container">
+                  <!-- Dinámico (CSS Progress Bars) -->
+                </div>
+              </div>
+
+              <!-- Simulador de Crecimiento Financiero -->
+              <div class="glass-panel" style="background: linear-gradient(135deg, rgba(0, 229, 255, 0.02) 0%, rgba(10, 15, 30, 0.5) 100%);">
+                <h2 style="font-size: 14px; font-weight: 900; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent);">Simulador SaaS</h2>
+                <p style="font-size: 10px; opacity: 0.6; margin-bottom: 20px; line-height: 1.5;">Calcula ingresos estimados duplicando la cartera actual o agregando una proyección.</p>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                  <div class="form-group">
+                    <label class="form-label" style="font-size: 8px;">Multiplicador de Clientes</label>
+                    <input type="range" id="erp-sim-multiplier" min="1" max="10" value="1" step="0.5" class="form-input" style="height: 36px; padding: 0; cursor: pointer;" oninput="updateSaasSimulation()">
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 800;">
+                    <span>Escala Proyección:</span>
+                    <span id="erp-sim-scale-label" style="color: var(--accent);">1x Clientes</span>
+                  </div>
+                </div>
+
+                <div style="border-top: 1px solid var(--border-glass); padding-top: 16px; display: flex; flex-direction: column; gap: 8px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; opacity: 0.7;">
+                    <span>Clientes Proyectados:</span>
+                    <span id="erp-sim-clients" style="font-weight: 900; color: #fff;">0</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; opacity: 0.7;">
+                    <span>MRR Proyectado:</span>
+                    <span id="erp-sim-mrr" style="font-weight: 900; color: var(--accent);">$0</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; opacity: 0.7;">
+                    <span>ARR Proyectado (Anual):</span>
+                    <span id="erp-sim-arr" style="font-weight: 900; color: var(--success);">$0</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ==================== VISTA: TELEMETRÍA Y LOGS ==================== -->
+        <div class="saas-view" id="view-telemetry">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Telemetría y Auditoría</h1>
+              <p class="view-subtitle">Registro de auditoría de seguridad de aprovisionamiento y peticiones de API Gateway.</p>
+            </div>
+            <div style="display:flex; gap:16px; flex-wrap:wrap;">
+              <button class="btn btn-secondary" onclick="openRestoreBackupModal()">
+                <i class="ri-history-fill"></i> Panel de Recuperación
+              </button>
+              <button class="btn btn-secondary" onclick="window.exportLocalBackupJson()" title="Respaldar licencias locales en archivo JSON">
+                <i class="ri-download-cloud-line"></i> Exportar JSON
+              </button>
+              <button class="btn btn-secondary" onclick="document.getElementById('import-backup-json-input').click()" title="Importar licencias desde archivo JSON">
+                <i class="ri-upload-cloud-line"></i> Importar JSON
+              </button>
+              <input type="file" id="import-backup-json-input" style="display: none;" onchange="window.importLocalBackupJson(event)">
+              <button class="btn btn-secondary" onclick="window.exportTelemetryLogs()">
+                <i class="ri-download-2-line"></i> Exportar CSV
+              </button>
+              <button class="btn btn-danger-outline" onclick="clearAuditLogs()">Limpiar Logs</button>
+            </div>
+          </div>
+
+          <!-- Layout de doble columna para Bitácora y Configuración de Nube -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+            <!-- Columna Izquierda: Tabla de logs de telemetría -->
+            <div class="glass-panel" style="margin-bottom: 0;">
+              <div style="display: flex; gap: 16px; margin-bottom: 24px; max-width: 400px;">
+                <div class="form-group" style="flex: 1; gap: 0;">
+                  <input type="text" id="telemetry-search-input" class="form-input" placeholder="🔍 Buscar por módulo, acción o detalles..." oninput="window.telemetryPage=1; renderTelemetryLogs()" style="height: 40px; border-radius: 12px; font-size: 11px; padding: 0 16px; background: rgba(0,0,0,0.4);">
+                </div>
+              </div>
+              <div style="overflow-x: auto; max-height: 500px;" class="custom-scroll">
+                <table class="saas-table">
+                  <thead>
+                    <tr>
+                      <th>Timestamp</th>
+                      <th>Módulo</th>
+                      <th>Acción</th>
+                      <th>Detalles</th>
+                    </tr>
+                  </thead>
+                  <tbody id="telemetry-table-body" style="font-family: var(--font-mono); font-size: 11px;">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
+              <!-- Controles de Paginación Reactiva -->
+              <div id="telemetry-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-glass);"></div>
+            </div>
+
+            <!-- Columna Derecha: Configuración de Nube & Alertas -->
+            <div class="glass-panel" style="display: flex; flex-direction: column; gap: 24px;">
+              <div>
+                <h3 style="font-size: 13px; font-weight: 900; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                  <i class="ri-notification-badge-fill"></i> Alertas y Nube
+                </h3>
+                <p style="font-size: 10px; opacity: 0.5; line-height: 1.4; margin-bottom: 16px;">Vincule servidores de telemetría Firebase en tiempo real y notificaciones críticas por bot de Telegram.</p>
+                <div id="cfg-crypto-rotation-warning" style="display:none; font-size: 9px; line-height: 1.4; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(245,158,11,0.25); background: rgba(245,158,11,0.05); color: #f59e0b; margin-bottom: 16px;"></div>
+              </div>
+
+              <!-- Integración Telegram -->
+              <div style="border-top: 1px solid var(--border-glass); padding-top: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <span style="font-size: 11px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 4px;">
+                    <i class="ri-telegram-fill" style="color: #0088cc; font-size: 14px;"></i> Notificaciones Telegram
+                    <a href="#" onclick="event.preventDefault(); window.openTelegramHelpModal()" style="color: var(--accent); font-size: 8px; text-decoration: none; font-weight: 800; border: 1px solid rgba(0,229,255,0.15); border-radius: 6px; padding: 2px 6px; margin-left: 6px; background: rgba(0,229,255,0.03); display: inline-flex; align-items: center;" title="Ver Guía de Configuración">¿Cómo configurar?</a>
+                  </span>
+                  <label class="switch-toggle" style="display: inline-flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="cfg-tg-enabled" onchange="window.saveTelegramConfig()" style="display:none;">
+                    <div class="switch-slider" style="width: 32px; height: 18px; background: rgba(255,255,255,0.08); border: 1px solid var(--border-glass); border-radius: 9px; position: relative; transition: all 0.3s;">
+                      <div class="switch-knob" style="width: 12px; height: 12px; background: rgba(255,255,255,0.4); border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: all 0.3s;"></div>
+                    </div>
+                  </label>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
+                  <div class="form-group" style="gap: 4px;">
+                    <label class="form-label" style="font-size: 8px;">Token de Bot Telegram</label>
+                    <input type="password" id="cfg-tg-token" class="form-input" style="height: 32px; font-size: 10px;" placeholder="123456789:ABCdefGhI..." oninput="window.saveTelegramConfig()">
+                  </div>
+                  <div class="form-group" style="gap: 4px;">
+                    <label class="form-label" style="font-size: 8px;">ID de Chat Destinatario</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="text" id="cfg-tg-chatid" class="form-input" style="height: 32px; font-size: 10px; flex: 1;" placeholder="-100123456789" oninput="window.saveTelegramConfig()">
+                      <button class="btn btn-secondary" id="btn-detect-tg-id" style="height: 32px; font-size: 8px; padding: 0 10px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" onclick="window.autoDetectTelegramChatId()">
+                        <i class="ri-radar-line" style="color: var(--accent);"></i> Detectar ID
+                      </button>
+                    </div>
+                  </div>
+                  <div class="form-group" style="gap: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <label class="form-label" style="font-size: 8px;">Lista Blanca de Telegram (IDs separados por coma)</label>
+                      <span id="whitelist-sync-badge" style="font-size: 7.5px; font-weight: 800; border-radius: 4px; padding: 2px 6px; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.4); display: none;">Sincronizado</span>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="text" id="cfg-tg-whitelist" class="form-input" style="height: 32px; font-size: 10px; flex: 1;" placeholder="8337803949, 123456789" oninput="window.saveTelegramConfig()">
+                      <button class="btn btn-secondary" style="height: 32px; font-size: 8px; padding: 0 12px; font-weight: 800; cursor: pointer;" onclick="window.testTelegramWhitelistIds()">
+                        <i class="ri-checkbox-circle-fill"></i> Verificar
+                      </button>
+                    </div>
+                    <span id="whitelist-err" style="color: var(--danger); font-size: 8px; display: none; margin-top: 2px; font-weight: 800;">⚠️ Formato incorrecto (solo números separados por comas)</span>
+                  </div>
+                  <div class="form-group" style="gap: 4px;">
+                    <label class="form-label" style="font-size: 8px;">Filtro de Severidad de Alertas</label>
+                    <select id="cfg-tg-severity" class="form-input" style="height: 32px; font-size: 10px; background:#000; color:#fff; border: 1px solid var(--border-glass);" onchange="window.saveTelegramConfig()">
+                      <option value="CRITICO">CRÍTICO (Sólo ledger roto, fallos críticos)</option>
+                      <option value="SEGURIDAD">SEGURIDAD (2FA, bloqueos, cuarentenas + Crítico)</option>
+                      <option value="TODO">TODO (Auditoría, provisiones, sesiones + Seguridad)</option>
+                    </select>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn btn-secondary" style="flex: 1; height: 32px; font-size: 9px; font-weight: 800;" onclick="window.sendTestTelegramAlert()">
+                    <i class="ri-send-plane-fill"></i> Probar Telegram
+                  </button>
+                  <button class="btn btn-secondary" style="flex: 1; height: 32px; font-size: 9px; font-weight: 800; border-color: rgba(59,130,246,0.3); color: #3b82f6; background: rgba(59,130,246,0.05);" onclick="window.forceOfflineLicenseSync()">
+                    <i class="ri-cloud-windy-line"></i> Forzar Sinc. Licencias
+                  </button>
+                </div>
+              </div>
+
+              <!-- Integración Firebase -->
+              <div style="border-top: 1px solid var(--border-glass); padding-top: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <span style="font-size: 11px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+                    <i class="ri-google-fill" style="color: #ea4335; font-size: 14px;"></i> Firebase Logs Sync
+                  </span>
+                  <label class="switch-toggle" style="display: inline-flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="cfg-fb-enabled" onchange="window.saveFirebaseConfig()" style="display:none;">
+                    <div class="switch-slider" style="width: 32px; height: 18px; background: rgba(255,255,255,0.08); border: 1px solid var(--border-glass); border-radius: 9px; position: relative; transition: all 0.3s;">
+                      <div class="switch-knob" style="width: 12px; height: 12px; background: rgba(255,255,255,0.4); border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: all 0.3s;"></div>
+                    </div>
+                  </label>
+                </div>
+                
+                <div class="form-group" style="gap: 4px; margin-bottom: 12px;">
+                  <label class="form-label" style="font-size: 8px;">Firebase Config JSON</label>
+                  <textarea id="cfg-fb-json" class="form-input" rows="4" style="font-family: var(--font-mono); font-size: 9px; resize: none; background: #000; color: #fff; border: 1px solid var(--border-glass); padding: 8px;" placeholder='{&#10;  "apiKey": "AIzaSy...",&#10;  "projectId": "alr-saas"&#10;}' oninput="window.saveFirebaseConfig()"></textarea>
+                </div>
+
+                <div class="form-group" style="gap: 4px; margin-bottom: 12px;">
+                  <label class="form-label" style="font-size: 8px;">Webhook de Seguridad Secundario (Discord/Slack)</label>
+                  <input type="text" id="cfg-security-webhook" class="form-input" style="height: 32px; font-size: 10px;" placeholder="https://discord.com/api/webhooks/..." oninput="window.saveSecurityWebhookConfig()">
+                  <span id="security-webhook-err" style="color: var(--danger); font-size: 8px; display: none; margin-top: 2px; font-weight: 800;">⚠️ Formato incorrecto (debe ser una o varias URLs válidas de Discord o Slack separadas por comas)</span>
+                </div>
+
+                <div class="form-group" style="gap: 4px; margin-bottom: 12px;">
+                  <label class="form-label" style="font-size: 8px;">Llave Personalizada de Cifrado (Papelera)</label>
+                  <div style="position: relative; width: 100%;">
+                    <input type="password" id="cfg-cleanup-key" class="form-input" style="height: 32px; font-size: 10px; padding-right: 30px; width: 100%; box-sizing: border-box;" placeholder="Clave de seguridad para respaldos cifrados..." oninput="window.saveCleanupKey()">
+                    <button type="button" id="btn-toggle-cleanup-key" onclick="window.toggleInputVisibility('cfg-cleanup-key', 'btn-toggle-cleanup-key')" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; height: 20px; width: 20px; transition: color 0.2s;">
+                      <i class="ri-eye-line" style="font-size: 12px;"></i>
+                    </button>
+                  </div>
+                  <div id="cleanup-key-strength" style="font-size: 8px; margin-top: 4px; display: flex; align-items: center; gap: 6px;"></div>
+                </div>
+
+                <div class="form-group" style="gap: 4px; margin-bottom: 12px;">
+                  <label class="form-label" style="font-size: 8px;">API Token del Puente Local</label>
+                  <div style="position: relative; width: 100%;">
+                    <input type="password" id="cfg-bridge-token" class="form-input" style="height: 32px; font-size: 10px; padding-right: 30px; width: 100%; box-sizing: border-box;" placeholder="Token de seguridad del puente local..." oninput="window.saveBridgeToken()">
+                    <button type="button" id="btn-toggle-bridge-token" onclick="window.toggleInputVisibility('cfg-bridge-token', 'btn-toggle-bridge-token')" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; height: 20px; width: 20px; transition: color 0.2s;">
+                      <i class="ri-eye-line" style="font-size: 12px;"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="form-group" style="gap: 4px; margin-bottom: 12px;">
+                  <label class="form-label" style="font-size: 8px;">Resolución de Concurrencia Optimista (Nube)</label>
+                  <select id="cfg-concurrency-policy" class="form-input" style="height: 32px; font-size: 10px; background:#000; color:#fff; border: 1px solid var(--border-glass);" onchange="window.saveConcurrencyPolicy()">
+                    <option value="MANUAL">Resolución Manual (Modal)</option>
+                    <option value="FORCE_LOCAL">Forzar Local (Sobrescribir Nube)</option>
+                    <option value="FORCE_CLOUD">Forzar Nube (Sobrescribir Local)</option>
+                  </select>
+                </div>
+
+                <!-- ⚠️ Banner de Respaldo Físico Crítico (USB/HDD) -->
+                <div id="external-backup-banner" style="margin-bottom: 12px; border: 1px solid rgba(245, 158, 11, 0.35); background: rgba(245, 158, 11, 0.05); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; transition: all 0.5s ease-in-out;" class="backup-pulse-red">
+                  <span id="external-backup-title" style="font-size: 9px; font-weight: 900; color: #f59e0b; display: flex; align-items: center; gap: 6px;">
+                    <i id="external-backup-icon" class="ri-error-warning-fill" style="font-size: 13px;"></i> RESPALDO FÍSICO EXTERNO CRÍTICO
+                  </span>
+                  <p id="external-backup-text" style="font-size: 8px; color: rgba(255, 255, 255, 0.75); line-height: 1.35; margin: 0; font-family: var(--font-sans);">
+                    Para prevenir pérdidas por fallos del disco principal o del puente, <b>realice periódicamente respaldos de sus proyectos y la papelera (.trash) en una unidad USB o disco duro externo.</b>
+                  </p>
+                  <span id="external-backup-status" style="font-size: 8px; font-weight: 900; margin-top: 2px; text-transform: uppercase;">Último respaldo: Nunca</span>
+                  <button type="button" class="btn btn-action" onclick="window.logExternalBackup()" style="height: 24px; font-size: 8px; margin-top: 6px; padding: 0 8px; align-self: flex-start; border-radius: 4px; display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; cursor: pointer; transition: all 0.2s;">
+                    <i class="ri-save-3-line"></i> Registrar Respaldo Hoy
+                  </button>
+                </div>
+
+                <div class="form-group" style="gap: 4px; margin-bottom: 12px; border-top: 1px dashed var(--border-glass); padding-top: 12px;">
+                  <label class="form-label" style="font-size: 8px; font-weight: 800; color: var(--accent);">Exclusiones de Limpieza Inteligente</label>
+                  <div style="display: flex; gap: 4px;">
+                    <input type="text" id="cfg-new-exclusion" class="form-input" style="height: 28px; font-size: 9px; flex: 1; box-sizing: border-box;" placeholder="Nombre de carpeta a ignorar...">
+                    <button type="button" class="btn btn-action" onclick="window.addCustomExclusion()" style="height: 28px; font-size: 9px; padding: 0 10px; border-radius: 4px;">Añadir</button>
+                  </div>
+                  <div id="cfg-exclusions-list" style="margin-top: 6px; display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.2); border: 1px solid var(--border-glass); border-radius: 4px; padding: 4px;">
+                    <!-- Se poblará dinámicamente con las exclusiones -->
+                  </div>
+                  <div style="display: flex; gap: 4px; margin-top: 6px;">
+                    <button type="button" class="btn btn-secondary" onclick="window.exportCustomExclusions()" style="height: 22px; font-size: 8px; flex: 1; padding: 0; border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: center; gap: 4px;">
+                      <i class="ri-download-2-line" style="font-size: 10px;"></i> Exportar JSON
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('cfg-import-file').click()" style="height: 22px; font-size: 8px; flex: 1; padding: 0; border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: center; gap: 4px;">
+                      <i class="ri-upload-2-line" style="font-size: 10px;"></i> Importar JSON
+                    </button>
+                    <input type="file" id="cfg-import-file" style="display: none;" accept=".json" onchange="window.importCustomExclusions(event)">
+                  </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-top: 1px dashed var(--border-glass); padding-top: 12px;">
+                  <span style="font-size: 10px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+                    <i class="ri-shield-check-fill" style="color: var(--accent); font-size: 14px;"></i> Validación Estricta de Dominios Semilla
+                  </span>
+                  <label class="switch-toggle" style="display: inline-flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="cfg-strict-domains-enabled" onchange="window.saveStrictDomainsConfig()" style="display:none;">
+                    <div class="switch-slider" style="width: 32px; height: 18px; background: rgba(255,255,255,0.08); border: 1px solid var(--border-glass); border-radius: 9px; position: relative; transition: all 0.3s;">
+                      <div class="switch-knob" style="width: 12px; height: 12px; background: rgba(255,255,255,0.4); border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: all 0.3s;"></div>
+                    </div>
+                  </label>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 9px; font-weight: 900; margin-bottom: 12px; background: rgba(255,255,255,0.01); border: 1px solid var(--border-glass); border-radius: 12px; padding: 10px 14px;">
+                  <span style="opacity: 0.5; text-transform: uppercase;">Estado Sincronización:</span>
+                  <span id="fb-status-badge" style="font-size: 8px; border: 1px solid rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 10px; color: rgba(255,255,255,0.4);">DESCONECTADO</span>
+                </div>
+
+                <button class="btn btn-secondary" style="width: 100%; height: 32px; font-size: 9px; font-weight: 800;" onclick="window.forceFirebaseSync()">
+                  <i class="ri-refresh-line"></i> Forzar Sincronización
+                </button>
+              </div>
+            </div>
+        </div>
+
+        <!-- ==================== VISTA: GESTIÓN DE DISCO Y LIMPIEZA ==================== -->
+        <div class="saas-view" id="view-cleanup">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Gestión de Disco y Limpieza</h1>
+              <p class="view-subtitle">Análisis inteligente de inactividad de proyectos y papelera de reciclaje segura (60 días).</p>
+            </div>
+            <div style="display:flex; gap:16px;">
+              <button class="btn btn-secondary" onclick="window.refreshCleanupData()">
+                <i class="ri-refresh-line"></i> Escanear Proyectos
+              </button>
+            </div>
+          </div>
+          
+          <!-- Alerta de Auditoría Corrupta -->
+          <div id="audit-integrity-alert" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px dashed var(--danger); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; align-items: center; gap: 12px;">
+            <i class="ri-error-warning-fill" style="color: var(--danger); font-size: 20px;"></i>
+            <div style="flex: 1;">
+              <div style="font-size: 11px; font-weight: 900; color: #fff;">🚨 AUDITORÍA LOCAL COMPROMETIDA</div>
+              <div id="audit-integrity-reason" style="font-size: 9px; opacity: 0.8; margin-top: 2px;">Se ha detectado una modificación externa no autorizada en el log de auditoría.</div>
+            </div>
+            <button class="btn btn-danger" style="height: 28px; font-size: 8px; padding: 0 10px; font-weight: 900; text-transform: uppercase;" onclick="window.repairAuditLogLocal()">
+              <i class="ri-tools-fill"></i> Reparar Log
+            </button>
+          </div>
+
+          <!-- Layout de doble columna: Proyectos Inactivos y Papelera -->
+          <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 30px;">
+            
+            <!-- Columna Izquierda: Analizador de Inactividad -->
+            <div class="glass-panel" style="margin-bottom: 0;">
+              <h3 style="font-size: 13px; font-weight: 900; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                <i class="ri-radar-line"></i> Analizador de Inactividad
+              </h3>
+              <p style="font-size: 10px; opacity: 0.5; margin-bottom: 20px;">Proyectos detectados sin modificaciones recientes. Define su estado para optimizar tu espacio de almacenamiento.</p>
+              
+              <div id="inactivity-list" class="custom-scroll" style="display: flex; flex-direction: column; gap: 16px; max-height: 550px; overflow-y: auto; padding-right: 8px;">
+                <!-- Dinámico -->
+                <div style="text-align: center; padding: 40px; opacity: 0.5; font-size: 11px;">
+                  <i class="ri-loader-4-line" style="font-size: 24px; animation: spin 1s infinite linear; display: block; margin-bottom: 12px; color: var(--accent);"></i>
+                  Escaneando proyectos...
+                </div>
+              </div>
+            </div>
+
+            <!-- Columna Derecha: Papelera de Reciclaje -->
+            <div class="glass-panel" style="margin-bottom: 0;">
+              <h3 style="font-size: 13px; font-weight: 900; color: var(--danger); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                <i class="ri-delete-bin-line"></i> Papelera de Reciclaje (60 Días)
+              </h3>
+              <p style="font-size: 10px; opacity: 0.5; margin-bottom: 20px;">Los proyectos borrados se guardan aquí. Tienes 60 días para restaurarlos antes de que se destruyan de forma definitiva.</p>
+              
+              <div style="overflow-x: auto; max-height: 500px;" class="custom-scroll">
+                <table class="saas-table">
+                  <thead>
+                    <tr>
+                      <th>Proyecto</th>
+                      <th>Fecha Eliminación</th>
+                      <th>Restante</th>
+                      <th style="text-align: right;">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="trash-table-body" style="font-size: 11px;">
+                    <!-- Dinámico -->
+                    <tr>
+                      <td colspan="4" style="text-align: center; opacity: 0.5; padding: 30px;">Cargando papelera...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+  </div>
+
+  <!-- 🌌 VENTANAS MODALES GLOBALES -->
+  <div id="modal-overlay" class="modal-overlay">
+    <div id="modal-box" class="modal-box">
+      <!-- Dinámico -->
+    </div>
+  </div>
+
+  <!-- 📥 TOASTS NOTIFICADORES -->
+  <div id="toast" class="toast">
+    <span id="toast-icon">⚡</span>
+    <span id="toast-message">Notificación del sistema</span>
+  </div>
+
+  <script>
+    // Verificar si RemixIcon se cargó; si no, inyectar SVGs premium de reemplazo para los íconos
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => {
+        let isLoaded = window.remixIconLoaded;
+        if (!isLoaded) {
+          for (let i = 0; i < document.styleSheets.length; i++) {
+            try {
+              const sheet = document.styleSheets[i];
+              if (sheet.href && sheet.href.includes("remixicon")) {
+                isLoaded = true;
+                break;
+              }
+            } catch (e) {}
+          }
+        }
+        
+        if (!isLoaded) {
+          console.warn("[ICONS] RemixIcon failed to load. Injecting CSS SVG premium vector fallbacks.");
+          const style = document.createElement('style');
+          style.innerHTML = `
+            [class^="ri-"]::before, [class*=" ri-"]::before {
+              content: "" !important;
+              display: inline-block !important;
+              width: 1em !important;
+              height: 1em !important;
+              vertical-align: -0.15em !important;
+              background-repeat: no-repeat !important;
+              background-position: center !important;
+              background-size: contain !important;
+            }
+            .brand-title i::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M12 1l9.5 5.5v11L12 23l-9.5-5.5v-11L12 1zm0 2.3L4.8 7.5v9L12 20.7l7.2-4.2v-9L12 3.3zM12 7c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5 2.24-5 5-5zm0 2c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z'/></svg>") !important;
+            }
+            .nav-item i.ri-dashboard-fill::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z'/></svg>") !important;
+            }
+            .nav-item i.ri-grid-fill::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M22 12.999V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7.001l9.997-6L22 12.999zM12 2.6L2.3 8.4l1.4 2.4 8.3-5 8.3 5 1.4-2.4L12 2.6z'/></svg>") !important;
+            }
+            .nav-item i.ri-shield-keyhole-fill::before, .ri-shield-keyhole-fill::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.66 0 3 1.34 3 3 0 1.09-.59 2.05-1.47 2.58L14 17h-4v-4.42A3.001 3.001 0 0 1 9 10c0-1.66 1.34-3 3-3z'/></svg>") !important;
+            }
+            .nav-item i.ri-magic-fill::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M8 2v4H4v2h4v4h2V8h4V6h-4V2H8zm10 7l-1.4 3.1L13.5 13.5 16.6 15l1.4 3.1 1.4-3.1 3.1-1.5-3.1-1.4L18 9zM6.5 11l-.9 2L3.6 13.6l2 1L6.5 16.5l.9-2 2-1-2-1-.9-1.5z'/></svg>") !important;
+            }
+            .nav-item i.ri-money-dollar-box-fill::before, .metric-icon i.ri-money-dollar-box-line::before, .ri-money-dollar-box-fill::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M3 3h18a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm9 4c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z'/></svg>") !important;
+            }
+            .nav-item i.ri-pulse-fill::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zM3 3h18a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z'/></svg>") !important;
+            }
+            .metric-icon i.ri-grid-line::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M22 12.999V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7.001l9.997-6L22 12.999zM12 2.6L2.3 8.4l1.4 2.4 8.3-5 8.3 5 1.4-2.4L12 2.6z'/></svg>") !important;
+            }
+            .metric-icon i.ri-team-line::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M2 22a8 8 0 1 1 16 0H2zm8-9c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm10 9h4v-2c0-3.9-3.1-7-7-7-1.1 0-2.2.3-3.1.8 1.9 1.6 3.1 4 3.1 6.2v2zm-3-15c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z'/></svg>") !important;
+            }
+            .metric-icon i.ri-flashlight-line::before, .ri-flashlight-line::before, .ri-flashlight-fill::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M13 10h7l-9 13v-9H4l9-13v9z'/></svg>") !important;
+            }
+            .ri-command-fill::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M12 1l9.5 5.5v11L12 23l-9.5-5.5v-11L12 1zm0 2.3L4.8 7.5v9L12 20.7l7.2-4.2v-9L12 3.3zM12 7c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5 2.24-5 5-5zm0 2c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z'/></svg>") !important;
+            }
+            .ri-shut-down-line::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ef4444'><path d='M11 2.05v9h2v-9h-2zm-4.78 2.3l1.42 1.42C5.58 7.39 4.8 9.61 4.8 12c0 3.97 3.23 7.2 7.2 7.2s7.2-3.23 7.2-7.2c0-2.39-.78-4.61-1.84-6.23l1.42-1.42C20.35 6.13 21.2 8.97 21.2 12c0 5.08-4.12 9.2-9.2 9.2S2.8 17.08 2.8 12c0-3.03.85-5.87 2.42-7.65z'/></svg>") !important;
+            }
+            .ri-delete-bin-3-line::before, .ri-delete-bin-line::before, .ri-delete-bin-2-line::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ef4444'><path d='M17 6h5v2h-2v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8H2V6h5V3a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v3zm1 2H6v12h12V8zm-9 3h2v6H9v-6zm4 0h2v6h-2v-6zM9 4v2h6V4H9z'/></svg>") !important;
+            }
+            .ri-external-link-line::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M10 6v2H5v11h11v-5h2v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6zm11-3v8h-2V6.41l-7 7-1.41-1.41 7-7H13V3h8z'/></svg>") !important;
+            }
+            .ri-key-fill::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M12.65 10A5.99 5.99 0 1 0 6 16c1.66 0 3-1.34 3-3V9h4v2h2v2h2v3h4v-4.35A5.99 5.99 0 0 0 12.65 10zM6 12a2 2 0 1 1 0-4 2 2 0 0 1 0 4z'/></svg>") !important;
+            }
+            .ri-money-dollar-circle-line::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10zm1-13h2v2h-2v1h2v2h-3v-1h-2v-2h2v-1h-2V9h3V7h2v2z'/></svg>") !important;
+            }
+            .ri-wallet-3-line::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M21 18v1c0 1.1-.9 2-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14c1.1 0 2 .9 2 2v1h-9a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h9zm-9-2h10V8H12v8zm4-2.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z'/></svg>") !important;
+            }
+            .ri-file-copy-line::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z'/></svg>") !important;
+            }
+            .ri-send-plane-fill::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M2 21l21-9L2 3v7l15 2-15 2v7z'/></svg>") !important;
+            }
+            .ri-history-line::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12h2c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8-8 3.58-8 8H2C2 6.48 6.48 2 12 2zm1 5v5.27l4.5 2.25-.9 1.8-5.1-2.55V7h2z'/></svg>") !important;
+            }
+            .ri-refresh-line::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M5.46 11H2.05A8.005 8.005 0 0 1 9.5 4.05v3.46A4.502 4.502 0 0 0 5.46 11zm9.54-6.95v3.46A4.502 4.502 0 0 0 18.54 11h3.41a8.005 8.005 0 0 1-7.45-6.95zM18.54 13a4.502 4.502 0 0 0-4.04 3.54v3.41a8.005 8.005 0 0 1 7.45-6.95h-3.41zM9.5 20.46v-3.46A4.502 4.502 0 0 0 5.46 13H2.05a8.005 8.005 0 0 1 7.45 7.46z'/></svg>") !important;
+            }
+            .ri-code-box-line::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M3 3h18a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm2 2v14h14V5H5zm2 4h2v2H7V9zm0 4h2v2H7v-2zm4-4h6v2h-6V9zm0 4h6v2h-6v-2z'/></svg>") !important;
+            }
+            .ri-add-line::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2h6z'/></svg>") !important;
+            }
+            .ri-download-cloud-line::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M12 16l-5-5h3V4h4v7h3l-5 5zm9-4v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7h2v7h14v-7h2z'/></svg>") !important;
+            }
+            .ri-file-copy-2-line::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z'/></svg>") !important;
+            }
+            .ri-telegram-fill::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230088cc'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1 .22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-2.03 1.28-5.74 3.79-.54.37-1.03.55-1.47.54-.48-.01-1.4-.27-2.08-.49-.83-.27-1.5-.42-1.44-.88.03-.24.36-.49.99-.74 3.86-1.68 6.44-2.78 7.74-3.3 3.68-1.48 4.44-1.74 4.94-1.75.11 0 .36.03.52.16.13.11.17.26.19.37z'/></svg>") !important;
+            }
+            .ri-whatsapp-fill::before, .ri-whatsapp-line::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2322c55e'><path d='M12.004 2c-5.523 0-10.004 4.482-10.004 10.004 0 1.956.564 3.782 1.536 5.342L2 22l4.808-1.264c1.5.88 3.232 1.396 5.08 1.396 5.522 0 10.003-4.482 10.003-10.004S17.526 2 12.004 2zm5.727 13.918c-.244.693-1.21 1.258-1.748 1.307-.492.044-1.127.228-3.298-.67-2.775-1.147-4.57-3.974-4.708-4.16-.14-.188-1.124-1.5-1.124-2.862 0-1.363.712-2.032.966-2.31.254-.277.553-.347.737-.347.185 0 .368.002.528.01.166.008.388-.063.606.463.222.536.758 1.85.823 1.98.065.13.109.28.02.463-.09.18-.135.297-.27.45-.136.155-.29.347-.413.466-.137.13-.28.272-.12.55.16.276.713 1.176 1.528 1.9 1.05.938 1.933 1.229 2.21 1.368.277.14.44.116.604-.07.165-.188.71-.825.9-.11.19.713 1.255 1.54 1.31 1.657.054.117.108.23.054.34-.055.116-.245.692-.489 1.385z'/></svg>") !important;
+            }
+            .ri-shield-check-fill::before {
+              background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2322c55e'><path d='M12 22C6.48 22 2 17.52 2 12S6.48 2 12 2s10 4.48 10 10-4.48 10-10 10zm-1-6l7.07-7.07-1.41-1.41L11 13.17 8.34 10.51 6.93 11.93 11 16z'/></svg>") !important;
+            }
+          `;
+          document.head.appendChild(style);
+        }
+      }, 2000);
+    });
+  </script>
+
+  <script src="app.js?v=b8b5de76"></script>
+</body>
+</html>

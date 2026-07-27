@@ -1,0 +1,20 @@
+@echo off
+echo [INFO] Iniciando subida de cambios en Brain Branding Web...
+
+if not exist .git (
+    echo [INFO] Inicializando repositorio Git...
+    git init
+    git branch -M main
+    git config user.email "andre@example.com"
+    git config user.name "Andre"
+)
+
+git add .
+if errorlevel 1 (
+    echo [ERROR] Falló al agregar cambios.
+    exit /b 1
+)
+
+git commit -m "Auto-commit: Adición de Hermes Agent"
+
+echo [SUCCESS] Cambios locales confirmados en Git.
