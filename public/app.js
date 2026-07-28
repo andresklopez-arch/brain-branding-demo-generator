@@ -53,6 +53,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let isDeleting = false;
     
     function type() {
+      if (document.hidden) {
+        setTimeout(type, 1000);
+        return;
+      }
       const currentWord = words[wordIndex];
       if (isDeleting) {
         typingElement.textContent = currentWord.substring(0, charIndex - 1);

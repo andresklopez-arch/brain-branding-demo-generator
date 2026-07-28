@@ -250,8 +250,24 @@
       -webkit-text-fill-color: transparent !important;
       text-shadow: 0 0 30px rgba(168, 85, 247, 0.2);
     }
+    :root {
+      --font-title: 'Plus Jakarta Sans', sans-serif !important;
+      --font-body: 'Plus Jakarta Sans', sans-serif !important;
+    }
     .hero-desc {
       transition: opacity 0.3s ease-in-out;
+    }
+    #typing-text::after {
+      content: '|';
+      animation: blink-cursor 0.75s step-end infinite;
+      margin-left: 3px;
+      color: #ec4899;
+      font-weight: 300;
+      -webkit-text-fill-color: #ec4899 !important; /* Force color on webkit transparent text */
+    }
+    @keyframes blink-cursor {
+      from, to { color: transparent; }
+      50% { color: #ec4899; }
     }
     .hero-content {
       align-items: center !important;
