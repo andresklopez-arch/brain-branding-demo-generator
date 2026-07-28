@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>REY Smart Wash System v2.9.0</title>
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <!-- REY SMART WASH SYSTEM - GLOBAL SaaS HUB -->
+  <script type="text/javascript" src="/modules/welcome_hub.js?v=3.0.0"></script>
+  <link rel="stylesheet" href="/index.css?v=4.4.0">
+  <!-- Remix Icons v4.2.0 - Doble CDN redundante para fiabilidad absoluta en WebView y navegadores móviles -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="preload" as="image" href="/logo-rey.png">
+  <script>
+    // 📱 DETECCIÓN ROBUSTA DE CAPACITOR, PLATAFORMA Y APP NATIVA
+    (function() {
+      function detectApp() {
+        const isCapacitor = !!(window.Capacitor || (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.bridge) || navigator.userAgent.includes('Capacitor') || window.location.href.indexOf('capacitor://') === 0 || window.location.href.indexOf('http://localhost:3000') === 0 || window.location.href.indexOf('http://localhost:8080') === 0);
+        if (document.body) {
+          if (isCapacitor && !document.body.classList.contains('native-app')) {
+            document.body.classList.add('native-app');
+            console.log("📱 Entorno nativo (Capacitor/WebView) detectado con éxito.");
+          }
+          // Detectar Plataforma OS
+          const ua = navigator.userAgent.toLowerCase();
+          if (ua.includes('iphone') || ua.includes('ipad') || ua.includes('ipod') || (ua.includes('macintosh') && 'ontouchend' in document)) {
+            if (!document.body.classList.contains('platform-ios')) {
+              document.body.classList.add('platform-ios');
+              console.log("🍏 Dispositivo iOS detectado.");
+            }
+          } else if (ua.includes('android')) {
+            if (!document.body.classList.contains('platform-android')) {
+              document.body.classList.add('platform-android');
+              console.log("🤖 Dispositivo Android detectado.");
+            }
+          }
+        }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', detectApp);
+      } else {
+        detectApp();
+      }
+      window.addEventListener('load', detectApp);
+      // Re-verificar periódicamente por si el puente de Capacitor se inyecta tarde
+      let retries = 0;
+      const interval = setInterval(() => {
+        detectApp();
+        if (++retries >= 5) clearInterval(interval);
+      }, 500);
+    })();
+
+    // 🌐 GESTIÓN ACTIVA DEL ESTADO DE CONEXIÓN (Modo Offline)
+    (function() {
+      function initOfflineManager() {
+        let banner = document.getElementById('global-offline-banner');
+        if (!banner) {
+          banner = document.createElement('div');
+          banner.id = 'global-offline-banner';
+          banner.className = 'offline-banner';
+          document.body.appendChild(banner);
+        }
+
+        function showOffline() {
+          banner.innerHTML = '<span>⚠️</span> Sin conexión a Internet. Trabajando en modo local.';
+          banner.classList.remove('online-restored');
+          banner.classList.add('visible');
+        }
+
+        function showOnline() {
+          if (banner.classList.contains('visible') && !banner.classList.contains('online-restored')) {
+            banner.innerHTML = '<span>⚡</span> Conexión restablecida. Sincronizando datos...';
+            banner.classList.add('online-restored');
+            setTimeout(() => {
+              banner.classList.remove('visible');
+            }, 3000);
+          }
+        }
+
+        window.addEventListener('offline', showOffline);
+        window.addEventListener('online', showOnline);
+
+        if (!navigator.onLine) {
+          showOffline();
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initOfflineManager);
+      } else {
+        initOfflineManager();
+      }
+    })();
+
+    // 🔄 MICRO-TOAST DE TRANSICIÓN DE ORIENTACIÓN (v1.8.0)
+    (function() {
+      let lastOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+      function checkOrientationChange() {
+        const currentOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+        if (currentOrientation !== lastOrientation) {
+          lastOrientation = currentOrientation;
+          if (typeof window.showToast === 'function') {
+            if (currentOrientation === 'landscape') {
+              window.showToast("🔄 Vista adaptada al modo horizontal", "accent");
+            } else {
+              window.showToast("📱 Vista adaptada al modo vertical", "info");
+            }
+          }
+        }
+      }
+      window.addEventListener('resize', checkOrientationChange);
+      if (screen && screen.orientation) {
+        screen.orientation.addEventListener('change', checkOrientationChange);
+      }
+    })();
+
+    // ☢️ NUCLEAR SW KILL — Elimina cualquier Service Worker que pueda redirigir rutas
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (let registration of registrations) {
+          registration.unregister();
+          console.log('SW eliminado:', registration.scope);
+        }
+      });
+    }
+    // Limpia todos los cachés
+    function getCookie(name) {
+      const value = "; " + document.cookie;
+      const parts = value.split("; " + name + "=");
+      if (parts.length === 2) return parts.pop().split(";").shift();
+      return null;
+    }
+    function setCookie(name, value, days = 365) {
+      const d = new Date();
+      d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+      const expires = "expires=" + d.toUTCString();
+      document.cookie = name + "=" + value + ";" + expires + ";path=/;SameSite=Strict;Secure";
+    }
+
+    // Control de versión agresivo
+    const APP_V = '2.9.0'; // Bump: Nuclear cache-clear and scaling layout fix
+    const currentV = localStorage.getItem('sys_v');
+    const savedStrId = localStorage.getItem('REY_STR_ID') || getCookie('REY_STR_ID');
+    
+    if (!currentV || currentV !== APP_V) {
+      console.log("🚀 Nueva versión detectada (v" + APP_V + "), realizando limpieza nuclear...");
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          for (let name of names) {
+            console.log('Borrando caché:', name);
+            caches.delete(name);
+          }
+        });
+      }
+      localStorage.clear(); // Limpia TODO para evitar confusiones persistentes
+      if (savedStrId) {
+        localStorage.setItem('REY_STR_ID', savedStrId);
+        setCookie('REY_STR_ID', savedStrId);
+      }
+      localStorage.setItem('sys_v', APP_V);
+      setTimeout(() => { window.location.reload(true); }, 800);
+    } else {
+      localStorage.setItem('sys_v', APP_V);
+      if (!localStorage.getItem('REY_STR_ID') && savedStrId) {
+        localStorage.setItem('REY_STR_ID', savedStrId);
+      }
+    }
+
+    // 🚫 INHIBIDOR ABSOLUTO DE PINCH-TO-ZOOM Y MULTI-TOUCH ZOOM (Garantía responsiva)
+    (function() {
+      document.addEventListener('touchstart', function(event) {
+        if (event.touches.length > 1) {
+          event.preventDefault();
+        }
+      }, { passive: false });
+      
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', function(event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+          event.preventDefault();
+        }
+        lastTouchEnd = now;
+      }, { passive: false });
+      
+      document.addEventListener('gesturestart', function(event) {
+        event.preventDefault();
+      }, { passive: false });
+    })();
+
+    window.onerror = function(msg, url, line) {
+      console.error("❌ REY ERROR:", msg, url, line);
+      return false;
+    };
+    window.addEventListener('unhandledrejection', function(event) {
+      console.error("❌ REY PROMISE ERROR:", event.reason);
+    });
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script>
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+    window.installPWA = async () => {
+      if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; }
+    };
+  </script>
+</head>
+<body style="background:#000; margin:0; padding:0; overflow-x:hidden;">
+  <div id="app-root">
+    <div id="splash-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#030508; z-index:9999; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+      <style>
+        .stars-container {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          z-index: 1;
+        }
+        .star {
+          position: absolute;
+          background: #fff;
+          border-radius: 50%;
+          animation: twinkle var(--d, 3s) infinite ease-in-out;
+          opacity: var(--op, 0.5);
+        }
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.15; transform: scale(0.7); }
+          50% { opacity: 1; transform: scale(1.3); box-shadow: 0 0 10px rgba(255,255,255,0.8); }
+        }
+        @keyframes pulse-logo {
+          0%, 100% { transform: scale(0.95); }
+          50% { transform: scale(1.05); }
+        }
+      </style>
+      <div id="splash-stars" class="stars-container"></div>
+      <img src="/logo-rey.png" loading="lazy" style="width:280px; max-width:85vw; height:auto; display:block; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) !important; z-index:2; animation: pulse-logo 2.5s infinite ease-in-out;" onerror="this.style.display='none'">
+      <script>
+        (function() {
+          const container = document.getElementById('splash-stars');
+          if (!container) return;
+          for (let i = 0; i < 80; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            const size = Math.random() * 3 + 1;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.setProperty('--d', (Math.random() * 3 + 2) + 's');
+            star.style.setProperty('--op', (Math.random() * 0.6 + 0.2));
+            star.style.animationDelay = (Math.random() * 5) + 's';
+            container.appendChild(star);
+          }
+        })();
+      </script>
+    </div>
+    <main id="main-content"></main>
+    <div id="app-nav" style="display:none;"></div>
+    <div id="toast-container" class="toast-container"></div>
+    <div id="modal-overlay" class="modal-overlay"><div id="modal-body" class="modal"></div></div>
+  </div>
+  <script type="module" src="/app_app_v5.js?v=3.4.0"></script>
+</body>
+</html>
