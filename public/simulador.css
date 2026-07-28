@@ -76,19 +76,14 @@
   box-shadow: var(--glow-primary);
 }
 
-/* STACKED TAB PANELS (SINGLE PAGE SCROLL) */
+/* TAB PANEL TOGGLE (ONE SIMULATOR PER PAGE) */
 .tab-panel {
-  display: block;
-  margin-bottom: 60px;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
-  padding-bottom: 45px;
-  scroll-margin-top: 140px; /* Synchronizes with the header and sticky sub-tabs */
+  display: none;
+  animation: fadeIn 0.4s ease-out;
 }
 
-.tab-panel:last-of-type {
-  border-bottom: none;
-  padding-bottom: 0;
-  margin-bottom: 20px;
+.tab-panel.active {
+  display: block;
 }
 
 @keyframes fadeIn {

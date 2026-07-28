@@ -168,74 +168,217 @@ function printLog() {
 }
 printLog();
 
-// ── TAB NAVIGATION (SCROLL-SPY & SMOOTH SCROLL) ──
+// ── TAB SYSTEM (ONE SIMULATOR PER PAGE) ──
 function initTabs() {
   const tabLinks = document.querySelectorAll('.tab-link');
+  const tabPanels = document.querySelectorAll('.tab-panel');
   
-  // Smooth scroll when tab is clicked
+  // Set initial active tab (default to 'asistente' if 'all' or empty)
+  const defaultTab = (activeService === 'all') ? 'asistente' : activeService;
+  
   tabLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      tabLinks.forEach(l => l.classList.remove('active'));
+    if (link.getAttribute('data-tab') === defaultTab) {
       link.classList.add('active');
-      
-      const tabId = link.getAttribute('data-tab');
-      const targetPanel = document.getElementById(`panel-${tabId}`);
-      if (targetPanel) {
-        // Offset for the fixed header
-        const headerOffset = 90;
-        const elementPosition = targetPanel.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-        
-        window.scrollTo({
-          top: offsetPosition,
-          behavior: 'smooth'
-        });
-      }
-    });
+    } else {
+      link.classList.remove('active');
+    }
   });
-
-  // Highlight tab based on scroll position (Scroll-Spy)
-  window.addEventListener('scroll', () => {
-    let current = '';
-    const scrollPos = window.scrollY + 140; // Offset threshold
-    
-    const tabPanels = document.querySelectorAll('.tab-panel');
-    tabPanels.forEach(panel => {
-      const top = panel.offsetTop;
-      const height = panel.offsetHeight;
-      if (scrollPos >= top && scrollPos < top + height) {
-        current = panel.id.replace('panel-', '');
-      }
-    });
-    
-    if (current) {
-      tabLinks.forEach(link => {
-        if (link.getAttribute('data-tab') === current) {
-          link.classList.add('active');
-        } else {
-          link.classList.remove('active');
-        }
-      });
+  
+  tabPanels.forEach(panel => {
+    if (panel.id === `panel-${defaultTab}`) {
+      panel.classList.add('active');
+    } else {
+      panel.classList.remove('active');
     }
   });
 
-  // Initial scroll if a specific service (other than all) was selected
-  if (activeService && activeService !== 'all') {
-    setTimeout(() => {
-      const target = document.getElementById(`panel-${activeService}`);
-      if (target) {
-        const headerOffset = 90;
-        const elementPosition = target.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-        window.scrollTo({
-          top: offsetPosition,
-          behavior: 'smooth'
-        });
-      }
-    }, 800);
+  tabLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      tabLinks.forEach(l => l.classList.remove('active'));
+      tabPanels.forEach(p => p.classList.remove('active'));
+      
+      link.classList.add('active');
+      const tabId = link.getAttribute('data-tab');
+      document.getElementById(`panel-${tabId}`).classList.add('active');
+      
+      // Reset scroll to top of content area to avoid disorientation
+      document.querySelector('.sim-content-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+}
+
+// ── SECTOR DYNAMIC PROFILES ──
+const sectorProfiles = {
+  "restaurante": {
+    logoName: "Restaurante / Café",
+    chatInit: "¡Hola! ¿Tienen mesa disponible para hoy a las 8:00 PM para 4 personas y qué recomiendan de cenar?",
+    chatReply: "¡Hola! Sí, por supuesto. He reservado una mesa para 4 personas hoy a las 8:00 PM en **{bizName}**. De cenar te recomiendo probar nuestra *Hamburguesa Especial* y el delicioso *Pastel de Chocolate*. ¿Te gustaría que pre-ordenemos algo para que esté listo al llegar?",
+    posProducts: [
+      { id: 1, icon: '☕', name: 'Café Capuccino', price: 55 },
+      { id: 2, icon: '🍰', name: 'Pastel de Chocolate', price: 75 },
+      { id: 3, icon: '🍳', name: 'Desayuno Americano', price: 145 },
+      { id: 4, icon: '🍹', name: 'Bebida Artesanal', price: 60 },
+      { id: 5, icon: '🥐', name: 'Croissant Jamón', price: 45 },
+      { id: 6, icon: '🍔', name: 'Hamburguesa Especial', price: 180 }
+    ],
+    webTitle: "Sabor y Calidez en un Solo Lugar",
+    webSlogan: "Explora nuestro menú artesanal e interactivo. Pide en línea, reserva tu mesa y disfruta de la mejor atención gastronómica de la ciudad.",
+    erpBottleneck: "Retrasos y confusión en comandas físicas entre meseros y cocina.",
+    erpOptimizeNode: "✅ Comandas Digitales en Tiempo Real",
+    erpOptimizeDesc: "Pedidos directo a cocina desde tablet. Reduce el tiempo de entrega un 35% y elimina mermas por errores."
+  },
+  "comercio": {
+    logoName: "Comercio / Tienda (Retail)",
+    chatInit: "Hola! ¿Tienen en existencia los tenis deportivos en talla 27 y hacen envíos a domicilio?",
+    chatReply: "¡Hola! Sí, tenemos 3 piezas de *Tenis Deportivos* en talla 27 en stock. Sí hacemos envíos gratis a todo el país. He apartado un par provisionalmente para ti en **{bizName}**. ¿Te gustaría recibir el link de pago seguro?",
+    posProducts: [
+      { id: 1, icon: '👕', name: 'Playera de Algodón', price: 350 },
+      { id: 2, icon: '👟', name: 'Tenis Deportivos', price: 1200 },
+      { id: 3, icon: '🎒', name: 'Mochila Ergonómica', price: 450 },
+      { id: 4, icon: '🕶️', name: 'Lentes de Sol', price: 750 },
+      { id: 5, icon: '⌚', name: 'Reloj Inteligente', price: 1800 },
+      { id: 6, icon: '👜', name: 'Bolso de Cuero', price: 950 }
+    ],
+    webTitle: "Moda y Tendencias a tu Alcance",
+    webSlogan: "Descubre nuestra colección exclusiva. Compra online de forma segura con envío rápido a domicilio y devoluciones sin costo.",
+    erpBottleneck: "Falta de sincronización de stock físico y digital en tiempo real.",
+    erpOptimizeNode: "✅ Control de Inventario Omnicanal",
+    erpOptimizeDesc: "Stock sincronizado automáticamente en web, POS y almacén. Reduce faltantes de stock un 40%."
+  },
+  "servicios": {
+    logoName: "Servicios Profesionales / Consultoría",
+    chatInit: "Hola, me interesa una cotización para una auditoría contable y saber qué incluye.",
+    chatReply: "¡Hola! Claro. Nuestra *Auditoría Contable* incluye revisión de balances, conciliaciones fiscales y reporte de riesgos. El costo base es de $3,500. He generado una propuesta interactiva para **{bizName}**. ¿Te gustaría agendar una llamada breve con un especialista?",
+    posProducts: [
+      { id: 1, icon: '📑', name: 'Asesoría Legal / Hora', price: 1500 },
+      { id: 2, icon: '📊', name: 'Auditoría Contable', price: 3500 },
+      { id: 3, icon: '📈', name: 'Planificación Fiscal', price: 4500 },
+      { id: 4, icon: '🧠', name: 'Consultoría TI', price: 2500 },
+      { id: 5, icon: '💻', name: 'Soporte y Hosting', price: 1200 },
+      { id: 6, icon: '📝', name: 'Redacción Contratos', price: 1800 }
+    ],
+    webTitle: "Soluciones Estratégicas para tu Crecimiento",
+    webSlogan: "Impulsamos tu negocio con consultoría de alto nivel. Agenda citas de asesoría, firma contratos digitalmente y accede a tu panel de cliente.",
+    erpBottleneck: "Lentitud en la preparación y envío de cotizaciones y contratos.",
+    erpOptimizeNode: "✅ Generador Automático de Propuestas",
+    erpOptimizeDesc: "Cotizaciones en PDF autogeneradas y firma electrónica instantánea. Reduce el ciclo de venta en un 50%."
+  },
+  "salud": {
+    logoName: "Salud / Clínica",
+    chatInit: "Hola! Buenas tardes, ¿tienen cita disponible para una limpieza dental mañana por la tarde?",
+    chatReply: "¡Buenas tardes! Sí, tenemos espacios libres para *Limpieza Dental* mañana a las 3:00 PM y 5:00 PM en **{bizName}**. He apartado tentativamente el horario de las 3:00 PM. ¿Te queda bien para agendarlo oficialmente?",
+    posProducts: [
+      { id: 1, icon: '🩺', name: 'Consulta Médica', price: 600 },
+      { id: 2, icon: '🦷', name: 'Limpieza Dental', price: 800 },
+      { id: 3, icon: '🔬', name: 'Estudios de Laboratorio', price: 1200 },
+      { id: 4, icon: '💊', name: 'Receta y Tratamiento', price: 450 },
+      { id: 5, icon: '🧪', name: 'Prueba Diagnóstica', price: 1500 },
+      { id: 6, icon: '🩹', name: 'Curación Clínica', price: 500 }
+    ],
+    webTitle: "Cuidado Profesional de tu Salud",
+    webSlogan: "Reserva tus citas médicas en línea 24/7 de forma inmediata, consulta nuestro directorio de especialistas y accede a tu historial médico.",
+    erpBottleneck: "Alta tasa de inasistencia a consultas y citas duplicadas.",
+    erpOptimizeNode: "✅ Agenda y Recordatorios Automatizados",
+    erpOptimizeDesc: "Confirmaciones automáticas vía WhatsApp integradas a la agenda. Reduce ausentismo en un 45%."
+  },
+  "educacion": {
+    logoName: "Educación / Cursos",
+    chatInit: "Hola, me podrían dar información sobre los costos de inscripción y formas de pago?",
+    chatReply: "¡Hola! Por supuesto. En **{bizName}** la *Inscripción Anual* es de $2,500 y la *Mensualidad del Curso* es de $1,800. Aceptamos tarjetas de crédito con facturación automatizada. ¿Deseas recibir el link del formulario de inscripción digital?",
+    posProducts: [
+      { id: 1, icon: '📚', name: 'Inscripción Anual', price: 2500 },
+      { id: 2, icon: '✏️', name: 'Mensualidad Curso', price: 1800 },
+      { id: 3, icon: '🎒', name: 'Kit Material Didáctico', price: 650 },
+      { id: 4, icon: '💻', name: 'Acceso Plataforma LMS', price: 1200 },
+      { id: 5, icon: '🧪', name: 'Taller Extracurricular', price: 950 },
+      { id: 6, icon: '🎓', name: 'Certificado de Grado', price: 3000 }
+    ],
+    webTitle: "Formación de Excelencia para el Futuro",
+    webSlogan: "Explora nuestra oferta académica. Inscripciones 100% online, pagos automatizados de colegiaturas y clases virtuales de última generación.",
+    erpBottleneck: "Proceso manual y tardado de cobranza de colegiaturas pendientes.",
+    erpOptimizeNode: "✅ Cobranza Recurrente y Automatizada",
+    erpOptimizeDesc: "Cargos recurrentes con recordatorios de pago automáticos vía WhatsApp. Disminuye cartera vencida en un 60%."
+  },
+  "inmobiliaria": {
+    logoName: "Inmobiliaria / Bienes Raíces",
+    chatInit: "Hola! Busco casas o departamentos en renta por la zona centro de aprox $10,000 pesos.",
+    chatReply: "¡Hola! Sí, contamos con 2 departamentos disponibles en la zona centro por $10,000. He enviado las fichas y recorridos virtuales a tu WhatsApp. ¿Te gustaría coordinar una visita física para esta semana?",
+    posProducts: [
+      { id: 1, icon: '🔑', name: 'Comisión Renta / Depósito', price: 15000 },
+      { id: 2, icon: '🏢', name: 'Comisión Venta Propiedad', price: 95000 },
+      { id: 3, icon: '📝', name: 'Contrato de Arrendamiento', price: 2500 },
+      { id: 4, icon: '📸', name: 'Sesión Fotos Profesional', price: 1800 },
+      { id: 5, icon: '📋', name: 'Valuación Comercial', price: 3500 },
+      { id: 6, icon: '🛡️', name: 'Póliza Jurídica Anual', price: 4500 }
+    ],
+    webTitle: "Encuentra la Propiedad de tus Sueños",
+    webSlogan: "Buscador inteligente de casas, oficinas y departamentos. Recorridos virtuales, mapas interactivos e información detallada al instante.",
+    erpBottleneck: "Retrasos en el envío de fichas y listados de propiedades a leads.",
+    erpOptimizeNode: "✅ CRM de Propiedades Inteligente",
+    erpOptimizeDesc: "Mapeo automático de preferencias del cliente con fichas en PDF enviadas de inmediato. Agiliza cierres en un 40%."
+  },
+  "manufactura": {
+    logoName: "Manufactura / Distribución",
+    chatInit: "Hola, queremos consultar el estado del pedido de 500 piezas que ordenamos.",
+    chatReply: "¡Hola! Tu pedido de 500 piezas en **{bizName}** está al 90% de fabricación y programado para distribución mañana a las 9:00 AM. Se ha asignado el transportista y la guía de rastreo. ¿Quieres recibir notificaciones de entrega?",
+    posProducts: [
+      { id: 1, icon: '📦', name: 'Lote de Materia Prima A', price: 8500 },
+      { id: 2, icon: '⚙️', name: 'Servicio Procesamiento', price: 12000 },
+      { id: 3, icon: '🚛', name: 'Logística de Distribución', price: 3500 },
+      { id: 4, icon: '📦', name: 'Lote de Producto Terminado', price: 14500 },
+      { id: 5, icon: '🔧', name: 'Mantenimiento Correctivo', price: 4500 },
+      { id: 6, icon: '📋', name: 'Control de Calidad ISO', price: 5000 }
+    ],
+    webTitle: "Suministro y Manufactura de Alta Precisión",
+    webSlogan: "Portal corporativo para clientes mayoristas. Levanta órdenes de compra, cotiza fletes y rastrea el avance de tu producción en tiempo real.",
+    erpBottleneck: "Falta de coordinación entre órdenes de venta y capacidad de planta.",
+    erpOptimizeNode: "✅ Planificación de Producción (MRP)",
+    erpOptimizeDesc: "Generación automática de órdenes de producción basadas en inventarios y ventas. Reduce retrasos un 30%."
+  },
+  "otro": {
+    logoName: "Otro Sector",
+    chatInit: "Hola! Me interesa conocer más sobre sus servicios especializados y qué soluciones tienen.",
+    chatReply: "¡Hola! Qué gusto saludarte. En **{bizName}** diseñamos software inteligente a la medida para optimizar tus flujos de trabajo. En especial, solucionamos tu problema: *\"{bizProblem}\"*. ¿Te gustaría agendar una demostración con nuestro equipo técnico?",
+    posProducts: [
+      { id: 1, icon: '⚙️', name: 'Solución Personalizada', price: 4500 },
+      { id: 2, icon: '💻', name: 'Software a la Medida', price: 12000 },
+      { id: 3, icon: '📊', name: 'Integración de API', price: 3500 },
+      { id: 4, icon: '🧠', name: 'Consultoría Tecnológica', price: 2500 },
+      { id: 5, icon: '🔧', name: 'Soporte y Garantía', price: 1500 },
+      { id: 6, icon: '📈', name: 'Optimización de Procesos', price: 3000 }
+    ],
+    webTitle: "Tecnología a la Medida de tus Ideas",
+    webSlogan: "Desarrollamos soluciones de software robustas e inteligentes. Automatizamos procesos, conectamos tus sistemas y expandimos tu negocio.",
+    erpBottleneck: "Inoperancia y pérdida de tiempo por tareas manuales repetitivas.",
+    erpOptimizeNode: "✅ Automatización de Procesos (RPA)",
+    erpOptimizeDesc: "Robotización de flujos de trabajo administrativos. Ahorra hasta 20 horas semanales de trabajo manual."
+  }
+};
+
+function getSectorProfile(sector) {
+  if (!sector) return sectorProfiles.otro;
+  const norm = sector.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (norm.includes("restaurante") || norm.includes("cafe") || norm.includes("comida") || norm.includes("bistro") || norm.includes("alimento")) {
+    return sectorProfiles.restaurante;
+  } else if (norm.includes("tienda") || norm.includes("comercio") || norm.includes("retail") || norm.includes("ropa") || norm.includes("ventas") || norm.includes("boutique") || norm.includes("supermercado")) {
+    return sectorProfiles.comercio;
+  } else if (norm.includes("servicio") || norm.includes("consultor") || norm.includes("abogado") || norm.includes("despacho") || norm.includes("oficina") || norm.includes("agencia") || norm.includes("asesor")) {
+    return sectorProfiles.servicios;
+  } else if (norm.includes("salud") || norm.includes("clinica") || norm.includes("doctor") || norm.includes("dentista") || norm.includes("medico") || norm.includes("hospital") || norm.includes("odontol")) {
+    return sectorProfiles.salud;
+  } else if (norm.includes("educacion") || norm.includes("curso") || norm.includes("escuela") || norm.includes("academia") || norm.includes("colegio") || norm.includes("clase")) {
+    return sectorProfiles.educacion;
+  } else if (norm.includes("inmobiliaria") || norm.includes("raices") || norm.includes("casa") || norm.includes("departamento") || norm.includes("inmueble") || norm.includes("terreno")) {
+    return sectorProfiles.inmobiliaria;
+  } else if (norm.includes("manufactura") || norm.includes("distribucion") || norm.includes("fabrica") || norm.includes("almacen") || norm.includes("logistica") || norm.includes("produccion")) {
+    return sectorProfiles.manufactura;
+  } else {
+    return sectorProfiles.otro;
   }
 }
+
+// Global reference to active profile
+const profile = getSectorProfile(bizSector);
 
 // ── INITIALIZE DATA IN MOCKUPS ──
 function initMockups() {
@@ -255,25 +398,28 @@ function initMockups() {
   // 1. WhatsApp Chat Init
   const chatMessages = document.getElementById('chat-messages');
   chatMessages.innerHTML = '';
-  addChatMessage('incoming', `Hola! Me gustaría cotizar un servicio y saber sus horarios. ¿Cuáles son las ventajas de contratarlos?`);
+  
+  const initMsg = profile.chatInit
+    .replace(/{bizName}/g, bizName)
+    .replace(/{bizProblem}/g, bizProblem);
+  const replyMsg = profile.chatReply
+    .replace(/{bizName}/g, bizName)
+    .replace(/{bizProblem}/g, bizProblem);
+
+  addChatMessage('incoming', initMsg);
   setTimeout(() => {
-    addChatMessage('outgoing', `¡Hola! Un gusto saludarte. En **${bizName}** te atendemos de inmediato de forma automatizada.\n\nPara tu sector (${bizSector}), optimizamos las operaciones. De manera específica, nuestra solución soluciona de raíz tu problema: *"${bizProblem}"*, ahorrándote tiempo administrativo y evitando descuidos. ¿Te gustaría agendar una llamada con un asesor humano?`);
+    addChatMessage('outgoing', replyMsg);
   }, 1000);
 
   // 2. POS Grid Init
   initPOSProducts();
 
-  // 3. Mini Web Slogan
-  let webSlogan = `Optimizamos los procesos comerciales de ${bizName} y solucionamos tus problemas de ${bizProblem} con software inteligente a la medida.`;
-  if (bizSector.includes('Restaurante')) {
-    webSlogan = `El sabor, la calidez y el servicio que te definen en ${bizName}, potenciados por un sistema de caja y comandas inteligente.`;
-  } else if (bizSector.includes('Comercio')) {
-    webSlogan = `Explora y compra lo mejor de ${bizName} de forma ágil. Administramos inventario en tiempo real para brindarte el mejor stock.`;
-  }
-  document.getElementById('mock-web-slogan').textContent = webSlogan;
+  // 3. Mini Web Title & Slogan
+  document.getElementById('mock-web-title').textContent = profile.webTitle;
+  document.getElementById('mock-web-slogan').textContent = profile.webSlogan;
 
   // 4. ERP Workflow Problem Description
-  document.getElementById('erp-bottleneck-desc').textContent = `Cuello de botella: "${bizProblem}"`;
+  document.getElementById('erp-bottleneck-desc').textContent = `Cuello de botella: ${profile.erpBottleneck}`;
 
   // Update final WhatsApp link
   updateWhatsAppLink();
@@ -325,11 +471,11 @@ document.querySelectorAll('.sample-msg-btn').forEach(btn => {
     setTimeout(() => {
       let reply = "";
       if (text.includes('Precios')) {
-        reply = `En **${bizName}** ofrecemos soluciones modulares a la medida de tu sector (${bizSector}). Al automatizar tu problema: *"${bizProblem}"*, reduces mermas y costos operativos desde el primer mes. ¿Te gustaría recibir una llamada de presupuesto?`;
+        reply = `En **${bizName}** ofrecemos soluciones modulares a la medida. Al automatizar tu problema principal: *"${profile.erpBottleneck}"*, reduces costos operativos e ineficiencias desde el primer mes. ¿Te gustaría recibir una llamada de presupuesto?`;
       } else if (text.includes('Cita')) {
-        reply = `Entendido. Registramos solicitud de atención técnica para tu negocio. El Asistente IA de **${bizName}** consultará disponibilidad y enviará recordatorio automático.`;
+        reply = `Entendido. Registramos tu solicitud de agendamiento para tu negocio. El Asistente IA de **${bizName}** consultará la disponibilidad en la agenda de tu sector (${profile.logoName}) y enviará confirmación automática por WhatsApp en unos momentos.`;
       } else {
-        reply = `Lamentamos el inconveniente. Tu reporte ha sido indexado y catalogado por el motor IA de **${bizName}** para asignación inmediata.`;
+        reply = `Tu reporte técnico ha sido indexado y catalogado por el motor IA de **${bizName}** para asignación y resolución inmediata.`;
       }
       addChatMessage('outgoing', reply);
     }, 1200);
@@ -343,35 +489,7 @@ function initPOSProducts() {
   const grid = document.getElementById('pos-products-grid');
   grid.innerHTML = '';
   
-  let products = [];
-  if (bizSector.includes('Restaurante')) {
-    products = [
-      { id: 1, icon: '☕', name: 'Café Capuccino', price: 55 },
-      { id: 2, icon: '🍰', name: 'Pastel de Chocolate', price: 75 },
-      { id: 3, icon: '🍳', name: 'Desayuno Completo', price: 145 },
-      { id: 4, icon: '🍹', name: 'Bebida Artesanal', price: 60 },
-      { id: 5, icon: '🥐', name: 'Pan Horneado', price: 35 },
-      { id: 6, icon: '🍔', name: 'Hamburguesa Especial', price: 180 }
-    ];
-  } else if (bizSector.includes('Comercio')) {
-    products = [
-      { id: 1, icon: '👕', name: 'Prenda de Moda', price: 350 },
-      { id: 2, icon: '👟', name: 'Calzado Deportivo', price: 1200 },
-      { id: 3, icon: '🎒', name: 'Accesorio / Mochila', price: 450 },
-      { id: 4, icon: '🕶️', name: 'Lentes Premium', price: 750 },
-      { id: 5, icon: '⌚', name: 'Reloj Inteligente', price: 1800 },
-      { id: 6, icon: '👜', name: 'Bolso de Mano', price: 950 }
-    ];
-  } else {
-    products = [
-      { id: 1, icon: '💼', name: 'Servicio Estándar', price: 450 },
-      { id: 2, icon: '📈', name: 'Suscripción Mensual', price: 950 },
-      { id: 3, icon: '🧠', name: 'Asesoría Técnica', price: 1200 },
-      { id: 4, icon: '🛠️', name: 'Mantenimiento Correctivo', price: 850 },
-      { id: 5, icon: '📦', name: 'Kit Básico Insumos', price: 650 },
-      { id: 6, icon: '📑', name: 'Consultoría Integral', price: 3200 }
-    ];
-  }
+  const products = profile.posProducts;
 
   products.forEach(p => {
     const card = document.createElement('div');
@@ -482,8 +600,8 @@ document.getElementById('erp-optimize-toggle').addEventListener('change', (e) =>
   if (e.target.checked) {
     node.className = 'flow-node success';
     node.innerHTML = `
-      ✅ Flujo Optimizado por IA
-      <div style="font-size: 11px; font-weight: 500; opacity: 0.8; margin-top: 4px;">Reglas de negocio aplicadas</div>
+      ${profile.erpOptimizeNode}
+      <div style="font-size: 11px; font-weight: 500; opacity: 0.8; margin-top: 4px;">${profile.erpOptimizeDesc}</div>
     `;
     statusVal.textContent = '🟢 Prototipo Óptimo (100% Eficiente)';
     statusVal.style.color = '#10b981';
@@ -497,7 +615,7 @@ document.getElementById('erp-optimize-toggle').addEventListener('change', (e) =>
     node.className = 'flow-node error';
     node.innerHTML = `
       ❌ Cuello de Botella Operativo
-      <div id="erp-bottleneck-desc" style="font-size: 11px; font-weight: 500; opacity: 0.8; margin-top: 4px;">Cuello de botella: "${bizProblem}"</div>
+      <div id="erp-bottleneck-desc" style="font-size: 11px; font-weight: 500; opacity: 0.8; margin-top: 4px;">Cuello de botella: "${profile.erpBottleneck}"</div>
     `;
     statusVal.textContent = '⚠️ Ineficiencias Detectadas';
     statusVal.style.color = '#ef4444';
