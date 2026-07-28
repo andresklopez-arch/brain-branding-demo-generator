@@ -403,6 +403,10 @@ const roiStaffVal = document.getElementById('roi-staff-val');
 const roiHoursSaved = document.getElementById('roi-hours-saved');
 const roiMoneySaved = document.getElementById('roi-money-saved');
 const roiBizLabel = document.getElementById('roi-biz-name-label');
+const roiToggleBtn = document.getElementById('roi-view-toggle-btn');
+const roiMetricsView = document.getElementById('roi-metrics-view');
+const roiChartView = document.getElementById('roi-chart-view');
+let hasFiredRoiConfetti = false;
 
 if (roiBizLabel && bizName) {
   roiBizLabel.textContent = bizName;
@@ -416,10 +420,29 @@ if (roiSlider) {
     const money = staff * 14500 * 12;
     if (roiHoursSaved) roiHoursSaved.textContent = `${hours.toLocaleString()} hrs`;
     if (roiMoneySaved) roiMoneySaved.textContent = `$${money.toLocaleString()} MXN`;
+
+    if (staff >= 10 && !hasFiredRoiConfetti && typeof confetti === 'function') {
+      hasFiredRoiConfetti = true;
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.8 } });
+    }
   });
 }
 
-// ── VCARD DOWNLOAD HANDLER ──
+if (roiToggleBtn && roiMetricsView && roiChartView) {
+  roiToggleBtn.addEventListener('click', () => {
+    if (roiChartView.style.display === 'none') {
+      roiChartView.style.display = 'flex';
+      roiMetricsView.style.display = 'none';
+      roiToggleBtn.textContent = '🔢 Ver Métricas Numeradas';
+    } else {
+      roiChartView.style.display = 'none';
+      roiMetricsView.style.display = 'grid';
+      roiToggleBtn.textContent = '📊 Alternar Gráfico / Métricas';
+    }
+  });
+}
+
+// ── VCARD DOWNLOAD & WHATSAPP DIRECT HANDLER ──
 const vcardBtn = document.getElementById('download-vcard-btn');
 if (vcardBtn) {
   vcardBtn.addEventListener('click', () => {
@@ -432,6 +455,12 @@ if (vcardBtn) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    // Open WhatsApp directly after short delay
+    setTimeout(() => {
+      const waUrl = `https://api.whatsapp.com/send?phone=525638165507&text=Hola%20Brain%20Branding,%20aqu%C3%AD%20est%C3%A1%20la%20vCard%20digital%20de%20mi%20empresa%20${encodeURIComponent(bizName)}%20(${encodeURIComponent(bizSector)}).%20Quiero%20solicitar%20asesor%C3%ADa%20personalizada.`;
+      window.open(waUrl, '_blank');
+    }, 500);
   });
 }
 
