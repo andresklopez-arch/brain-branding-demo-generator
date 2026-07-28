@@ -507,12 +507,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (passcodeError) {
           passcodeError.style.display = 'block';
           passcodeError.style.color = 'var(--secondary)';
-          let timeLeft = 60;
-          passcodeError.textContent = `Demasiados intentos. Bloqueado por ${timeLeft}s.`;
+          let timeLeft = 600; // 10 minutes
+          
+          // Format seconds into MM:SS
+          const formatTime = (secs) => {
+            const m = Math.floor(secs / 60).toString().padStart(2, '0');
+            const s = (secs % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+          };
+          
+          passcodeError.textContent = `Demasiados intentos. Bloqueado por ${formatTime(timeLeft)}.`;
+          
+          // Log security event to backend server
+          fetch('https://brain-branding-demo-generator.onrender.com/api/log-client-security', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'PORTAL_LOCKOUT',
+              details: 'Intrusión potencial: El portal corporativo bloqueó un cliente tras 5 intentos fallidos de passcode.'
+            })
+          }).catch(err => console.warn('Fallo al reportar auditoría:', err));
           
           passcodeLockoutTimer = setInterval(() => {
             timeLeft--;
-            passcodeError.textContent = `Demasiados intentos. Bloqueado por ${timeLeft}s.`;
+            passcodeError.textContent = `Demasiados intentos. Bloqueado por ${formatTime(timeLeft)}.`;
             if (timeLeft <= 0) {
               clearInterval(passcodeLockoutTimer);
               passcodeAttempts = 0;
