@@ -57,32 +57,32 @@ function sanitizeInput(text) {
   return text.replace(/<[^>]*>?/gm, '').trim();
 }
 
-// Validate active session (must exist in safeSessionStorage, i.e., tab was not closed)
-if (!safeSessionStorage.getItem('sim_session_active')) {
-  safeLocalStorage.setItem('sim_redirect_reason', 'No sim_session_active in safeSessionStorage. safeSessionStorage keys: ' + Object.keys(safeSessionStorage).join(', '));
-  safeSessionStorage.clear();
-  safeLocalStorage.clear();
-  window.location.href = '/';
-  throw new Error("No active session found. Redirecting to root...");
-}
-
-const rawBizName = safeSessionStorage.getItem('sim_biz_name') || safeLocalStorage.getItem('sim_biz_name') || "";
-const rawBizSector = safeSessionStorage.getItem('sim_biz_sector') || safeLocalStorage.getItem('sim_biz_sector') || "";
-const rawBizProblem = safeSessionStorage.getItem('sim_biz_problem') || safeLocalStorage.getItem('sim_biz_problem') || "";
+// Read data from safeLocalStorage or safeSessionStorage
+const rawBizName = safeLocalStorage.getItem('sim_biz_name') || safeSessionStorage.getItem('sim_biz_name') || "";
+const rawBizSector = safeLocalStorage.getItem('sim_biz_sector') || safeSessionStorage.getItem('sim_biz_sector') || "";
+const rawBizProblem = safeLocalStorage.getItem('sim_biz_problem') || safeSessionStorage.getItem('sim_biz_problem') || "";
+const simStart = parseInt(safeLocalStorage.getItem('sim_session_start') || safeSessionStorage.getItem('sim_session_start') || '0', 10);
 
 const bizName = sanitizeInput(cleanSpelling(rawBizName));
 const bizSector = sanitizeInput(cleanSpelling(rawBizSector));
 const bizProblem = sanitizeInput(cleanSpelling(rawBizProblem));
-const bizStyle = sanitizeInput(safeSessionStorage.getItem('sim_biz_style') || safeLocalStorage.getItem('sim_biz_style') || 'ultra-moderno');
-let bizLogo = safeSessionStorage.getItem('sim_biz_logo') || safeLocalStorage.getItem('sim_biz_logo') || '';
-const activeService = sanitizeInput(safeSessionStorage.getItem('sim_active_service') || safeLocalStorage.getItem('sim_active_service') || 'asistente');
+const bizStyle = sanitizeInput(safeLocalStorage.getItem('sim_biz_style') || safeSessionStorage.getItem('sim_biz_style') || 'ultra-moderno');
+let bizLogo = safeLocalStorage.getItem('sim_biz_logo') || safeSessionStorage.getItem('sim_biz_logo') || '';
+const activeService = sanitizeInput(safeLocalStorage.getItem('sim_active_service') || safeSessionStorage.getItem('sim_active_service') || 'asistente');
 
-// Redirect if no data
-if (!bizName || !bizSector || !bizProblem) {
-  safeLocalStorage.setItem('sim_redirect_reason', 'Missing fields: bizName=' + bizName + ', bizSector=' + bizSector + ', bizProblem=' + bizProblem);
+// Check 15-minute expiration (15 * 60 * 1000 = 900,000 ms)
+const isExpired = simStart > 0 && (Date.now() - simStart > 15 * 60 * 1000);
+
+// Redirect if missing data or expired
+if (!bizName || !bizSector || !bizProblem || isExpired) {
+  safeLocalStorage.clear();
+  safeSessionStorage.clear();
   window.location.href = '/';
-  throw new Error("No session data found. Redirecting to root...");
+  throw new Error("No session data found or session expired. Redirecting to root...");
 }
+
+// Set session active mark
+safeSessionStorage.setItem('sim_session_active', 'true');
 
 // Synchronize storage
 safeSessionStorage.setItem('sim_biz_name', bizName);

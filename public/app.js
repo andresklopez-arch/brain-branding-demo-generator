@@ -312,9 +312,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const bizProblem = document.getElementById('sim-business-problem').value.trim();
       const bizStyle = document.getElementById('sim-business-style').value;
 
+      const nowStr = Date.now().toString();
+
       // Store in safeSessionStorage
       safeSessionStorage.setItem('sim_session_active', 'true');
-      safeSessionStorage.setItem('sim_session_start', Date.now().toString());
+      safeSessionStorage.setItem('sim_session_start', nowStr);
       safeSessionStorage.setItem('sim_biz_name', bizName);
       safeSessionStorage.setItem('sim_biz_sector', bizSector);
       safeSessionStorage.setItem('sim_biz_problem', bizProblem);
@@ -322,6 +324,9 @@ document.addEventListener('DOMContentLoaded', () => {
       safeSessionStorage.setItem('sim_biz_logo', uploadedLogoDataUrl || '');
       safeSessionStorage.setItem('sim_active_service', activeSimulatorService);
 
+      // Store in safeLocalStorage
+      safeLocalStorage.setItem('sim_session_active', 'true');
+      safeLocalStorage.setItem('sim_session_start', nowStr);
       safeLocalStorage.setItem('sim_biz_name', bizName);
       safeLocalStorage.setItem('sim_biz_sector', bizSector);
       safeLocalStorage.setItem('sim_biz_problem', bizProblem);
@@ -332,8 +337,11 @@ document.addEventListener('DOMContentLoaded', () => {
       // Close modal
       hideSimModal();
 
-      // Open simulator in new tab
-      window.location.href = '/simulador.html';
+      // Open simulator in new tab or navigate
+      const newWin = window.open('/simulador.html', '_blank');
+      if (!newWin || newWin.closed || typeof newWin.closed === 'undefined') {
+        window.location.href = '/simulador.html';
+      }
     });
   }
 
