@@ -8,6 +8,7 @@ const activeService = sessionStorage.getItem('sim_active_service') || 'asistente
 // Redirect if no data
 if (!bizName || !bizSector || !bizProblem) {
   window.location.href = '/';
+  throw new Error("No session data found. Redirecting to root...");
 }
 
 // ── AUTOGENERATE LOGO IF EMPTY ──
@@ -17,6 +18,7 @@ if (!bizLogo) {
 }
 
 function generateAvatar(name) {
+  if (!name) return '';
   const initials = name.trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase() || 'BB';
   const colors = [
     ['#a855f7', '#ec4899'],
