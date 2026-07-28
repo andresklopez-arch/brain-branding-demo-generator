@@ -397,32 +397,41 @@ if (qrModal) {
   });
 }
 
-// ── LANGUAGE TOGGLE (ES | EN) ──
-let currentLang = 'ES';
-const langToggleBtn = document.getElementById('lang-toggle-btn');
-if (langToggleBtn) {
-  langToggleBtn.addEventListener('click', () => {
-    currentLang = currentLang === 'ES' ? 'EN' : 'ES';
-    langToggleBtn.innerHTML = `🌐 ${currentLang === 'ES' ? 'ES | EN' : 'EN | ES'}`;
+// ── ROI CALCULATOR LOGIC ──
+const roiSlider = document.getElementById('roi-staff-slider');
+const roiStaffVal = document.getElementById('roi-staff-val');
+const roiHoursSaved = document.getElementById('roi-hours-saved');
+const roiMoneySaved = document.getElementById('roi-money-saved');
+const roiBizLabel = document.getElementById('roi-biz-name-label');
 
-    const tab1 = document.querySelector('.tab-link[data-tab="panel-asistente"]');
-    const tab2 = document.querySelector('.tab-link[data-tab="panel-pos"]');
-    const tab3 = document.querySelector('.tab-link[data-tab="panel-web"]');
-    const tab4 = document.querySelector('.tab-link[data-tab="panel-erp"]');
+if (roiBizLabel && bizName) {
+  roiBizLabel.textContent = bizName;
+}
 
-    if (currentLang === 'EN') {
-      if (tab1) tab1.textContent = '🤖 AI Assistant';
-      if (tab2) tab2.textContent = '🛒 Smart POS';
-      if (tab3) tab3.textContent = '🌐 Custom Web';
-      if (tab4) tab4.textContent = '⚡ ERP Software';
-      if (copyDiagBtn) copyDiagBtn.innerHTML = '📋 Copy Diagnosis';
-    } else {
-      if (tab1) tab1.textContent = '🤖 Asistente IA';
-      if (tab2) tab2.textContent = '🛒 Punto de Venta (POS)';
-      if (tab3) tab3.textContent = '🌐 Página Web a Medida';
-      if (tab4) tab4.textContent = '⚡ Software ERP a Medida';
-      if (copyDiagBtn) copyDiagBtn.innerHTML = '📋 Copiar Diagnóstico';
-    }
+if (roiSlider) {
+  roiSlider.addEventListener('input', (e) => {
+    const staff = parseInt(e.target.value, 10);
+    if (roiStaffVal) roiStaffVal.textContent = `${staff} ${staff === 1 ? 'persona' : 'personas'}`;
+    const hours = staff * 35;
+    const money = staff * 14500 * 12;
+    if (roiHoursSaved) roiHoursSaved.textContent = `${hours.toLocaleString()} hrs`;
+    if (roiMoneySaved) roiMoneySaved.textContent = `$${money.toLocaleString()} MXN`;
+  });
+}
+
+// ── VCARD DOWNLOAD HANDLER ──
+const vcardBtn = document.getElementById('download-vcard-btn');
+if (vcardBtn) {
+  vcardBtn.addEventListener('click', () => {
+    const safeFilename = bizName.replace(/[^a-zA-Z0-9]/g, '_');
+    const vcardContent = `BEGIN:VCARD\nVERSION:3.0\nN:${bizName};;;;\nFN:${bizName}\nORG:${bizName}\nTITLE:${bizSector}\nNOTE:Diagnóstico de IA creado en Brain Branding - ${bizProblem}\nTEL;TYPE=CELL:+525638165507\nURL:https://brainbranding.com.mx\nEND:VCARD`;
+    const blob = new Blob([vcardContent], { type: 'text/vcard;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${safeFilename}_Contacto.vcf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   });
 }
 
