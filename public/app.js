@@ -762,4 +762,34 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }, 600);
   }
+
+  // 24. WhatsApp FAB click debouncing
+  if (fab) {
+    let clickTimeout = null;
+    fab.addEventListener('click', (e) => {
+      if (clickTimeout !== null) {
+        e.preventDefault();
+        return;
+      }
+      clickTimeout = setTimeout(() => {
+        clickTimeout = null;
+      }, 500);
+    });
+  }
+
+  // 25. Hide WhatsApp FAB Tooltip on scroll or click outside
+  const tooltip = document.getElementById('fab-tooltip');
+  if (tooltip) {
+    const hideTooltip = () => {
+      if (tooltip.style.opacity === '1') {
+        tooltip.style.opacity = '0';
+        tooltip.style.transform = 'translateY(10px)';
+      }
+    };
+    window.addEventListener('scroll', hideTooltip, { passive: true });
+    document.addEventListener('click', (e) => {
+      if (fab && fab.contains(e.target)) return;
+      hideTooltip();
+    });
+  }
 });
