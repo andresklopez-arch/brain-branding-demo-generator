@@ -192,6 +192,9 @@ function initTabs() {
     }
   });
 
+  // Load initial AI advice
+  updateAIAdvice(defaultTab);
+
   tabLinks.forEach(link => {
     link.addEventListener('click', () => {
       tabLinks.forEach(l => l.classList.remove('active'));
@@ -200,6 +203,9 @@ function initTabs() {
       link.classList.add('active');
       const tabId = link.getAttribute('data-tab');
       document.getElementById(`panel-${tabId}`).classList.add('active');
+      
+      // Update dynamic AI advice!
+      updateAIAdvice(tabId);
       
       // Reset scroll to top of content area to avoid disorientation
       document.querySelector('.sim-content-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -226,7 +232,13 @@ const sectorProfiles = {
     erpBottleneck: "Retrasos y confusión en comandas físicas entre meseros y cocina.",
     erpOptimizeNode: "✅ Comandas Digitales en Tiempo Real",
     erpOptimizeDesc: "Pedidos directo a cocina desde tablet. Reduce el tiempo de entrega un 35% y elimina mermas por errores.",
-    aiAdvice: "En el sector restaurantero, implementar un control de comandas digital sincronizado y predicción de demanda para ingredientes perecederos reduce las mermas de insumos críticos hasta en un 22% anual."
+    aiAdvice: "En el sector restaurantero, implementar un control de comandas digital sincronizado y predicción de demanda para ingredientes perecederos reduce las mermas de insumos críticos hasta en un 22% anual.",
+    aiAdvices: {
+      asistente: "Consejo IA: Un Asistente de reservas automatizado por WhatsApp evita la pérdida de mesas por llamadas no contestadas fuera de horario de servicio, captando un 15% más de reservas.",
+      pos: "Consejo IA: La facturación con QR en el ticket del restaurante permite al cliente auto-facturar desde su celular, disminuyendo las filas en caja y el tiempo de espera del cliente.",
+      web: "Consejo IA: Integrar un menú digital con fotos de alta calidad y un botón de pedido instantáneo eleva el ticket promedio de compra en un 24% comparado con menús en PDF tradicionales.",
+      erp: "Consejo IA: Sincronizar las comandas directo de la mesa a la cocina elimina confusiones del mesero, reduciendo las mermas por platos mal preparados hasta en un 18%."
+    }
   },
   "comercio": {
     logoName: "Comercio / Tienda (Retail)",
@@ -245,7 +257,13 @@ const sectorProfiles = {
     erpBottleneck: "Falta de sincronización de stock físico y digital en tiempo real.",
     erpOptimizeNode: "✅ Control de Inventario Omnicanal",
     erpOptimizeDesc: "Stock sincronizado automáticamente en web, POS y almacén. Reduce faltantes de stock un 40%.",
-    aiAdvice: "Para comercios minoristas (Retail), la integración de inventario omnicanal automatizado previene ventas de productos agotados y disminuye pérdidas de conversión por quiebres de stock en un 28%."
+    aiAdvice: "Para comercios minoristas (Retail), la integración de inventario omnicanal automatizado previene ventas de productos agotados y disminuye pérdidas de conversión por quiebres de stock en un 28%.",
+    aiAdvices: {
+      asistente: "Consejo IA: Integrar un chatbot que responda al instante dudas sobre disponibilidad de tallas y colores de productos eleva la tasa de conversión de clientes potenciales un 30%.",
+      pos: "Consejo IA: Un sistema POS sincronizado en tiempo real con tu catálogo online previene la venta de piezas agotadas y gestiona múltiples almacenes automáticamente.",
+      web: "Consejo IA: El uso de pasarelas de pago con checkout rápido (como Apple Pay o tarjetas pre-guardadas) incrementa las compras completadas un 25%.",
+      erp: "Consejo IA: Un ERP omnicanal te permite planificar reabastecimientos preventivos de mercancía basándose en análisis predictivos de tus ventas de los últimos 3 meses."
+    }
   },
   "servicios": {
     logoName: "Servicios Profesionales / Consultoría",
@@ -264,7 +282,13 @@ const sectorProfiles = {
     erpBottleneck: "Lentitud en la preparación y envío de cotizaciones y contratos.",
     erpOptimizeNode: "✅ Generador Automático de Propuestas",
     erpOptimizeDesc: "Cotizaciones en PDF autogeneradas y firma electrónica instantánea. Reduce el ciclo de venta en un 50%.",
-    aiAdvice: "En empresas de consultoría y servicios, automatizar la generación de propuestas comerciales y habilitar firmas digitales acorta el proceso de cierre de contratos comerciales de 9 días a menos de 24 horas."
+    aiAdvice: "En empresas de consultoría y servicios, automatizar la generación de propuestas comerciales y habilitar firmas digitales acorta el proceso de cierre de contratos comerciales de 9 días a menos de 24 horas.",
+    aiAdvices: {
+      asistente: "Consejo IA: Configurar recordatorios interactivos de citas profesionales vía chat reduce el ausentismo de clientes un 40% y agiliza el re-agendamiento autónomo.",
+      pos: "Consejo IA: Habilitar cobros mediante links de pago de Stripe o PayPal integrados a tu CRM agiliza el cobro de anticipos de proyectos en un 60%.",
+      web: "Consejo IA: Un sitio web con un cotizador interactivo permite perfilar prospectos calificados antes de que tomen una llamada, ahorrando valiosas horas de tu equipo de ventas.",
+      erp: "Consejo IA: Centralizar tus propuestas, minutas y contratos de clientes en un solo sistema en la nube reduce los tiempos de cierre de contratos comerciales de 9 días a menos de 24 horas."
+    }
   },
   "salud": {
     logoName: "Salud / Clínica",
@@ -283,7 +307,13 @@ const sectorProfiles = {
     erpBottleneck: "Alta tasa de inasistencia a consultas y citas duplicadas.",
     erpOptimizeNode: "✅ Agenda y Recordatorios Automatizados",
     erpOptimizeDesc: "Confirmaciones automáticas vía WhatsApp integradas a la agenda. Reduce ausentismo en un 45%.",
-    aiAdvice: "El uso de asistentes conversacionales para confirmación y recordatorio automático de consultas médicas disminuye el ausentismo (no-show) del 24% a menos del 5%, maximizando la ocupación del staff."
+    aiAdvice: "El uso de asistentes conversacionales para confirmación y recordatorio automático de consultas médicas disminuye el ausentismo (no-show) del 24% a menos del 5%, maximizando la ocupación del staff.",
+    aiAdvices: {
+      asistente: "Consejo IA: Un asistente médico virtual que responda preguntas comunes y valide seguros médicos por chat agiliza la recepción de la clínica y ahorra 15 horas semanales de llamadas.",
+      pos: "Consejo IA: Integrar el cobro de consultas directamente con el expediente médico asegura el control de ingresos y automatiza el reporte de insumos médicos utilizados.",
+      web: "Consejo IA: Un portal de pacientes para reservar citas médicas en línea 24/7 y descargar recetas o estudios clínicos eleva la retención de pacientes un 35%.",
+      erp: "Consejo IA: Agendar citas médicas digitales integradas con recordatorios automáticos por WhatsApp disminuye el ausentismo (no-show) de pacientes del 24% a menos del 5%."
+    }
   },
   "educacion": {
     logoName: "Educación / Cursos",
@@ -789,3 +819,136 @@ function updateWhatsAppLink() {
   
   document.getElementById('whatsapp-implement-btn').setAttribute('href', url);
 }
+
+// ── UPDATE IA ADVICE BY TAB ──
+function updateAIAdvice(tabId) {
+  const adviceEl = document.getElementById('ai-advisor-advice');
+  if (!adviceEl) return;
+  
+  if (profile.aiAdvices && profile.aiAdvices[tabId]) {
+    adviceEl.textContent = profile.aiAdvices[tabId].replace(/{bizName}/g, bizName).replace(/{bizProblem}/g, bizProblem);
+  } else {
+    // Fallback if not defined or custom
+    const genericAdvices = {
+      asistente: "Consejo IA: Automatizar la atención de primer contacto mediante WhatsApp Business API reduce los costos operativos de soporte técnico y atención a clientes hasta en un 40%.",
+      pos: "Consejo IA: Emitir facturas fiscales automáticas en el Punto de Venta con timbrado SAT en la nube disminuye el trabajo del equipo contable en un 70% al cierre mensual.",
+      web: "Consejo IA: Un sitio web optimizado para SEO local e indexado correctamente en Google Maps incrementa las visitas presenciales a tu negocio un 35%.",
+      erp: profile.aiAdvice || "Consejo IA: Automatizar el flujo de tus procesos operativos te ahorra hasta 22 horas de tareas manuales repetitivas a la semana."
+    };
+    adviceEl.textContent = genericAdvices[tabId];
+  }
+}
+
+// ── INTERACTIVE IA DIAGNOSTIC ENGINE ──
+document.getElementById('trigger-diagnostic-btn').addEventListener('click', () => {
+  const overlay = document.getElementById('diagnostic-overlay');
+  const scanner = document.getElementById('diagnostic-scanner');
+  const report = document.getElementById('diagnostic-report-card');
+  const status = document.getElementById('scanner-status');
+  
+  overlay.style.display = 'flex';
+  scanner.style.display = 'flex';
+  report.style.display = 'none';
+  
+  // Set up animation phases
+  const statuses = [
+    { text: "Accediendo al motor cognitivo de Brain Branding...", delay: 0 },
+    { text: `Analizando el sector: "${bizSector}"...`, delay: 600 },
+    { text: `Deconstruyendo cuello de botella: "${bizProblem}"...`, delay: 1300 },
+    { text: "Calculando proyecciones de ROI y automatizaciones...", delay: 2000 }
+  ];
+  
+  statuses.forEach(phase => {
+    setTimeout(() => {
+      status.textContent = phase.text;
+    }, phase.delay);
+  });
+  
+  setTimeout(() => {
+    // Hide scanner, show report
+    scanner.style.display = 'none';
+    report.style.display = 'flex';
+    
+    // Fill diagnostic report details
+    document.querySelectorAll('.biz-name').forEach(el => el.textContent = bizName);
+    
+    // Calculate smart values based on sector or custom
+    let hrsSaved = 22;
+    let efficiencyInc = 45;
+    let analysisText = "";
+    let steps = [];
+    
+    if (bizSector.toLowerCase().includes("restaurante")) {
+      hrsSaved = 18;
+      efficiencyInc = 35;
+      analysisText = `En el sector de Restaurantes, el problema "${bizProblem}" se origina por la desconexión entre el personal de servicio y cocina, provocando mermas de insumos críticos e insatisfacción del comensal.`;
+      steps = [
+        "**Fase 1 (Día 1-15)**: Desplegar comandas digitales en tablets sincronizadas con cocina para reducir los tiempos de entrega un 35%.",
+        "**Fase 2 (Día 16-30)**: Integrar bases de datos de inventario con predicción de demanda para ingredientes perecederos.",
+        "**Fase 3 (Día 31+)**: Habilitar autofacturación vía QR en tickets y encuestas de satisfacción automatizadas."
+      ];
+    } else if (bizSector.toLowerCase().includes("tienda") || bizSector.toLowerCase().includes("comercio")) {
+      hrsSaved = 20;
+      efficiencyInc = 40;
+      analysisText = `Para Comercios, la ineficiencia de "${bizProblem}" deviene de no sincronizar las existencias entre la tienda física y digital, perdiendo conversiones valiosas en temporadas altas.`;
+      steps = [
+        "**Fase 1 (Día 1-15)**: Implementar control de inventario omnicanal en tiempo real unificando POS y tienda en línea.",
+        "**Fase 2 (Día 16-30)**: Automatizar alertas de stock crítico y reordenes de proveedores con reglas lógicas de negocio.",
+        "**Fase 3 (Día 31+)**: Lanzar campañas automatizadas de retención de clientes inactivos basadas en historial de compras."
+      ];
+    } else {
+      // Custom / generic
+      // Deterministic but random-looking numbers based on string lengths
+      hrsSaved = 14 + (bizName.length % 11);
+      efficiencyInc = 35 + (bizProblem.length % 21);
+      analysisText = `El cuello de botella detectado en ${bizSector} bajo el problema "${bizProblem}" genera pérdidas de productividad severas debido a procesos administrativos y operativos manuales.`;
+      steps = [
+        `**Fase 1 (Día 1-15)**: Integrar Asistente Conversacional IA para automatizar dudas recurrentes sobre ${bizSector}.`,
+        `**Fase 2 (Día 16-30)**: Diseñar un flujo en la nube a medida para organizar y erradicar tareas repetitivas relacionadas con "${bizProblem}".`,
+        `**Fase 3 (Día 31+)**: Establecer dashboards en tiempo real con alertas preventivas para evitar que el cuello de botella vuelva a surgir.`
+      ];
+    }
+    
+    document.getElementById('diag-time-saved').textContent = hrsSaved;
+    document.getElementById('diag-efficiency').textContent = efficiencyInc;
+    document.getElementById('diag-analysis-text').textContent = analysisText;
+    
+    const stepsUl = document.getElementById('diag-steps');
+    stepsUl.innerHTML = '';
+    steps.forEach(step => {
+      const li = document.createElement('li');
+      // Format bold text
+      li.innerHTML = step.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      stepsUl.appendChild(li);
+    });
+    
+    // Configure WhatsApp Button inside Diagnostic Report
+    const phone = '525638165507';
+    const msgText = `Hola Brain Branding, acabo de generar mi Reporte de Diagnóstico IA para mi negocio *${bizName}* (Giro: ${bizSector}). El reporte estima un ahorro de ${hrsSaved} horas semanales y eficiencia de +${efficiencyInc}%. Me interesa programar una sesión estratégica para implementar este plan y solucionar: "${bizProblem}".`;
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msgText)}`;
+    
+    const wBtn = document.getElementById('diag-whatsapp-btn');
+    wBtn.onclick = () => {
+      window.open(whatsappUrl, '_blank');
+    };
+    
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 80, spread: 60 });
+    }
+    
+  }, 2600);
+});
+
+// Close diagnostic modal actions
+const closeBtn = document.getElementById('close-diagnostic-btn');
+if (closeBtn) {
+  closeBtn.addEventListener('click', () => {
+    document.getElementById('diagnostic-overlay').style.display = 'none';
+  });
+}
+
+document.getElementById('diagnostic-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'diagnostic-overlay') {
+    document.getElementById('diagnostic-overlay').style.display = 'none';
+  }
+});
