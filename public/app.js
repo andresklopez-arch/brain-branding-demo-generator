@@ -128,10 +128,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const business = document.getElementById('contact-business').value.trim();
       const vertical = document.getElementById('contact-vertical').value;
       const desc = document.getElementById('contact-desc').value.trim();
+      const operation = document.getElementById('contact-operation').value.trim();
       
       // WhatsApp pre-filled link
       const phone = "525638165507"; // WhatsApp comercial
-      const text = `Hola *Brain Branding*, mi nombre es *${name}* de la empresa *${business}* (Giro: *${vertical}*).\n\nMe interesa solicitar un prototipo descriptivo de software de IA para mi negocio. Aquí te comparto la idea general:\n\n_"${desc}"_`;
+      const text = `Hola *Brain Branding*, realicé el diagnóstico de mi negocio en la web:\n\n1. *Giro:* ${vertical}\n2. *Funciones que requiero:* ${desc}\n3. *Operación actual:* ${operation}\n\nMi nombre es *${name}* de la empresa *${business}*. Quedo a la espera de mi propuesta personalizada.`;
       
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       const waUrl = isMobile 
