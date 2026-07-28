@@ -1,7 +1,43 @@
-// ── READ SESSION DATA ──
-const bizName = sessionStorage.getItem('sim_biz_name');
-const bizSector = sessionStorage.getItem('sim_biz_sector');
-const bizProblem = sessionStorage.getItem('sim_biz_problem');
+// ── READ SESSION DATA & AUTOCORRECT SPELLING ──
+function cleanSpelling(text) {
+  if (!text) return "";
+  let cleaned = text.trim();
+  
+  const typos = [
+    { regex: /\bmuebleds\b/gi, replacement: "muebles" },
+    { regex: /\bmuebled\b/gi, replacement: "muebles" },
+    { regex: /\bcréditp\b/gi, replacement: "crédito" },
+    { regex: /\bcreditp\b/gi, replacement: "crédito" },
+    { regex: /\bservico\b/gi, replacement: "servicio" },
+    { regex: /\bservicos\b/gi, replacement: "servicios" },
+    { regex: /\batencion\b/gi, replacement: "atención" },
+    { regex: /\bclianterla\b/gi, replacement: "clientela" },
+    { regex: /\bdesconecion\b/gi, replacement: "desconexión" },
+    { regex: /\boptimisacion\b/gi, replacement: "optimización" },
+    { regex: /\bautonoma\b/gi, replacement: "autónoma" },
+    { regex: /\bautonomo\b/gi, replacement: "autónomo" },
+    { regex: /\bdiagnostico\b/gi, replacement: "diagnóstico" },
+    { regex: /\binterrucion\b/gi, replacement: "interrupción" },
+    { regex: /\binterucion\b/gi, replacement: "interrupción" }
+  ];
+  
+  typos.forEach(t => {
+    cleaned = cleaned.replace(t.regex, t.replacement);
+  });
+  
+  cleaned = cleaned.replace(/ebleds/gi, "ebles");
+  cleaned = cleaned.replace(/itp\b/gi, "ito");
+  
+  return cleaned;
+}
+
+const rawBizName = sessionStorage.getItem('sim_biz_name') || "";
+const rawBizSector = sessionStorage.getItem('sim_biz_sector') || "";
+const rawBizProblem = sessionStorage.getItem('sim_biz_problem') || "";
+
+const bizName = cleanSpelling(rawBizName);
+const bizSector = cleanSpelling(rawBizSector);
+const bizProblem = cleanSpelling(rawBizProblem);
 const bizStyle = sessionStorage.getItem('sim_biz_style') || 'ultra-moderno';
 let bizLogo = sessionStorage.getItem('sim_biz_logo');
 const activeService = sessionStorage.getItem('sim_active_service') || 'asistente';
@@ -2754,10 +2790,16 @@ document.querySelectorAll('.tab-link').forEach(link => {
   });
 });
 
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    attachPauseListeners();
-    const defaultTab = (activeService === 'all') ? 'asistente' : activeService;
-    startActiveTabLoop(defaultTab);
-  }, 1500);
-});
+function initSimulationLoop() {
+  attachPauseListeners();
+  const defaultTab = (activeService === 'all') ? 'asistente' : activeService;
+  startActiveTabLoop(defaultTab);
+}
+
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  setTimeout(initSimulationLoop, 600);
+} else {
+  window.addEventListener('load', () => {
+    setTimeout(initSimulationLoop, 600);
+  });
+}
