@@ -316,9 +316,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const bizSector = sectorEl.value.trim();
     const bizProblem = problemEl.value.trim();
 
-    if (!bizName || !bizSector || !bizProblem) {
-      alert('Por favor completa todos los campos obligatorios (*).');
+    // Highlight empty required fields with neon glow shake
+    let hasError = false;
+    [
+      { el: nameEl, val: bizName },
+      { el: sectorEl, val: bizSector },
+      { el: problemEl, val: bizProblem }
+    ].forEach(item => {
+      if (!item.val) {
+        hasError = true;
+        item.el.classList.add('shake-input');
+        setTimeout(() => item.el.classList.remove('shake-input'), 600);
+      }
+    });
+
+    if (hasError) {
+      const firstEmpty = [nameEl, sectorEl, problemEl].find(el => !el.value.trim());
+      if (firstEmpty) firstEmpty.focus();
       return;
+    }
+
+    // Lock button to prevent duplicate clicks
+    const startBtn = document.getElementById('start-sim-btn');
+    if (startBtn) {
+      startBtn.disabled = true;
+      startBtn.innerHTML = '✨ Generando Prototipo...';
+      startBtn.style.opacity = '0.75';
+      startBtn.style.cursor = 'wait';
     }
 
     const bizStyle = (document.getElementById('sim-business-style') && document.getElementById('sim-business-style').value) || 'ultra-moderno';
