@@ -798,6 +798,138 @@ function detectSentiment(text) {
   }
 }
 
+// ── LLM TELEMETRY & CHAT CONTROLS ──
+let totalTokensUsed = 0;
+let accumulatedCost = 0.0;
+let averageLatency = 0;
+let latencySamplesCount = 0;
+let memoryVariables = {
+  user_name: "Visitante",
+  sentiment: "Neutro",
+  sector: bizSector,
+  style_applied: bizStyle,
+  last_intent: "ninguno"
+};
+
+function updateTelemetry(promptText, replyText, latency) {
+  const promptTokens = Math.ceil(promptText.length / 4);
+  const replyTokens = Math.ceil(replyText.length / 4);
+  const totalThisTurn = promptTokens + replyTokens;
+  totalTokensUsed += totalThisTurn;
+  
+  const costThisTurn = (promptTokens * 0.0000015) + (replyTokens * 0.000002);
+  accumulatedCost += costThisTurn;
+  
+  latencySamplesCount++;
+  averageLatency = Math.round(((averageLatency * (latencySamplesCount - 1)) + latency) / latencySamplesCount);
+  
+  document.getElementById('telemetry-tokens').textContent = `${totalTokensUsed} tok`;
+  document.getElementById('telemetry-cost').textContent = `$${accumulatedCost.toFixed(5)} USD`;
+  document.getElementById('telemetry-latency').textContent = `${averageLatency} ms`;
+  
+  const keysCount = Object.keys(memoryVariables).length;
+  document.getElementById('telemetry-memory-size').textContent = `${keysCount} vars`;
+  
+  document.getElementById('agent-memory-inspector').textContent = JSON.stringify(memoryVariables, null, 2);
+}
+
+let ttsTimeout = null;
+function playBeep(freq, type, duration) {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = type || 'sine';
+    osc.frequency.value = freq || 440;
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {
+    console.warn('Blocked by user gesture:', e);
+  }
+}
+
+function startTTS(text) {
+  if (ttsTimeout) clearTimeout(ttsTimeout);
+  const overlay = document.getElementById('tts-waveform-overlay');
+  if (overlay) overlay.style.display = 'flex';
+  
+  playBeep(650, 'sine', 0.2);
+  setTimeout(() => playBeep(850, 'sine', 0.2), 100);
+  
+  const wordCount = text.split(/\s+/).length;
+  const durationMs = Math.max(2500, Math.min(8000, wordCount * 380));
+  
+  ttsTimeout = setTimeout(() => {
+    stopTTS();
+  }, durationMs);
+}
+
+function stopTTS() {
+  if (ttsTimeout) clearTimeout(ttsTimeout);
+  const overlay = document.getElementById('tts-waveform-overlay');
+  if (overlay) overlay.style.display = 'none';
+  playBeep(450, 'sine', 0.15);
+}
+
+document.getElementById('tts-stop-btn').addEventListener('click', stopTTS);
+
+document.getElementById('chat-messages').addEventListener('click', (e) => {
+  if (e.target && e.target.classList.contains('tts-play-btn')) {
+    const textNode = e.target.closest('.chat-bubble').querySelector('.msg-body');
+    if (textNode) {
+      startTTS(textNode.innerText || textNode.textContent);
+    }
+  }
+});
+
+// Bind sliders
+document.getElementById('slider-temp').addEventListener('input', (e) => {
+  document.getElementById('val-temp').textContent = e.target.value;
+  memoryVariables.style_applied = bizStyle;
+});
+document.getElementById('slider-tokens').addEventListener('input', (e) => {
+  document.getElementById('val-tokens').textContent = e.target.value;
+});
+
+// Omnichannel Toggles
+document.querySelectorAll('.chat-theme-toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.chat-theme-toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    const theme = btn.getAttribute('data-theme');
+    const chatOuter = document.getElementById('chat-outer-container');
+    const headerBar = document.getElementById('chat-header-bar');
+    const subtitle = document.getElementById('chat-channel-subtitle');
+    
+    if (theme === 'whatsapp') {
+      chatOuter.style.borderColor = 'rgba(37, 211, 102, 0.25)';
+      headerBar.style.background = 'rgba(6, 8, 12, 0.6)';
+      subtitle.innerHTML = 'Chat de WhatsApp Oficial';
+      subtitle.style.color = '#25d366';
+      printToolLog(`[CHAT] Canal cambiado a WhatsApp API.`);
+    } else if (theme === 'messenger') {
+      chatOuter.style.borderColor = 'rgba(59, 130, 246, 0.25)';
+      headerBar.style.background = 'rgba(15, 23, 42, 0.7)';
+      subtitle.innerHTML = 'Facebook Messenger';
+      subtitle.style.color = '#3b82f6';
+      printToolLog(`[CHAT] Canal cambiado a Messenger API.`);
+    } else {
+      chatOuter.style.borderColor = 'rgba(168, 85, 247, 0.25)';
+      headerBar.style.background = 'rgba(0, 0, 0, 0.5)';
+      subtitle.innerHTML = 'Web Widget Live Chat';
+      subtitle.style.color = '#c084fc';
+      printToolLog(`[CHAT] Canal cambiado a Widget Web.`);
+    }
+  });
+});
+
 function addChatMessage(sender, text) {
   const chatMessages = document.getElementById('chat-messages');
   const bubble = document.createElement('div');
@@ -806,7 +938,6 @@ function addChatMessage(sender, text) {
   const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
   if (text.startsWith('[PAYMENT_CARD]')) {
-    // Render payment link card
     const parts = text.split('|');
     const title = parts[1] || 'Pago de Servicio';
     const desc = parts[2] || 'Código de transacción único';
@@ -826,8 +957,12 @@ function addChatMessage(sender, text) {
     `;
   } else {
     const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');
+    const ttsButtonHtml = sender === 'outgoing' ? `<button class="tts-play-btn" style="background: none; border: none; cursor: pointer; font-size: 10px; margin-left: 5px; opacity: 0.6; padding: 2px;" title="Escuchar Mensaje">🔊</button>` : '';
     bubble.innerHTML = `
-      <div>${formattedText}</div>
+      <div style="display:flex; align-items:center; gap:4px;">
+        <div class="msg-body">${formattedText}</div>
+        ${ttsButtonHtml}
+      </div>
       <span class="chat-time">${time} ${sender === 'outgoing' ? '✓✓' : ''}</span>
     `;
   }
@@ -854,7 +989,8 @@ function handleUserChatSend() {
   printToolLog(`Recibida entrada de usuario: "${text.substring(0, 25)}..."`);
   printToolLog(`Ejecutando herramienta router_agent()...`);
   
-  // Show typing response
+  const latency = Math.round(Math.random() * 380 + 120);
+  
   setTimeout(() => {
     const activeAgent = document.getElementById('agent-type-select').value;
     let reply = "";
@@ -877,8 +1013,13 @@ function handleUserChatSend() {
       reply = `Hola, soy el Agente de Cobranza de **${bizName}**. He consultado el sistema contable y no tienes facturas pendientes. ¿Deseas emitir un CFDI o descargar tu Estado de Resultados del ERP?`;
     }
     
+    // Update memory
+    memoryVariables.sentiment = document.getElementById('chat-sentiment').textContent.split(' ')[1] || "Neutro";
+    memoryVariables.last_intent = text.toLowerCase().match(/(precio|costo|cuanto cuesta|pagar|comprar|servicio|cotiza)/) ? "ventas_cotizacion" : "consulta_general";
+    
     addChatMessage('outgoing', reply);
-  }, 1200);
+    updateTelemetry(text, reply, latency);
+  }, latency);
 }
 
 document.querySelectorAll('.sample-msg-btn').forEach(btn => {
@@ -889,6 +1030,8 @@ document.querySelectorAll('.sample-msg-btn').forEach(btn => {
     
     printToolLog(`Recibido clic en muestra: "${text.substring(0, 20)}..."`);
     printToolLog(`Ejecutando router_agent() con prioridad alta...`);
+    
+    const latency = Math.round(Math.random() * 300 + 100);
     
     setTimeout(() => {
       let reply = "";
@@ -902,8 +1045,13 @@ document.querySelectorAll('.sample-msg-btn').forEach(btn => {
         printToolLog(`Llamando api_ticket_system_raise()...`);
         reply = `Tu reporte técnico sobre *"${bizProblem}"* ha sido indexado y catalogado por el motor IA de **${bizName}** para asignación y resolución inmediata.`;
       }
+      
+      memoryVariables.sentiment = document.getElementById('chat-sentiment').textContent.split(' ')[1] || "Neutro";
+      memoryVariables.last_intent = text.includes('Precios') ? "consultar_precios" : (text.includes('Cita') ? "agendar_cita" : "soporte_reporte");
+      
       addChatMessage('outgoing', reply);
-    }, 1200);
+      updateTelemetry(text, reply, latency);
+    }, latency);
   });
 });
 
@@ -922,6 +1070,8 @@ document.getElementById('human-transfer-btn').addEventListener('click', () => {
 document.getElementById('agent-type-select').addEventListener('change', (e) => {
   printToolLog(`[COGNITIVE] Cambiando a perfil: "${e.target.options[e.target.selectedIndex].text}"`);
   printToolLog(`[COGNITIVE] Inicializando sub-agentes y recargando base de conocimiento...`);
+  memoryVariables.active_agent_profile = e.target.value;
+  document.getElementById('agent-memory-inspector').textContent = JSON.stringify(memoryVariables, null, 2);
 });
 
 // ── MOCKUP B: POS CONTROLLER ──
@@ -963,6 +1113,9 @@ function initPOSInventory() {
     `;
     listContainer.appendChild(card);
   });
+
+  // Sync the admin stock manager table
+  renderAdminStockTable();
 }
 
 function initPOSProducts() {
@@ -1130,14 +1283,71 @@ document.getElementById('pos-reorder-btn').addEventListener('click', () => {
   }
 });
 
-// Checkout action
+function renderAdminStockTable() {
+  const tbody = document.getElementById('pos-admin-stock-tbody');
+  if (!tbody || !profile.posProducts) return;
+  tbody.innerHTML = '';
+  
+  profile.posProducts.forEach((p, idx) => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+    const qtyVal = profile.inventory && profile.inventory[idx] ? profile.inventory[idx].qty : 20;
+    const unitStr = profile.inventory && profile.inventory[idx] ? profile.inventory[idx].unit : 'u';
+    tr.innerHTML = `
+      <td style="padding:4px 0; color:#fff; display:flex; align-items:center; gap:4px;">
+        <span>${p.icon}</span>
+        <span style="font-weight:bold;">${p.name}</span>
+      </td>
+      <td style="padding:4px 0;">
+        <div style="display:flex; align-items:center; gap:2px;">
+          <span style="color:var(--text-muted);">$</span>
+          <input type="number" value="${p.price}" class="pos-admin-price-input" data-idx="${idx}" style="width:40px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:4px; color:#fff; font-size:10px; padding:2px; text-align:center; outline:none;">
+        </div>
+      </td>
+      <td style="padding:4px 0;">
+        <div style="display:flex; align-items:center; gap:2px;">
+          <input type="number" value="${qtyVal}" class="pos-admin-qty-input" data-idx="${idx}" style="width:35px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:4px; color:#fff; font-size:10px; padding:2px; text-align:center; outline:none;">
+          <span style="font-size:8px; color:var(--text-muted);">${unitStr}</span>
+        </div>
+      </td>
+      <td style="padding:4px 0; text-align:right;">
+        <button class="pos-admin-save-btn" data-idx="${idx}" style="background:var(--primary); border:none; border-radius:4px; padding:3px 6px; font-size:9px; font-weight:bold; color:#fff; cursor:pointer; font-family:inherit;">ok</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  tbody.querySelectorAll('.pos-admin-save-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt(btn.getAttribute('data-idx'));
+      const row = btn.closest('tr');
+      const newPrice = parseFloat(row.querySelector('.pos-admin-price-input').value);
+      const newQty = parseFloat(row.querySelector('.pos-admin-qty-input').value);
+      
+      if (!isNaN(newPrice) && newPrice >= 0) {
+        profile.posProducts[idx].price = newPrice;
+      }
+      if (!isNaN(newQty) && newQty >= 0 && profile.inventory && profile.inventory[idx]) {
+        profile.inventory[idx].qty = newQty;
+      }
+      
+      initPOSProducts();
+      initPOSInventory();
+      renderCart();
+      printToolLog(`[ALMACÉN] Precios y existencias actualizados para: "${profile.posProducts[idx].name}"`);
+    });
+  });
+}
+
+let pendingCheckoutData = null;
+
+// Checkout action (Stripe Terminal Modal trigger)
 document.getElementById('checkout-pos-btn').addEventListener('click', () => {
   if (posCart.length === 0) {
     alert('El carrito está vacío. Agrega productos haciendo clic en ellos.');
     return;
   }
 
-  // Calculate totals
   const subtotal = posCart.reduce((acc, item) => acc + (item.price * item.qty), 0);
   const loyalty = document.getElementById('pos-loyalty-select').value;
   let loyaltyPct = 0;
@@ -1157,25 +1367,159 @@ document.getElementById('checkout-pos-btn').addEventListener('click', () => {
   const finalSub = Math.max(0, subtotal - discountVal);
   const finalTotal = finalSub * 1.16 + (finalSub * activeTipPercent / 100);
   
-  // Accumulate cash sales
-  totalCashSales += finalTotal;
+  pendingCheckoutData = {
+    subtotal: subtotal,
+    discountVal: discountVal,
+    tipVal: (finalSub * activeTipPercent / 100),
+    iva: finalSub * 0.16,
+    total: finalTotal,
+    items: [...posCart],
+    clientName: loyalty === 'vip' ? 'Juan Pérez (VIP)' : (loyalty === 'frecuente' ? 'María Gómez (Frecuente)' : 'Público General')
+  };
 
-  // Trigger Confetti!
-  if (typeof confetti === 'function') {
-    confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+  const terminalOverlay = document.getElementById('pos-terminal-overlay');
+  terminalOverlay.style.display = 'flex';
+  document.getElementById('terminal-screen-amount').textContent = `$${finalTotal.toFixed(2)} MXN`;
+  document.getElementById('terminal-screen-status').textContent = 'ESPERANDO TARJETA...';
+  document.getElementById('terminal-screen-progress').style.display = 'none';
+  document.getElementById('terminal-payment-icon').style.transform = 'scale(1)';
+  document.getElementById('simulate-tap-btn').disabled = false;
+  document.getElementById('simulate-tap-btn').style.background = '#38bdf8';
+  document.getElementById('simulate-tap-btn').textContent = '💳 Aproximar Tarjeta (Contactless)';
+});
+
+// Card Tap button handler
+document.getElementById('simulate-tap-btn').addEventListener('click', () => {
+  const tapBtn = document.getElementById('simulate-tap-btn');
+  tapBtn.disabled = true;
+  tapBtn.style.background = '#6b7280';
+  tapBtn.textContent = 'Procesando...';
+  
+  const statusEl = document.getElementById('terminal-screen-status');
+  const progressEl = document.getElementById('terminal-screen-progress');
+  const iconEl = document.getElementById('terminal-payment-icon');
+  
+  statusEl.textContent = 'LEYENDO CHIP/NFC...';
+  progressEl.style.display = 'block';
+  iconEl.style.transform = 'scale(1.2) rotate(15deg)';
+  
+  playBeep(880, 'sine', 0.1);
+  
+  setTimeout(() => {
+    statusEl.textContent = 'COMUNICANDO CON BANCO...';
+    iconEl.style.transform = 'scale(1.3) rotate(-15deg)';
+    
+    setTimeout(() => {
+      statusEl.textContent = 'TRANSACCIÓN APROBADA!';
+      iconEl.style.transform = 'scale(1) rotate(0deg)';
+      progressEl.style.display = 'none';
+      
+      playBeep(980, 'sine', 0.08);
+      setTimeout(() => playBeep(1180, 'sine', 0.08), 80);
+      setTimeout(() => playBeep(1380, 'sine', 0.12), 160);
+      
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 180, spread: 90, origin: { y: 0.6 } });
+      }
+      
+      totalCardSales += pendingCheckoutData.total;
+      
+      // Update transaction log
+      const logContainer = document.getElementById('pos-transaction-log');
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const newLog = `[${timeStr}] Venta #${Math.floor(Math.random()*9000+1000)} por $${pendingCheckoutData.total.toFixed(2)} MXN cobrada con tarjeta. Cliente: ${pendingCheckoutData.clientName}.\n`;
+      logContainer.innerHTML = newLog + logContainer.innerHTML;
+      
+      // Invoicing SAT CFDI 4.0
+      const satTbody = document.getElementById('erp-sat-table-body');
+      if (satTbody) {
+        const uuid = generateUUID();
+        const folioStr = `F-00${Math.floor(Math.random()*8000+1000)}`;
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        tr.innerHTML = `
+          <td style="padding: 8px 4px; font-family: monospace; font-size:10px;" title="${uuid}">
+            <strong>${folioStr}</strong><br>
+            <span style="color:var(--text-muted); font-size:8.5px;">${uuid.substring(0,8)}...</span>
+          </td>
+          <td style="padding: 8px 4px;">${pendingCheckoutData.clientName}</td>
+          <td style="padding: 8px 4px; font-weight:bold; color:#10b981;">$${pendingCheckoutData.total.toFixed(2)}</td>
+          <td style="padding: 8px 4px;"><span style="background:rgba(16,185,129,0.1); color:#34d399; padding:2px 6px; border-radius:4px; font-size:9.5px; font-weight:bold;">VIGENTE</span></td>
+          <td style="padding: 8px 4px; text-align:right;">
+            <button class="sat-download-btn" onclick="alert('📥 XML de Factura CFDI descargado.');" style="background:none; border:none; color:var(--primary); font-size:10px; cursor:pointer; text-decoration:underline;">XML</button>
+            <button class="sat-download-btn" onclick="alert('📥 Representación impresa PDF descargada.');" style="background:none; border:none; color:var(--primary); font-size:10px; cursor:pointer; text-decoration:underline; margin-left:4px;">PDF</button>
+          </td>
+        `;
+        satTbody.insertBefore(tr, satTbody.firstChild);
+      }
+      
+      updateERPPL();
+      
+      // Close Stripe Terminal and open receipt ticket view
+      setTimeout(() => {
+        document.getElementById('pos-terminal-overlay').style.display = 'none';
+        openReceiptTicket(pendingCheckoutData);
+      }, 1200);
+      
+    }, 1500);
+  }, 1500);
+});
+
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16).toUpperCase();
+  });
+}
+
+function openReceiptTicket(data) {
+  const ticketOverlay = document.getElementById('pos-ticket-overlay');
+  ticketOverlay.style.display = 'flex';
+  
+  document.getElementById('ticket-folio').textContent = `F-00${Math.floor(Math.random()*8000+1000)}`;
+  const dateStr = new Date().toISOString().substring(0,10) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('ticket-date').textContent = dateStr;
+  document.getElementById('ticket-client').textContent = data.clientName;
+  document.getElementById('ticket-uuid').textContent = generateUUID();
+  
+  const tbody = document.getElementById('ticket-items-tbody');
+  tbody.innerHTML = '';
+  data.items.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="padding: 2px 0;">${item.name}</td>
+      <td style="padding: 2px 0; text-align: center;">${item.qty}</td>
+      <td style="padding: 2px 0; text-align: right;">$${(item.price * item.qty).toFixed(2)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  document.getElementById('ticket-subtotal').textContent = `$${data.subtotal.toFixed(2)}`;
+  if (data.discountVal > 0) {
+    document.getElementById('ticket-discount-row').style.display = 'table-row';
+    document.getElementById('ticket-discount').textContent = `-$${data.discountVal.toFixed(2)}`;
+  } else {
+    document.getElementById('ticket-discount-row').style.display = 'none';
   }
+  
+  if (data.tipVal > 0) {
+    document.getElementById('ticket-tip-row').style.display = 'table-row';
+    document.getElementById('ticket-tip').textContent = `$${data.tipVal.toFixed(2)}`;
+  } else {
+    document.getElementById('ticket-tip-row').style.display = 'none';
+  }
+  
+  document.getElementById('ticket-iva').textContent = `$${data.iva.toFixed(2)}`;
+  document.getElementById('ticket-total').textContent = `$${data.total.toFixed(2)} MXN`;
+}
 
-  alert(`💰 Cobro Exitoso para ${bizName}\n` +
-        `-----------------------------------------\n` +
-        `Total de Venta: $${finalTotal.toFixed(2)} MXN\n` +
-        `Facturación automática enviada por API SAT con Inteligencia Artificial.\n` +
-        `Estado de Resultados del ERP actualizado.`);
-        
+document.getElementById('close-terminal-btn').addEventListener('click', () => {
+  document.getElementById('pos-terminal-overlay').style.display = 'none';
+});
+document.getElementById('close-ticket-btn').addEventListener('click', () => {
+  document.getElementById('pos-ticket-overlay').style.display = 'none';
   posCart = [];
   renderCart();
-  
-  // Update financial bookkeeping
-  updateERPPL();
 });
 
 // Arqueo y Corte de Caja Modal Controls
@@ -1345,6 +1689,176 @@ function initWebData() {
   document.getElementById('web-contact-address').textContent = profile.address;
   document.getElementById('web-promo-text').textContent = profile.specialOffer;
   renderWebServices();
+
+  // Populate dynamic FAQs based on sector
+  const faqAccordion = document.getElementById('web-faqs-accordion');
+  if (faqAccordion) {
+    let faqsList = [];
+    if (bizSector.toLowerCase().match(/(restaurante|cafe|comida|alimento)/)) {
+      faqsList = [
+        { q: "¿Tienen opciones vegetarianas o sin gluten?", a: "Sí, en nuestro menú indicamos con símbolos especiales todas las opciones vegetarianas, veganas y libres de gluten. Si tienes una alergia severa, por favor avísanos al ordenar." },
+        { q: "¿Cómo funcionan las pre-órdenes desde el chat?", a: "Es muy sencillo: cuando chateas con nuestro asistente IA, puedes indicarle qué platillos deseas ordenar y la hora de tu llegada. Él procesará el cobro seguro y enviará la comanda al instante." },
+        { q: "¿Tienen servicio a domicilio o catering para eventos?", a: "Sí, contamos con cobertura de envíos locales directos y diseñamos menús especiales con buffet para banquetes, bodas o eventos corporativos." }
+      ];
+    } else if (bizSector.toLowerCase().match(/(tienda|comercio|retail|ropa|compras)/)) {
+      faqsList = [
+        { q: "¿Cuánto tarda en llegar mi pedido?", a: "El envío estándar terrestre demora de 2 a 4 días hábiles. Si eliges envío express en el checkout, llegará en un lapso de 24 a 48 horas a cualquier parte del país." },
+        { q: "¿Cómo realizo una devolución o cambio de talla?", a: "Tienes hasta 30 días naturales a partir de tu compra. Solicítalo en la sección de soporte del portal web o mediante WhatsApp y te enviaremos una guía de retorno sin costo." },
+        { q: "¿Qué garantía tienen los productos?", a: "Todos nuestros artículos retail originales cuentan con 1 año de garantía de fábrica contra cualquier defecto de costura, materiales o ensamblaje." }
+      ];
+    } else {
+      faqsList = [
+        { q: "¿Cómo se realiza el diagnóstico inicial del servicio?", a: "Nuestros agentes analizan la información de tu sector y tus cuellos de botella operativos para proponerte una automatización a la medida en menos de 48 horas de forma gratuita." },
+        { q: "¿Ofrecen soporte técnico post-implementación?", a: "Por supuesto, todos nuestros planes de servicio SaaS premium incluyen soporte técnico prioritario 24/7 con tiempos de respuesta menores a 15 minutos vía ticket o chat." },
+        { q: "¿Cuáles son los métodos de pago aceptados?", a: "Aceptamos pagos con cualquier tarjeta de crédito o débito (Visa, Mastercard, Amex) a través del portal de Stripe, transferencias interbancarias SPEI y depósitos bancarios." }
+      ];
+    }
+
+    faqAccordion.innerHTML = '';
+    faqsList.forEach(faq => {
+      const item = document.createElement('div');
+      item.className = 'faq-accordion-item';
+      item.innerHTML = `
+        <div class="faq-accordion-header">
+          <span>${faq.q}</span>
+          <span class="faq-accordion-arrow">▶</span>
+        </div>
+        <div class="faq-accordion-content">${faq.a}</div>
+      `;
+      faqAccordion.appendChild(item);
+    });
+
+    // Accordion Event Click Listener
+    faqAccordion.querySelectorAll('.faq-accordion-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const isActive = item.classList.contains('active');
+        faqAccordion.querySelectorAll('.faq-accordion-item').forEach(i => i.classList.remove('active'));
+        if (!isActive) {
+          item.classList.add('active');
+        }
+      });
+    });
+  }
+
+  // Bind Website tab navigation
+  const webTabs = document.querySelectorAll('.web-nav-tab');
+  const webSections = document.querySelectorAll('.web-section');
+  webTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      webTabs.forEach(t => t.classList.remove('active'));
+      webSections.forEach(s => s.style.display = 'none');
+      
+      tab.classList.add('active');
+      const targetSectionId = tab.getAttribute('data-target');
+      const targetEl = document.getElementById(targetSectionId);
+      if (targetEl) {
+        targetEl.style.display = 'flex';
+        if (targetSectionId === 'web-contact') {
+          // Draw maps when tab becomes active
+          drawWebMockMap();
+        }
+      }
+      printToolLog(`[PÁGINA WEB] Navegando a pestaña: "${tab.textContent}"`);
+    });
+  });
+
+  // Website Fullscreen toggle
+  const fsBtn = document.getElementById('web-fullscreen-btn');
+  if (fsBtn) {
+    fsBtn.addEventListener('click', () => {
+      const browser = document.getElementById('browser-outer-container');
+      if (browser) {
+        const isFS = browser.classList.contains('web-preview-fullscreen');
+        if (isFS) {
+          browser.classList.remove('web-preview-fullscreen');
+          fsBtn.innerHTML = '🖥️ Pantalla Completa';
+          printToolLog(`[PÁGINA WEB] Desactivado modo pantalla completa.`);
+        } else {
+          browser.classList.add('web-preview-fullscreen');
+          fsBtn.innerHTML = '✕ Salir Pantalla Completa';
+          printToolLog(`[PÁGINA WEB] Activado vista de fidelidad Pantalla Completa.`);
+        }
+      }
+    });
+  }
+
+  // Draw initial ERP maps
+  drawERPCoverageMap();
+}
+
+function drawWebMockMap() {
+  const canvas = document.getElementById('web-mock-map-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, w, h);
+  
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for(let x=0; x<w; x+=15) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+  }
+  for(let y=0; y<h; y+=15) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  }
+  
+  // Roads
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(w/2, 0); ctx.lineTo(w/2, h); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(25, 0); ctx.lineTo(w - 25, h); ctx.stroke();
+  
+  // Pin & Pulse
+  ctx.fillStyle = 'rgba(168, 85, 247, 0.2)';
+  ctx.beginPath(); ctx.arc(w/2, h/2, 20, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(168, 85, 247, 0.5)';
+  ctx.beginPath(); ctx.arc(w/2, h/2, 10, 0, Math.PI*2); ctx.fill();
+  
+  // Pin marker icon
+  ctx.fillStyle = '#a855f7';
+  ctx.font = '14px sans-serif';
+  ctx.fillText('📍', w/2 - 7, h/2 + 2);
+}
+
+function drawERPCoverageMap() {
+  const canvas = document.getElementById('erp-coverage-map-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, w, h);
+  
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for(let i=0; i<18; i++) {
+    ctx.beginPath();
+    ctx.arc(w/2 + (i*12 - 100), h/2 + (Math.sin(i)*20), Math.abs(Math.cos(i))*30 + 6, 0, Math.PI*2);
+    ctx.stroke();
+  }
+  
+  // Lines
+  ctx.strokeStyle = 'rgba(168, 85, 247, 0.2)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(w*0.35, h*0.45);
+  ctx.lineTo(w*0.65, h*0.25);
+  ctx.lineTo(w*0.5, h*0.75);
+  ctx.closePath();
+  ctx.stroke();
+  
+  // Points
+  ctx.fillStyle = '#fbbf24'; // North branch
+  ctx.beginPath(); ctx.arc(w*0.65, h*0.25, 5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#38bdf8'; // South branch
+  ctx.beginPath(); ctx.arc(w*0.5, h*0.75, 5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#10b981'; // Centro branch (Selected)
+  ctx.beginPath(); ctx.arc(w*0.35, h*0.45, 6, 0, Math.PI*2); ctx.fill();
 }
 
 // Countdown timer loop
@@ -1429,6 +1943,17 @@ function updateERPPL() {
   } else {
     netEl.style.color = '#10b981';
   }
+
+  // Update Sales Trend Chart July bar (scaled dynamically)
+  const julyTotalK = totalRev / 1000;
+  // Scale bar height: let max 25k represent 80px
+  const barHeight = Math.max(5, Math.min(90, Math.round((julyTotalK / 25) * 80)));
+  const bar6 = document.getElementById('chart-bar-6');
+  const lbl6 = document.getElementById('chart-lbl-6');
+  if (bar6 && lbl6) {
+    bar6.style.height = `${barHeight}px`;
+    lbl6.textContent = `$${julyTotalK.toFixed(1)}k`;
+  }
   
   // Also refresh alerts, CRM and Tasks
   updateERPALerts();
@@ -1490,10 +2015,16 @@ function updateERPTasks() {
   const branch = document.getElementById('erp-branch-select').value;
   const branchData = profile.branchFinancials[branch];
   const todoContainer = document.getElementById('erp-tasks-todo');
+  const progressContainer = document.getElementById('erp-tasks-progress');
   const doneContainer = document.getElementById('erp-tasks-done');
   if (!todoContainer || !doneContainer || !branchData || !branchData.tasks) return;
   
+  if (!branchData.tasks.progress) {
+    branchData.tasks.progress = [];
+  }
+  
   todoContainer.innerHTML = '';
+  if (progressContainer) progressContainer.innerHTML = '';
   doneContainer.innerHTML = '';
   
   branchData.tasks.todo.forEach(t => {
@@ -1502,12 +2033,31 @@ function updateERPTasks() {
     card.innerHTML = `
       <strong style="color: #fff; font-size: 11px;">${t.title}</strong>
       <span style="font-size: 10px; color: var(--text-muted);">${t.desc}</span>
-      <button class="solve-task-btn" style="width: 100%; padding: 4px; border-radius: 4px; background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.4); color: #fff; font-size: 9.5px; font-weight: bold; cursor: pointer; margin-top: 3px; font-family: inherit;">🚀 Resolver con IA</button>
+      <button class="start-task-btn" style="width: 100%; padding: 4px; border-radius: 4px; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.4); color: #fff; font-size: 9.5px; font-weight: bold; cursor: pointer; margin-top: 3px; font-family: inherit;">⚙️ Iniciar Proceso</button>
+    `;
+    
+    card.querySelector('.start-task-btn').addEventListener('click', () => {
+      branchData.tasks.todo = branchData.tasks.todo.filter(item => item.id !== t.id);
+      branchData.tasks.progress.push(t);
+      printToolLog(`[OPERACIONES] Tarea "${t.title}" movida a En Progreso.`);
+      updateERPTasks();
+    });
+    
+    todoContainer.appendChild(card);
+  });
+  
+  branchData.tasks.progress.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'erp-task-card';
+    card.style.borderColor = 'rgba(251, 191, 36, 0.3)';
+    card.innerHTML = `
+      <strong style="color: #fff; font-size: 11px;">${t.title}</strong>
+      <span style="font-size: 10px; color: var(--text-muted);">${t.desc}</span>
+      <button class="solve-task-btn" style="width: 100%; padding: 4px; border-radius: 4px; background: rgba(168, 85, 247, 0.25); border: 1px solid rgba(168, 85, 247, 0.45); color: #fff; font-size: 9.5px; font-weight: bold; cursor: pointer; margin-top: 3px; font-family: inherit;">🚀 Resolver con IA</button>
     `;
     
     card.querySelector('.solve-task-btn').addEventListener('click', () => {
-      // Move to done
-      branchData.tasks.todo = branchData.tasks.todo.filter(item => item.id !== t.id);
+      branchData.tasks.progress = branchData.tasks.progress.filter(item => item.id !== t.id);
       branchData.tasks.done.push(t);
       printToolLog(`[OPERACIONES] Tarea "${t.title}" completada autónomamente por Agente Hermes.`);
       updateERPTasks();
@@ -1516,7 +2066,7 @@ function updateERPTasks() {
       }
     });
     
-    todoContainer.appendChild(card);
+    if (progressContainer) progressContainer.appendChild(card);
   });
   
   branchData.tasks.done.forEach(t => {

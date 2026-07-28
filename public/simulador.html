@@ -100,23 +100,23 @@
         <div id="panel-asistente" class="tab-panel active">
           <h3 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0 0 15px 0; font-family: var(--font-title); display: flex; align-items: center; gap: 8px;">
             <span style="background: linear-gradient(135deg, var(--primary), var(--secondary)); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #fff; font-weight: 800;">1</span>
-            🤖 Módulo: Asistente Personal IA (WhatsApp API)
+            🤖 Módulo: Asistente Personal IA (WhatsApp / Omnicanal)
           </h3>
-          <div class="panel-layout" style="display: grid; grid-template-columns: 320px 1fr; gap: 24px;">
+          <div class="panel-layout" style="display: grid; grid-template-columns: 330px 1fr; gap: 24px;">
             <!-- Left Info Card -->
-            <div class="glass-card" style="padding: 24px; border-radius: 16px; display: flex; flex-direction: column; gap: 15px;">
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <div class="business-logo-container" style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center;">
+            <div class="glass-card" style="padding: 20px; border-radius: 16px; display: flex; flex-direction: column; gap: 12px; max-height: 520px; overflow-y: auto;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="business-logo-container" style="width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center;">
                   <!-- Logo / initials injected here -->
                 </div>
                 <div>
-                  <h4 class="biz-name" style="font-size: 16px; font-weight: bold; color: #fff; margin: 0;"></h4>
-                  <span class="biz-sector" style="font-size: 11px; color: var(--primary); font-weight: 700; text-transform: uppercase;"></span>
+                  <h4 class="biz-name" style="font-size: 15px; font-weight: bold; color: #fff; margin: 0;"></h4>
+                  <span class="biz-sector" style="font-size: 10px; color: var(--primary); font-weight: 700; text-transform: uppercase;"></span>
                 </div>
               </div>
 
               <!-- AI Agent Selector -->
-              <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
                 <label style="font-size: 11px; font-weight: 700; color: #fff;">Agente Cognitivo IA Activo:</label>
                 <select id="agent-type-select" style="width: 100%; padding: 8px; border-radius: 8px; background: rgba(15,23,42,0.95); border: 1px solid var(--border-color); color: #fff; font-size: 12px; cursor: pointer; font-family: inherit; outline: none;">
                   <option value="ventas" selected>🛍️ Agente de Ventas y Cotización</option>
@@ -127,26 +127,71 @@
               </div>
 
               <!-- Real-time Sentiment Detector -->
-              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
+              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
                 <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Sentimiento del Cliente:</span>
-                <span id="chat-sentiment" style="font-size: 11px; font-weight: 800; color: #10b981; display: flex; align-items: center; gap: 4px;">🟢 Feliz / Satisfecho</span>
+                <span id="chat-sentiment" style="font-size: 11px; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 4px;">🟡 Neutro</span>
               </div>
 
-              <!-- Live Tool Calling Logs (Hermes Agent Console) -->
-              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+              <!-- Model Sliders and Parameters -->
+              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+                <span style="font-size: 11px; font-weight: 700; color: #fff;">🎛️ Parámetros del Modelo LLM:</span>
+                <div style="display: flex; flex-direction: column; gap: 5px; background: rgba(0,0,0,0.15); padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03);">
+                  <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted);">
+                    <span>Temperatura: <strong id="val-temp" style="color: #fff;">0.7</strong></span>
+                  </div>
+                  <input type="range" id="slider-temp" min="0.1" max="1.0" step="0.1" value="0.7" style="width:100%; height:4px; accent-color: var(--primary);">
+                  
+                  <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 4px;">
+                    <span>Max Tokens: <strong id="val-tokens" style="color: #fff;">150</strong></span>
+                  </div>
+                  <input type="range" id="slider-tokens" min="50" max="400" step="10" value="150" style="width:100%; height:4px; accent-color: var(--primary);">
+                </div>
+              </div>
+
+              <!-- Telemetries readouts -->
+              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 11px; font-weight: 700; color: #fff;">📊 Telemetría de Consulta de API:</span>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 9.5px;">
+                  <div style="background: rgba(255,255,255,0.02); padding: 5px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.03);">
+                    <div style="color: var(--text-muted); text-transform: uppercase; font-size: 8px;">Tokens Utilizados</div>
+                    <div id="telemetry-tokens" style="font-weight: bold; color: #fff; margin-top: 1px;">0 tok</div>
+                  </div>
+                  <div style="background: rgba(255,255,255,0.02); padding: 5px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.03);">
+                    <div style="color: var(--text-muted); text-transform: uppercase; font-size: 8px;">Costo Acumulado</div>
+                    <div id="telemetry-cost" style="font-weight: bold; color: #34d399; margin-top: 1px;">$0.0000 USD</div>
+                  </div>
+                  <div style="background: rgba(255,255,255,0.02); padding: 5px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.03);">
+                    <div style="color: var(--text-muted); text-transform: uppercase; font-size: 8px;">Latencia Media</div>
+                    <div id="telemetry-latency" style="font-weight: bold; color: #38bdf8; margin-top: 1px;">0 ms</div>
+                  </div>
+                  <div style="background: rgba(255,255,255,0.02); padding: 5px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.03);">
+                    <div style="color: var(--text-muted); text-transform: uppercase; font-size: 8px;">Memoria Contexto</div>
+                    <div id="telemetry-memory-size" style="font-weight: bold; color: #fff; margin-top: 1px;">0 vars</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Context Inspector JSON -->
+              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 11px; font-weight: 700; color: #fff;">🧠 Variables del Agente (JSON):</span>
+                <pre id="agent-memory-inspector" style="margin:0; font-family: monospace; font-size: 9px; color: #a7f3d0; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); max-height: 60px; overflow-y: auto; box-sizing: border-box; line-height: 1.1;">{}</pre>
+              </div>
+
+              <!-- Tool Calling logs -->
+              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; display: flex; flex-direction: column; gap: 4px;">
                 <span style="font-size: 11px; font-weight: 700; color: #fff; display: flex; justify-content: space-between; align-items: center;">
-                  <span>⚙️ Logs de Herramientas IA (Hermes)</span>
+                  <span>⚙️ Logs de Herramientas (Hermes)</span>
                   <span id="tool-status-dot" style="width: 6px; height: 6px; background: #6b7280; border-radius: 50%; display: inline-block;"></span>
                 </span>
-                <div id="agent-tool-logs" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); font-family: monospace; font-size: 10px; color: #38bdf8; padding: 8px 10px; border-radius: 8px; height: 85px; overflow-y: auto; line-height: 1.4; box-sizing: border-box;">
+                <div id="agent-tool-logs" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); font-family: monospace; font-size: 9.5px; color: #38bdf8; padding: 6px 8px; border-radius: 8px; height: 75px; overflow-y: auto; line-height: 1.3; box-sizing: border-box;">
                   &gt;_ Esperando interacción del usuario...
                 </div>
               </div>
 
               <!-- Sample Questions -->
-              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
-                <span style="font-size: 11px; font-weight: 700; color: #fff; display: block; margin-bottom: 8px;">Preguntas de Prueba del Sector:</span>
-                <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                <span style="font-size: 11px; font-weight: 700; color: #fff; display: block; margin-bottom: 6px;">Preguntas de Prueba del Sector:</span>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
                   <button class="sample-msg-btn" data-msg="¿Cuáles son los precios de sus servicios y formas de pago?">💰 Consultar Precios y Pago</button>
                   <button class="sample-msg-btn" data-msg="Hola, quiero programar una cita de atención técnica urgente.">📅 Agendar Cita Técnica</button>
                   <button class="sample-msg-btn" data-msg="Tengo problemas con el servicio anterior, ¿me pueden ayudar?">⚠️ Solicitar Soporte Técnico</button>
@@ -154,34 +199,60 @@
               </div>
 
               <!-- Human Transfer Button -->
-              <button id="human-transfer-btn" style="width: 100%; padding: 8px 12px; border-radius: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; font-size: 11.5px; font-weight: bold; cursor: pointer; transition: background 0.2s; border: 1px solid rgba(239, 68, 68, 0.3); font-family: inherit;">
+              <button id="human-transfer-btn" style="width: 100%; padding: 8px; border-radius: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 11px; font-weight: bold; cursor: pointer; transition: background 0.2s; font-family: inherit;">
                 🚨 Transferir a Operador Humano
               </button>
             </div>
 
             <!-- Right Chat Frame -->
-            <div class="glass-card chat-frame" style="padding: 0; border-radius: 16px; display: flex; flex-direction: column; height: 500px; overflow: hidden; border-color: rgba(99, 102, 241, 0.15);">
+            <div id="chat-outer-container" class="glass-card chat-frame" style="padding: 0; border-radius: 16px; display: flex; flex-direction: column; height: 520px; overflow: hidden; border-color: rgba(99, 102, 241, 0.15); position: relative;">
               <!-- Chat Header -->
-              <div style="background: rgba(6, 8, 12, 0.6); padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between;">
+              <div id="chat-header-bar" style="background: rgba(6, 8, 12, 0.6); padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                  <div class="business-logo-container" style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;"></div>
+                  <div class="business-logo-container" style="width: 34px; height: 34px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;"></div>
                   <div>
                     <div style="display: flex; align-items: center; gap: 6px;">
-                      <span class="biz-name" style="font-size: 14px; font-weight: 700; color: #fff;"></span>
+                      <span class="biz-name" style="font-size: 13.5px; font-weight: 700; color: #fff;"></span>
                       <span style="background: #25d366; width: 8px; height: 8px; border-radius: 50%; display: inline-block;"></span>
                     </div>
-                    <span style="font-size: 11px; color: #25d366; font-weight: 600;">Asistente Oficial IA</span>
+                    <span id="chat-channel-subtitle" style="font-size: 10.5px; color: #25d366; font-weight: 600;">Chat de WhatsApp Oficial</span>
                   </div>
                 </div>
-                <div style="font-size: 12px; color: var(--text-muted); font-weight: bold; background: rgba(255,255,255,0.03); padding: 4px 10px; border-radius: 10px;">Whatsapp API</div>
+                
+                <!-- Interface Selectors (Omnicanal) -->
+                <div style="display: flex; gap: 5px;">
+                  <button class="chat-theme-toggle-btn active" data-theme="whatsapp" style="padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; border: 1px solid var(--border-color); background: rgba(37,211,102,0.15); color: #25d366; cursor: pointer; font-family: inherit;">WhatsApp</button>
+                  <button class="chat-theme-toggle-btn" data-theme="messenger" style="padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: #cbd5e1; cursor: pointer; font-family: inherit;">Messenger</button>
+                  <button class="chat-theme-toggle-btn" data-theme="widget" style="padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: #cbd5e1; cursor: pointer; font-family: inherit;">Web Widget</button>
+                </div>
               </div>
+              
               <!-- Chat Area -->
               <div id="chat-messages" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: rgba(0,0,0,0.25);">
                 <!-- Messages dynamic -->
               </div>
+              
+              <!-- Text-to-Speech Waveform Overlay (active during play) -->
+              <div id="tts-waveform-overlay" style="display: none; position: absolute; bottom: 80px; left: 20px; right: 20px; background: rgba(15,23,42,0.95); border: 1px solid rgba(168,85,247,0.4); border-radius: 12px; padding: 10px 15px; align-items: center; gap: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 10;">
+                <span style="font-size: 16px; animation: pulse 1s infinite;">🗣️</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                  <span style="font-size: 10px; color: #fff; font-weight: bold;">Leyendo mensaje con voz neuronal...</span>
+                  <div style="display: flex; gap: 3px; height: 16px; align-items: flex-end;">
+                    <div class="eq-bar" style="width: 3px; height: 40%; background: var(--primary); border-radius: 2px;"></div>
+                    <div class="eq-bar" style="width: 3px; height: 80%; background: var(--primary); border-radius: 2px;"></div>
+                    <div class="eq-bar" style="width: 3px; height: 20%; background: var(--primary); border-radius: 2px;"></div>
+                    <div class="eq-bar" style="width: 3px; height: 60%; background: var(--primary); border-radius: 2px;"></div>
+                    <div class="eq-bar" style="width: 3px; height: 95%; background: var(--primary); border-radius: 2px;"></div>
+                    <div class="eq-bar" style="width: 3px; height: 35%; background: var(--primary); border-radius: 2px;"></div>
+                    <div class="eq-bar" style="width: 3px; height: 70%; background: var(--primary); border-radius: 2px;"></div>
+                  </div>
+                </div>
+                <button id="tts-stop-btn" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-family: inherit;">Detener</button>
+              </div>
+
               <!-- Chat Input -->
               <div style="background: rgba(6, 8, 12, 0.4); padding: 15px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 10px; align-items: center;">
-                <input type="text" id="chat-user-input" placeholder="Escribe una pregunta para la IA de tu negocio..." style="flex: 1; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 13.5px;">
+                <input type="text" id="chat-user-input" placeholder="Escribe una pregunta para la IA de tu negocio..." style="flex: 1; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 13.5px; outline: none; font-family: inherit;">
                 <button id="send-chat-btn" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none; border-radius: 10px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-weight: bold; font-size: 16px;">➔</button>
               </div>
             </div>
@@ -228,6 +299,26 @@
                   <span><strong>Alerta Predictiva IA:</strong> Insumos del sector en nivel crítico. ¿Reabastecer?</span>
                 </div>
                 <button id="pos-reorder-btn" style="background: #ef4444; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; color: #fff; cursor: pointer; font-family: inherit;">Compra Directa IA</button>
+              </div>
+
+              <!-- Configuración de Stock y Precios -->
+              <div style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                <span style="font-size: 12.5px; font-weight: 700; color: #fff; display:flex; align-items:center; gap:6px;">📦 Configuración de Stock y Precios (Almacén)</span>
+                <div style="overflow-x: auto;">
+                  <table style="width:100%; border-collapse:collapse; font-size:10.5px; color:#cbd5e1; text-align:left;">
+                    <thead>
+                      <tr style="border-bottom:1px solid rgba(255,255,255,0.08); color:#fff; font-weight:bold;">
+                        <th style="padding:4px 0;">Producto</th>
+                        <th style="padding:4px 0;">Precio Venta</th>
+                        <th style="padding:4px 0;">Stock Físico</th>
+                        <th style="padding:4px 0; text-align:right;">Modificar</th>
+                      </tr>
+                    </thead>
+                    <tbody id="pos-admin-stock-tbody">
+                      <!-- Dynamic stock controls will be injected here -->
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
 
@@ -310,6 +401,14 @@
                     🔑 Realizar Corte de Caja (Arqueo)
                   </button>
                 </div>
+
+                <!-- Bitácora contable de sesión -->
+                <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; display: flex; flex-direction: column; gap: 4px; margin-top: 8px;">
+                  <span style="font-size: 11px; font-weight: 700; color: #fff;">📝 Bitácora Contable POS (Sesión):</span>
+                  <div id="pos-transaction-log" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.04); font-family: monospace; font-size: 9.5px; color: #a7f3d0; padding: 6px 8px; border-radius: 8px; height: 80px; overflow-y: auto; line-height: 1.3; box-sizing: border-box;">
+                    [Caja abierta] Base inicial: $500.00 MXN en efectivo para cambio.
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -343,15 +442,36 @@
             </div>
 
             <!-- Web Browser Preview Mockup -->
-            <div class="glass-card" style="padding: 0; border-radius: 16px; overflow: hidden; border-color: rgba(255,255,255,0.08); background: rgba(6, 8, 12, 0.9);">
-              <!-- Browser Header -->
-              <div style="background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid rgba(255,255,255,0.06); padding: 10px 15px; display: flex; align-items: center; gap: 10px;">
-                <div style="display: flex; gap: 6px;">
+            <div id="browser-outer-container" class="glass-card" style="padding: 0; border-radius: 16px; overflow: hidden; border-color: rgba(255,255,255,0.08); background: rgba(6, 8, 12, 0.9); position: relative;">
+              <!-- Browser Tabs -->
+              <div style="background: rgba(15, 23, 42, 0.6); padding: 6px 12px 0 12px; display: flex; gap: 4px; border-bottom: 1px solid rgba(255,255,255,0.06); align-items: flex-end;">
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 6px 15px; border-radius: 6px 6px 0 0; border: 1px solid rgba(255,255,255,0.08); border-bottom: none; font-size: 10px; color: #fff; font-weight: bold; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                  🌐 <span class="biz-name-tab">Nova Business</span>
+                </div>
+                <div style="padding: 6px 15px; font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; cursor: not-allowed;">
+                  📊 SAT Facturas
+                </div>
+              </div>
+              
+              <!-- Browser Header controls -->
+              <div style="background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid rgba(255,255,255,0.06); padding: 8px 15px; display: flex; align-items: center; gap: 12px;">
+                <div style="display: flex; gap: 8px; align-items: center;">
                   <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
                   <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
                   <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
                 </div>
-                <div id="mock-browser-url" style="flex: 1; text-align: center; font-size: 11px; color: var(--text-muted); background: rgba(0, 0, 0, 0.2); padding: 4px; border-radius: 6px; letter-spacing: 0.3px;"></div>
+                <div style="display: flex; gap: 8px; align-items: center; margin-left: 5px;">
+                  <button style="background: none; border: none; color: #fff; cursor: pointer; font-size: 10px; opacity: 0.5;">◀</button>
+                  <button style="background: none; border: none; color: #fff; cursor: pointer; font-size: 10px; opacity: 0.5;">▶</button>
+                  <button style="background: none; border: none; color: #fff; cursor: pointer; font-size: 10px;">🔄</button>
+                </div>
+                <div style="flex: 1; display: flex; align-items: center; gap: 6px; font-size: 11px; color: #cbd5e1; background: rgba(0, 0, 0, 0.4); padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                  <span id="browser-ssl-lock" style="color: #10b981; cursor: pointer; font-size: 10px;" title="Ver certificado SSL">🔒</span>
+                  <span id="mock-browser-url" style="flex: 1; font-family: monospace; font-size: 10.5px; letter-spacing: 0.2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">https://boutique-nova.com</span>
+                </div>
+                <button id="web-fullscreen-btn" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 4px 10px; font-size: 10.5px; font-weight: bold; color: #fff; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 4px; transition: background 0.2s;">
+                  🖥️ Pantalla Completa
+                </button>
               </div>
               
               <!-- Mock Web Site Content Inside Sandbox -->
@@ -390,6 +510,14 @@
                       <div id="web-countdown" style="font-family: monospace; font-size: 14px; font-weight: 800; color: #fb7185; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 6px;">04:59</div>
                     </div>
                   </div>
+                  
+                  <!-- FAQs Accordion Section -->
+                  <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                    <span style="font-size: 13px; font-weight: 700; color: #fff;">❓ Preguntas Frecuentes (FAQs)</span>
+                    <div style="display: flex; flex-direction: column; gap: 6px;" id="web-faqs-accordion">
+                      <!-- Accordion items loaded dynamically by sector -->
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Section: SERVICES -->
@@ -418,6 +546,35 @@
                       <span id="web-about-values" style="font-size: 10px; color: var(--text-muted); line-height: 1.3; display: block;"></span>
                     </div>
                   </div>
+                  
+                  <!-- High-fidelity Timeline and Org Chart -->
+                  <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; margin-top: 5px;">
+                    <span style="font-size: 12.5px; font-weight: 700; color: #fff;">📊 Estructura y Trayectoria</span>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 9.5px; color: var(--text-muted); padding-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.03);">
+                      <div>
+                        <strong style="color:var(--primary); display:block;">Año 2021:</strong>
+                        <span>Fundación y primeras operaciones locales.</span>
+                      </div>
+                      <div>
+                        <strong style="color:var(--primary); display:block;">Año 2023:</strong>
+                        <span>Apertura de Sucursal Norte y Sur.</span>
+                      </div>
+                      <div>
+                        <strong style="color:var(--primary); display:block;">Año 2026:</strong>
+                        <span>Integración de IA Cognitiva Hermes.</span>
+                      </div>
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 15px; margin-top: 5px;">
+                      <div style="text-align: center; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.04); padding: 5px 10px; border-radius: 6px; min-width: 80px;">
+                        <span style="font-size: 9.5px; color: #fff; font-weight: bold; display: block;">CEO & Fundador</span>
+                        <span style="font-size: 8px; color: var(--text-muted);">Dirección General</span>
+                      </div>
+                      <div style="text-align: center; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.04); padding: 5px 10px; border-radius: 6px; min-width: 80px;">
+                        <span style="font-size: 9.5px; color: #fff; font-weight: bold; display: block;">Hermes IA</span>
+                        <span style="font-size: 8px; color: var(--primary); font-weight: bold;">Operador Cognitivo</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Section: CONTACT -->
@@ -433,11 +590,13 @@
                   <!-- Right: Map/Address details -->
                   <div style="display: flex; flex-direction: column; gap: 8px;">
                     <span style="font-size: 12px; font-weight: bold; color: #fff;">Nuestra Ubicación</span>
-                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; flex: 1; display: flex; flex-direction: column; gap: 6px; justify-content: center;">
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; flex: 1; display: flex; flex-direction: column; gap: 6px;">
                       <span style="font-size: 11px; color: #fff; font-weight: bold;">🏢 Dirección Corporativa:</span>
                       <span id="web-contact-address" style="font-size: 10.5px; color: var(--text-muted); line-height: 1.4;"></span>
-                      <div style="height: 60px; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px dashed rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text-muted);">
-                        🗺️ [Simulación de Mapa Google Maps]
+                      <div style="flex: 1; min-height: 100px; position: relative; border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08);">
+                        <canvas id="web-mock-map-canvas" width="220" height="100" style="width: 100%; height: 100%; background: #0f172a; display: block;"></canvas>
+                        <!-- Floating pin overlay -->
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); font-size: 16px; animation: bounce 1.5s infinite; text-shadow: 0 4px 6px rgba(0,0,0,0.8); pointer-events: none;">📍</div>
                       </div>
                     </div>
                   </div>
@@ -490,22 +649,31 @@
                   <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
                     <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Estado de Procesos</div>
                     <div id="erp-status-val" style="font-size: 13px; font-weight: bold; color: #ef4444; margin-top: 2px;">⚠️ Ineficiencias Detectadas</div>
-                  </div>
-                  <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
-                    <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Ahorro de Tiempo Estimado</div>
-                    <div id="erp-time-val" style="font-size: 13px; font-weight: bold; color: #fff; margin-top: 2px;">0 horas/semana</div>
-                  </div>
+                                   <div id="erp-time-val" style="font-size: 13px; font-weight: bold; color: #fff; margin-top: 2px;">0 horas/semana</div>
+                </div>
+              </div>
+              
+              <!-- Mapa de Cobertura de Sucursales -->
+              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
+                <span style="font-size: 11.5px; font-weight: 700; color: #fff;">🗺️ Cobertura Metropolitana (Live)</span>
+                <div style="position: relative; height: 95px; background: #0f172a; border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; overflow: hidden;">
+                  <canvas id="erp-coverage-map-canvas" width="220" height="80" style="width: 100%; height: 100%; display: block;"></canvas>
+                  <!-- Pulsing markers -->
+                  <div class="map-pulse-dot" style="position: absolute; top: 40%; left: 35%; width: 6px; height: 6px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 8px #38bdf8;" title="Sucursal Centro"></div>
+                  <div class="map-pulse-dot" style="position: absolute; top: 20%; left: 60%; width: 6px; height: 6px; background: #fb7185; border-radius: 50%; box-shadow: 0 0 8px #fb7185;" title="Sucursal Norte"></div>
+                  <div class="map-pulse-dot" style="position: absolute; top: 75%; left: 45%; width: 6px; height: 6px; background: #34d399; border-radius: 50%; box-shadow: 0 0 8px #34d399;" title="Sucursal Sur"></div>
                 </div>
               </div>
             </div>
-
+ 
             <!-- ERP Content Dashboard -->
             <div class="glass-card" style="padding: 20px; border-radius: 16px; display: flex; flex-direction: column; gap: 15px; border-color: rgba(255,255,255,0.08); background: rgba(0,0,0,0.15);">
               <!-- Sub-tab headers -->
               <div style="display: flex; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; flex-wrap: wrap;">
                 <button class="erp-subtab-btn active" data-subtab="pl" style="padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: #fff; cursor: pointer; font-family: inherit;">📊 Estado de Resultados</button>
                 <button class="erp-subtab-btn" data-subtab="crm" style="padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: #fff; cursor: pointer; font-family: inherit;">👥 Leads / CRM</button>
-                <button class="erp-subtab-btn" data-subtab="tasks" style="padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: #fff; cursor: pointer; font-family: inherit;">📋 Kanban de Tareas</button>
+                <button class="erp-subtab-btn" data-subtab="tasks" style="padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: #fff; cursor: pointer; font-family: inherit;">📋 Tablero Kanban</button>
+                <button class="erp-subtab-btn" data-subtab="sat" style="padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: #fff; cursor: pointer; font-family: inherit;">📑 SAT CFDI 4.0</button>
                 <button class="erp-subtab-btn" data-subtab="flow" style="padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: #fff; cursor: pointer; font-family: inherit;">⚙️ Diagrama de Procesos</button>
               </div>
 
@@ -544,6 +712,45 @@
                     </tr>
                   </tbody>
                 </table>
+
+                <!-- Sales Trend Chart Container -->
+                <div style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 12px; margin-top: 5px; display: flex; flex-direction: column; gap: 6px;">
+                  <span style="font-size: 11px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">📈 Histórico de Ventas (Sucursal Seleccionada)</span>
+                  <div style="height: 100px; width: 100%; border: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.2); border-radius: 8px; padding: 5px; box-sizing: border-box; display: flex; align-items: flex-end; justify-content: space-around; position: relative;">
+                    <div style="display: flex; width: 100%; height: 100%; align-items: flex-end; justify-content: space-around; padding-top: 10px;">
+                      <div style="display:flex; flex-direction:column; align-items:center; gap:2px; flex:1;">
+                        <span style="font-size:7.5px; color:var(--text-muted);">$8k</span>
+                        <div id="chart-bar-1" style="width:14px; height:35px; background: rgba(255,255,255,0.15); border-radius:2px 2px 0 0; transition: height 0.5s;"></div>
+                        <span style="font-size:8px; color:var(--text-muted);">Feb</span>
+                      </div>
+                      <div style="display:flex; flex-direction:column; align-items:center; gap:2px; flex:1;">
+                        <span style="font-size:7.5px; color:var(--text-muted);">$12k</span>
+                        <div id="chart-bar-2" style="width:14px; height:50px; background: rgba(255,255,255,0.15); border-radius:2px 2px 0 0; transition: height 0.5s;"></div>
+                        <span style="font-size:8px; color:var(--text-muted);">Mar</span>
+                      </div>
+                      <div style="display:flex; flex-direction:column; align-items:center; gap:2px; flex:1;">
+                        <span style="font-size:7.5px; color:var(--text-muted);">$15k</span>
+                        <div id="chart-bar-3" style="width:14px; height:65px; background: rgba(255,255,255,0.15); border-radius:2px 2px 0 0; transition: height 0.5s;"></div>
+                        <span style="font-size:8px; color:var(--text-muted);">Abr</span>
+                      </div>
+                      <div style="display:flex; flex-direction:column; align-items:center; gap:2px; flex:1;">
+                        <span style="font-size:7.5px; color:var(--text-muted);">$11k</span>
+                        <div id="chart-bar-4" style="width:14px; height:45px; background: rgba(255,255,255,0.15); border-radius:2px 2px 0 0; transition: height 0.5s;"></div>
+                        <span style="font-size:8px; color:var(--text-muted);">May</span>
+                      </div>
+                      <div style="display:flex; flex-direction:column; align-items:center; gap:2px; flex:1;">
+                        <span style="font-size:7.5px; color:var(--text-muted);">$18k</span>
+                        <div id="chart-bar-5" style="width:14px; height:75px; background: rgba(255,255,255,0.15); border-radius:2px 2px 0 0; transition: height 0.5s;"></div>
+                        <span style="font-size:8px; color:var(--text-muted);">Jun</span>
+                      </div>
+                      <div style="display:flex; flex-direction:column; align-items:center; gap:2px; flex:1;">
+                        <span id="chart-lbl-6" style="font-size:7.5px; color:var(--primary); font-weight:bold;">$0k</span>
+                        <div id="chart-bar-6" style="width:14px; height:5px; background: linear-gradient(to top, var(--primary), var(--secondary)); border-radius:2px 2px 0 0; transition: height 0.5s;"></div>
+                        <span style="font-size:8px; color:var(--primary); font-weight:bold;">Jul</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <!-- SUBTAB: CRM -->
@@ -573,24 +780,55 @@
               <!-- SUBTAB: KANBAN -->
               <div id="erp-view-tasks" class="erp-subtab-content" style="display: none; flex-direction: column; gap: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 13px; font-weight: bold; color: #fff;">Tablero de Tareas Operativas</span>
-                  <span style="font-size: 11px; color: #10b981;">Automatizado con Agente Hermes</span>
+                  <span style="font-size: 13px; font-weight: bold; color: #fff;">Tablero Kanban de Tareas Operativas</span>
+                  <span style="font-size: 11px; color: #fbbf24; font-weight: bold;">Arrastre de Tareas / Clic de Acción Rápida</span>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
                   <!-- Pending Column -->
-                  <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px;">
-                    <strong style="font-size: 11px; color: #fb7185; display: block; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">⏳ Pendientes</strong>
-                    <div id="erp-tasks-todo" style="display: flex; flex-direction: column; gap: 8px;">
+                  <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; min-height: 240px;">
+                    <strong style="font-size: 10.5px; color: #fb7185; display: block; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">⏳ Pendientes</strong>
+                    <div id="erp-tasks-todo" style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
                       <!-- Task cards -->
                     </div>
                   </div>
+                  <!-- In Progress Column -->
+                  <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; min-height: 240px;">
+                    <strong style="font-size: 10.5px; color: #fbbf24; display: block; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">⚙️ En Progreso</strong>
+                    <div id="erp-tasks-progress" style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+                      <!-- Task cards in progress -->
+                    </div>
+                  </div>
                   <!-- Done Column -->
-                  <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px;">
-                    <strong style="font-size: 11px; color: #34d399; display: block; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">✅ Completadas por IA</strong>
-                    <div id="erp-tasks-done" style="display: flex; flex-direction: column; gap: 8px;">
+                  <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; min-height: 240px;">
+                    <strong style="font-size: 10.5px; color: #34d399; display: block; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">✅ Completadas</strong>
+                    <div id="erp-tasks-done" style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
                       <!-- Done task cards -->
                     </div>
                   </div>
+                </div>
+              </div>
+
+              <!-- SUBTAB: SAT CFDI 4.0 -->
+              <div id="erp-view-sat" class="erp-subtab-content" style="display: none; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 13px; font-weight: bold; color: #fff;">Portal de Facturación SAT (CFDI 4.0)</span>
+                  <span style="font-size: 11px; color: #38bdf8; font-weight: bold;">Folios e Invoices Timbradas PAC</span>
+                </div>
+                <div style="overflow-x: auto;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 11px; color: #cbd5e1; text-align: left;">
+                    <thead>
+                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #fff; font-weight: bold;">
+                        <th style="padding: 6px 4px;">Folio / UUID</th>
+                        <th style="padding: 6px 4px;">Receptor</th>
+                        <th style="padding: 6px 4px;">Total Facturado</th>
+                        <th style="padding: 6px 4px;">Estado SAT</th>
+                        <th style="padding: 6px 4px; text-align: right;">Descargas</th>
+                      </tr>
+                    </thead>
+                    <tbody id="erp-sat-table-body">
+                      <!-- Invoices will be injected dynamically -->
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
@@ -790,6 +1028,103 @@
         <button id="diag-whatsapp-btn" style="padding: 12px 24px; background: #25d366; color: #fff; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 13px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3);">
           🟢 Implementar Plan con Brain Branding
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMULADOR TERMINAL DE PAGO (DATÁFONO) -->
+  <div id="pos-terminal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(6, 8, 12, 0.9); z-index: 2500; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(10px);">
+    <div class="glass-card" style="width: 100%; max-width: 380px; border-color: rgba(99, 102, 241, 0.4); background: rgba(15, 23, 42, 0.95); border-radius: 20px; padding: 25px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.8); text-align: center; position: relative;">
+      <button id="close-terminal-btn" style="position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; border: none; font-size: 13px;">✕</button>
+      
+      <span style="font-size: 12px; text-transform: uppercase; color: var(--primary); font-weight: 700; letter-spacing: 1px; display:block;">Stripe Terminal IA v4.0</span>
+      
+      <!-- Card Terminal Screen -->
+      <div style="background: #020617; border: 2px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 25px 20px; min-height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px;">
+        <!-- Visual Contactless Icon -->
+        <div id="terminal-payment-icon" style="font-size: 40px; color: #38bdf8; transition: transform 0.5s;">📶</div>
+        <div id="terminal-screen-status" style="font-family: monospace; font-size: 13.5px; color: #38bdf8; font-weight: bold;">ESPERANDO TARJETA...</div>
+        <div id="terminal-screen-amount" style="font-size: 22px; font-weight: 800; color: #fff; font-family: var(--font-title);">$0.00 MXN</div>
+        <div id="terminal-screen-progress" style="display: none; width: 150px; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; position: relative;">
+          <div style="width: 50px; height: 100%; background: #38bdf8; position: absolute; animation: loading-slide 1.5s infinite ease-in-out;"></div>
+        </div>
+      </div>
+      
+      <div id="terminal-action-area" style="display: flex; flex-direction: column; gap: 10px;">
+        <p style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4; margin: 0;">Simula la lectura de la tarjeta (NFC o chip) aproximando tu clic al sensor:</p>
+        <button id="simulate-tap-btn" style="width: 100%; padding: 10px; border-radius: 10px; background: #38bdf8; border: none; color: #020617; font-weight: bold; font-size: 12.5px; cursor: pointer; font-family: inherit;">💳 Aproximar Tarjeta (Contactless)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMULADOR TICKET TÉRMICO IMPRESO -->
+  <div id="pos-ticket-overlay" style="display: none; position: fixed; inset: 0; background: rgba(6, 8, 12, 0.9); z-index: 2500; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(10px);">
+    <div style="width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 15px; align-items: center;">
+      <!-- Thermal Paper Ticket Structure -->
+      <div id="thermal-ticket-container" style="width: 100%; background: #ffffff; color: #000000; border-radius: 2px; padding: 25px 20px; box-sizing: border-box; box-shadow: 0 15px 30px rgba(0,0,0,0.5); font-family: 'Courier New', Courier, monospace; font-size: 11px; line-height: 1.4; max-height: 75vh; overflow-y: auto;">
+        <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+          <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 4px 0;"><span class="biz-name"></span></h3>
+          <p style="margin: 0; font-size: 10px;">RFC: BBR-260722-X10<br>DIR: CDMX, MEXICO<br>TEL: 55-COGNITIVO</p>
+        </div>
+        
+        <div style="border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 10px;">
+          <p style="margin: 0 0 2px 0;">FOLIO: <span id="ticket-folio">F-001928</span></p>
+          <p style="margin: 0 0 2px 0;">FECHA: <span id="ticket-date">2026-07-28 13:40</span></p>
+          <p style="margin: 0 0 2px 0;">CAJA: 01 | TURNO: A</p>
+          <p style="margin: 0;">CLIENTE: <span id="ticket-client">Público General</span></p>
+        </div>
+        
+        <!-- Items List Table -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 10.5px; margin-bottom: 10px;">
+          <thead>
+            <tr style="border-bottom: 1px dashed #000; font-weight: bold;">
+              <th style="padding: 2px 0; text-align: left;">DESCRIPCIÓN</th>
+              <th style="padding: 2px 0; text-align: center;">CANT</th>
+              <th style="padding: 2px 0; text-align: right;">TOTAL</th>
+            </tr>
+          </thead>
+          <tbody id="ticket-items-tbody">
+            <!-- Ticket items injected here -->
+          </tbody>
+        </table>
+        
+        <!-- Breakdown Totals -->
+        <div style="border-top: 1px dashed #000; padding-top: 8px; display: flex; flex-direction: column; gap: 3px; align-items: flex-end; width: 100%;">
+          <div>SUBTOTAL: <span id="ticket-subtotal">$0.00</span></div>
+          <div id="ticket-discount-row" style="display:none;">DESCUENTO: <span id="ticket-discount">-$0.00</span></div>
+          <div id="ticket-tip-row" style="display:none;">PROPINA: <span id="ticket-tip">$0.00</span></div>
+          <div>IVA (16%): <span id="ticket-iva">$0.00</span></div>
+          <div style="font-weight: bold; font-size: 12px; margin-top: 3px; border-top: 1px dashed #000; padding-top: 4px; width: 100%; text-align: right;">TOTAL: <span id="ticket-total">$0.00 MXN</span></div>
+        </div>
+        
+        <!-- SAT CFDI Info Section -->
+        <div style="border-top: 1px dashed #000; padding-top: 10px; margin-top: 12px; font-size: 9px; text-align: center; display: flex; flex-direction: column; gap: 4px;">
+          <strong style="display: block;">TIMBRADO DIGITAL SAT CFDI 4.0</strong>
+          <div style="font-size: 8px; color: #444; word-break: break-all; margin: 2px 0;">UUID: <span id="ticket-uuid">2A79F9C0-FF39-49AA-928E-CE2C7C4C9E7D</span></div>
+          <div style="display: flex; justify-content: center; margin: 4px 0;">
+            <svg width="60" height="60" viewBox="0 0 100 100" style="background:#fff; border:1px solid #000;">
+              <rect x="10" y="10" width="20" height="20" fill="#000"/>
+              <rect x="15" y="15" width="10" height="10" fill="#fff"/>
+              <rect x="70" y="10" width="20" height="20" fill="#000"/>
+              <rect x="75" y="15" width="10" height="10" fill="#fff"/>
+              <rect x="10" y="70" width="20" height="20" fill="#000"/>
+              <rect x="15" y="75" width="10" height="10" fill="#fff"/>
+              <rect x="40" y="40" width="20" height="20" fill="#000"/>
+              <rect x="50" y="50" width="10" height="10" fill="#fff"/>
+              <rect x="40" y="10" width="10" height="10" fill="#000"/>
+              <rect x="55" y="25" width="10" height="10" fill="#000"/>
+              <rect x="25" y="45" width="10" height="10" fill="#000"/>
+              <rect x="80" y="45" width="10" height="10" fill="#000"/>
+              <rect x="85" y="80" width="15" height="15" fill="#000"/>
+            </svg>
+          </div>
+          <span>¡Gracias por su compra! Facturación timbrada automáticamente por Hermes IA.</span>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 10px; width: 100%;">
+        <button id="print-ticket-btn" onclick="alert('🖨️ Comando de impresión térmica enviado a caja.');" style="flex:1; padding: 10px; border-radius: 10px; background: #fff; color: #000; border: none; font-weight: bold; cursor: pointer; font-family: inherit;">🖨️ Imprimir Físico</button>
+        <button id="close-ticket-btn" style="flex:1; padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-weight: bold; cursor: pointer; font-family: inherit;">Cerrar Vista</button>
       </div>
     </div>
   </div>
