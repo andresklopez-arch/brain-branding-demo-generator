@@ -2,6 +2,126 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   
+  
+  // ── IA SIMULATOR SETUP MODAL LOGIC ──
+  let activeSimulatorService = 'asistente';
+  let uploadedLogoDataUrl = '';
+
+  const simModal = document.getElementById('setup-simulator-modal');
+  const cancelSimBtn = document.getElementById('cancel-sim-btn');
+  const closeSimModalBtn = document.getElementById('close-sim-modal-btn');
+  const simSetupForm = document.getElementById('sim-setup-form');
+  const dragZone = document.getElementById('sim-logo-drag-zone');
+  const fileInput = document.getElementById('sim-logo-file');
+  const logoStatus = document.getElementById('sim-logo-status');
+
+  // Open modal on simulator button clicks
+  document.querySelectorAll('.sim-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeSimulatorService = btn.getAttribute('data-service');
+      if (simModal) {
+        simModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // Lock main scroll
+      }
+    });
+  });
+
+  // Close modal functions
+  const hideSimModal = () => {
+    if (simModal) {
+      simModal.style.display = 'none';
+      document.body.style.overflow = ''; // Unlock scroll
+      // Reset form
+      if (simSetupForm) simSetupForm.reset();
+      uploadedLogoDataUrl = '';
+      if (logoStatus) {
+        logoStatus.textContent = 'Arrastra tu logo aquí o haz clic para subir';
+        logoStatus.style.color = 'var(--text-muted)';
+      }
+      if (dragZone) dragZone.style.borderColor = 'rgba(168, 85, 247, 0.4)';
+    }
+  };
+
+  if (cancelSimBtn) cancelSimBtn.addEventListener('click', hideSimModal);
+  if (closeSimModalBtn) closeSimModalBtn.addEventListener('click', hideSimModal);
+  if (simModal) {
+    simModal.addEventListener('click', (e) => {
+      if (e.target === simModal) hideSimModal();
+    });
+  }
+
+  // Logo Drag & Drop / File Upload handlers
+  if (dragZone && fileInput) {
+    dragZone.addEventListener('click', (e) => {
+      if (e.target !== fileInput) fileInput.click();
+    });
+
+    dragZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dragZone.style.borderColor = '#ec4899';
+      dragZone.style.background = 'rgba(236, 72, 153, 0.05)';
+    });
+
+    ['dragleave', 'drop'].forEach(evt => {
+      dragZone.addEventListener(evt, () => {
+        dragZone.style.borderColor = 'rgba(168, 85, 247, 0.4)';
+        dragZone.style.background = 'rgba(255,255,255,0.01)';
+      });
+    });
+
+    dragZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        processLogoFile(file);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        processLogoFile(file);
+      }
+    });
+  }
+
+  function processLogoFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      uploadedLogoDataUrl = e.target.result;
+      if (logoStatus) {
+        logoStatus.textContent = `✓ Logo cargado: ${file.name}`;
+        logoStatus.style.color = '#10b981';
+      }
+      if (dragZone) dragZone.style.borderColor = '#10b981';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Handle Form Submit
+  if (simSetupForm) {
+    simSetupForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const bizName = document.getElementById('sim-business-name').value.trim();
+      const bizSector = document.getElementById('sim-business-sector').value;
+      const bizProblem = document.getElementById('sim-business-problem').value.trim();
+
+      // Store in sessionStorage
+      sessionStorage.setItem('sim_biz_name', bizName);
+      sessionStorage.setItem('sim_biz_sector', bizSector);
+      sessionStorage.setItem('sim_biz_problem', bizProblem);
+      sessionStorage.setItem('sim_biz_logo', uploadedLogoDataUrl || '');
+      sessionStorage.setItem('sim_active_service', activeSimulatorService);
+
+      // Close modal
+      hideSimModal();
+
+      // Open simulator in new tab
+      window.open('/simulador.html', '_blank');
+    });
+  }
+
   // 1. Header scroll animation
   const header = document.querySelector('header');
   window.addEventListener('scroll', () => {

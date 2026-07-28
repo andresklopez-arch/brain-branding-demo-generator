@@ -305,8 +305,45 @@
       margin-right: auto !important;
       max-width: 780px !important;
     }
-    .hero-btns {
+    .hero-btns-grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 15px !important;
+      width: 100% !important;
+      max-width: 580px !important;
+      margin: 10px auto 0 auto !important;
+    }
+    .sim-btn {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      border: 1px solid var(--border-color) !important;
+      border-radius: 12px !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      font-size: 13.5px !important;
+      padding: 12px 18px !important;
+      display: flex !important;
+      align-items: center !important;
       justify-content: center !important;
+      gap: 8px !important;
+      font-family: inherit !important;
+    }
+    .sim-btn:hover {
+      transform: translateY(-3px) scale(1.02) !important;
+      box-shadow: 0 10px 25px rgba(168, 85, 247, 0.25) !important;
+    }
+    .sim-btn.btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;
+      color: #fff !important;
+      border: none !important;
+      box-shadow: var(--glow-primary) !important;
+    }
+    .sim-btn.btn-secondary {
+      background: rgba(255, 255, 255, 0.03) !important;
+      color: #fff !important;
+    }
+    .sim-btn.btn-secondary:hover {
+      border-color: rgba(168, 85, 247, 0.5) !important;
+      background: rgba(255, 255, 255, 0.07) !important;
     }
 
     /* FINE-TUNED MOBILE HEADER */
@@ -366,15 +403,15 @@
         line-height: 1.5 !important;
         max-width: 100% !important;
       }
-      .hero-btns {
-        flex-direction: column !important;
-        width: 100% !important;
+      .hero-btns-grid {
+        grid-template-columns: 1fr !important;
         max-width: 320px !important;
-        gap: 12px !important;
+        gap: 10px !important;
       }
-      .hero-btns .btn {
+      .sim-btn {
         width: 100% !important;
-        text-align: center !important;
+        padding: 10px 14px !important;
+        font-size: 12.5px !important;
       }
       .glass-pill-btn {
         padding: 6px 14px !important;
@@ -444,9 +481,19 @@
             <span id="more-info-text">Ver ventajas de tu Asistente Personal IA</span>
           </a>
         </div>
-        <div class="hero-btns">
-          <a href="#contacto" class="btn btn-primary">Solicitar Prototipo de IA</a>
-          <a href="#servicios" class="btn btn-secondary">Ver Servicios</a>
+        <div class="hero-btns-grid">
+          <button class="sim-btn btn-primary" data-service="asistente">
+            🤖 Simular Asistente IA
+          </button>
+          <button class="sim-btn btn-secondary" data-service="pos">
+            💳 Simular Punto de Venta
+          </button>
+          <button class="sim-btn btn-secondary" data-service="web">
+            🌐 Simular Página Web
+          </button>
+          <button class="sim-btn btn-secondary" data-service="erp">
+            🛠️ Simular Software a Medida
+          </button>
         </div>
       </div>
     </section>
@@ -1083,6 +1130,60 @@
     <span style="display: inline-block; width: 8px; height: 8px; background: #25d366; border-radius: 50%; animation: fab-radar 1.5s infinite;"></span>
     ¿Tienes dudas? Chatea con un asesor en vivo 💬
   </div>
+  <!-- SETUP SIMULATOR MODAL -->
+  <div id="setup-simulator-modal" class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(6, 8, 12, 0.95); z-index: 1001; display: none; align-items: center; justify-content: center; backdrop-filter: blur(15px); overflow-y: auto; padding: 20px; box-sizing: border-box;">
+    <div class="glass-card modal-content" style="width: 100%; max-width: 500px; padding: 30px; border-radius: 20px; border-color: rgba(99, 102, 241, 0.25); box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 20px; box-sizing: border-box;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 20px; font-weight: 700; color: #fff; font-family: var(--font-title); margin: 0;">🪄 Configura tu Simulación IA</h3>
+        <button id="close-sim-modal-btn" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 5px;">&times;</button>
+      </div>
+      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+        Ingresa los datos reales de tu negocio para generar un diagnóstico interactivo y un prototipo simulado a la medida de tu empresa.
+      </p>
+
+      <form id="sim-setup-form" style="display: flex; flex-direction: column; gap: 15px;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: 12px; font-weight: 700; color: #fff;">Nombre de tu Empresa / Negocio *</label>
+          <input type="text" id="sim-business-name" required placeholder="Ej: Café Ciber, Boutique Nova" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 14px; box-sizing: border-box;">
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: 12px; font-weight: 700; color: #fff;">Giro o Sector Comercial *</label>
+          <select id="sim-business-sector" required style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(6, 8, 12, 0.95); border: 1px solid var(--border-color); color: #fff; font-size: 14px; box-sizing: border-box; cursor: pointer;">
+            <option value="" disabled selected>Selecciona tu sector</option>
+            <option value="Restaurante / Café">Restaurante / Café</option>
+            <option value="Comercio / Tienda">Comercio / Tienda (Retail)</option>
+            <option value="Servicios Profesionales">Servicios Profesionales / Consultoría</option>
+            <option value="Salud / Clínica">Salud / Clínica</option>
+            <option value="Educación / Cursos">Educación / Cursos</option>
+            <option value="Inmobiliaria / Bienes Raíces">Inmobiliaria / Bienes Raíces</option>
+            <option value="Manufactura / Distribución">Manufactura / Distribución</option>
+            <option value="Otro Sector">Otro Sector</option>
+          </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: 12px; font-weight: 700; color: #fff;">¿Qué problemas o cuellos de botella deseas solucionar? *</label>
+          <textarea id="sim-business-problem" required rows="3" placeholder="Ej: Mis asistentes tardan mucho respondiendo dudas repetitivas, o tengo descontrol en inventario de mis sucursales..." style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 14px; line-height: 1.5; resize: none; box-sizing: border-box; font-family: inherit;"></textarea>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: 12px; font-weight: 700; color: #fff;">Cargar Logotipo de la Empresa (Opcional)</label>
+          <div id="sim-logo-drag-zone" style="width: 100%; border: 2px dashed rgba(168, 85, 247, 0.4); border-radius: 12px; padding: 20px; text-align: center; background: rgba(255,255,255,0.01); transition: all 0.3s ease; cursor: pointer; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <span style="font-size: 24px;">📁</span>
+            <span id="sim-logo-status" style="font-size: 12px; color: var(--text-muted);">Arrastra tu logo aquí o haz clic para subir</span>
+            <input type="file" id="sim-logo-file" accept="image/*" style="display: none;">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 10px;">
+          <button type="button" id="cancel-sim-btn" class="btn" style="flex: 1; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); cursor: pointer; font-weight: 700;">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;">✨ Iniciar Simulación</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
   <a href="https://api.whatsapp.com/send?phone=525638165507&text=Hola%20Brain%20Branding,%20quiero%20solicitar%20asesor%C3%ADa%20para%20un%20proyecto%20a%20la%20medida." target="_blank" id="whatsapp-fab" style="position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #25d366; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 10px 25px rgba(37, 211, 102, 0.4); z-index: 998; text-decoration: none; transition: transform 0.3s; will-change: transform;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0; color: white;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
     <span style="position: absolute; inset: -4px; border-radius: 50%; border: 2px solid #25d366; animation: fab-radar 2s infinite; opacity: 0; pointer-events: none;"></span>
