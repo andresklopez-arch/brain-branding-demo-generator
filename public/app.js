@@ -311,6 +311,16 @@ document.addEventListener('DOMContentLoaded', () => {
           contactSec.scrollIntoView({ behavior: 'smooth' });
         }
 
+        // Fire premium corporate confetti burst
+        if (typeof confetti === 'function') {
+          confetti({
+            particleCount: 150,
+            spread: 85,
+            origin: { y: 0.6 },
+            colors: ['#6366f1', '#ec4899', '#3b82f6', '#10b981']
+          });
+        }
+
         const contactCard = document.querySelector('.contact-card');
         if (contactCard) {
           contactCard.classList.add('pulse-highlight');
