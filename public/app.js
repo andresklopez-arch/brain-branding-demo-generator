@@ -407,15 +407,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 1. Header scroll animation
+  // 1. Header scroll animation & Footer Sim Banner
   const header = document.querySelector('header');
+  const footerBanner = document.getElementById('footer-sim-banner');
+
   window.addEventListener('scroll', () => {
     if (window.scrollY > 50) {
       header.classList.add('scrolled');
     } else {
       header.classList.remove('scrolled');
     }
+
+    const scrollPos = window.scrollY + window.innerHeight;
+    const docHeight = document.documentElement.scrollHeight;
+    if (footerBanner) {
+      if (scrollPos > docHeight * 0.75) {
+        footerBanner.style.display = 'flex';
+      } else {
+        footerBanner.style.display = 'none';
+      }
+    }
   });
+
+  // Suggestion Chip Handler
+  const probInput = document.getElementById('sim-business-problem');
+  const chipBtn = document.getElementById('use-suggestion-chip');
+  if (probInput && chipBtn) {
+    probInput.addEventListener('focus', () => {
+      if (!probInput.value.trim() && probInput.placeholder) {
+        chipBtn.innerHTML = `💡 Tap para usar sugerencia: "${probInput.placeholder.substring(0, 45)}..."`;
+        chipBtn.style.display = 'block';
+      }
+    });
+
+    chipBtn.addEventListener('click', () => {
+      if (probInput.placeholder) {
+        probInput.value = probInput.placeholder.replace(/^Ej:\s*/i, '');
+        probInput.style.borderColor = 'rgba(16, 185, 129, 0.6)';
+        probInput.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.15)';
+        chipBtn.style.display = 'none';
+      }
+    });
+  }
 
   // 2. Parallax 3D Card Hover for the Brain Card
   const brainCard = document.querySelector('.brain-card');

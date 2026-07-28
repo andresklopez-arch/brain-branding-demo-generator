@@ -308,10 +308,40 @@ function destroySession() {
 }
 
 document.getElementById('destroy-session-btn').addEventListener('click', () => {
-  if (confirm('¿Seguro que deseas destruir la sesión de simulación y todos los datos asociados inmediatamente?')) {
+  if (confirm("¿Estás seguro de que deseas finalizar la sesión de simulación? Se borrarán todos los datos.")) {
     destroySession();
   }
 });
+
+// Copy Diagnosis Summary handler for WhatsApp
+const copyDiagBtn = document.getElementById('copy-diag-btn');
+if (copyDiagBtn) {
+  copyDiagBtn.addEventListener('click', () => {
+    const summaryText = `🤖 *DIAGNÓSTICO INTERACTIVO DE IA - BRAIN BRANDING*\n\n` +
+      `🏢 *Empresa:* ${bizName}\n` +
+      `🏷️ *Sector:* ${bizSector}\n` +
+      `⚠️ *Reto Identificado:* ${bizProblem}\n` +
+      `💡 *Solución Evaluada:* Implementación de Asistente IA 24/7, POS Inteligente, Plataforma Web y ERP a la medida.\n\n` +
+      `🌐 *Solicitar Asesoría Directa por WhatsApp:* https://api.whatsapp.com/send?phone=525638165507&text=Hola%20Brain%20Branding,%20revis%C3%A9%20mi%20diagn%C3%B3stico%20para%20${encodeURIComponent(bizName)}%20y%20quiero%20cotizar.`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(summaryText).then(() => {
+        copyDiagBtn.innerHTML = '✅ ¡Copiado!';
+        copyDiagBtn.style.borderColor = '#10b981';
+        copyDiagBtn.style.color = '#10b981';
+        setTimeout(() => {
+          copyDiagBtn.innerHTML = '📋 Copiar Diagnóstico';
+          copyDiagBtn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+          copyDiagBtn.style.color = '#34d399';
+        }, 3000);
+      }).catch(() => {
+        prompt('Copia este resumen para enviar por WhatsApp:', summaryText);
+      });
+    } else {
+      prompt('Copia este resumen para enviar por WhatsApp:', summaryText);
+    }
+  });
+}
 
 // ── TERMINAL LOGS INITIALIZATION ──
 const terminal = document.getElementById('terminal-logs');
