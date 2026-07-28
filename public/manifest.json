@@ -9,7 +9,13 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/assets/og-image.jpg",
+      "src": "/favicon.jpg",
+      "type": "image/jpeg",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.jpg",
       "type": "image/jpeg",
       "sizes": "512x512",
       "purpose": "any maskable"
