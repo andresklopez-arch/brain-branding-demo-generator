@@ -1193,16 +1193,64 @@
 
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
           <div style="display: flex; gap: 12px;">
-            <button type="button" id="cancel-sim-btn" class="btn" style="flex: 1; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); cursor: pointer; font-weight: 700;">Cancelar</button>
-            <button type="button" id="start-sim-btn" class="btn btn-primary" style="flex: 1; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;">✨ Iniciar Simulación</button>
+            <button type="button" id="cancel-sim-btn" class="btn" onclick="document.getElementById('setup-simulator-modal').style.display='none'; document.body.style.overflow='';" style="flex: 1; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); cursor: pointer; font-weight: 700;">Cancelar</button>
+            <button type="button" id="start-sim-btn" class="btn btn-primary" onclick="BB_startSim()" style="flex: 1; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;">✨ Iniciar Simulación</button>
           </div>
-          <button type="button" id="express-sim-btn" style="background: none; border: none; color: #a855f7; text-decoration: underline; font-size: 12.5px; cursor: pointer; text-align: center; font-weight: 600; padding: 4px; font-family: inherit;">
+          <button type="button" id="express-sim-btn" onclick="BB_expressSim()" style="background: none; border: none; color: #a855f7; text-decoration: underline; font-size: 12.5px; cursor: pointer; text-align: center; font-weight: 600; padding: 4px; font-family: inherit;">
             ⚡ O haz clic aquí para Simulación Express (Datos Demo)
           </button>
         </div>
       </form>
     </div>
   </div>
+
+  <!-- INLINE SIM ENGINE — carga inmediata, no depende de caché ni de app.js -->
+  <script>
+  (function() {
+    var _simStorage = (function() {
+      try { localStorage.setItem('__bb__','1'); localStorage.removeItem('__bb__'); return localStorage; }
+      catch(e) { var m={}; return { getItem:function(k){return m[k]||null;}, setItem:function(k,v){m[k]=String(v);}, removeItem:function(k){delete m[k];} }; }
+    })();
+
+    window.BB_startSim = function() {
+      var btn = document.getElementById('start-sim-btn');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando...'; btn.style.opacity = '0.7'; }
+
+      var bizName    = (document.getElementById('sim-business-name')    || {}).value || '';
+      var bizSector  = (document.getElementById('sim-business-sector')  || {}).value || '';
+      var bizProblem = (document.getElementById('sim-business-problem') || {}).value || '';
+      var bizStyle   = (document.getElementById('sim-business-style')   || {}).value || 'ultra-moderno';
+
+      bizName    = bizName.trim()    || 'Mi Empresa';
+      bizSector  = bizSector.trim()  || 'Comercio / General';
+      bizProblem = bizProblem.trim() || 'Optimización de tiempo y control de operaciones';
+
+      var now = Date.now().toString();
+      _simStorage.setItem('sim_session_active', 'true');
+      _simStorage.setItem('sim_session_start',  now);
+      _simStorage.setItem('sim_biz_name',    bizName);
+      _simStorage.setItem('sim_biz_sector',  bizSector);
+      _simStorage.setItem('sim_biz_problem', bizProblem);
+      _simStorage.setItem('sim_biz_style',   bizStyle);
+      _simStorage.setItem('sim_biz_logo',    '');
+      _simStorage.setItem('sim_active_service', 'asistente');
+
+      document.getElementById('setup-simulator-modal').style.display = 'none';
+      document.body.style.overflow = '';
+      window.location.href = '/simulador.html';
+    };
+
+    window.BB_expressSim = function() {
+      var n = document.getElementById('sim-business-name');
+      var s = document.getElementById('sim-business-sector');
+      var p = document.getElementById('sim-business-problem');
+      if (n) n.value = 'Boutique Nova';
+      if (s) s.value = 'Venta de Muebles y Decoración';
+      if (p) p.value = 'Optimización de respuestas a clientes y control de crédito';
+      window.BB_startSim();
+    };
+  })();
+  </script>
   
   <!-- FLOATING FOOTER SIMULATOR BANNER ON SCROLL -->
   <div id="footer-sim-banner" style="position: fixed; bottom: 30px; left: 30px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(168, 85, 247, 0.4); color: #fff; padding: 12px 20px; border-radius: 14px; font-size: 13px; z-index: 990; display: none; align-items: center; gap: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); backdrop-filter: blur(15px); animation: fadeIn 0.4s ease-out;">
