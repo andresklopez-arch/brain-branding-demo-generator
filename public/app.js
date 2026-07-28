@@ -43,10 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typingElement) {
     const words = ["Asistente Personal IA", "Punto de Venta", "Página Web", "Software a Medida"];
     const descriptions = [
-      "En Brain Branding desarrollamos e implementamos tu Asistente Personal con motores avanzados de Inteligencia Artificial para automatizar tu operación, agendar tus citas y atender a tus clientes de forma autónoma las 24 horas del día.",
-      "Controla y optimiza el flujo de tu negocio con nuestro Sistema de Punto de Venta a la medida. Administra tus inventarios, sucursales, facturación y cobros de forma ágil y transparente desde cualquier dispositivo.",
-      "Establece una presencia digital corporativa premium con tu Página Web de alta conversión. Desarrolladas con diseño UI/UX personalizado para captar prospectos y reprogramar la mente de tus clientes recurrentes.",
-      "La principal ventaja de tu Software a Medida es que no te adaptas a un programa genérico: el sistema se amolda a tu forma exacta de trabajar. Aumenta la eficiencia, elimina cuellos de botella y escala tu negocio sin límites."
+      "En Brain Branding implementamos tu Asistente Personal de Inteligencia Artificial que puedes controlar desde Whatsapp o Telegram para que puedas disfrutar más de las cosas que valen la pena.",
+      "Controla tu negocio 24/7 desde cualquier lugar y/o dispositivo, administra tus inventarios, sucursales, facturación y cobros, todo a medida.",
+      "Establece una presencia digital corporativa premium con tu Página Web, con el nombre de tu empresa en la WEB.",
+      "Tu negocio no es igual a ningún otro, tu empresa no se tiene que amoldar al sistema, naturalmente debe ser al revés."
     ];
     let wordIndex = 0;
     let charIndex = 0;
