@@ -214,40 +214,120 @@
 }
 
 /* ── MOCKUP C: WEBSITE THEMES ── */
-#mock-web-preview.theme-ciberpunk {
+#mock-web-preview.theme-ultra-moderno {
   background: radial-gradient(circle at top right, rgba(168, 85, 247, 0.15), transparent), #06080c;
+  color: #fff !important;
+}
+#mock-web-preview.theme-ultra-moderno .web-accent-text {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+#mock-web-preview.theme-ultra-moderno .web-btn-primary {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  border-radius: 8px;
+  color: #fff;
+}
+
+#mock-web-preview.theme-clasico-claro {
+  background: #f8fafc;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0;
+}
+#mock-web-preview.theme-clasico-claro .web-accent-text {
+  color: #3b82f6 !important;
+  background: none;
+  -webkit-text-fill-color: initial;
+}
+#mock-web-preview.theme-clasico-claro .web-btn-primary {
+  background: #1e293b;
+  border-radius: 6px;
+  color: #fff;
+}
+#mock-web-preview.theme-clasico-claro h1, 
+#mock-web-preview.theme-clasico-claro span, 
+#mock-web-preview.theme-clasico-claro p {
+  color: #0f172a !important;
+}
+#mock-web-preview.theme-clasico-claro .biz-name {
+  color: #0f172a !important;
+}
+
+#mock-web-preview.theme-windows {
+  background: #1e1e1e;
+  border: 1px solid #0078d4;
+  color: #fff !important;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+#mock-web-preview.theme-windows .web-accent-text {
+  color: #60cdff !important;
+  background: none;
+  -webkit-text-fill-color: initial;
+}
+#mock-web-preview.theme-windows .web-btn-primary {
+  background: #0078d4;
+  border-radius: 0px;
+  color: #fff;
+  border: 1px solid #005a9e;
+}
+
+#mock-web-preview.theme-mac {
+  background: linear-gradient(135deg, #2e0854, #120024);
+  color: #fff !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+#mock-web-preview.theme-mac .web-accent-text {
+  background: linear-gradient(135deg, #ff5f56, #ffbd2e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+#mock-web-preview.theme-mac .web-btn-primary {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  color: #fff;
+}
+
+#mock-web-preview.theme-ciberpunk {
+  background: radial-gradient(circle at top right, rgba(236, 72, 153, 0.15), transparent), #050508;
+  color: #fff !important;
+  border: 1px solid #ec4899;
 }
 #mock-web-preview.theme-ciberpunk .web-accent-text {
-  background: linear-gradient(135deg, #a855f7, #ec4899);
+  background: linear-gradient(135deg, #f472b6, #ec4899);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 #mock-web-preview.theme-ciberpunk .web-btn-primary {
-  background: linear-gradient(135deg, #a855f7, #ec4899);
+  background: #ec4899;
+  box-shadow: 0 0 15px rgba(236, 72, 153, 0.5);
+  border-radius: 4px;
+  color: #fff;
 }
 
-#mock-web-preview.theme-emerald {
-  background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.15), transparent), #050b07;
+#mock-web-preview.theme-nordico {
+  background: #f4f6f0;
+  color: #2c3e2b !important;
+  border: 1px solid #dcdfd8;
 }
-#mock-web-preview.theme-emerald .web-accent-text {
-  background: linear-gradient(135deg, #10b981, #059669);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+#mock-web-preview.theme-nordico .web-accent-text {
+  color: #10b981 !important;
+  background: none;
+  -webkit-text-fill-color: initial;
 }
-#mock-web-preview.theme-emerald .web-btn-primary {
-  background: linear-gradient(135deg, #10b981, #059669);
+#mock-web-preview.theme-nordico .web-btn-primary {
+  background: #4b6b5a;
+  border-radius: 4px;
+  color: #fff;
 }
-
-#mock-web-preview.theme-sky {
-  background: radial-gradient(circle at top right, rgba(14, 165, 233, 0.15), transparent), #030811;
+#mock-web-preview.theme-nordico h1, 
+#mock-web-preview.theme-nordico span, 
+#mock-web-preview.theme-nordico p {
+  color: #2c3e2b !important;
 }
-#mock-web-preview.theme-sky .web-accent-text {
-  background: linear-gradient(135deg, #0ea5e9, #0284c7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-#mock-web-preview.theme-sky .web-btn-primary {
-  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+#mock-web-preview.theme-nordico .biz-name {
+  color: #2c3e2b !important;
 }
 
 /* ── MOCKUP D: ERP NODE CHART ── */

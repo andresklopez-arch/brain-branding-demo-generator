@@ -234,11 +234,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const bizName = document.getElementById('sim-business-name').value.trim();
       const bizSector = document.getElementById('sim-business-sector').value.trim();
       const bizProblem = document.getElementById('sim-business-problem').value.trim();
+      const bizStyle = document.getElementById('sim-business-style').value;
 
       // Store in sessionStorage
       sessionStorage.setItem('sim_biz_name', bizName);
       sessionStorage.setItem('sim_biz_sector', bizSector);
       sessionStorage.setItem('sim_biz_problem', bizProblem);
+      sessionStorage.setItem('sim_biz_style', bizStyle);
       sessionStorage.setItem('sim_biz_logo', uploadedLogoDataUrl || '');
       sessionStorage.setItem('sim_active_service', activeSimulatorService);
 

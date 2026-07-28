@@ -2,6 +2,7 @@
 const bizName = sessionStorage.getItem('sim_biz_name');
 const bizSector = sessionStorage.getItem('sim_biz_sector');
 const bizProblem = sessionStorage.getItem('sim_biz_problem');
+const bizStyle = sessionStorage.getItem('sim_biz_style') || 'ultra-moderno';
 let bizLogo = sessionStorage.getItem('sim_biz_logo');
 const activeService = sessionStorage.getItem('sim_active_service') || 'asistente';
 
@@ -602,6 +603,9 @@ function initMockups() {
   document.getElementById('mock-web-title').textContent = profile.webTitle;
   document.getElementById('mock-web-slogan').textContent = profile.webSlogan;
 
+  // Initialize Website Theme based on user choice
+  applyWebTheme(bizStyle);
+
   // 3.5 AI Advisor Card
   document.getElementById('ai-advisor-advice').textContent = profile.aiAdvice;
 
@@ -752,29 +756,48 @@ document.getElementById('checkout-pos-btn').addEventListener('click', () => {
 });
 
 // ── MOCKUP C: WEBSITE CONTROLLER ──
+function applyWebTheme(theme) {
+  const preview = document.getElementById('mock-web-preview');
+  if (!preview) return;
+  
+  preview.className = `theme-${theme}`;
+  
+  document.querySelectorAll('.web-color-btn').forEach(btn => {
+    btn.classList.remove('active');
+    btn.style.background = 'rgba(255,255,255,0.05)';
+    btn.style.borderColor = 'rgba(255,255,255,0.1)';
+    
+    const btnTheme = btn.getAttribute('data-theme');
+    if (btnTheme === theme) {
+      btn.classList.add('active');
+      
+      const colors = {
+        'ultra-moderno': 'rgba(168, 85, 247, 0.4)',
+        'clasico-claro': 'rgba(255, 255, 255, 0.4)',
+        'windows': 'rgba(14, 165, 233, 0.4)',
+        'mac': 'rgba(244, 63, 94, 0.4)',
+        'ciberpunk': 'rgba(236, 72, 153, 0.4)',
+        'nordico': 'rgba(16, 185, 129, 0.4)'
+      };
+      const backgrounds = {
+        'ultra-moderno': 'rgba(168, 85, 247, 0.15)',
+        'clasico-claro': 'rgba(255, 255, 255, 0.15)',
+        'windows': 'rgba(14, 165, 233, 0.15)',
+        'mac': 'rgba(244, 63, 94, 0.15)',
+        'ciberpunk': 'rgba(236, 72, 153, 0.15)',
+        'nordico': 'rgba(16, 185, 129, 0.15)'
+      };
+      
+      btn.style.borderColor = colors[theme] || 'rgba(255,255,255,0.4)';
+      btn.style.background = backgrounds[theme] || 'rgba(255,255,255,0.15)';
+    }
+  });
+}
+
 document.querySelectorAll('.web-color-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.web-color-btn').forEach(b => {
-      b.classList.remove('active');
-      b.style.background = 'rgba(255,255,255,0.05)';
-      b.style.borderColor = 'rgba(255,255,255,0.1)';
-    });
-    btn.classList.add('active');
-    
     const theme = btn.getAttribute('data-theme');
-    const preview = document.getElementById('mock-web-preview');
-    preview.className = `theme-${theme}`;
-
-    if (theme === 'ciberpunk') {
-      btn.style.background = 'rgba(168, 85, 247, 0.15)';
-      btn.style.borderColor = 'rgba(168, 85, 247, 0.4)';
-    } else if (theme === 'emerald') {
-      btn.style.background = 'rgba(16, 185, 129, 0.15)';
-      btn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
-    } else if (theme === 'sky') {
-      btn.style.background = 'rgba(14, 165, 233, 0.15)';
-      btn.style.borderColor = 'rgba(14, 165, 233, 0.4)';
-    }
+    applyWebTheme(theme);
   });
 });
 
