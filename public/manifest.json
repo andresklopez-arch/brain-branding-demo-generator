@@ -1,0 +1,18 @@
+{
+  "name": "Brain Branding",
+  "short_name": "Brain Branding",
+  "description": "Consultora Premium de Desarrollo de Software e IA.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#06080c",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/og-image.jpg",
+      "type": "image/jpeg",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

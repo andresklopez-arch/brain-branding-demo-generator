@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6366f1">
   
   <!-- Structured Data JSON-LD (SEO) -->
   <script type="application/ld+json">
@@ -482,6 +484,11 @@
         
         <div class="glass-card contact-card">
           <form id="agency-contact-form">
+            <!-- Honeypot anti-spam field -->
+            <div style="position: absolute; left: -9999px; overflow: hidden; height: 0; width: 0;">
+              <label for="contact-honeypot">No rellenar este campo si eres humano</label>
+              <input type="text" id="contact-honeypot" tabindex="-1" autocomplete="off">
+            </div>
             <div class="form-group">
               <label for="contact-name">Tu Nombre</label>
               <input type="text" id="contact-name" placeholder="Ej. Alejandro Torres" required>

@@ -117,6 +117,13 @@ document.addEventListener('DOMContentLoaded', () => {
     contactForm.addEventListener('submit', (e) => {
       e.preventDefault();
       
+      // Honeypot anti-spam verification
+      const honeypot = document.getElementById('contact-honeypot');
+      if (honeypot && honeypot.value !== '') {
+        console.warn('[Security] Bot detectado en el formulario.');
+        return; // Bloqueo silencioso
+      }
+      
       const name = document.getElementById('contact-name').value.trim();
       const business = document.getElementById('contact-business').value.trim();
       const vertical = document.getElementById('contact-vertical').value;
@@ -309,4 +316,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  // 12. Register PWA Service Worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('[PWA] Service Worker registrado con éxito:', reg.scope))
+        .catch(err => console.error('[PWA] Error al registrar Service Worker:', err));
+    });
+  }
 });
