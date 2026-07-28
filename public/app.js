@@ -108,10 +108,29 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }, { threshold: 0.3 });
     
-    observer.observe(showcaseSection);
   }
 
-  // 5. Contact Form WhatsApp Redirection
+  // 5. Contact Form WhatsApp Redirection & Giro Chips Handler
+  const chips = document.querySelectorAll('.giro-chip');
+  const verticalInput = document.getElementById('contact-vertical');
+  if (chips && verticalInput) {
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => {
+          c.style.borderColor = 'var(--border-color)';
+          c.style.color = 'var(--text-muted)';
+          c.style.background = 'rgba(255,255,255,0.02)';
+          c.classList.remove('active-chip');
+        });
+        chip.style.borderColor = 'var(--primary)';
+        chip.style.color = '#fff';
+        chip.style.background = 'rgba(99, 102, 241, 0.1)';
+        chip.classList.add('active-chip');
+        verticalInput.value = chip.getAttribute('data-value');
+      });
+    });
+  }
+
   const contactForm = document.getElementById('agency-contact-form');
   if (contactForm) {
     contactForm.addEventListener('submit', (e) => {
@@ -136,8 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       const waUrl = isMobile 
-        ? `whatsapp://send?phone=${phone}&text=${encodeURIComponent(text)}`
-        : `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`;
+        ? `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`
+        : `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`;
       
       // Visual feedback on button
       const submitBtn = contactForm.querySelector('button[type="submit"]');
@@ -145,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
       submitBtn.innerHTML = '✓ ¡Estructurando idea! Abriendo WhatsApp...';
       submitBtn.disabled = true;
       submitBtn.style.opacity = '0.7';
-
+ 
       setTimeout(() => {
         window.open(waUrl, '_blank');
         
@@ -155,6 +174,23 @@ document.addEventListener('DOMContentLoaded', () => {
           submitBtn.disabled = false;
           submitBtn.style.opacity = '1';
           contactForm.reset();
+          // Reset chips to default
+          if (chips && chips.length > 0) {
+            chips.forEach((c, idx) => {
+              if (idx === 0) {
+                c.style.borderColor = 'var(--primary)';
+                c.style.color = '#fff';
+                c.style.background = 'rgba(99, 102, 241, 0.1)';
+                c.classList.add('active-chip');
+                verticalInput.value = c.getAttribute('data-value');
+              } else {
+                c.style.borderColor = 'var(--border-color)';
+                c.style.color = 'var(--text-muted)';
+                c.style.background = 'rgba(255,255,255,0.02)';
+                c.classList.remove('active-chip');
+              }
+            });
+          }
         }, 1000);
       }, 600);
     });
