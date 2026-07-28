@@ -2863,13 +2863,21 @@ document.getElementById('chat-messages').addEventListener('click', (e) => {
 });
 
 // Bind sliders
-document.getElementById('slider-temp').addEventListener('input', (e) => {
-  document.getElementById('val-temp').textContent = e.target.value;
-  memoryVariables.style_applied = bizStyle;
-});
-document.getElementById('slider-tokens').addEventListener('input', (e) => {
-  document.getElementById('val-tokens').textContent = e.target.value;
-});
+const sliderTemp = document.getElementById('slider-temp');
+if (sliderTemp) {
+  sliderTemp.addEventListener('input', (e) => {
+    const valTemp = document.getElementById('val-temp');
+    if (valTemp) valTemp.textContent = e.target.value;
+    memoryVariables.style_applied = bizStyle;
+  });
+}
+const sliderTokens = document.getElementById('slider-tokens');
+if (sliderTokens) {
+  sliderTokens.addEventListener('input', (e) => {
+    const valTokens = document.getElementById('val-tokens');
+    if (valTokens) valTokens.textContent = e.target.value;
+  });
+}
 
 // Omnichannel Toggles
 document.querySelectorAll('.chat-theme-toggle-btn').forEach(btn => {
@@ -3062,23 +3070,32 @@ document.querySelectorAll('.sample-msg-btn').forEach(btn => {
 });
 
 // Human transfer simulation
-document.getElementById('human-transfer-btn').addEventListener('click', () => {
-  printToolLog(`FORZANDO INTERVENCIÓN HUMANA...`);
-  printToolLog(`Compilando resumen contextual de conversación...`);
-  
-  const summary = `Cliente consulta sobre el sector ${bizSector} para el negocio "${bizName}" con problema "${bizProblem}". Sentimiento actual: ${document.getElementById('chat-sentiment').textContent}`;
-  printToolLog(`Enviando resumen al operador: "${summary.substring(0, 45)}..."`);
-  
-  alert(`🚨 Conversación transferida con éxito.\nUn operador humano se conectará de inmediato.\n\nResumen enviado por IA al operador:\n"${summary}"`);
-});
+const humanTransferBtn = document.getElementById('human-transfer-btn');
+if (humanTransferBtn) {
+  humanTransferBtn.addEventListener('click', () => {
+    printToolLog(`FORZANDO INTERVENCIÓN HUMANA...`);
+    printToolLog(`Compilando resumen contextual de conversación...`);
+    
+    const sentimentEl = document.getElementById('chat-sentiment');
+    const sentimentText = sentimentEl ? sentimentEl.textContent : 'Neutro';
+    const summary = `Cliente consulta sobre el sector ${bizSector} para el negocio "${bizName}" con problema "${bizProblem}". Sentimiento actual: ${sentimentText}`;
+    printToolLog(`Enviando resumen al operador: "${summary.substring(0, 45)}..."`);
+    
+    alert(`🚨 Conversación transferida con éxito.\nUn operador humano se conectará de inmediato.\n\nResumen enviado por IA al operador:\n"${summary}"`);
+  });
+}
 
 // Selector changes agent logs
-document.getElementById('agent-type-select').addEventListener('change', (e) => {
-  printToolLog(`[COGNITIVE] Cambiando a perfil: "${e.target.options[e.target.selectedIndex].text}"`);
-  printToolLog(`[COGNITIVE] Inicializando sub-agentes y recargando base de conocimiento...`);
-  memoryVariables.active_agent_profile = e.target.value;
-  document.getElementById('agent-memory-inspector').textContent = JSON.stringify(memoryVariables, null, 2);
-});
+const agentTypeSelect = document.getElementById('agent-type-select');
+if (agentTypeSelect) {
+  agentTypeSelect.addEventListener('change', (e) => {
+    printToolLog(`[COGNITIVE] Cambiando a perfil: "${e.target.options[e.target.selectedIndex].text}"`);
+    printToolLog(`[COGNITIVE] Inicializando sub-agentes y recargando base de conocimiento...`);
+    memoryVariables.active_agent_profile = e.target.value;
+    const inspectorEl = document.getElementById('agent-memory-inspector');
+    if (inspectorEl) inspectorEl.textContent = JSON.stringify(memoryVariables, null, 2);
+  });
+}
 
 // ── MOCKUP B: POS CONTROLLER ──
 let posCart = [];
