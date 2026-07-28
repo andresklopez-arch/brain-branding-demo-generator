@@ -3592,10 +3592,7 @@ function updateWhatsAppLink() {
   document.getElementById('whatsapp-implement-btn').setAttribute('href', url);
 }
 
-// ── UPDATE IA ADVICE BY TAB ──
-function updateAIAdvice(tabId) {
-  // Obsoleted
-}
+
 
 // ── AUTONOMOUS PERSONAL ASSISTANT DEMO ENGINE ──
 // ── UNIFIED MULTI-PRODUCT AUTONOMOUS RUNNER ──
