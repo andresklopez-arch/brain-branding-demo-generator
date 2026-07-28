@@ -194,12 +194,47 @@ function generateAvatar(name) {
   resize(); initStars(); animateStars();
 })();
 
-// ── SESSION TIMER (15 MINUTES HARD LIMIT) ──
-const sessionStart = parseInt(safeSessionStorage.getItem('sim_session_start') || Date.now().toString(), 10);
+// ── SESSION TIMER (15 MINUTES HARD LIMIT WITH EXTENSION TOAST) ──
+let currentSessionStart = parseInt(safeLocalStorage.getItem('sim_session_start') || safeSessionStorage.getItem('sim_session_start') || Date.now().toString(), 10);
 const timerEl = document.getElementById('countdown-timer');
+let hasShownExpiryToast = false;
+
+function showExpiryToast() {
+  if (hasShownExpiryToast) return;
+  hasShownExpiryToast = true;
+
+  let toast = document.getElementById('sim-expiry-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'sim-expiry-toast';
+    toast.style.cssText = `
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(236, 72, 153, 0.5);
+      color: #fff; padding: 14px 24px; border-radius: 16px; font-size: 13px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 20px rgba(236, 72, 153, 0.3);
+      z-index: 1000; display: flex; align-items: center; gap: 15px;
+      backdrop-filter: blur(15px); animation: fadeIn 0.4s ease-out;
+    `;
+    toast.innerHTML = `
+      <span>⏳ Tu sesión de simulación caducará en <strong>menos de 1 minuto</strong>.</span>
+      <button id="extend-timer-btn" style="background: linear-gradient(135deg, #a855f7, #ec4899); border: none; color: #fff; padding: 8px 16px; border-radius: 10px; font-weight: bold; font-size: 12px; cursor: pointer; transition: transform 0.2s;">
+        ⏱️ Extender 15 min
+      </button>
+    `;
+    document.body.appendChild(toast);
+
+    document.getElementById('extend-timer-btn').addEventListener('click', () => {
+      currentSessionStart = Date.now();
+      safeLocalStorage.setItem('sim_session_start', currentSessionStart.toString());
+      safeSessionStorage.setItem('sim_session_start', currentSessionStart.toString());
+      if (toast) toast.remove();
+      hasShownExpiryToast = false;
+    });
+  }
+}
 
 function updateTimer() {
-  const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+  const elapsed = Math.floor((Date.now() - currentSessionStart) / 1000);
   const timeLeft = Math.max(0, 15 * 60 - elapsed);
   
   const minutes = Math.floor(timeLeft / 60);
@@ -208,6 +243,10 @@ function updateTimer() {
     timerEl.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   }
   
+  if (timeLeft <= 60 && timeLeft > 0) {
+    showExpiryToast();
+  }
+
   if (timeLeft < 120) {
     if (timerEl) {
       timerEl.style.color = '#ef4444';
@@ -218,6 +257,11 @@ function updateTimer() {
       badge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
       badge.style.background = 'rgba(239, 68, 68, 0.08)';
     }
+  } else {
+    if (timerEl) {
+      timerEl.style.color = 'var(--text-main)';
+      timerEl.style.animation = 'none';
+    }
   }
 
   if (timeLeft <= 0) {
@@ -226,6 +270,26 @@ function updateTimer() {
 }
 const timerInterval = setInterval(updateTimer, 1000);
 updateTimer();
+
+// Listen for storage changes across tabs
+window.addEventListener('storage', (e) => {
+  if (['sim_biz_name', 'sim_biz_sector', 'sim_biz_problem', 'sim_biz_logo'].includes(e.key)) {
+    const newName = safeLocalStorage.getItem('sim_biz_name');
+    const newSector = safeLocalStorage.getItem('sim_biz_sector');
+    const newProblem = safeLocalStorage.getItem('sim_biz_problem');
+    const newLogo = safeLocalStorage.getItem('sim_biz_logo');
+
+    if (newName && newSector && newProblem) {
+      bizName = sanitizeInput(cleanSpelling(newName));
+      bizSector = sanitizeInput(cleanSpelling(newSector));
+      bizProblem = sanitizeInput(cleanSpelling(newProblem));
+      if (newLogo) bizLogo = newLogo;
+      if (typeof initMockups === 'function') {
+        initMockups();
+      }
+    }
+  }
+});
 
 function destroySession() {
   clearInterval(timerInterval);

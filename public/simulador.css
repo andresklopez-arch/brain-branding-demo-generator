@@ -70,10 +70,30 @@
 }
 
 .tab-link.active {
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  color: #fff;
-  border-color: transparent;
-  box-shadow: var(--glow-primary);
+  background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4), 0 4px 10px rgba(0,0,0,0.3) !important;
+  transform: translateY(-2px) scale(1.03) !important;
+  position: relative !important;
+}
+
+.tab-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -13px;
+  left: 15%;
+  width: 70%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), #00e5ff);
+  border-radius: 2px;
+  box-shadow: 0 0 10px #00e5ff;
+  animation: tabGlowPulse 1.5s infinite alternate;
+}
+
+@keyframes tabGlowPulse {
+  from { opacity: 0.7; box-shadow: 0 0 6px #00e5ff; }
+  to { opacity: 1; box-shadow: 0 0 14px #00e5ff, 0 0 20px #ec4899; }
 }
 
 /* TAB PANEL TOGGLE (ONE SIMULATOR PER PAGE) */
