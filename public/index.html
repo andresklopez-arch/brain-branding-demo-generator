@@ -229,7 +229,28 @@
     }
 
     .hero {
-      padding-top: 95px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      text-align: center !important;
+      max-width: 900px !important;
+      margin: 0 auto !important;
+      min-height: 70vh !important;
+      padding-top: 100px !important;
+    }
+    .hero-content {
+      align-items: center !important;
+      text-align: center !important;
+    }
+    .hero-desc {
+      text-align: center !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+      max-width: 780px !important;
+    }
+    .hero-btns {
+      justify-content: center !important;
     }
 
     /* FINE-TUNED MOBILE HEADER */
@@ -320,59 +341,6 @@
         <div class="hero-btns">
           <a href="#contacto" class="btn btn-primary">Solicitar Prototipo de IA</a>
           <a href="#servicios" class="btn btn-secondary">Ver Servicios</a>
-        </div>
-      </div>
-      <div class="hero-visual">
-        <div class="glass-card brain-card">
-          <div class="brain-pulse-ring"></div>
-          <div class="brain-container">
-            <!-- Pulsing Cyber Brain SVG -->
-            <svg class="brain-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-              <!-- Left Hemisphere (Neural circuits) -->
-              <path d="M50,15 C35,15 25,25 25,40 C25,48 30,55 30,62 C30,70 38,78 45,82 L50,85 Z" fill="none" stroke="url(#circuit-grad)" stroke-width="1.5" />
-              <!-- Right Hemisphere (Digital blocks) -->
-              <path d="M50,15 C65,15 75,25 75,40 C75,48 70,55 70,62 C70,70 62,78 55,82 L50,85 Z" fill="none" stroke="url(#digital-grad)" stroke-width="1.5" />
-              <!-- Neural Connections / Nodes -->
-              <circle cx="35" cy="30" r="2.5" fill="#6366f1" />
-              <line x1="35" y1="30" x2="42" y2="38" stroke="rgba(255,255,255,0.2)" stroke-width="0.8" />
-              
-              <circle cx="42" cy="38" r="2" fill="#ec4899" />
-              <line x1="42" y1="38" x2="30" y2="48" stroke="rgba(255,255,255,0.2)" stroke-width="0.8" />
-              
-              <circle cx="30" cy="48" r="2.5" fill="#06b6d4" />
-              <line x1="30" y1="48" x2="38" y2="58" stroke="rgba(255,255,255,0.2)" stroke-width="0.8" />
-              
-              <circle cx="38" cy="58" r="2" fill="#6366f1" />
-              
-              <circle cx="65" cy="30" r="2.5" fill="#ec4899" />
-              <line x1="65" y1="30" x2="58" y2="38" stroke="rgba(255,255,255,0.2)" stroke-width="0.8" />
-              
-              <circle cx="58" cy="38" r="2" fill="#06b6d4" />
-              <line x1="58" y1="38" x2="70" y2="48" stroke="rgba(255,255,255,0.2)" stroke-width="0.8" />
-              
-              <circle cx="70" cy="48" r="2.5" fill="#6366f1" />
-              <line x1="70" y1="48" x2="62" y2="58" stroke="rgba(255,255,255,0.2)" stroke-width="0.8" />
-              
-              <circle cx="62" cy="58" r="2" fill="#ec4899" />
-              
-              <!-- Center stem -->
-              <line x1="50" y1="15" x2="50" y2="85" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
-              <circle cx="50" cy="15" r="3" fill="#f8fafc" />
-              <circle cx="50" cy="50" r="3" fill="#6366f1" />
-              <circle cx="50" cy="85" r="3" fill="#ec4899" />
-
-              <defs>
-                <linearGradient id="circuit-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#6366f1" />
-                  <stop offset="100%" stop-color="#06b6d4" />
-                </linearGradient>
-                <linearGradient id="digital-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#ec4899" />
-                  <stop offset="100%" stop-color="#6366f1" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
         </div>
       </div>
     </section>
