@@ -836,7 +836,7 @@ footer {
     justify-content: center;
   }
   
-  .showcase-container, .contact-container {
+  .showcase-container, .contact-container, .calc-grid {
     grid-template-columns: 1fr;
     gap: 40px;
   }

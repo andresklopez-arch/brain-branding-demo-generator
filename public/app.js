@@ -243,4 +243,70 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { threshold: 0.15 });
 
   revealElements.forEach(el => revealObserver.observe(el));
+
+  // 10. Calculator Logic
+  const basePrice = 12000;
+  const calcChecks = document.querySelectorAll('.calc-check');
+  const totalDisplay = document.getElementById('calc-total-price');
+  
+  if (totalDisplay && calcChecks.length > 0) {
+    const updateEstimate = () => {
+      let total = basePrice;
+      calcChecks.forEach(chk => {
+        if (chk.checked) {
+          total += parseInt(chk.getAttribute('data-price'));
+        }
+      });
+      totalDisplay.textContent = `$${total.toLocaleString()} MXN`;
+    };
+    
+    calcChecks.forEach(chk => chk.addEventListener('change', updateEstimate));
+    
+    const calcSubmitBtn = document.getElementById('calc-submit-btn');
+    if (calcSubmitBtn) {
+      calcSubmitBtn.addEventListener('click', () => {
+        const selectedModules = [];
+        calcChecks.forEach(chk => {
+          if (chk.checked) {
+            selectedModules.push(chk.parentElement.querySelector('span').textContent);
+          }
+        });
+        
+        const descField = document.getElementById('contact-desc');
+        if (descField) {
+          descField.value = `Hola Brain Branding, coticé en su web un proyecto SaaS que incluye:\n- Plataforma Base SaaS\n${selectedModules.map(m => `- ${m}`).join('\n')}\n\nMi idea general de negocio es...`;
+          // Trigger change event if needed
+        }
+        
+        const contactSec = document.getElementById('contacto');
+        if (contactSec) {
+          contactSec.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    }
+  }
+
+  // 11. FAQ Accordion Logic
+  const faqItems = document.querySelectorAll('.faq-item');
+  faqItems.forEach(item => {
+    const answer = item.querySelector('.faq-answer');
+    const icon = item.querySelector('.faq-icon');
+    
+    item.addEventListener('click', () => {
+      const isOpen = answer.style.maxHeight && answer.style.maxHeight !== '0px';
+      
+      // Close all other FAQs
+      document.querySelectorAll('.faq-answer').forEach(ans => {
+        ans.style.maxHeight = '0px';
+      });
+      document.querySelectorAll('.faq-icon').forEach(ic => {
+        ic.style.transform = 'rotate(0deg)';
+      });
+      
+      if (!isOpen) {
+        answer.style.maxHeight = answer.scrollHeight + 'px';
+        icon.style.transform = 'rotate(45deg)';
+      }
+    });
+  });
 });
