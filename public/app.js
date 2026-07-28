@@ -781,6 +781,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: true });
   }
 
+  // Helper to sanitize HTML to prevent XSS injection
+  function sanitizeInput(str) {
+    return str.replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    })[m]);
+  }
+
   // 27. Form draft auto-save
   const draftFields = {
     'contact-name': 'draft_name',
@@ -800,7 +811,7 @@ document.addEventListener('DOMContentLoaded', () => {
         el.dispatchEvent(new Event('input'));
       }
       el.addEventListener('input', () => {
-        localStorage.setItem(key, el.value);
+        localStorage.setItem(key, sanitizeInput(el.value));
       });
     }
   });
