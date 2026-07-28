@@ -244,6 +244,13 @@ document.addEventListener('DOMContentLoaded', () => {
       sessionStorage.setItem('sim_biz_logo', uploadedLogoDataUrl || '');
       sessionStorage.setItem('sim_active_service', activeSimulatorService);
 
+      localStorage.setItem('sim_biz_name', bizName);
+      localStorage.setItem('sim_biz_sector', bizSector);
+      localStorage.setItem('sim_biz_problem', bizProblem);
+      localStorage.setItem('sim_biz_style', bizStyle);
+      localStorage.setItem('sim_biz_logo', uploadedLogoDataUrl || '');
+      localStorage.setItem('sim_active_service', activeSimulatorService);
+
       // Close modal
       hideSimModal();
 

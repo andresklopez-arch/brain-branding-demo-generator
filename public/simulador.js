@@ -31,22 +31,42 @@ function cleanSpelling(text) {
   return cleaned;
 }
 
-const rawBizName = sessionStorage.getItem('sim_biz_name') || "";
-const rawBizSector = sessionStorage.getItem('sim_biz_sector') || "";
-const rawBizProblem = sessionStorage.getItem('sim_biz_problem') || "";
+function sanitizeInput(text) {
+  if (!text) return "";
+  return text.replace(/<[^>]*>?/gm, '').trim();
+}
 
-const bizName = cleanSpelling(rawBizName);
-const bizSector = cleanSpelling(rawBizSector);
-const bizProblem = cleanSpelling(rawBizProblem);
-const bizStyle = sessionStorage.getItem('sim_biz_style') || 'ultra-moderno';
-let bizLogo = sessionStorage.getItem('sim_biz_logo');
-const activeService = sessionStorage.getItem('sim_active_service') || 'asistente';
+const rawBizName = sessionStorage.getItem('sim_biz_name') || localStorage.getItem('sim_biz_name') || "";
+const rawBizSector = sessionStorage.getItem('sim_biz_sector') || localStorage.getItem('sim_biz_sector') || "";
+const rawBizProblem = sessionStorage.getItem('sim_biz_problem') || localStorage.getItem('sim_biz_problem') || "";
+
+const bizName = sanitizeInput(cleanSpelling(rawBizName));
+const bizSector = sanitizeInput(cleanSpelling(rawBizSector));
+const bizProblem = sanitizeInput(cleanSpelling(rawBizProblem));
+const bizStyle = sanitizeInput(sessionStorage.getItem('sim_biz_style') || localStorage.getItem('sim_biz_style') || 'ultra-moderno');
+let bizLogo = sessionStorage.getItem('sim_biz_logo') || localStorage.getItem('sim_biz_logo') || '';
+const activeService = sanitizeInput(sessionStorage.getItem('sim_active_service') || localStorage.getItem('sim_active_service') || 'asistente');
 
 // Redirect if no data
 if (!bizName || !bizSector || !bizProblem) {
   window.location.href = '/';
   throw new Error("No session data found. Redirecting to root...");
 }
+
+// Synchronize storage
+sessionStorage.setItem('sim_biz_name', bizName);
+sessionStorage.setItem('sim_biz_sector', bizSector);
+sessionStorage.setItem('sim_biz_problem', bizProblem);
+sessionStorage.setItem('sim_biz_style', bizStyle);
+sessionStorage.setItem('sim_biz_logo', bizLogo);
+sessionStorage.setItem('sim_active_service', activeService);
+
+localStorage.setItem('sim_biz_name', bizName);
+localStorage.setItem('sim_biz_sector', bizSector);
+localStorage.setItem('sim_biz_problem', bizProblem);
+localStorage.setItem('sim_biz_style', bizStyle);
+localStorage.setItem('sim_biz_logo', bizLogo);
+localStorage.setItem('sim_active_service', activeService);
 
 // ── AUTOGENERATE LOGO IF EMPTY ──
 if (!bizLogo) {
