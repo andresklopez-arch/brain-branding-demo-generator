@@ -49,6 +49,50 @@
             box-shadow: 0 0 30px rgba(99, 102, 241, 0.6) !important;
         }
 
+        /* ── RESPONSIVE NAVIGATION & HAMBURGER MENU ── */
+        #mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 5px;
+            z-index: 1001;
+            transition: transform 0.2s;
+        }
+        #mobile-menu-btn:active {
+            transform: scale(0.9);
+        }
+
+        @media (max-width: 768px) {
+            header nav {
+                display: none !important;
+                position: fixed;
+                top: 80px;
+                left: 0;
+                width: 100%;
+                background: rgba(5, 7, 10, 0.96);
+                flex-direction: column;
+                padding: 30px 20px;
+                gap: 25px !important;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                backdrop-filter: blur(25px);
+                -webkit-backdrop-filter: blur(25px);
+                z-index: 999;
+                box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+            }
+            header nav.mobile-active {
+                display: flex !important;
+            }
+            #mobile-menu-btn {
+                display: block !important;
+            }
+            header .header-btn {
+                display: none !important; /* Ocultar CTA largo en móvil para dar espacio */
+            }
+        }
+
         :root {
             --accent: #00e5ff;
             --accent-glow: rgba(0, 229, 255, 0.5);
@@ -75,9 +119,11 @@
             inset: 0;
             z-index: 0;
             pointer-events: none;
+            will-change: transform;
+            transform: translate3d(0,0,0);
         }
 
-        /* ── ANIMATION ENGINE ── */
+        /* ── ANIMATION ENGINE (Aceleración por GPU) ── */
         .scene {
             position: fixed;
             inset: 0;
@@ -90,14 +136,15 @@
             opacity: 0;
             visibility: hidden;
             transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-            transform: scale(1.1);
             z-index: 10;
+            will-change: transform, opacity;
+            transform: translate3d(0, 0, 0) scale(1.1);
         }
 
         .scene.active {
             opacity: 1;
             visibility: visible;
-            transform: scale(1);
+            transform: translate3d(0, 0, 0) scale(1);
         }
 
         .overlay {
@@ -672,6 +719,7 @@
         </nav>
         <div style="display: flex; gap: 12px; align-items: center;">
             <a href="#" onclick="showScene(7); return false;" class="header-btn" style="background: linear-gradient(135deg, #6366f1, #ec4899); color: #fff; border: none; font-size: 13.5px; font-weight: 600; padding: 10px 20px; border-radius: 12px; text-decoration: none; transition: transform 0.2s; box-shadow: 0 0 20px rgba(99, 102, 241, 0.35);">Agendar Demo</a>
+            <button id="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
         </div>
     </header>
 
@@ -1523,7 +1571,52 @@
             
             // Resetear el temporizador de auto-avance al navegar manualmente
             resetAutoAdvance();
+
+            // Sugerencia 1: Iluminar el menú de navegación según escena activa
+            updateActiveMenuLink(idx);
         }
+
+        function updateActiveMenuLink(idx) {
+            const navLinks = document.querySelectorAll('header nav .nav-link');
+            if (navLinks.length === 0) return;
+            
+            navLinks.forEach(link => {
+                link.style.color = '#94a3b8';
+                link.style.fontWeight = '500';
+            });
+            
+            if (idx === 0 || idx === 1) {
+                navLinks[0].style.color = '#ffffff';
+                navLinks[0].style.fontWeight = '600';
+            } else if (idx === 5) {
+                navLinks[1].style.color = '#ffffff';
+                navLinks[1].style.fontWeight = '600';
+            } else if (idx === 2) {
+                navLinks[2].style.color = '#ffffff';
+                navLinks[2].style.fontWeight = '600';
+            } else if (idx === 3 || idx === 4 || idx === 6) {
+                navLinks[3].style.color = '#ffffff';
+                navLinks[3].style.fontWeight = '600';
+            } else if (idx === 7) {
+                navLinks[4].style.color = '#00e5ff';
+                navLinks[4].style.fontWeight = 'bold';
+            }
+        }
+
+        function toggleMobileMenu() {
+            const nav = document.querySelector('header nav');
+            if (nav) {
+                nav.classList.toggle('mobile-active');
+            }
+        }
+
+        // Registrar cierre de menú al hacer clic en enlaces móviles
+        document.querySelectorAll('header nav .nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                const nav = document.querySelector('header nav');
+                if (nav) nav.classList.remove('mobile-active');
+            });
+        });
 
         function nextScene() {
             currentIdx = (currentIdx + 1) % scenes.length;
