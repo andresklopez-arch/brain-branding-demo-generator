@@ -43,10 +43,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInput = document.getElementById('sim-logo-file');
   const logoStatus = document.getElementById('sim-logo-status');
 
+  const servicePlaceholders = {
+    asistente: 'Ej: Tardo mucho respondiendo dudas repetitivas de clientes en WhatsApp sobre precios y horarios...',
+    pos: 'Ej: Tengo descontrol en inventario, faltantes de stock y cobros lentos en cajas...',
+    web: 'Ej: No tengo presencia digital profesional ni catálogo web interactivo para captar prospectos...',
+    erp: 'Ej: Mis sucursales, facturación y cuentas por cobrar están desconectadas y generan cuellos de botella...'
+  };
+
   // Open modal on simulator button clicks
   document.querySelectorAll('.sim-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      activeSimulatorService = btn.getAttribute('data-service');
+      activeSimulatorService = btn.getAttribute('data-service') || 'asistente';
+      const problemInput = document.getElementById('sim-business-problem');
+      if (problemInput && servicePlaceholders[activeSimulatorService]) {
+        problemInput.placeholder = servicePlaceholders[activeSimulatorService];
+      }
       if (simModal) {
         simModal.style.display = 'flex';
         document.body.style.overflow = 'hidden'; // Lock main scroll
@@ -365,6 +376,36 @@ document.addEventListener('DOMContentLoaded', () => {
   if (simSetupForm) {
     simSetupForm.addEventListener('submit', startSimAction);
   }
+
+  // Express Simulation 1-click action
+  const expressSimBtn = document.getElementById('express-sim-btn');
+  if (expressSimBtn) {
+    expressSimBtn.addEventListener('click', () => {
+      const nameEl = document.getElementById('sim-business-name');
+      const sectorEl = document.getElementById('sim-business-sector');
+      const problemEl = document.getElementById('sim-business-problem');
+      if (nameEl) nameEl.value = 'Boutique Nova';
+      if (sectorEl) sectorEl.value = 'Venta de Muebles y Decoración';
+      if (problemEl) problemEl.value = 'Optimización de respuestas a clientes y control de crédito';
+      startSimAction();
+    });
+  }
+
+  // Real-time green glow feedback on filled inputs
+  ['sim-business-name', 'sim-business-sector', 'sim-business-problem'].forEach(id => {
+    const input = document.getElementById(id);
+    if (input) {
+      input.addEventListener('input', () => {
+        if (input.value.trim().length >= 2) {
+          input.style.borderColor = 'rgba(16, 185, 129, 0.6)';
+          input.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.15)';
+        } else {
+          input.style.borderColor = 'var(--border-color)';
+          input.style.boxShadow = 'none';
+        }
+      });
+    }
+  });
 
   // 1. Header scroll animation
   const header = document.querySelector('header');
