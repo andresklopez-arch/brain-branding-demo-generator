@@ -343,6 +343,89 @@ if (copyDiagBtn) {
   });
 }
 
+// ── PRINT PDF HANDLER ──
+const printPdfBtn = document.getElementById('print-pdf-btn');
+if (printPdfBtn) {
+  printPdfBtn.addEventListener('click', () => {
+    window.print();
+  });
+}
+
+// ── QR CODE MODAL HANDLER ──
+const qrCodeBtn = document.getElementById('qr-code-btn');
+const qrModal = document.getElementById('qr-modal');
+const closeQrBtn = document.getElementById('close-qr-modal-btn');
+const qrContainer = document.getElementById('qr-code-container');
+
+function generateQrSvg() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 25 25">
+    <rect width="25" height="25" fill="#ffffff" />
+    <path d="M 2,2 H 9 V 9 H 2 Z M 3,3 V 8 H 8 V 3 Z M 4,4 H 7 V 7 H 4 Z" fill="#a855f7" />
+    <path d="M 16,2 H 23 V 9 H 16 Z M 17,3 V 8 H 22 V 3 Z M 18,4 H 21 V 7 H 18 Z" fill="#a855f7" />
+    <path d="M 2,16 H 9 V 23 H 2 Z M 3,17 V 22 H 8 V 17 Z M 4,18 H 7 V 21 H 4 Z" fill="#a855f7" />
+    <rect x="11" y="2" width="2" height="3" fill="#06080c"/>
+    <rect x="14" y="4" width="1" height="4" fill="#06080c"/>
+    <rect x="10" y="7" width="4" height="2" fill="#06080c"/>
+    <rect x="2" y="11" width="5" height="2" fill="#06080c"/>
+    <rect x="8" y="10" width="3" height="3" fill="#06080c"/>
+    <rect x="12" y="12" width="5" height="2" fill="#a855f7"/>
+    <rect x="18" y="11" width="4" height="2" fill="#06080c"/>
+    <rect x="11" y="15" width="3" height="4" fill="#06080c"/>
+    <rect x="15" y="16" width="4" height="2" fill="#06080c"/>
+    <rect x="20" y="15" width="3" height="5" fill="#06080c"/>
+    <rect x="10" y="20" width="4" height="3" fill="#06080c"/>
+    <rect x="16" y="21" width="6" height="2" fill="#a855f7"/>
+  </svg>`;
+}
+
+if (qrCodeBtn && qrModal) {
+  qrCodeBtn.addEventListener('click', () => {
+    if (qrContainer) {
+      qrContainer.innerHTML = generateQrSvg();
+    }
+    qrModal.style.display = 'flex';
+  });
+}
+if (closeQrBtn && qrModal) {
+  closeQrBtn.addEventListener('click', () => {
+    qrModal.style.display = 'none';
+  });
+}
+if (qrModal) {
+  qrModal.addEventListener('click', (e) => {
+    if (e.target === qrModal) qrModal.style.display = 'none';
+  });
+}
+
+// ── LANGUAGE TOGGLE (ES | EN) ──
+let currentLang = 'ES';
+const langToggleBtn = document.getElementById('lang-toggle-btn');
+if (langToggleBtn) {
+  langToggleBtn.addEventListener('click', () => {
+    currentLang = currentLang === 'ES' ? 'EN' : 'ES';
+    langToggleBtn.innerHTML = `🌐 ${currentLang === 'ES' ? 'ES | EN' : 'EN | ES'}`;
+
+    const tab1 = document.querySelector('.tab-link[data-tab="panel-asistente"]');
+    const tab2 = document.querySelector('.tab-link[data-tab="panel-pos"]');
+    const tab3 = document.querySelector('.tab-link[data-tab="panel-web"]');
+    const tab4 = document.querySelector('.tab-link[data-tab="panel-erp"]');
+
+    if (currentLang === 'EN') {
+      if (tab1) tab1.textContent = '🤖 AI Assistant';
+      if (tab2) tab2.textContent = '🛒 Smart POS';
+      if (tab3) tab3.textContent = '🌐 Custom Web';
+      if (tab4) tab4.textContent = '⚡ ERP Software';
+      if (copyDiagBtn) copyDiagBtn.innerHTML = '📋 Copy Diagnosis';
+    } else {
+      if (tab1) tab1.textContent = '🤖 Asistente IA';
+      if (tab2) tab2.textContent = '🛒 Punto de Venta (POS)';
+      if (tab3) tab3.textContent = '🌐 Página Web a Medida';
+      if (tab4) tab4.textContent = '⚡ Software ERP a Medida';
+      if (copyDiagBtn) copyDiagBtn.innerHTML = '📋 Copiar Diagnóstico';
+    }
+  });
+}
+
 // ── TERMINAL LOGS INITIALIZATION ──
 const terminal = document.getElementById('terminal-logs');
 const progressBar = document.getElementById('loader-progress-bar');

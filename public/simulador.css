@@ -809,3 +809,28 @@
   transform: rotate(90deg);
 }
 
+/* PRINT & PDF STYLES */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  header, .sim-tabs, #sim-star-canvas, .cyber-grid, #qr-modal, #sim-expiry-toast, button, #whatsapp-fab, #sim-loader {
+    display: none !important;
+  }
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  .glass-card, .tab-panel {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+  }
+  .tab-panel.active {
+    display: block !important;
+  }
+}
+
