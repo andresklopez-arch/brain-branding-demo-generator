@@ -19,6 +19,22 @@
     <meta name="twitter:description" content="Conecta tu negocio a la Inteligencia Artificial. Deja atrás el caos de las hojas de cálculo y descubre tu app o sistema a la medida con Brain Branding.">
     <meta name="twitter:image" content="https://brainbranding.com.mx/logo-branding.png">
 
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+
+      function trackNeuromarketingEvent(eventName, eventDetails) {
+        console.log(`[Neuro-Analytics] Event: ${eventName}`, eventDetails);
+        if (typeof gtag === 'function') {
+          gtag('event', eventName, eventDetails);
+        }
+      }
+    </script>
+
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- Sugerencia 2: QR Code library -->
@@ -1579,6 +1595,9 @@
             
             // 🚀 Sugerencia 2: Métrica de Conversión Digital
             console.log(`[Zenith Analytics] Conversión registrada desde el origen: ${origin}`);
+            if (typeof trackNeuromarketingEvent === 'function') {
+                trackNeuromarketingEvent('contact_whatsapp', { origin: origin });
+            }
             
             window.open(url, '_blank');
         }
@@ -1838,6 +1857,14 @@
             const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
             
             console.log('[Zenith Analytics] Conversión Diagnóstico completado.');
+            if (typeof trackNeuromarketingEvent === 'function') {
+                trackNeuromarketingEvent('diagnostic_completed', {
+                    giro: diagnosticData.giro,
+                    funciones: diagnosticData.funciones.join(','),
+                    operacion: diagnosticData.operacion
+                });
+            }
+            
             window.open(url, '_blank');
         }
 

@@ -17,4 +17,12 @@ if errorlevel 1 (
 
 git commit -m "Auto-commit: Adición de Hermes Agent"
 
+git remote get-url origin >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [INFO] Subiendo cambios a GitHub (git push)...
+    git push origin main
+) else (
+    echo [WARNING] No hay repositorio remoto "origin" configurado. Agrega uno con: git remote add origin ^<url^>
+)
+
 echo [SUCCESS] Cambios locales confirmados en Git.
