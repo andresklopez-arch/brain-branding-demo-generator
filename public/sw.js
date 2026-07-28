@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bb-cache-v3';
+const CACHE_NAME = 'bb-cache-v4';
 const ASSETS = [
   '/',
   '/index.html',
@@ -6,6 +6,7 @@ const ASSETS = [
   '/app.js?v=1.0.0',
   '/assets/og-image.jpg?v=1.0.0',
   '/favicon.jpg',
+  '/favicon.ico',
   '/assets/logo.jpg',
   '/privacidad.html',
   '/terminos.html'
