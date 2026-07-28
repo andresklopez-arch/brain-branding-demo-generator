@@ -1096,3 +1096,52 @@ body.light-theme .user-avatar {
   box-shadow: 0 15px 35px rgba(99, 102, 241, 0.12);
 }
 
+/* ════════════════ PRINT MEDIA STYLES (PDF EXPORT) ════════════════ */
+@media print {
+  body *, html * {
+    visibility: hidden;
+  }
+  
+  #cotizador, #cotizador * {
+    visibility: visible;
+  }
+  
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  #cotizador {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+  }
+  
+  #calc-pdf-btn, #calc-submit-btn, .calc-check {
+    display: none !important;
+  }
+  
+  .glass-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+    color: #000000 !important;
+  }
+  
+  h2, h3, h4, span, div, p {
+    color: #000000 !important;
+    text-shadow: none !important;
+  }
+  
+  .section-tag {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+}
+

@@ -10,6 +10,27 @@
     gtag('js', new Date());
     gtag('config', 'G-XXXXXXXXXX');
   </script>
+  <!-- Meta Pixel Code -->
+  <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '1234567890');
+    fbq('track', 'PageView');
+  </script>
+  <!-- Microsoft Clarity -->
+  <script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "clarity_id");
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6366f1">
@@ -316,6 +337,7 @@
             Este costo es estimado para el desarrollo final llave en mano. El prototipo inicial de demostración sigue siendo 100% gratuito.
           </p>
           <button id="calc-submit-btn" class="btn btn-primary" style="width: 100%;">Solicitar esta Configuración</button>
+          <button id="calc-pdf-btn" class="btn" style="width: 100%; margin-top: 12px; font-size: 13px; padding: 10px 15px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: var(--text-main); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">📄 Descargar Propuesta PDF</button>
         </div>
       </div>
     </section>
@@ -539,6 +561,12 @@
             <div class="form-group">
               <label for="contact-desc">Cuéntanos sobre tu idea de software</label>
               <textarea id="contact-desc" rows="4" placeholder="Ej. Necesitamos un sistema de pedidos en línea con un panel para cocina y notificaciones por WhatsApp..." required></textarea>
+            </div>
+            <div class="form-group" style="display: flex; gap: 10px; align-items: flex-start; margin-top: 15px; margin-bottom: 15px;">
+              <input type="checkbox" id="contact-privacy-check" required style="width: 18px; height: 18px; margin-top: 2px; accent-color: var(--primary); cursor: pointer;">
+              <label for="contact-privacy-check" style="font-size: 12px; color: var(--text-muted); line-height: 1.4; cursor: pointer;">
+                Acepto la <a href="/privacidad.html" target="_blank" style="color: var(--primary); text-decoration: underline;">Política de Privacidad</a> y los <a href="/terminos.html" target="_blank" style="color: var(--primary); text-decoration: underline;">Términos de Servicio</a> de la agencia.
+              </label>
             </div>
             <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;">Enviar Propuesta por WhatsApp 💬</button>
           </form>

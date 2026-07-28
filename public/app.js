@@ -278,7 +278,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
     
-    calcChecks.forEach(chk => chk.addEventListener('change', updateEstimate));
+    calcChecks.forEach(chk => chk.addEventListener('change', () => {
+      updateEstimate();
+      if (typeof gtag === 'function') {
+        gtag('event', 'select_saas_module', {
+          event_category: 'calculator',
+          event_label: chk.parentElement.querySelector('span').textContent,
+          value: parseInt(chk.getAttribute('data-price'))
+        });
+      }
+    }));
     updateEstimate(); // Inicializar gráfico
     
     const calcSubmitBtn = document.getElementById('calc-submit-btn');
@@ -416,14 +425,59 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  let passcodeAttempts = 0;
+  let passcodeLockoutTimer = null;
+
   if (submitPasscodeBtn) {
     const checkPasscode = () => {
-      if (passcodeInput && passcodeInput.value.trim() === 'BB2026') {
+      if (passcodeAttempts >= 5) return;
+      
+      const enteredCode = passcodeInput ? passcodeInput.value.trim() : '';
+      if (enteredCode === 'BB2026') {
+        passcodeAttempts = 0;
+        if (typeof gtag === 'function') {
+          gtag('event', 'unlock_private_portal', { event_category: 'security', event_label: 'Success' });
+        }
         window.location.href = targetPortalUrl;
       } else {
-        if (passcodeError) passcodeError.style.display = 'block';
+        passcodeAttempts++;
+        if (typeof gtag === 'function') {
+          gtag('event', 'unlock_private_portal_fail', { event_category: 'security', event_label: `Attempt ${passcodeAttempts}` });
+        }
+        
+        if (passcodeAttempts >= 5) {
+          submitPasscodeBtn.disabled = true;
+          if (passcodeInput) passcodeInput.disabled = true;
+          if (passcodeError) {
+            passcodeError.style.display = 'block';
+            let timeLeft = 60;
+            passcodeError.textContent = `Demasiados intentos. Bloqueado por ${timeLeft}s.`;
+            
+            passcodeLockoutTimer = setInterval(() => {
+              timeLeft--;
+              passcodeError.textContent = `Demasiados intentos. Bloqueado por ${timeLeft}s.`;
+              if (timeLeft <= 0) {
+                clearInterval(passcodeLockoutTimer);
+                passcodeAttempts = 0;
+                submitPasscodeBtn.disabled = false;
+                if (passcodeInput) {
+                  passcodeInput.disabled = false;
+                  passcodeInput.value = '';
+                  passcodeInput.focus();
+                }
+                passcodeError.style.display = 'none';
+              }
+            }, 1000);
+          }
+        } else {
+          if (passcodeError) {
+            passcodeError.style.display = 'block';
+            passcodeError.textContent = `Clave incorrecta. (${passcodeAttempts}/5 intentos)`;
+          }
+        }
       }
     };
+
     submitPasscodeBtn.addEventListener('click', checkPasscode);
     if (passcodeInput) {
       passcodeInput.addEventListener('keypress', (e) => {
@@ -452,4 +506,18 @@ document.addEventListener('DOMContentLoaded', () => {
       card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)';
     });
   });
+
+  // 16. Print / Download PDF Proposal
+  const calcPdfBtn = document.getElementById('calc-pdf-btn');
+  if (calcPdfBtn) {
+    calcPdfBtn.addEventListener('click', () => {
+      if (typeof gtag === 'function') {
+        gtag('event', 'download_proposal_pdf', {
+          event_category: 'engagement',
+          event_label: 'SaaS Calculator'
+        });
+      }
+      window.print();
+    });
+  }
 });
