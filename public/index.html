@@ -1028,8 +1028,10 @@
                 if (s7Title) s7Title.innerHTML = t.scene7Title;
                 if (s7Sub) s7Sub.innerHTML = t.scene7Sub;
                 
-                document.querySelector('.cta-btn').textContent = t.btnCta;
-                document.querySelector('.qr-label').textContent = t.qrLabel;
+                const ctaBtn = document.querySelector('.cta-btn');
+                if (ctaBtn) ctaBtn.textContent = t.btnCta;
+                const qrLabel = document.querySelector('.qr-label');
+                if (qrLabel) qrLabel.textContent = t.qrLabel;
             }
         }
 
@@ -1126,14 +1128,17 @@
         resize(); initStars(); animateStars();
 
         // ── Sugerencia 2: GENERAR QR CODE ──
-        new QRCode(document.getElementById('qr-code'), {
-            text: 'https://wa.me/527712339238?text=Hola,%20Brain%20Branding.%20Quiero%20empezar%20mi%20imperio%20digital.',
-            width: 160,
-            height: 160,
-            colorDark: '#000000',
-            colorLight: '#ffffff',
-            correctLevel: QRCode.CorrectLevel.H
-        });
+        const qrContainer = document.getElementById('qr-code');
+        if (qrContainer) {
+            new QRCode(qrContainer, {
+                text: 'https://wa.me/527712339238?text=Hola,%20Brain%20Branding.%20Quiero%20empezar%20mi%20imperio%20digital.',
+                width: 160,
+                height: 160,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
 
         // ── Sugerencia 1: MOTOR DE MÚSICA AMBIENTAL DINÁMICA PROGRESIVA ──
         let audioCtx = null;
