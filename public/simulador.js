@@ -2187,186 +2187,246 @@ function updateWhatsAppLink() {
 
 // ── UPDATE IA ADVICE BY TAB ──
 function updateAIAdvice(tabId) {
-  const adviceEl = document.getElementById('ai-advisor-advice');
-  if (!adviceEl) return;
-  
-  if (profile.aiAdvices && profile.aiAdvices[tabId]) {
-    adviceEl.textContent = profile.aiAdvices[tabId].replace(/{bizName}/g, bizName).replace(/{bizProblem}/g, bizProblem);
-  } else {
-    // Fallback if not defined or custom
-    const genericAdvices = {
-      asistente: "Consejo IA: Automatizar la atención de primer contacto mediante WhatsApp Business API reduce los costos operativos de soporte técnico y atención a clientes hasta en un 40%.",
-      pos: "Consejo IA: Emitir facturas fiscales automáticas en el Punto de Venta con timbrado SAT en la nube disminuye el trabajo del equipo contable en un 70% al cierre mensual.",
-      web: "Consejo IA: Un sitio web optimizado para SEO local e indexado correctamente en Google Maps incrementa las visitas presenciales a tu negocio un 35%.",
-      erp: profile.aiAdvice || "Consejo IA: Automatizar el flujo de tus procesos operativos te ahorra hasta 22 horas de tareas manuales repetitivas a la semana."
-    };
-    adviceEl.textContent = genericAdvices[tabId];
-  }
+  // Obsoleted
 }
 
-// ── INTERACTIVE IA DIAGNOSTIC ENGINE ──
-document.getElementById('trigger-diagnostic-btn').addEventListener('click', () => {
-  const overlay = document.getElementById('diagnostic-overlay');
-  const scanner = document.getElementById('diagnostic-scanner');
-  const report = document.getElementById('diagnostic-report-card');
-  const status = document.getElementById('scanner-status');
+// ── AUTONOMOUS PERSONAL ASSISTANT DEMO ENGINE ──
+let assistantAutoInterval = null;
+let assistantStepIndex = 0;
+let isSimulationPaused = false;
+let userResumeTimeout = null;
+
+const assistantScenarios = [
+  {
+    title: "Atendiendo Cliente (Ventas)",
+    channel: "whatsapp",
+    logs: [
+      "[NLP] Detectando intención del usuario: 'Consulta de precios'...",
+      "[DB] query_pricing_database(sector: '" + bizSector + "')",
+      "[Stripe_API] Generando link de pago dinámico seguro..."
+    ],
+    incoming: "Hola! ¿Cuáles son los precios de sus servicios y formas de pago para mi negocio?",
+    outgoing: "[PAYMENT_CARD]|Servicio de " + bizSector + "|Cotización de servicio a la medida para solucionar " + bizProblem + "|" + (profile.posProducts[1] ? '$' + profile.posProducts[1].price + '.00 MXN' : '$1,500.00 MXN'),
+    vars: { last_intent: "cotizacion_precios", active_channel: "whatsapp", client_status: "Interesado" }
+  },
+  {
+    title: "Organizando Correos Entrantes",
+    channel: "widget",
+    logs: [
+      "[RPA] Buscando correos no leídos en Inbox corporativo...",
+      "[OCR_Engine] Procesando archivo adjunto 'factura_proveedor.pdf'...",
+      "[ERP_API] Insertar cuenta por pagar en base de datos contable..."
+    ],
+    incoming: "📩 [SISTEMA: CORREO] Entrada de correo de proveedora@almacen.com con asunto: 'Factura pendiente de pago y actualización de stock'.",
+    outgoing: "✅ **Acción Autónoma**: Recibí el correo de tu proveedor, extraje los datos de la factura e indexé la cuenta por pagar en tu ERP contable. También redacté un correo de confirmación de trámite en tus borradores.",
+    vars: { last_intent: "organizar_correos", active_channel: "widget", accounts_payable: "actualizado" }
+  },
+  {
+    title: "Reporte de Datos Financieros",
+    channel: "messenger",
+    logs: [
+      "[SQL] query_sales_records(branch: 'all', date: 'yesterday')",
+      "[NLP] Formateando resumen de desempeño operativo para chat..."
+    ],
+    incoming: "Hola, ¿me das las estadísticas de ventas generales de ayer?",
+    outgoing: "Aquí tienes el reporte de ayer para **" + bizName + "**:\n📈 **Ventas Totales**: $14,850.00 MXN (+12% vs promedio)\n💳 **Tarjeta**: 65% | 💵 **Efectivo**: 35%\n🏆 **Producto más vendido**: Insumo Premium.\n*Estado de Resultados del ERP totalmente sincronizado.*",
+    vars: { last_intent: "reporte_ventas", active_channel: "messenger", sales_trend: "positivo" }
+  },
+  {
+    title: "Recordatorios de Citas Urgentes",
+    channel: "whatsapp",
+    logs: [
+      "[Calendar] check_meeting_details(id: 'inv-903')",
+      "[Google_Maps_API] Buscando tráfico a Paseo de la Reforma 405...",
+      "[RPA] Solicitando Uber ejecutivo de forma automática..."
+    ],
+    incoming: "📅 [CALENDARIO] Recordatorio: Junta de negocios clave en 15 minutos con cliente corporativo.",
+    outgoing: "🔔 **Recordatorio**: Tienes la junta de negocios en 15 minutos. El tráfico es moderado. He abierto los documentos de presentación en tu laptop y solicité un Uber para tu traslado. ¡Buen viaje!",
+    vars: { last_intent: "recordatorio_citas", active_channel: "whatsapp", uber_requested: true }
+  },
+  {
+    title: "Resumen de Minuta de Junta",
+    channel: "widget",
+    logs: [
+      "[SpeechToText] Procesando audio 'minuta_planeacion.wav' con Whisper...",
+      "[NLP] Extrayendo puntos de acuerdo y asignando responsables..."
+    ],
+    incoming: "🎙️ [SISTEMA: AUDIO] Procesar minuta de la junta de planeación mensual finalizada (12 min).",
+    outgoing: "📝 **Resumen de Junta Procesado**:\n• **Acuerdo 1**: Automatizar stock en POS (Responsable: Sistemas).\n• **Acuerdo 2**: Lanzar campaña de marketing Web (Responsable: Ventas).\n*Minuta guardada en la base de conocimiento de " + bizName + ".*",
+    vars: { last_intent: "resumen_junta", active_channel: "widget", knowledge_base: "actualizada" }
+  },
+  {
+    title: "Agendando Llamadas en Calendario",
+    channel: "messenger",
+    logs: [
+      "[Calendar] search_free_slots(date: 'tomorrow', duration: '30m')",
+      "[Calendar_API] insert_event(title: 'Llamada Técnica - " + bizName + "')"
+    ],
+    incoming: "Hola, ¿tienen espacio mañana para una llamada técnica de soporte?",
+    outgoing: "Entendido. He agendado la llamada técnica para mañana a las 4:30 PM en el espacio libre de tu Google Calendar. He enviado la invitación por correo electrónico al cliente.",
+    vars: { last_intent: "agendar_llamada", active_channel: "messenger", calendar_synced: true }
+  },
+  {
+    title: "Llamadas y Buzón de Voz",
+    channel: "whatsapp",
+    logs: [
+      "[SpeechToText] Transcribiendo mensaje de voz entrante...",
+      "[NLP] Clasificando sentimiento del mensaje: 'Satisfecho'..."
+    ],
+    incoming: "📞 [SISTEMA: BUZÓN] Mensaje de voz entrante de Cliente Satisfecho (0:45s).",
+    outgoing: "📞 **Buzón de Voz Transcrito**: El cliente llamó para felicitarlos por el gran servicio y consultar horarios. Le envié un WhatsApp automatizado con los horarios del fin de semana.",
+    vars: { last_intent: "buzon_voz", active_channel: "whatsapp", client_sentiment: "Feliz" }
+  },
+  {
+    title: "Conciliación de Hojas de Excel",
+    channel: "widget",
+    logs: [
+      "[Excel] parse_csv_rows('conciliaciones_bancarias.csv')...",
+      "[ERP_API] Comparando movimientos bancarios contra facturas...",
+      "[IA_AUDIT] Buscando discrepancias fiscales..."
+    ],
+    incoming: "📊 [SISTEMA: EXCEL] Archivo 'conciliaciones_bancarias.csv' cargado en la nube corporativa.",
+    outgoing: "📊 **Análisis Contable**: Procesé 140 transacciones de Excel. Encontré 1 discrepancia de $120.00 MXN en la factura F-409. He marcado la celda en rojo en la hoja de cálculo y notificado al contador.",
+    vars: { last_intent: "conciliacion_excel", active_channel: "widget", discrepancy_found: true }
+  },
+  {
+    title: "Reservaciones de Restaurante",
+    channel: "messenger",
+    logs: [
+      "[OpenTable_API] Buscando mesas hoy 8:00 PM para 4 personas cerca de Lomas...",
+      "[API] Reservar mesa confirmada en Rosetta..."
+    ],
+    incoming: "Reserva una mesa de negocios para cenar hoy con 3 socios.",
+    outgoing: "🍽️ **Reserva Confirmada**: Mesa reservada para 4 personas hoy a las 8:00 PM en el restaurante *Rosetta*. He enviado la confirmación en formato de tarjeta digital a tu correo y calendario.",
+    vars: { last_intent: "reservacion_restaurante", active_channel: "messenger", reservation_confirmed: true }
+  },
+  {
+    title: "Recomendación de Citas de Negocios",
+    channel: "whatsapp",
+    logs: [
+      "[Google_Maps] query_places(type: 'cafe', rating: '>4.5', keyword: 'business, quiet')"
+    ],
+    incoming: "Recomiéndame un café tranquilo para una junta de negocios rápida cerca de la oficina.",
+    outgoing: "📍 **Lugares recomendados para juntas**:\n1. *Café Toscano* (Terraza tranquila y buen internet).\n2. *Lalo!* (Espacio amplio, ambiente ejecutivo).\n3. *Piso 12 Ejecutivo* (Privacidad total y salas de juntas).",
+    vars: { last_intent: "recomendar_lugares", active_channel: "whatsapp", rating_limit: 4.5 }
+  },
+  {
+    title: "Recordatorio de Juntas por Prioridad",
+    channel: "widget",
+    logs: [
+      "[Calendar] query_today_meetings(status: 'pending')",
+      "[IA_PRIORITY] Clasificando juntas por nivel de importancia y urgencia..."
+    ],
+    incoming: "Dime qué reuniones tengo pendientes para el resto del día.",
+    outgoing: "📅 **Reuniones por Prioridad para hoy**:\n• 🔴 **Alta (16:30)**: Cierre de Contrato con Inversionistas (Sala Principal).\n• 🟡 **Media (17:45)**: Estatus de operaciones de la sucursal Centro.\n• 🟢 **Baja (19:00)**: Charla informal con el equipo de soporte.",
+    vars: { last_intent: "prioridad_juntas", active_channel: "widget", pending_meetings_count: 3 }
+  }
+];
+
+function runAutonomousAssistantStep() {
+  if (isSimulationPaused) return;
+
+  const panel = document.getElementById('panel-asistente');
+  if (!panel || !panel.classList.contains('active')) return;
+
+  const step = assistantScenarios[assistantStepIndex];
   
-  overlay.style.display = 'flex';
-  scanner.style.display = 'flex';
-  report.style.display = 'none';
+  const themeBtn = document.querySelector(`.chat-theme-toggle-btn[data-theme="${step.channel}"]`);
+  if (themeBtn) {
+    themeBtn.click();
+  }
+
+  if (assistantStepIndex === 0) {
+    document.getElementById('chat-messages').innerHTML = '';
+  }
+
+  const statusEl = document.getElementById('chat-simulation-status');
+  if (statusEl) {
+    statusEl.textContent = `Paso: ${step.title}`;
+  }
+
+  const logsEl = document.getElementById('agent-tool-logs');
+  if (logsEl) {
+    logsEl.innerHTML = '';
+  }
   
-  // Set up animation phases
-  const statuses = [
-    { text: "Accediendo al motor cognitivo de Brain Branding...", delay: 0 },
-    { text: `Analizando el sector: "${bizSector}"...`, delay: 600 },
-    { text: `Deconstruyendo cuello de botella: "${bizProblem}"...`, delay: 1300 },
-    { text: "Calculando proyecciones de ROI y automatizaciones...", delay: 2000 }
-  ];
-  
-  statuses.forEach(phase => {
+  step.logs.forEach((log, index) => {
     setTimeout(() => {
-      status.textContent = phase.text;
-    }, phase.delay);
+      if (logsEl) {
+        logsEl.innerHTML += `<div>&gt; ${log}</div>`;
+        logsEl.scrollTop = logsEl.scrollHeight;
+      }
+    }, index * 300);
   });
-  
+
   setTimeout(() => {
-    // Hide scanner, show report
-    scanner.style.display = 'none';
-    report.style.display = 'flex';
+    if (isSimulationPaused) return;
+    addChatMessage('incoming', step.incoming.replace(/{bizName}/g, bizName).replace(/{bizSector}/g, bizSector).replace(/{bizProblem}/g, bizProblem));
     
-    // Fill diagnostic report details
-    document.querySelectorAll('.biz-name').forEach(el => el.textContent = bizName);
-    
-    // Calculate smart values based on sector or custom
-    let hrsSaved = 22;
-    let efficiencyInc = 45;
-    let analysisText = "";
-    let steps = [];
-    let technicalDetails = {};
-    
-    if (bizSector.toLowerCase().includes("restaurante")) {
-      hrsSaved = 18;
-      efficiencyInc = 35;
-      analysisText = `En el sector de Restaurantes, el problema "${bizProblem}" se origina por la desconexión entre el personal de servicio y cocina, provocando mermas de insumos críticos e insatisfacción del comensal.`;
-      steps = [
-        "**Fase 1 (Día 1-15)**: Desplegar comandas digitales en tablets sincronizadas con cocina para reducir los tiempos de entrega un 35%.",
-        "**Fase 2 (Día 16-30)**: Integrar bases de datos de inventario con predicción de demanda para ingredientes perecederos.",
-        "**Fase 3 (Día 31+)**: Habilitar autofacturación vía QR en tickets y encuestas de satisfacción automatizadas."
-      ];
-      technicalDetails = {
-        0: `Para la Fase 1 en ${bizName}, implementaremos una interfaz táctil PWA responsiva conectada por WebSockets directos a una pantalla de cocina. Los pedidos ingresan de inmediato con prioridad automática de preparación, reduciendo el papeleo y eliminando el 100% de los errores de comanda escrita.`,
-        1: `En la Fase 2, programaremos un motor lógico local en NodeJS que cruza el historial de platos vendidos con la disponibilidad de ingredientes en el POS. Al predecir el flujo de comensales semanales, te sugerirá las cantidades óptimas de compra para pescados, carnes y verduras, evitando mermas.`,
-        2: `Para la Fase 3, integraremos un generador de CFDI con timbrado automático directo a la pasarela de pagos SAT. El cliente final puede escanear su ticket físico, ingresar su RFC y descargar su factura fiscal en PDF/XML en menos de 2 minutos sin intervención del cajero.`
-      };
-    } else if (bizSector.toLowerCase().includes("tienda") || bizSector.toLowerCase().includes("comercio")) {
-      hrsSaved = 20;
-      efficiencyInc = 40;
-      analysisText = `Para Comercios, la ineficiencia de "${bizProblem}" deviene de no sincronizar las existencias entre la tienda física y digital, perdiendo conversiones valiosas en temporadas altas.`;
-      steps = [
-        "**Fase 1 (Día 1-15)**: Implementar control de inventario omnicanal en tiempo real unificando POS y tienda en línea.",
-        "**Fase 2 (Día 16-30)**: Automatizar alertas de stock crítico y reordenes de proveedores con reglas lógicas de negocio.",
-        "**Fase 3 (Día 31+)**: Lanzar campañas automatizadas de retención de clientes inactivos basadas en historial de compras."
-      ];
-      technicalDetails = {
-        0: `La Fase 1 en ${bizName} conectará el software de cobro físico (POS) con las APIs de tu tienda en línea (Shopify/WooCommerce). Cada transacción en caja descuenta stock de forma inmediata en la web, previniendo compras accidentales de artículos agotados.`,
-        1: `Para la Fase 2, desarrollaremos un gestor de almacenes centralizado que detecta niveles mínimos de stock. Cuando un producto de alta rotación baja del límite de seguridad, el sistema redacta y envía automáticamente una orden de compra en PDF al proveedor correspondiente.`,
-        2: `En la Fase 3, usaremos algoritmos de retención (CRM) que identifican comportamientos de compra. Si un cliente frecuente deja de comprar por 45 días, el sistema le enviará un cupón dinámico del 15% por WhatsApp de forma autónoma.`
-      };
-    } else {
-      // Custom / generic
-      // Deterministic but random-looking numbers based on string lengths
-      hrsSaved = 14 + (bizName.length % 11);
-      efficiencyInc = 35 + (bizProblem.length % 21);
-      analysisText = `El cuello de botella detectado en ${bizSector} bajo el problema "${bizProblem}" genera pérdidas de productividad severas debido a procesos administrativos y operativos manuales.`;
-      steps = [
-        `**Fase 1 (Día 1-15)**: Integrar Asistente Conversacional IA para automatizar dudas recurrentes sobre ${bizSector}.`,
-        `**Fase 2 (Día 16-30)**: Diseñar un flujo en la nube a medida para organizar y erradicar tareas repetitivas relacionadas con "${bizProblem}".`,
-        `**Fase 3 (Día 31+)**: Establecer dashboards en tiempo real con alertas preventivas para evitar que el cuello de botella vuelva a surgir.`
-      ];
-      technicalDetails = {
-        0: `En la Fase 1, desplegaremos un bot conversacional con procesamiento de lenguaje natural (NLP) entrenado específicamente con las políticas y tarifas de ${bizName}. Resolverá el 80% de preguntas frecuentes por WhatsApp en segundos.`,
-        1: `La Fase 2 estructurará una base de datos relacional PostgreSQL con un frontend web responsivo a medida. Automatizará los registros de entrada/salida y las notificaciones para erradicar las tareas manuales repetitivas que provocan: "${bizProblem}".`,
-        2: `En la Fase 3, configuraremos un panel de control con métricas clave (KPIs) e integraciones Webhook para monitorear el desempeño del negocio de ${bizSector} en vivo, alertando por correo y chat si ocurren anomalías operativas.`
-      };
-    }
-    
-    // Calculate Return on Investment savings
-    // Costo promedio de hora operativa = $75 MXN
-    const monthlySavingsVal = Math.round(hrsSaved * 75 * 4.33);
-    const formattedSavings = monthlySavingsVal.toLocaleString('es-MX');
-    
-    document.getElementById('diag-time-saved').textContent = hrsSaved;
-    document.getElementById('diag-efficiency').textContent = efficiencyInc;
-    document.getElementById('diag-roi-savings').textContent = formattedSavings;
-    document.getElementById('diag-analysis-text').textContent = analysisText;
-    
-    // Animate capacity chart
-    const targetCapacity = 80 + (efficiencyInc % 18);
-    document.getElementById('diag-chart-capacity').textContent = `${targetCapacity}% de capacidad`;
-    const chartBar = document.getElementById('diag-chart-bar');
-    chartBar.style.width = '0%';
     setTimeout(() => {
-      chartBar.style.width = `${targetCapacity}%`;
-    }, 100);
-    
-    const stepsUl = document.getElementById('diag-steps');
-    stepsUl.innerHTML = '';
-    
-    const detailsDrawer = document.getElementById('diag-step-details');
-    const detailsTitle = document.getElementById('diag-step-details-title');
-    const detailsBody = document.getElementById('diag-step-details-body');
-    
-    // Reset details drawer
-    detailsDrawer.style.display = 'none';
-    
-    steps.forEach((step, idx) => {
-      const li = document.createElement('li');
-      li.innerHTML = step.replace(/\*\frac{.*?}{.*?}/g, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      if (isSimulationPaused) return;
       
-      li.addEventListener('click', () => {
-        // Toggle selected styling
-        stepsUl.querySelectorAll('li').forEach(item => item.classList.remove('selected-phase'));
-        li.classList.add('selected-phase');
-        
-        // Show detail in drawer
-        detailsDrawer.style.display = 'block';
-        detailsTitle.textContent = `Detalle Técnico: Fase ${idx + 1}`;
-        detailsBody.textContent = technicalDetails[idx];
-        
-        // Soft scroll into view
-        detailsDrawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      });
+      const outgoingMsg = step.outgoing.replace(/{bizName}/g, bizName).replace(/{bizSector}/g, bizSector).replace(/{bizProblem}/g, bizProblem);
+      addChatMessage('outgoing', outgoingMsg);
       
-      stepsUl.appendChild(li);
-    });
-    
-    // Configure WhatsApp Button inside Diagnostic Report
-    const phone = '525638165507';
-    const msgText = `Hola Brain Branding, acabo de generar mi Reporte de Diagnóstico IA para mi negocio *${bizName}* (Giro: ${bizSector}). El reporte estima un ahorro de ${hrsSaved} horas semanales y eficiencia de +${efficiencyInc}%. Me interesa programar una sesión estratégica para implementar este plan y solucionar: "${bizProblem}".`;
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msgText)}`;
-    
-    const wBtn = document.getElementById('diag-whatsapp-btn');
-    wBtn.onclick = () => {
-      window.open(whatsappUrl, '_blank');
-    };
-    
-    if (typeof confetti === 'function') {
-      confetti({ particleCount: 80, spread: 60 });
+      memoryVariables = { ...memoryVariables, ...step.vars };
+      
+      const latency = Math.round(Math.random() * 220 + 80);
+      updateTelemetry(step.incoming, outgoingMsg, latency);
+      
+      assistantStepIndex = (assistantStepIndex + 1) % assistantScenarios.length;
+    }, 1800);
+
+  }, 1000);
+}
+
+function startAutonomousAssistantLoop() {
+  if (assistantAutoInterval) clearInterval(assistantAutoInterval);
+  
+  runAutonomousAssistantStep();
+  
+  assistantAutoInterval = setInterval(() => {
+    runAutonomousAssistantStep();
+  }, 7500);
+}
+
+function pauseSimulationOnUserAction() {
+  isSimulationPaused = true;
+  const statusEl = document.getElementById('chat-simulation-status');
+  if (statusEl) {
+    statusEl.textContent = "Interrupción Manual Activa";
+    statusEl.style.color = "#ef4444";
+  }
+  
+  if (userResumeTimeout) clearTimeout(userResumeTimeout);
+  
+  userResumeTimeout = setTimeout(() => {
+    isSimulationPaused = false;
+    if (statusEl) {
+      statusEl.textContent = "Simulación Autónoma Activa";
+      statusEl.style.color = "#fbbf24";
     }
-    
-  }, 2600);
+    printToolLog("[SYSTEM] Reanudando ciclo autónomo del Asistente...");
+    runAutonomousAssistantStep();
+  }, 22000);
+}
+
+document.getElementById('chat-user-input').addEventListener('focus', pauseSimulationOnUserAction);
+document.getElementById('chat-user-input').addEventListener('keypress', (e) => {
+  pauseSimulationOnUserAction();
+});
+document.getElementById('send-chat-btn').addEventListener('click', pauseSimulationOnUserAction);
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    startAutonomousAssistantLoop();
+  }, 8000);
 });
 
-// Close diagnostic modal actions
-const closeBtn = document.getElementById('close-diagnostic-btn');
-if (closeBtn) {
-  closeBtn.addEventListener('click', () => {
-    document.getElementById('diagnostic-overlay').style.display = 'none';
+document.querySelectorAll('.tab-link').forEach(link => {
+  link.addEventListener('click', () => {
+    if (link.getAttribute('data-tab') === 'asistente') {
+      setTimeout(startAutonomousAssistantLoop, 200);
+    }
   });
-}
-
-document.getElementById('diagnostic-overlay').addEventListener('click', (e) => {
-  if (e.target.id === 'diagnostic-overlay') {
-    document.getElementById('diagnostic-overlay').style.display = 'none';
-  }
 });
