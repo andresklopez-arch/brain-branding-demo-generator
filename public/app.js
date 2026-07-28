@@ -86,6 +86,25 @@ document.addEventListener('DOMContentLoaded', () => {
           }, 250);
         }
         
+        // Update more info button dynamic link & label
+        const targets = ["#detail-asistente-ia", "#detail-punto-venta", "#detail-pagina-web", "#detail-software-medida"];
+        const buttonLabels = [
+          "Ver ventajas de tu Asistente Personal IA",
+          "Ver ventajas de tu Punto de Venta",
+          "Ver ventajas de tu Página Web",
+          "Ver ventajas de tu Software a Medida"
+        ];
+        const moreInfoBtn = document.getElementById('hero-more-info-btn');
+        const moreInfoText = document.getElementById('more-info-text');
+        if (moreInfoBtn && moreInfoText) {
+          moreInfoBtn.style.opacity = '0';
+          setTimeout(() => {
+            moreInfoBtn.setAttribute('href', targets[wordIndex]);
+            moreInfoText.textContent = buttonLabels[wordIndex];
+            moreInfoBtn.style.opacity = '1';
+          }, 250);
+        }
+        
         // Update contact form message input dynamically if empty or template
         const templates = [
           "Hola! Me interesa diseñar mi Asistente Personal de IA para automatizar mis procesos.",
