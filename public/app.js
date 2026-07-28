@@ -169,4 +169,78 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 300);
     });
   }
+
+  // 7. Light/Dark Theme Toggle Logic
+  const themeToggleBtn = document.getElementById('theme-toggle-btn');
+  if (themeToggleBtn) {
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light-theme');
+      themeToggleBtn.textContent = '🌙';
+    } else {
+      themeToggleBtn.textContent = '☀️';
+    }
+    
+    themeToggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('light-theme');
+      const isLight = document.body.classList.contains('light-theme');
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+      themeToggleBtn.textContent = isLight ? '🌙' : '☀️';
+    });
+  }
+
+  // 8. Cybernetic Custom Cursor Logic (Only Desktop)
+  if (!window.matchMedia("(max-width: 968px)").matches) {
+    const cursor = document.createElement('div');
+    cursor.className = 'custom-cursor';
+    const follower = document.createElement('div');
+    follower.className = 'custom-cursor-follower';
+    document.body.appendChild(cursor);
+    document.body.appendChild(follower);
+
+    document.addEventListener('mousemove', (e) => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top = e.clientY + 'px';
+      
+      // Smooth lag effect for follower
+      setTimeout(() => {
+        follower.style.left = e.clientX + 'px';
+        follower.style.top = e.clientY + 'px';
+      }, 40);
+    });
+
+    // Scale cursor on hover
+    document.querySelectorAll('a, button, .service-card, .btn').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        cursor.style.width = '14px';
+        cursor.style.height = '14px';
+        cursor.style.backgroundColor = 'var(--secondary)';
+        follower.style.width = '42px';
+        follower.style.height = '42px';
+        follower.style.borderColor = 'var(--primary)';
+      });
+      el.addEventListener('mouseleave', () => {
+        cursor.style.width = '8px';
+        cursor.style.height = '8px';
+        cursor.style.backgroundColor = 'var(--primary)';
+        follower.style.width = '26px';
+        follower.style.height = '26px';
+        follower.style.borderColor = 'var(--secondary)';
+      });
+    });
+  }
+
+  // 9. Scroll Reveal Logic
+  const revealElements = document.querySelectorAll('.service-card, .showcase-preview, .showcase-content, .testimonial-card, .contact-card, .contact-info');
+  revealElements.forEach(el => el.classList.add('reveal'));
+
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+        revealObserver.unobserve(entry.target); // Trigger only once
+      }
+    });
+  }, { threshold: 0.15 });
+
+  revealElements.forEach(el => revealObserver.observe(el));
 });
