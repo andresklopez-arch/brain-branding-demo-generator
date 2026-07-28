@@ -235,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const isLight = document.body.classList.contains('light-theme');
       localStorage.setItem('theme', isLight ? 'light' : 'dark');
       themeToggleBtn.textContent = isLight ? '🌙' : '☀️';
+      themeToggleBtn.classList.toggle('rotated');
     });
   }
 
