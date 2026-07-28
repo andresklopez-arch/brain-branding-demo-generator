@@ -213,10 +213,13 @@
 
   <!-- NAVIGATION HEADER -->
   <header>
-    <a href="#inicio" class="logo-area">
-      <img src="/favicon.png" alt="Logo Brain Branding" style="height: 38px; object-fit: contain; margin-right: 10px;">
-      <div class="logo-text" style="line-height: 1.1; font-size: 15px;">Empoderando <span>Marcas</span><br><span style="font-size: 10px; font-weight: 500; color: var(--text-muted); -webkit-text-fill-color: initial; background: none; letter-spacing: 0.5px; display: block; margin-top: 1px;">Reprogramando Mentes</span></div>
-    </a>
+    <div style="display: flex; gap: 15px; align-items: center;">
+      <a href="#inicio" class="logo-area">
+        <img src="/favicon.png" alt="Logo Brain Branding" style="height: 38px; object-fit: contain; margin-right: 10px;">
+        <div class="logo-text" style="line-height: 1.1; font-size: 15px;">Empoderando <span>Marcas</span><br><span style="font-size: 10px; font-weight: 500; color: var(--text-muted); -webkit-text-fill-color: initial; background: none; letter-spacing: 0.5px; display: block; margin-top: 1px;">Reprogramando Mentes</span></div>
+      </a>
+      <button id="theme-toggle-btn" class="header-btn" style="padding: 0; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; font-size: 15px; cursor: pointer; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.02); color: var(--text-main);" title="Cambiar tema">🌓</button>
+    </div>
     <nav style="display: flex; gap: 10px; align-items: center;">
       <a href="#inicio" class="nav-link custom-tooltip" data-tooltip="Inicio" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">🏠</a>
       <a href="#servicios" class="nav-link custom-tooltip" data-tooltip="Servicios" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">🛠️</a>
@@ -225,11 +228,7 @@
       <a href="#contacto" class="nav-link custom-tooltip" data-tooltip="Contacto" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">✉️</a>
       <a href="/propuesta_campana/" class="nav-link custom-tooltip" data-tooltip="Campaña IA" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0; color: #00e5ff; font-weight: bold;">⚡</a>
     </nav>
-    <div style="display: flex; gap: 12px; align-items: center;">
-      <button id="pwa-install-btn" class="header-btn" style="display: none; padding: 0 15px; align-items: center; justify-content: center; height: 40px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.02); color: var(--text-main); gap: 6px;" title="Instalar aplicación">📲 Instalar App</button>
-      <button id="theme-toggle-btn" class="header-btn" style="padding: 0; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; font-size: 16px; cursor: pointer; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.02); color: var(--text-main);" title="Cambiar tema">🌓</button>
-      <a href="/portal/" class="header-btn">Acceder al Portal</a>
-    </div>
+    <button id="pwa-install-btn" style="display: none !important;"></button>
   </header>
 
   <!-- MAIN VIEWPORT -->
