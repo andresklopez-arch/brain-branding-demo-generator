@@ -302,47 +302,61 @@ document.addEventListener('DOMContentLoaded', () => {
     el.addEventListener('blur', validate);
   });
 
-  // Handle Form Submit
+  // Handle Form Submit / Start Simulation Action
+  const startSimAction = (e) => {
+    if (e) e.preventDefault();
+
+    const nameEl = document.getElementById('sim-business-name');
+    const sectorEl = document.getElementById('sim-business-sector');
+    const problemEl = document.getElementById('sim-business-problem');
+
+    if (!nameEl || !sectorEl || !problemEl) return;
+
+    const bizName = nameEl.value.trim();
+    const bizSector = sectorEl.value.trim();
+    const bizProblem = problemEl.value.trim();
+
+    if (!bizName || !bizSector || !bizProblem) {
+      alert('Por favor completa todos los campos obligatorios (*).');
+      return;
+    }
+
+    const bizStyle = (document.getElementById('sim-business-style') && document.getElementById('sim-business-style').value) || 'ultra-moderno';
+    const nowStr = Date.now().toString();
+
+    // Store in safeSessionStorage
+    safeSessionStorage.setItem('sim_session_active', 'true');
+    safeSessionStorage.setItem('sim_session_start', nowStr);
+    safeSessionStorage.setItem('sim_biz_name', bizName);
+    safeSessionStorage.setItem('sim_biz_sector', bizSector);
+    safeSessionStorage.setItem('sim_biz_problem', bizProblem);
+    safeSessionStorage.setItem('sim_biz_style', bizStyle);
+    safeSessionStorage.setItem('sim_biz_logo', uploadedLogoDataUrl || '');
+    safeSessionStorage.setItem('sim_active_service', activeSimulatorService);
+
+    // Store in safeLocalStorage
+    safeLocalStorage.setItem('sim_session_active', 'true');
+    safeLocalStorage.setItem('sim_session_start', nowStr);
+    safeLocalStorage.setItem('sim_biz_name', bizName);
+    safeLocalStorage.setItem('sim_biz_sector', bizSector);
+    safeLocalStorage.setItem('sim_biz_problem', bizProblem);
+    safeLocalStorage.setItem('sim_biz_style', bizStyle);
+    safeLocalStorage.setItem('sim_biz_logo', uploadedLogoDataUrl || '');
+    safeLocalStorage.setItem('sim_active_service', activeSimulatorService);
+
+    // Close modal
+    hideSimModal();
+
+    // Navigate smoothly to simulator.html
+    window.location.href = '/simulador.html';
+  };
+
+  const startSimBtn = document.getElementById('start-sim-btn');
+  if (startSimBtn) {
+    startSimBtn.addEventListener('click', startSimAction);
+  }
   if (simSetupForm) {
-    simSetupForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-
-      const bizName = document.getElementById('sim-business-name').value.trim();
-      const bizSector = document.getElementById('sim-business-sector').value.trim();
-      const bizProblem = document.getElementById('sim-business-problem').value.trim();
-      const bizStyle = document.getElementById('sim-business-style').value;
-
-      const nowStr = Date.now().toString();
-
-      // Store in safeSessionStorage
-      safeSessionStorage.setItem('sim_session_active', 'true');
-      safeSessionStorage.setItem('sim_session_start', nowStr);
-      safeSessionStorage.setItem('sim_biz_name', bizName);
-      safeSessionStorage.setItem('sim_biz_sector', bizSector);
-      safeSessionStorage.setItem('sim_biz_problem', bizProblem);
-      safeSessionStorage.setItem('sim_biz_style', bizStyle);
-      safeSessionStorage.setItem('sim_biz_logo', uploadedLogoDataUrl || '');
-      safeSessionStorage.setItem('sim_active_service', activeSimulatorService);
-
-      // Store in safeLocalStorage
-      safeLocalStorage.setItem('sim_session_active', 'true');
-      safeLocalStorage.setItem('sim_session_start', nowStr);
-      safeLocalStorage.setItem('sim_biz_name', bizName);
-      safeLocalStorage.setItem('sim_biz_sector', bizSector);
-      safeLocalStorage.setItem('sim_biz_problem', bizProblem);
-      safeLocalStorage.setItem('sim_biz_style', bizStyle);
-      safeLocalStorage.setItem('sim_biz_logo', uploadedLogoDataUrl || '');
-      safeLocalStorage.setItem('sim_active_service', activeSimulatorService);
-
-      // Close modal
-      hideSimModal();
-
-      // Open simulator in new tab or navigate
-      const newWin = window.open('/simulador.html', '_blank');
-      if (!newWin || newWin.closed || typeof newWin.closed === 'undefined') {
-        window.location.href = '/simulador.html';
-      }
-    });
+    simSetupForm.addEventListener('submit', startSimAction);
   }
 
   // 1. Header scroll animation

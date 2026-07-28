@@ -1132,7 +1132,7 @@
         Ingresa los datos reales de tu negocio para generar un diagnóstico interactivo y un prototipo simulado a la medida de tu empresa.
       </p>
 
-      <form id="sim-setup-form" style="display: flex; flex-direction: column; gap: 15px;">
+      <form id="sim-setup-form" onsubmit="event.preventDefault(); return false;" style="display: flex; flex-direction: column; gap: 15px;">
         <div style="display: flex; flex-direction: column; gap: 6px;">
           <label style="font-size: 12px; font-weight: 700; color: #fff;">Nombre de tu Empresa / Negocio *</label>
           <input type="text" id="sim-business-name" required placeholder="Ej: Café Ciber, Boutique Nova" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 14px; box-sizing: border-box;">
@@ -1178,7 +1178,7 @@
 
         <div style="display: flex; gap: 12px; margin-top: 10px;">
           <button type="button" id="cancel-sim-btn" class="btn" style="flex: 1; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); cursor: pointer; font-weight: 700;">Cancelar</button>
-          <button type="submit" class="btn btn-primary" style="flex: 1; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;">✨ Iniciar Simulación</button>
+          <button type="button" id="start-sim-btn" class="btn btn-primary" style="flex: 1; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;">✨ Iniciar Simulación</button>
         </div>
       </form>
     </div>
