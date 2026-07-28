@@ -127,6 +127,12 @@ document.addEventListener('DOMContentLoaded', () => {
         chip.style.background = 'rgba(99, 102, 241, 0.1)';
         chip.classList.add('active-chip');
         verticalInput.value = chip.getAttribute('data-value');
+        if (typeof gtag === 'function') {
+          gtag('event', 'select_giro_chip', {
+            event_category: 'engagement',
+            event_label: chip.getAttribute('data-value')
+          });
+        }
       });
     });
   }
@@ -632,4 +638,49 @@ document.addEventListener('DOMContentLoaded', () => {
       window.print();
     });
   }
+
+  // 17. Real-Time Visual Field Validation
+  const validateInputs = ['contact-name', 'contact-business', 'contact-desc', 'contact-operation'];
+  validateInputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => {
+        if (el.value.trim().length >= 3) {
+          el.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+          el.style.boxShadow = '0 0 10px rgba(34, 197, 94, 0.1)';
+        } else {
+          el.style.borderColor = 'var(--border-color)';
+          el.style.boxShadow = 'none';
+        }
+      });
+    }
+  });
+
+  // 18. Google Analytics Event for FAB Click
+  const fab = document.getElementById('whatsapp-fab');
+  if (fab) {
+    fab.addEventListener('click', () => {
+      if (typeof gtag === 'function') {
+        gtag('event', 'click_whatsapp_fab', {
+          event_category: 'engagement',
+          event_label: 'WhatsApp FAB'
+        });
+      }
+    });
+  }
+
+  // 19. WhatsApp FAB Tooltip Auto-Show & Auto-Hide
+  setTimeout(() => {
+    const tooltip = document.getElementById('fab-tooltip');
+    if (tooltip) {
+      tooltip.style.opacity = '1';
+      tooltip.style.transform = 'translateY(0)';
+      
+      // Auto-hide after 6 seconds
+      setTimeout(() => {
+        tooltip.style.opacity = '0';
+        tooltip.style.transform = 'translateY(10px)';
+      }, 6000);
+    }
+  }, 5000);
 });
