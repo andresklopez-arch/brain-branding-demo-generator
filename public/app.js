@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typingElement) {
     const words = ["Asistente Personal IA", "Punto de Venta", "Página Web", "Software a Medida"];
     const descriptions = [
-      "En Brain Branding implementamos tu Asistente Personal de Inteligencia Artificial que puedes controlar desde Whatsapp o Telegram para que puedas disfrutar más de las cosas que valen la pena.",
+      "Implementamos tu Asistente Personal de Inteligencia Artificial que puedes controlar desde Whatsapp o Telegram para que puedas disfrutar más de las cosas que valen la pena.",
       "Controla tu negocio 24/7 desde cualquier lugar y/o dispositivo, administra tus inventarios, sucursales, facturación y cobros, todo a medida.",
       "Establece una presencia digital corporativa premium con tu Página Web, con el nombre de tu empresa en la WEB.",
       "Tu negocio no es igual a ningún otro, tu empresa no se tiene que amoldar al sistema, naturalmente debe ser al revés."
