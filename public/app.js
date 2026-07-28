@@ -310,31 +310,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const sectorEl = document.getElementById('sim-business-sector');
     const problemEl = document.getElementById('sim-business-problem');
 
-    if (!nameEl || !sectorEl || !problemEl) return;
+    const rawName = nameEl ? nameEl.value.trim() : '';
+    const rawSector = sectorEl ? sectorEl.value.trim() : '';
+    const rawProblem = problemEl ? problemEl.value.trim() : '';
 
-    const bizName = nameEl.value.trim();
-    const bizSector = sectorEl.value.trim();
-    const bizProblem = problemEl.value.trim();
-
-    // Highlight empty required fields with neon glow shake
-    let hasError = false;
-    [
-      { el: nameEl, val: bizName },
-      { el: sectorEl, val: bizSector },
-      { el: problemEl, val: bizProblem }
-    ].forEach(item => {
-      if (!item.val) {
-        hasError = true;
-        item.el.classList.add('shake-input');
-        setTimeout(() => item.el.classList.remove('shake-input'), 600);
-      }
-    });
-
-    if (hasError) {
-      const firstEmpty = [nameEl, sectorEl, problemEl].find(el => !el.value.trim());
-      if (firstEmpty) firstEmpty.focus();
-      return;
-    }
+    // Smart defaults so button NEVER fails
+    const bizName = rawName || 'Mi Empresa';
+    const bizSector = rawSector || 'Comercio / General';
+    const bizProblem = rawProblem || 'Optimización de tiempo y control de operaciones';
 
     // Lock button to prevent duplicate clicks
     const startBtn = document.getElementById('start-sim-btn');

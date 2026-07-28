@@ -1147,14 +1147,14 @@
 
       <form id="sim-setup-form" onsubmit="event.preventDefault(); return false;" style="display: flex; flex-direction: column; gap: 15px;">
         <div style="display: flex; flex-direction: column; gap: 6px;">
-          <label style="font-size: 12px; font-weight: 700; color: #fff;">Nombre de tu Empresa / Negocio *</label>
-          <input type="text" id="sim-business-name" required placeholder="Ej: Café Ciber, Boutique Nova" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 14px; box-sizing: border-box;">
+          <label style="font-size: 12px; font-weight: 700; color: #fff;">Nombre de tu Empresa / Negocio</label>
+          <input type="text" id="sim-business-name" placeholder="Ej: Café Ciber, Boutique Nova" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 14px; box-sizing: border-box;">
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 6px; position: relative;">
-          <label style="font-size: 12px; font-weight: 700; color: #fff;">Giro o Sector Comercial *</label>
+          <label style="font-size: 12px; font-weight: 700; color: #fff;">Giro o Sector Comercial</label>
           <div style="position: relative; width: 100%;">
-            <input type="text" id="sim-business-sector" required placeholder="Escribe tu sector (ej: Restaurante, Tienda, Consultoría...)" style="width: 100%; padding: 12px 40px 12px 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 14px; box-sizing: border-box;" autocomplete="off">
+            <input type="text" id="sim-business-sector" placeholder="Escribe tu sector (ej: Restaurante, Tienda, Consultoría...)" style="width: 100%; padding: 12px 40px 12px 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 14px; box-sizing: border-box;" autocomplete="off">
             <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; font-size: 14px;">🔍</span>
           </div>
           <!-- Floating Autocomplete List -->
@@ -1164,13 +1164,13 @@
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 6px;">
-          <label style="font-size: 12px; font-weight: 700; color: #fff;">¿Qué problemas o cuellos de botella deseas solucionar? *</label>
-          <textarea id="sim-business-problem" required rows="3" placeholder="Ej: Mis asistentes tardan mucho respondiendo dudas repetitivas, o tengo descontrol en inventario de mis sucursales..." style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 14px; line-height: 1.5; resize: none; box-sizing: border-box; font-family: inherit;"></textarea>
+          <label style="font-size: 12px; font-weight: 700; color: #fff;">¿Qué problemas o cuellos de botella deseas solucionar?</label>
+          <textarea id="sim-business-problem" rows="3" placeholder="Ej: Mis asistentes tardan mucho respondiendo dudas repetitivas, o tengo descontrol en inventario de mis sucursales..." style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 14px; line-height: 1.5; resize: none; box-sizing: border-box; font-family: inherit;"></textarea>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 6px;">
-          <label style="font-size: 12px; font-weight: 700; color: #fff;">Estilo de Diseño Requerido para tu Negocio (Sistemas y Web) *</label>
-          <select id="sim-business-style" required style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.98); border: 1px solid var(--border-color); color: #fff; font-size: 14px; box-sizing: border-box; cursor: pointer; font-family: inherit;">
+          <label style="font-size: 12px; font-weight: 700; color: #fff;">Estilo de Diseño Requerido para tu Negocio (Sistemas y Web)</label>
+          <select id="sim-business-style" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.98); border: 1px solid var(--border-color); color: #fff; font-size: 14px; box-sizing: border-box; cursor: pointer; font-family: inherit;">
             <option value="ultra-moderno" selected>✨ Diseño Ultra Moderno (Dark / Glassmorphism)</option>
             <option value="clasico-claro">☀️ Diseño Clásico en Color Claro (Light / Clean)</option>
             <option value="windows">🪟 Diseño Estilo Windows (Retro / Fluent UI)</option>
