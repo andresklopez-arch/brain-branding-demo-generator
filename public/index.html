@@ -132,13 +132,27 @@
     }
 
     /* MICRO-INTERACTIONS FOR NAV BUTTONS */
+    /* MICRO-INTERACTIONS & ENTRANCE FOR NAV BUTTONS */
+    @keyframes nav-item-entrance {
+      0% { opacity: 0; transform: translateY(-10px) scale(0.9); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
     header nav .nav-link {
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      opacity: 0;
+      animation: nav-item-entrance 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
+    header nav .nav-link:nth-child(1) { animation-delay: 0.05s; }
+    header nav .nav-link:nth-child(2) { animation-delay: 0.15s; }
+    header nav .nav-link:nth-child(3) { animation-delay: 0.25s; }
+    header nav .nav-link:nth-child(4) { animation-delay: 0.35s; }
+    header nav .nav-link:nth-child(5) { animation-delay: 0.45s; }
+    header nav .nav-link:nth-child(6) { animation-delay: 0.55s; }
+
     header nav .nav-link:hover {
       background: rgba(99, 102, 241, 0.15) !important;
       border-color: var(--primary) !important;
-      transform: scale(1.1) rotate(8deg);
+      transform: scale(1.1) rotate(8deg) !important;
       box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
     }
 

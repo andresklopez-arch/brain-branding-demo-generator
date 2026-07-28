@@ -683,4 +683,53 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 6000);
     }
   }, 5000);
+
+  // 20. Scroll Spy for Icon Nav links
+  const sections = document.querySelectorAll('section');
+  const navLinks = document.querySelectorAll('header nav .nav-link');
+
+  window.addEventListener('scroll', () => {
+    let currentSectionId = '';
+    const scrollPosition = window.scrollY + 140; // offset for header height
+    
+    sections.forEach(sec => {
+      const top = sec.offsetTop;
+      const height = sec.offsetHeight;
+      if (scrollPosition >= top && scrollPosition < top + height) {
+        currentSectionId = sec.getAttribute('id');
+      }
+    });
+
+    navLinks.forEach(link => {
+      const href = link.getAttribute('href');
+      // Reset active states
+      link.style.borderColor = 'var(--border-color)';
+      link.style.background = 'rgba(255, 255, 255, 0.02)';
+      link.style.boxShadow = 'none';
+      
+      if (href === `#${currentSectionId}`) {
+        link.style.borderColor = 'var(--primary)';
+        link.style.background = 'rgba(99, 102, 241, 0.15)';
+        link.style.boxShadow = '0 0 10px rgba(99, 102, 241, 0.25)';
+      }
+    });
+  });
+
+  // 21. Analytics Tooltip Reading Event
+  navLinks.forEach(link => {
+    let hoverTimer;
+    link.addEventListener('mouseenter', () => {
+      hoverTimer = setTimeout(() => {
+        if (typeof gtag === 'function') {
+          gtag('event', 'read_tooltip', {
+            event_category: 'engagement',
+            event_label: link.getAttribute('data-tooltip') || 'Campaña'
+          });
+        }
+      }, 1500);
+    });
+    link.addEventListener('mouseleave', () => {
+      clearTimeout(hoverTimer);
+    });
+  });
 });
