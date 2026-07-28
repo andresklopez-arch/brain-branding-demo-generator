@@ -289,6 +289,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (contactSec) {
           contactSec.scrollIntoView({ behavior: 'smooth' });
         }
+
+        const contactCard = document.querySelector('.contact-card');
+        if (contactCard) {
+          contactCard.classList.add('pulse-highlight');
+          setTimeout(() => {
+            contactCard.classList.remove('pulse-highlight');
+          }, 3000);
+        }
       });
     }
   }
@@ -325,4 +333,45 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(err => console.error('[PWA] Error al registrar Service Worker:', err));
     });
   }
+
+  // 13. PWA Installation Promotion Handler
+  let deferredPrompt;
+  const pwaInstallBtn = document.getElementById('pwa-install-btn');
+  
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent default browser install bar from showing
+    e.preventDefault();
+    // Stash the event so it can be triggered on user action
+    deferredPrompt = e;
+    // Show the custom install button
+    if (pwaInstallBtn) {
+      pwaInstallBtn.style.display = 'flex';
+    }
+  });
+
+  if (pwaInstallBtn) {
+    pwaInstallBtn.addEventListener('click', () => {
+      // Hide button
+      pwaInstallBtn.style.display = 'none';
+      // Trigger prompt
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('[PWA] El usuario aceptó instalar la app.');
+          } else {
+            console.log('[PWA] El usuario rechazó instalar la app.');
+          }
+          deferredPrompt = null;
+        });
+      }
+    });
+  }
+
+  window.addEventListener('appinstalled', () => {
+    console.log('[PWA] Aplicación instalada exitosamente.');
+    if (pwaInstallBtn) {
+      pwaInstallBtn.style.display = 'none';
+    }
+  });
 });
