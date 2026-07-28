@@ -831,8 +831,12 @@
             requestAnimationFrame(animateStars);
         }
 
-        window.addEventListener('resize', () => { resize(); initStars(); });
-        resize(); initStars(); animateStars();
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                window.addEventListener('resize', () => { resize(); initStars(); });
+                resize(); initStars(); animateStars();
+            }, 300);
+        });
     })();
   </script>
 </body>

@@ -301,10 +301,10 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
         
+        const totalPrice = document.getElementById('calc-total-price').textContent;
         const descField = document.getElementById('contact-desc');
         if (descField) {
-          descField.value = `Hola Brain Branding, coticé en su web un proyecto SaaS que incluye:\n- Plataforma Base SaaS\n${selectedModules.map(m => `- ${m}`).join('\n')}\n\nMi idea general de negocio es...`;
-          // Trigger change event if needed
+          descField.value = `Coticé una configuración SaaS con presupuesto estimado de ${totalPrice}.\n\nMódulos seleccionados:\n- Plataforma Base\n${selectedModules.map(m => `- ${m}`).join('\n')}`;
         }
         
         const contactSec = document.getElementById('contacto');
