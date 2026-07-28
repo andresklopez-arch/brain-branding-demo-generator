@@ -539,18 +539,38 @@ function initTabs() {
 
   tabLinks.forEach(link => {
     link.addEventListener('click', () => {
-      tabLinks.forEach(l => l.classList.remove('active'));
-      tabPanels.forEach(p => p.classList.remove('active'));
-      
-      link.classList.add('active');
       const tabId = link.getAttribute('data-tab');
-      document.getElementById(`panel-${tabId}`).classList.add('active');
+      const loader = document.getElementById('tab-loader-overlay');
       
-      // Update dynamic AI advice!
-      updateAIAdvice(tabId);
+      if (loader) {
+        loader.style.display = 'flex';
+        const loaderText = loader.querySelector('span');
+        const moduleNames = {
+          asistente: 'Asistente Personal Omnicanal',
+          pos: 'Terminal Punto de Venta (POS)',
+          web: 'Página Web Adaptativa',
+          erp: 'Software ERP Corporativo'
+        };
+        if (loaderText) {
+          loaderText.textContent = `Conectando con sandbox de ${moduleNames[tabId] || 'Módulo'}...`;
+        }
+      }
       
-      // Reset scroll to top of content area to avoid disorientation
-      document.querySelector('.sim-content-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => {
+        tabLinks.forEach(l => l.classList.remove('active'));
+        tabPanels.forEach(p => p.classList.remove('active'));
+        
+        link.classList.add('active');
+        const matchedPanel = document.getElementById(`panel-${tabId}`);
+        if (matchedPanel) matchedPanel.classList.add('active');
+        
+        updateAIAdvice(tabId);
+        
+        if (loader) loader.style.display = 'none';
+        
+        const contentArea = document.querySelector('.sim-content-area');
+        if (contentArea) contentArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 550);
     });
   });
 }
@@ -4658,30 +4678,36 @@ document.querySelectorAll('.tab-link').forEach(link => {
 });
 
 function initSimulationLoop() {
-  attachPauseListeners();
+  try {
+    attachPauseListeners();
+  } catch(e) { console.warn('initSimulationLoop: attachPauseListeners failed', e); }
   
-  // Categorize problem to generate custom scenarios using the extraction helper
-  const kws = extractKeywords(bizProblem + " " + bizSector);
   let category = 'operations';
+  try {
+    const kws = extractKeywords(bizProblem + " " + bizSector);
+    const matches = (list) => kws.some(kw => list.includes(kw));
+    
+    if (matches(["credito", "cobro", "cobranza", "pago", "abono", "mensualidad", "cartera", "cuotas", "financiar", "financiamiento", "moroso", "deuda"])) {
+      category = 'credit';
+    } else if (matches(["inventario", "stock", "almacen", "bodega", "existencias", "insumos", "cocina", "ingredientes", "materia", "refacciones", "piezas"])) {
+      category = 'inventory';
+    } else if (matches(["ventas", "clientes", "marketing", "prospectos", "cotizar", "vender", "atraer", "leads", "publicidad"])) {
+      category = 'sales';
+    } else if (matches(["reparacion", "tecnico", "reparar", "taller", "mantenimiento", "garantia", "soporte", "falla"])) {
+      category = 'repair';
+    } else if (matches(["entrega", "entregas", "domicilio", "flete", "envio", "envios", "transporte", "ruta", "rutas", "camion"])) {
+      category = 'logistics';
+    }
+  } catch(e) { console.warn('initSimulationLoop: categorization failed', e); }
   
-  const matches = (list) => kws.some(kw => list.includes(kw));
+  try {
+    assistantScenarios = generateDynamicScenarios(category);
+  } catch(e) { console.warn('initSimulationLoop: scenarios generation failed', e); }
   
-  if (matches(["credito", "cobro", "cobranza", "pago", "abono", "mensualidad", "cartera", "cuotas", "financiar", "financiamiento", "moroso", "deuda"])) {
-    category = 'credit';
-  } else if (matches(["inventario", "stock", "almacen", "bodega", "existencias", "insumos", "cocina", "ingredientes", "materia", "refacciones", "piezas"])) {
-    category = 'inventory';
-  } else if (matches(["ventas", "clientes", "marketing", "prospectos", "cotizar", "vender", "atraer", "leads", "publicidad"])) {
-    category = 'sales';
-  } else if (matches(["reparacion", "tecnico", "reparar", "taller", "mantenimiento", "garantia", "soporte", "falla"])) {
-    category = 'repair';
-  } else if (matches(["entrega", "entregas", "domicilio", "flete", "envio", "envios", "transporte", "ruta", "rutas", "camion"])) {
-    category = 'logistics';
-  }
-  
-  assistantScenarios = generateDynamicScenarios(category);
-  
-  const defaultTab = (activeService === 'all') ? 'asistente' : activeService;
-  startActiveTabLoop(defaultTab);
+  try {
+    const defaultTab = (activeService === 'all') ? 'asistente' : activeService;
+    startActiveTabLoop(defaultTab);
+  } catch(e) { console.error('initSimulationLoop: startActiveTabLoop failed', e); }
 }
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
