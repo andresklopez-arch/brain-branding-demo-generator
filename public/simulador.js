@@ -185,6 +185,18 @@ function updateTimer() {
     timerEl.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   }
   
+  if (timeLeft < 120) {
+    if (timerEl) {
+      timerEl.style.color = '#ef4444';
+      timerEl.style.animation = 'pulse 1s infinite alternate';
+    }
+    const badge = document.getElementById('sim-timer-badge');
+    if (badge) {
+      badge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+      badge.style.background = 'rgba(239, 68, 68, 0.08)';
+    }
+  }
+
   if (timeLeft <= 0) {
     destroySession();
   }
@@ -689,6 +701,10 @@ function getSectorEmojis(sector) {
 function buildProblemProfile(rawProfile) {
   const prof = { ...rawProfile };
   const prob = bizProblem.toLowerCase();
+  
+  // Detect currency preference from bizProblem or bizSector
+  const isUSD = prob.includes('usd') || prob.includes('dolar') || prob.includes('dólar') || prob.includes('dolares') || prob.includes('dólares');
+  prof.currencySymbol = isUSD ? 'USD' : 'MXN';
   
   const kws = extractKeywords(bizProblem + " " + bizSector);
   let category = 'operations';
@@ -2085,21 +2101,33 @@ function initMockups() {
   const cleanUrl = bizName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com.mx';
   document.getElementById('mock-browser-url').textContent = `https://www.${cleanUrl}`;
 
-  // 1. WhatsApp Chat Init
+  // 1. WhatsApp Chat Init with Memory
   const chatMessages = document.getElementById('chat-messages');
   chatMessages.innerHTML = '';
   
-  const initMsg = profile.chatInit
-    .replace(/{bizName}/g, bizName)
-    .replace(/{bizProblem}/g, bizProblem);
-  const replyMsg = profile.chatReply
-    .replace(/{bizName}/g, bizName)
-    .replace(/{bizProblem}/g, bizProblem);
+  const chatHistoryStr = sessionStorage.getItem('sim_chat_history');
+  if (chatHistoryStr) {
+    try {
+      const history = JSON.parse(chatHistoryStr);
+      history.forEach(msg => {
+        addChatMessage(msg.sender, msg.text, true);
+      });
+    } catch(e) {
+      sessionStorage.removeItem('sim_chat_history');
+    }
+  } else {
+    const initMsg = profile.chatInit
+      .replace(/{bizName}/g, bizName)
+      .replace(/{bizProblem}/g, bizProblem);
+    const replyMsg = profile.chatReply
+      .replace(/{bizName}/g, bizName)
+      .replace(/{bizProblem}/g, bizProblem);
 
-  addChatMessage('incoming', initMsg);
-  setTimeout(() => {
-    addChatMessage('outgoing', replyMsg);
-  }, 1000);
+    addChatMessage('incoming', initMsg);
+    setTimeout(() => {
+      addChatMessage('outgoing', replyMsg);
+    }, 1000);
+  }
 
   // 2. POS Grid Init
   initPOSProducts();
@@ -2297,7 +2325,7 @@ document.querySelectorAll('.chat-theme-toggle-btn').forEach(btn => {
   });
 });
 
-function addChatMessage(sender, text) {
+function addChatMessage(sender, text, isLoad = false) {
   const chatMessages = document.getElementById('chat-messages');
   const bubble = document.createElement('div');
   bubble.className = `chat-bubble ${sender}`;
@@ -2308,7 +2336,9 @@ function addChatMessage(sender, text) {
     const parts = text.split('|');
     const title = parts[1] || 'Pago de Servicio';
     const desc = parts[2] || 'Código de transacción único';
-    const amount = parts[3] || '$0.00 MXN';
+    // Format payment amount using currency preference
+    const amountVal = parts[3] || '$0.00 MXN';
+    const finalAmount = (profile && profile.currencySymbol === 'USD') ? amountVal.replace('MXN', 'USD') : amountVal;
     bubble.style.background = 'transparent';
     bubble.style.border = 'none';
     bubble.style.padding = '0';
@@ -2316,14 +2346,19 @@ function addChatMessage(sender, text) {
       <div class="glass-card" style="padding: 15px; border-radius: 12px; border: 1px solid rgba(52, 211, 153, 0.4); display: flex; flex-direction: column; gap: 8px; width: 240px; background: rgba(16, 185, 129, 0.08); box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: left;">
         <span style="font-size: 10px; text-transform: uppercase; color: #34d399; font-weight: bold; letter-spacing: 0.5px;">💳 Enlace de Pago Seguro (IA)</span>
         <strong style="font-size: 13.5px; color: #fff;">${title}</strong>
-        <span style="font-size: 11px; color: var(--text-muted);">${desc}</span>
-        <span style="font-size: 15px; font-weight: 800; color: #34d399; margin-top: 4px;">${amount}</span>
+        <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">${desc}</span>
+        <span style="font-size: 15px; font-weight: 800; color: #34d399; margin-top: 4px;">${finalAmount}</span>
         <button onclick="alert('💰 Pago Simulado Exitoso. El Asistente IA de ${bizName} ha timbrado la factura SAT automática en el ERP corporativo.'); console.log('Payment executed');" style="width: 100%; padding: 8px; border-radius: 6px; background: #10b981; border: none; color: #fff; font-size: 11.5px; font-weight: bold; cursor: pointer; margin-top: 5px; font-family: inherit;">Pagar con Stripe</button>
       </div>
       <span class="chat-time" style="display:block; margin-top: 4px;">${time} ✓✓</span>
     `;
   } else {
-    const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');
+    // Replace MXN to USD in outgoing text dynamically if prefered currency is USD
+    let finalText = text;
+    if (profile && profile.currencySymbol === 'USD') {
+      finalText = finalText.replace(/MXN/g, 'USD').replace(/pesos/g, 'dólares').replace(/Pesos/g, 'Dólares');
+    }
+    const formattedText = finalText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');
     const ttsButtonHtml = sender === 'outgoing' ? `<button class="tts-play-btn" style="background: none; border: none; cursor: pointer; font-size: 10px; margin-left: 5px; opacity: 0.6; padding: 2px;" title="Escuchar Mensaje">🔊</button>` : '';
     bubble.innerHTML = `
       <div style="display:flex; align-items:center; gap:4px;">
@@ -2336,6 +2371,16 @@ function addChatMessage(sender, text) {
   
   chatMessages.appendChild(bubble);
   chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  // Persist chat message inside sessionStorage
+  if (!isLoad) {
+    let history = [];
+    try {
+      history = JSON.parse(sessionStorage.getItem('sim_chat_history') || '[]');
+    } catch(e) {}
+    history.push({ sender, text });
+    sessionStorage.setItem('sim_chat_history', JSON.stringify(history));
+  }
 }
 
 document.getElementById('send-chat-btn').addEventListener('click', handleUserChatSend);
@@ -3290,6 +3335,11 @@ if (webForm) {
 }
 
 // ── MOCKUP D: ERP CONTROLLER ──
+function formatCurrency(amount) {
+  const symbol = (profile && profile.currencySymbol) ? profile.currencySymbol : 'MXN';
+  return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })} ${symbol}`;
+}
+
 function updateERPPL() {
   const branch = document.getElementById('erp-branch-select').value;
   const branchData = profile.branchFinancials[branch];
@@ -3312,14 +3362,14 @@ function updateERPPL() {
   const taxes = branchData.taxes + (dynamicRev * 0.16);
   const net = gross - expenses - taxes;
   
-  document.getElementById('erp-pl-revenue').textContent = `$${totalRev.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
-  document.getElementById('erp-pl-cogs').textContent = `$${totalCOGS.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
-  document.getElementById('erp-pl-gross').textContent = `$${gross.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
-  document.getElementById('erp-pl-expenses').textContent = `$${expenses.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
-  document.getElementById('erp-pl-taxes').textContent = `$${taxes.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
+  document.getElementById('erp-pl-revenue').textContent = formatCurrency(totalRev);
+  document.getElementById('erp-pl-cogs').textContent = formatCurrency(totalCOGS);
+  document.getElementById('erp-pl-gross').textContent = formatCurrency(gross);
+  document.getElementById('erp-pl-expenses').textContent = formatCurrency(expenses);
+  document.getElementById('erp-pl-taxes').textContent = formatCurrency(taxes);
   
   const netEl = document.getElementById('erp-pl-net');
-  netEl.textContent = `$${net.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
+  netEl.textContent = formatCurrency(net);
   if (net < 0) {
     netEl.style.color = '#ef4444';
   } else {
