@@ -437,3 +437,81 @@
   transform: rotate(90deg);
   color: var(--secondary);
 }
+
+/* ── POS INTERACTIVE STATES ── */
+.tip-btn.active {
+  border-color: #34d399 !important;
+  background: rgba(52, 211, 153, 0.15) !important;
+  color: #34d399 !important;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.2);
+}
+
+.coupon-btn.active {
+  border-color: #fb7185 !important;
+  background: rgba(251, 113, 133, 0.15) !important;
+  color: #fb7185 !important;
+  box-shadow: 0 0 10px rgba(251, 113, 133, 0.2);
+}
+
+/* ── ERP SUBTAB DASHBOARD STYLES ── */
+.erp-subtab-btn {
+  transition: all 0.2s ease;
+}
+
+.erp-subtab-btn.active {
+  background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25);
+}
+
+/* ── KANBAN & ALERTS ── */
+.erp-task-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.erp-task-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.erp-alert-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  animation: fadeIn 0.3s;
+}
+
+.erp-alert-item.warning {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.erp-alert-item.info {
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  color: #bae6fd;
+}
+
+.erp-alert-item.success {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: #a7f3d0;
+}
+

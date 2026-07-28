@@ -562,8 +562,147 @@ function getSectorProfile(sector) {
   }
 }
 
+function completeProfileData(prof, sectorName, bizName) {
+  // 1. Mission / Vision / Values
+  if (!prof.mission) {
+    prof.mission = `Proveer soluciones de alta calidad en ${sectorName} para potenciar el éxito y bienestar de nuestros clientes.`;
+  }
+  if (!prof.vision) {
+    prof.vision = `Ser líderes reconocidos en el sector de ${sectorName}, impulsando la innovación y excelencia operativa con IA.`;
+  }
+  if (!prof.values) {
+    prof.values = "Innovación, Integridad, Compromiso, Excelencia y Enfoque en el Cliente.";
+  }
+  if (!prof.address) {
+    prof.address = "Av. Paseo de la Reforma 405, Piso 12, Lomas de Chapultepec, CDMX, C.P. 11000";
+  }
+  if (!prof.specialOffer) {
+    prof.specialOffer = `¡20% de descuento en tu primer servicio de ${sectorName} contratando hoy!`;
+  }
+  
+  // 2. Services Catalog
+  if (!prof.detailedServices) {
+    const prods = prof.posProducts || [];
+    prof.detailedServices = [
+      {
+        icon: prods[0] ? prods[0].icon : '⚡',
+        name: prods[0] ? prods[0].name : 'Servicio Básico',
+        desc: `Solución de entrada ideal para optimizar tus operaciones diarias de ${sectorName}.`,
+        price: prods[0] ? prods[0].price : 1000
+      },
+      {
+        icon: prods[1] ? prods[1].icon : '💎',
+        name: prods[1] ? prods[1].name : 'Servicio Premium',
+        desc: `Implementación avanzada con inteligencia y control completo a la medida del negocio.`,
+        price: prods[1] ? prods[1].price : 2500
+      },
+      {
+        icon: prods[5] ? prods[5].icon : '📈',
+        name: prods[5] ? prods[5].name : 'Consultoría de Expansión',
+        desc: `Estrategia de crecimiento acelerado y automatización de procesos mediante IA avanzada.`,
+        price: prods[5] ? prods[5].price : 4500
+      }
+    ];
+  }
+  
+  // 3. Inventory Stock Insumos Key
+  if (!prof.inventory) {
+    const isRest = sectorName.toLowerCase().includes("restaurante");
+    const isCom = sectorName.toLowerCase().includes("tienda") || sectorName.toLowerCase().includes("comercio");
+    
+    if (isRest) {
+      prof.inventory = [
+        { key: 'insumo1', name: 'Materia Prima (Carnes/Verduras)', qty: 65, unit: 'kg', speed: 'Alta (Agotamiento en 2 días)', min: 30 },
+        { key: 'insumo2', name: 'Bebidas y Licores', qty: 110, unit: 'pzas', speed: 'Media (Agotamiento en 7 días)', min: 40 },
+        { key: 'insumo3', name: 'Detergentes y Suministros', qty: 15, unit: 'lts', speed: 'Baja (Agotamiento en 14 días)', min: 10 }
+      ];
+    } else if (isCom) {
+      prof.inventory = [
+        { key: 'insumo1', name: 'Mercancía Premium (Tenis/Prendas)', qty: 45, unit: 'pzas', speed: 'Alta (Agotamiento en 3 días)', min: 25 },
+        { key: 'insumo2', name: 'Bolsas y Empaques', qty: 400, unit: 'pzas', speed: 'Media (Agotamiento en 10 días)', min: 150 },
+        { key: 'insumo3', name: 'Etiquetas de Código de Barras', qty: 250, unit: 'pzas', speed: 'Baja (Agotamiento en 20 días)', min: 80 }
+      ];
+    } else {
+      prof.inventory = [
+        { key: 'insumo1', name: 'Licencias de Software Activadas', qty: 12, unit: 'pzas', speed: 'Alta (Agotamiento en 1 día)', min: 10 },
+        { key: 'insumo2', name: 'Papelería y Suministros de Oficina', qty: 85, unit: 'pzas', speed: 'Media (Agotamiento en 12 días)', min: 30 },
+        { key: 'insumo3', name: 'Ancho de Banda de Servidor Cloud', qty: 92, unit: 'GB', speed: 'Baja (Agotamiento en 30 días)', min: 20 }
+      ];
+    }
+  }
+
+  // 4. Financial P&L branch data structure
+  if (!prof.branchFinancials) {
+    prof.branchFinancials = {
+      centro: {
+        revenue: 285000,
+        cogs: 95000,
+        expenses: 74000,
+        taxes: 30400,
+        alerts: [
+          { type: 'info', text: 'Sucursal Centro operando al 92% de capacidad.' },
+          { type: 'success', text: 'Retención de Impuestos SAT completada sin discrepancias.' }
+        ],
+        leads: [
+          { name: 'Ricardo Ruiz', contact: '525541298471', note: 'Interés en auditoría fiscal completa', status: 'Cotizando' },
+          { name: 'Sofía Lira', contact: '525567312903', note: 'Consulta sobre planes de expansión corporativa', status: 'Cerrado' }
+        ],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Revisar balance de caja del día de ayer', desc: 'Asignado a Asistente IA' },
+            { id: 2, title: 'Conciliación fiscal SAT de cierre de mes', desc: 'Asignado a Contador Principal' }
+          ],
+          done: [
+            { id: 3, title: 'Renovación de licencias de facturación en la nube', desc: 'Auto-completado por IA' }
+          ]
+        }
+      },
+      norte: {
+        revenue: 145000,
+        cogs: 52000,
+        expenses: 42000,
+        taxes: 16480,
+        alerts: [
+          { type: 'warning', text: 'Fuga de clientes detectada: 3 clientes VIP inactivos hace 45 días.' },
+          { type: 'info', text: 'Nivel medio de stock en insumo crítico de almacén.' }
+        ],
+        leads: [
+          { name: 'Arturo Neri', contact: '525571930284', note: 'Requiere demo en vivo del sistema corporativo', status: 'En Espera' }
+        ],
+        tasks: {
+          todo: [
+            { id: 4, title: 'Enviar cupones de WhatsApp a clientes inactivos', desc: 'Acción sugerida por IA' }
+          ],
+          done: [
+            { id: 5, title: 'Reabastecer insumos agotados por fin de semana', desc: 'Auto-completado por IA' }
+          ]
+        }
+      },
+      sur: {
+        revenue: 95000,
+        cogs: 31000,
+        expenses: 28000,
+        taxes: 10240,
+        alerts: [
+          { type: 'warning', text: 'Desviación de arqueo inusual detectada en caja del turno matutino.' }
+        ],
+        leads: [
+          { name: 'Lucía Mendoza', contact: '525510293847', note: 'Interés en servicios básicos', status: 'Cotizando' }
+        ],
+        tasks: {
+          todo: [
+            { id: 6, title: 'Auditar caja de sucursal Sur con auditoría IA', desc: 'Urgente por desviación' }
+          ],
+          done: []
+        }
+      }
+    };
+  }
+}
+
 // Global reference to active profile
 const profile = getSectorProfile(bizSector);
+completeProfileData(profile, bizSector, bizName);
 
 // ── INITIALIZE DATA IN MOCKUPS ──
 function initMockups() {
@@ -612,24 +751,87 @@ function initMockups() {
   // 4. ERP Workflow Problem Description
   document.getElementById('erp-bottleneck-desc').textContent = `Cuello de botella: ${profile.erpBottleneck}`;
 
+  // Hydrate high fidelity sub-simulators
+  initPOSInventory();
+  initWebData();
+  startWebCountdown();
+  updateERPPL();
+
   // Update final WhatsApp link
   updateWhatsAppLink();
 }
 
 // ── MOCKUP A: CHAT CONTROLLER ──
+function printToolLog(message) {
+  const consoleEl = document.getElementById('agent-tool-logs');
+  if (!consoleEl) return;
+  
+  const dot = document.getElementById('tool-status-dot');
+  if (dot) {
+    dot.style.background = '#38bdf8'; // Active blue
+    setTimeout(() => { dot.style.background = '#6b7280'; }, 600);
+  }
+  
+  const div = document.createElement('div');
+  div.innerHTML = `&gt; <span style="color: #64748b;">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span> ${message}`;
+  consoleEl.appendChild(div);
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+function detectSentiment(text) {
+  const lower = text.toLowerCase();
+  const sentimentEl = document.getElementById('chat-sentiment');
+  if (!sentimentEl) return;
+  
+  if (lower.match(/(gracias|excelente|perfecto|bien|genial|super|chido|chulo|increible|wow)/)) {
+    sentimentEl.innerHTML = '🟢 Feliz / Satisfecho';
+    sentimentEl.style.color = '#10b981';
+  } else if (lower.match(/(mal|error|lento|tarda|espera|queja|falla|malo|ineficiente|peor)/)) {
+    sentimentEl.innerHTML = '🔴 Frustrado';
+    sentimentEl.style.color = '#f87171';
+  } else if (lower.match(/(urgente|sat|satula|multa|auditoria|estafa|robo|enojado|fraude|pelear)/)) {
+    sentimentEl.innerHTML = '🚨 Molesto / Enojado';
+    sentimentEl.style.color = '#ef4444';
+  } else {
+    sentimentEl.innerHTML = '🟡 Neutro';
+    sentimentEl.style.color = '#fbbf24';
+  }
+}
+
 function addChatMessage(sender, text) {
   const chatMessages = document.getElementById('chat-messages');
   const bubble = document.createElement('div');
   bubble.className = `chat-bubble ${sender}`;
   
-  // Format text with bold
-  const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');
-  
   const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  bubble.innerHTML = `
-    <div>${formattedText}</div>
-    <span class="chat-time">${time} ${sender === 'outgoing' ? '✓✓' : ''}</span>
-  `;
+  
+  if (text.startsWith('[PAYMENT_CARD]')) {
+    // Render payment link card
+    const parts = text.split('|');
+    const title = parts[1] || 'Pago de Servicio';
+    const desc = parts[2] || 'Código de transacción único';
+    const amount = parts[3] || '$0.00 MXN';
+    bubble.style.background = 'transparent';
+    bubble.style.border = 'none';
+    bubble.style.padding = '0';
+    bubble.innerHTML = `
+      <div class="glass-card" style="padding: 15px; border-radius: 12px; border: 1px solid rgba(52, 211, 153, 0.4); display: flex; flex-direction: column; gap: 8px; width: 240px; background: rgba(16, 185, 129, 0.08); box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: left;">
+        <span style="font-size: 10px; text-transform: uppercase; color: #34d399; font-weight: bold; letter-spacing: 0.5px;">💳 Enlace de Pago Seguro (IA)</span>
+        <strong style="font-size: 13.5px; color: #fff;">${title}</strong>
+        <span style="font-size: 11px; color: var(--text-muted);">${desc}</span>
+        <span style="font-size: 15px; font-weight: 800; color: #34d399; margin-top: 4px;">${amount}</span>
+        <button onclick="alert('💰 Pago Simulado Exitoso. El Asistente IA de ${bizName} ha timbrado la factura SAT automática en el ERP corporativo.'); console.log('Payment executed');" style="width: 100%; padding: 8px; border-radius: 6px; background: #10b981; border: none; color: #fff; font-size: 11.5px; font-weight: bold; cursor: pointer; margin-top: 5px; font-family: inherit;">Pagar con Stripe</button>
+      </div>
+      <span class="chat-time" style="display:block; margin-top: 4px;">${time} ✓✓</span>
+    `;
+  } else {
+    const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');
+    bubble.innerHTML = `
+      <div>${formattedText}</div>
+      <span class="chat-time">${time} ${sender === 'outgoing' ? '✓✓' : ''}</span>
+    `;
+  }
+  
   chatMessages.appendChild(bubble);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
@@ -646,11 +848,35 @@ function handleUserChatSend() {
   
   addChatMessage('incoming', text);
   input.value = '';
-
+  
+  detectSentiment(text);
+  
+  printToolLog(`Recibida entrada de usuario: "${text.substring(0, 25)}..."`);
+  printToolLog(`Ejecutando herramienta router_agent()...`);
+  
   // Show typing response
   setTimeout(() => {
-    // Generate AI dynamic reply
-    let reply = `Hemos recibido tu consulta sobre *"${text}"* en **${bizName}**. Nuestro motor de IA procesa esta información y está listo para canalizarla. ¿Deseas cotizar este módulo con uno de nuestros ingenieros de software?`;
+    const activeAgent = document.getElementById('agent-type-select').value;
+    let reply = "";
+    
+    if (activeAgent === 'ventas') {
+      printToolLog(`Ejecutando herramienta query_pricing_database()...`);
+      if (text.toLowerCase().match(/(precio|costo|cuanto cuesta|pagar|comprar|servicio|cotiza)/)) {
+        reply = `[PAYMENT_CARD]|Servicio de ${bizSector}|Cotización de servicio a la medida para solucionar ${bizProblem}|${profile.posProducts[1] ? '$' + profile.posProducts[1].price + '.00 MXN' : '$1,500.00 MXN'}`;
+      } else {
+        reply = `Hola, como Agente de Ventas de **${bizName}**, te comento que podemos solucionar tu problema de *"${bizProblem}"* implementando un flujo digital optimizado con IA. ¿Deseas que te genere un link de pago con tu cotización?`;
+      }
+    } else if (activeAgent === 'soporte') {
+      printToolLog(`Ejecutando herramienta check_system_status()...`);
+      reply = `Hola, soy tu Agente de Soporte Técnico de **${bizName}**. He revisado el estado del servidor y los flujos relacionados con *"${bizProblem}"*. Todo está listo para optimizarse. ¿Deseas levantar un ticket técnico?`;
+    } else if (activeAgent === 'citas') {
+      printToolLog(`Ejecutando herramienta check_google_calendar()...`);
+      reply = `Hola, soy el Coordinador de Citas de **${bizName}**. He verificado nuestra agenda para ${bizSector}. Tenemos espacio disponible mañana a las 11:00 AM y a las 4:30 PM. ¿Cuál prefieres agendar?`;
+    } else {
+      printToolLog(`Ejecutando herramienta query_billing_status()...`);
+      reply = `Hola, soy el Agente de Cobranza de **${bizName}**. He consultado el sistema contable y no tienes facturas pendientes. ¿Deseas emitir un CFDI o descargar tu Estado de Resultados del ERP?`;
+    }
+    
     addChatMessage('outgoing', reply);
   }, 1200);
 }
@@ -659,22 +885,85 @@ document.querySelectorAll('.sample-msg-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const text = btn.getAttribute('data-msg');
     addChatMessage('incoming', text);
+    detectSentiment(text);
+    
+    printToolLog(`Recibido clic en muestra: "${text.substring(0, 20)}..."`);
+    printToolLog(`Ejecutando router_agent() con prioridad alta...`);
+    
     setTimeout(() => {
       let reply = "";
       if (text.includes('Precios')) {
-        reply = `En **${bizName}** ofrecemos soluciones modulares a la medida. Al automatizar tu problema principal: *"${profile.erpBottleneck}"*, reduces costos operativos e ineficiencias desde el primer mes. ¿Te gustaría recibir una llamada de presupuesto?`;
+        printToolLog(`Llamando api_stripe_checkout()...`);
+        reply = `[PAYMENT_CARD]|Servicio Premium ${bizName}|Cotización completa de automatización para ${bizSector}|${profile.posProducts[2] ? '$' + profile.posProducts[2].price + '.00 MXN' : '$3,500.00 MXN'}`;
       } else if (text.includes('Cita')) {
+        printToolLog(`Llamando api_google_calendar_schedule()...`);
         reply = `Entendido. Registramos tu solicitud de agendamiento para tu negocio. El Asistente IA de **${bizName}** consultará la disponibilidad en la agenda de tu sector (${profile.logoName}) y enviará confirmación automática por WhatsApp en unos momentos.`;
       } else {
-        reply = `Tu reporte técnico ha sido indexado y catalogado por el motor IA de **${bizName}** para asignación y resolución inmediata.`;
+        printToolLog(`Llamando api_ticket_system_raise()...`);
+        reply = `Tu reporte técnico sobre *"${bizProblem}"* ha sido indexado y catalogado por el motor IA de **${bizName}** para asignación y resolución inmediata.`;
       }
       addChatMessage('outgoing', reply);
     }, 1200);
   });
 });
 
+// Human transfer simulation
+document.getElementById('human-transfer-btn').addEventListener('click', () => {
+  printToolLog(`FORZANDO INTERVENCIÓN HUMANA...`);
+  printToolLog(`Compilando resumen contextual de conversación...`);
+  
+  const summary = `Cliente consulta sobre el sector ${bizSector} para el negocio "${bizName}" con problema "${bizProblem}". Sentimiento actual: ${document.getElementById('chat-sentiment').textContent}`;
+  printToolLog(`Enviando resumen al operador: "${summary.substring(0, 45)}..."`);
+  
+  alert(`🚨 Conversación transferida con éxito.\nUn operador humano se conectará de inmediato.\n\nResumen enviado por IA al operador:\n"${summary}"`);
+});
+
+// Selector changes agent logs
+document.getElementById('agent-type-select').addEventListener('change', (e) => {
+  printToolLog(`[COGNITIVE] Cambiando a perfil: "${e.target.options[e.target.selectedIndex].text}"`);
+  printToolLog(`[COGNITIVE] Inicializando sub-agentes y recargando base de conocimiento...`);
+});
+
 // ── MOCKUP B: POS CONTROLLER ──
 let posCart = [];
+let totalCashSales = 0;
+let totalCardSales = 0;
+let activeTipPercent = 0;
+let activeCoupon = 'none';
+
+function initPOSInventory() {
+  const listContainer = document.getElementById('pos-inventory-list');
+  if (!listContainer || !profile.inventory) return;
+  
+  listContainer.innerHTML = '';
+  profile.inventory.forEach(item => {
+    const pct = Math.round((item.qty / (item.min * 2.5)) * 100);
+    const cappedPct = Math.min(100, pct);
+    
+    // Choose progress bar color based on stock level
+    let barColor = '#10b981'; // Green
+    if (item.qty <= item.min) {
+      barColor = '#ef4444'; // Red
+    } else if (item.qty <= item.min * 1.5) {
+      barColor = '#fbbf24'; // Yellow
+    }
+    
+    const card = document.createElement('div');
+    card.style.cssText = "background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.04); padding: 8px 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 4px;";
+    card.innerHTML = `
+      <span style="font-size: 11px; font-weight: bold; color: #fff; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; display:block;">${item.name}</span>
+      <div style="display:flex; justify-content:space-between; font-size:10px; color: var(--text-muted);">
+        <span>Stock: <strong>${item.qty} ${item.unit}</strong></span>
+        <span>${pct}%</span>
+      </div>
+      <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow:hidden;">
+        <div style="height: 100%; width: ${cappedPct}%; background: ${barColor}; border-radius: 3px; transition: width 0.5s;"></div>
+      </div>
+      <span style="font-size: 9px; color: var(--text-muted); font-style: italic;">${item.speed}</span>
+    `;
+    listContainer.appendChild(card);
+  });
+}
 
 function initPOSProducts() {
   const grid = document.getElementById('pos-products-grid');
@@ -695,6 +984,27 @@ function initPOSProducts() {
   });
 }
 
+function deductInventory(product) {
+  if (!profile.inventory) return true;
+  // Deduct 1 unit or a weight fraction from insumo1
+  const item = profile.inventory[0];
+  if (item && item.qty > 0) {
+    if (item.unit === 'kg') {
+      item.qty = parseFloat((item.qty - 0.4).toFixed(1));
+    } else {
+      item.qty = Math.max(0, item.qty - 1);
+    }
+    
+    if (item.qty <= item.min) {
+      printToolLog(`[ALERTA OPERACIONES] Stock crítico de insumo: "${item.name}" (Quedan: ${item.qty} ${item.unit})`);
+      updateERPPL(); // Trigger ERP warning alerts!
+    }
+    initPOSInventory();
+    return true;
+  }
+  return false;
+}
+
 function addProductToCart(product) {
   const existing = posCart.find(item => item.id === product.id);
   if (existing) {
@@ -702,6 +1012,7 @@ function addProductToCart(product) {
   } else {
     posCart.push({ ...product, qty: 1 });
   }
+  deductInventory(product);
   renderCart();
 }
 
@@ -723,10 +1034,51 @@ function renderCart() {
     container.appendChild(row);
   });
 
-  const iva = subtotal * 0.16;
-  const total = subtotal + iva;
+  // Calculate discounts
+  const loyalty = document.getElementById('pos-loyalty-select').value;
+  let loyaltyPct = 0;
+  if (loyalty === 'vip') loyaltyPct = 0.10;
+  if (loyalty === 'frecuente') loyaltyPct = 0.05;
+  
+  let discountVal = subtotal * loyaltyPct;
+  
+  if (activeCoupon === 'DESC15') {
+    discountVal += subtotal * 0.15;
+  } else if (activeCoupon === 'BOGO') {
+    // Buy one get one free for items with qty >= 2
+    posCart.forEach(item => {
+      if (item.qty >= 2) {
+        const freeItems = Math.floor(item.qty / 2);
+        discountVal += item.price * freeItems;
+      }
+    });
+  }
+  
+  const subtotalWithDisc = Math.max(0, subtotal - discountVal);
+  const tipVal = subtotalWithDisc * (activeTipPercent / 100);
+  const iva = subtotalWithDisc * 0.16;
+  const total = subtotalWithDisc + iva + tipVal;
 
   document.getElementById('pos-subtotal').textContent = `$${subtotal.toFixed(2)} MXN`;
+  
+  const discRow = document.getElementById('pos-discount-row');
+  const discValEl = document.getElementById('pos-discount-val');
+  if (discountVal > 0) {
+    discRow.style.display = 'flex';
+    discValEl.textContent = `-$${discountVal.toFixed(2)} MXN`;
+  } else {
+    discRow.style.display = 'none';
+  }
+  
+  const tipRow = document.getElementById('pos-tip-row');
+  const tipValEl = document.getElementById('pos-tip-val');
+  if (tipVal > 0) {
+    tipRow.style.display = 'flex';
+    tipValEl.textContent = `$${tipVal.toFixed(2)} MXN`;
+  } else {
+    tipRow.style.display = 'none';
+  }
+  
   document.getElementById('pos-iva').textContent = `$${iva.toFixed(2)} MXN`;
   document.getElementById('pos-total').textContent = `$${total.toFixed(2)} MXN`;
 }
@@ -736,11 +1088,77 @@ document.getElementById('clear-cart-btn').addEventListener('click', () => {
   renderCart();
 });
 
+// Loyalty discount change trigger
+document.getElementById('pos-loyalty-select').addEventListener('change', renderCart);
+
+// Suggestions tip buttons handlers
+document.querySelectorAll('.tip-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tip-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeTipPercent = parseInt(btn.getAttribute('data-tip'));
+    renderCart();
+  });
+});
+
+// Coupons selection handlers
+document.querySelectorAll('.coupon-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const selected = btn.getAttribute('data-coupon');
+    if (btn.classList.contains('active')) {
+      btn.classList.remove('active');
+      activeCoupon = 'none';
+    } else {
+      document.querySelectorAll('.coupon-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeCoupon = selected;
+    }
+    renderCart();
+  });
+});
+
+// Buy Direct reorder button
+document.getElementById('pos-reorder-btn').addEventListener('click', () => {
+  if (profile.inventory) {
+    profile.inventory.forEach(item => {
+      item.qty = Math.round(item.min * 2.3);
+    });
+    initPOSInventory();
+    printToolLog(`[INVENTARIO] Pedido de reabastecimiento enviado vía API. Existencias al 100%.`);
+    updateERPPL();
+    alert('📦 Compra Inteligente Exitosa. Existencias reabastecidas y proveedor notificado de forma autónoma.');
+  }
+});
+
+// Checkout action
 document.getElementById('checkout-pos-btn').addEventListener('click', () => {
   if (posCart.length === 0) {
     alert('El carrito está vacío. Agrega productos haciendo clic en ellos.');
     return;
   }
+
+  // Calculate totals
+  const subtotal = posCart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+  const loyalty = document.getElementById('pos-loyalty-select').value;
+  let loyaltyPct = 0;
+  if (loyalty === 'vip') loyaltyPct = 0.10;
+  if (loyalty === 'frecuente') loyaltyPct = 0.05;
+  
+  let discountVal = subtotal * loyaltyPct;
+  if (activeCoupon === 'DESC15') discountVal += subtotal * 0.15;
+  if (activeCoupon === 'BOGO') {
+    posCart.forEach(item => {
+      if (item.qty >= 2) {
+        discountVal += item.price * Math.floor(item.qty / 2);
+      }
+    });
+  }
+  
+  const finalSub = Math.max(0, subtotal - discountVal);
+  const finalTotal = finalSub * 1.16 + (finalSub * activeTipPercent / 100);
+  
+  // Accumulate cash sales
+  totalCashSales += finalTotal;
 
   // Trigger Confetti!
   if (typeof confetti === 'function') {
@@ -749,10 +1167,85 @@ document.getElementById('checkout-pos-btn').addEventListener('click', () => {
 
   alert(`💰 Cobro Exitoso para ${bizName}\n` +
         `-----------------------------------------\n` +
-        `Total de Venta: $${(posCart.reduce((acc, item) => acc + (item.price * item.qty), 0) * 1.16).toFixed(2)} MXN\n` +
-        `Facturación automática enviada por API SAT con Inteligencia Artificial.`);
+        `Total de Venta: $${finalTotal.toFixed(2)} MXN\n` +
+        `Facturación automática enviada por API SAT con Inteligencia Artificial.\n` +
+        `Estado de Resultados del ERP actualizado.`);
+        
   posCart = [];
   renderCart();
+  
+  // Update financial bookkeeping
+  updateERPPL();
+});
+
+// Arqueo y Corte de Caja Modal Controls
+document.getElementById('trigger-corte-btn').addEventListener('click', () => {
+  const overlay = document.getElementById('corte-caja-overlay');
+  if (!overlay) return;
+  
+  // Set values
+  const expectedCash = totalCashSales + 500; // $500 is base box/fondo
+  const expectedCard = totalCardSales;
+  const expectedTotal = expectedCash + expectedCard;
+  
+  document.getElementById('corte-efectivo-reg').textContent = `$${expectedCash.toFixed(2)} MXN`;
+  document.getElementById('corte-tarjeta-reg').textContent = `$${expectedCard.toFixed(2)} MXN`;
+  document.getElementById('corte-total-reg').textContent = `$${expectedTotal.toFixed(2)} MXN`;
+  
+  // Reset input and result
+  document.getElementById('corte-cash-counted').value = '';
+  document.getElementById('corte-variance-panel').style.display = 'none';
+  
+  overlay.style.display = 'flex';
+});
+
+document.getElementById('close-corte-btn').addEventListener('click', () => {
+  document.getElementById('corte-caja-overlay').style.display = 'none';
+});
+
+document.getElementById('calculate-arqueo-btn').addEventListener('click', () => {
+  const expectedCash = totalCashSales + 500;
+  const expectedCard = totalCardSales;
+  const expectedTotal = expectedCash + expectedCard;
+  
+  const countedCash = parseFloat(document.getElementById('corte-cash-counted').value) || 0;
+  const variance = countedCash - expectedCash;
+  
+  const varianceValEl = document.getElementById('corte-variance-val');
+  const auditLogsEl = document.getElementById('corte-audit-logs');
+  
+  varianceValEl.textContent = `$${variance.toFixed(2)} MXN`;
+  
+  if (variance < 0) {
+    varianceValEl.style.color = '#ef4444'; // Red
+    auditLogsEl.innerHTML = `
+      <div style="color:#fecaca; background:rgba(239,68,68,0.08); padding:8px; border-radius:6px; border:1px solid rgba(239,68,68,0.2); font-size: 11px;">
+        ⚠️ <strong>Discrepancia detectada: Faltante de $${Math.abs(variance).toFixed(2)} MXN.</strong><br>
+        El algoritmo IA del ERP sugiere auditar el turno del Cajero Activo. Posible merma o error humano en la entrega de cambio.
+      </div>
+    `;
+    printToolLog(`[AUDITORÍA POS] Discrepancia de caja negativa detectada: -$${Math.abs(variance).toFixed(2)} MXN.`);
+  } else if (variance > 0) {
+    varianceValEl.style.color = '#38bdf8'; // Blue
+    auditLogsEl.innerHTML = `
+      <div style="color:#bae6fd; background:rgba(14,165,233,0.08); padding:8px; border-radius:6px; border:1px solid rgba(14,165,233,0.2); font-size: 11px;">
+        📈 <strong>Sobrente detectado: +$${variance.toFixed(2)} MXN.</strong><br>
+        Se ha registrado el excedente en la contabilidad automatizada como ingreso misceláneo extraordinario.
+      </div>
+    `;
+    printToolLog(`[AUDITORÍA POS] Excedente detectado en caja: +$${variance.toFixed(2)} MXN.`);
+  } else {
+    varianceValEl.style.color = '#10b981'; // Green
+    auditLogsEl.innerHTML = `
+      <div style="color:#a7f3d0; background:rgba(16,185,129,0.08); padding:8px; border-radius:6px; border:1px solid rgba(16,185,129,0.2); font-size: 11px;">
+        ✅ <strong>Arqueo perfecto: Sin discrepancias ($0.00 MXN).</strong><br>
+        Corte verificado por el motor IA de auditoría SAT con firma digital. Todo cuadra correctamente.
+      </div>
+    `;
+    printToolLog(`[AUDITORÍA POS] Arqueo completado con éxito. Balance de caja perfecto.`);
+  }
+  
+  document.getElementById('corte-variance-panel').style.display = 'flex';
 });
 
 // ── MOCKUP C: WEBSITE CONTROLLER ──
@@ -801,7 +1294,301 @@ document.querySelectorAll('.web-color-btn').forEach(btn => {
   });
 });
 
+// Website subtab navigation switching
+document.querySelectorAll('.web-subtab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.web-subtab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    const targetSection = btn.getAttribute('data-web-tab');
+    document.querySelectorAll('.web-page-section').forEach(sect => {
+      sect.style.display = 'none';
+    });
+    
+    const matched = document.getElementById(`web-section-${targetSection}`);
+    if (matched) {
+      if (targetSection === 'contact') {
+        matched.style.display = 'grid';
+      } else {
+        matched.style.display = 'flex';
+      }
+    }
+  });
+});
+
+// Website catalog & contact details injection
+function renderWebServices() {
+  const grid = document.getElementById('web-services-grid');
+  if (!grid || !profile.detailedServices) return;
+  grid.innerHTML = '';
+  profile.detailedServices.forEach(s => {
+    const card = document.createElement('div');
+    card.style.cssText = "background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; text-align: center; display:flex; flex-direction:column; gap: 4px;";
+    card.innerHTML = `
+      <span style="font-size: 16px;">${s.icon}</span>
+      <strong style="font-size: 11px; color: #fff; display:block; text-overflow:ellipsis; white-space:nowrap; overflow:hidden;">${s.name}</strong>
+      <span style="font-size: 9.5px; color: var(--text-muted); line-height:1.2; flex: 1;">${s.desc}</span>
+      <span style="font-size: 11px; font-weight: bold; color: var(--primary); margin-top: 3px;">$${s.price} MXN</span>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function initWebData() {
+  document.getElementById('web-about-slogan').textContent = profile.webSlogan;
+  document.getElementById('web-about-mission').textContent = profile.mission;
+  document.getElementById('web-about-vision').textContent = profile.vision;
+  document.getElementById('web-about-values').textContent = profile.values;
+  document.getElementById('web-contact-address').textContent = profile.address;
+  document.getElementById('web-promo-text').textContent = profile.specialOffer;
+  renderWebServices();
+}
+
+// Countdown timer loop
+let countdownSecs = 5 * 60;
+function startWebCountdown() {
+  const el = document.getElementById('web-countdown');
+  if (!el) return;
+  setInterval(() => {
+    if (countdownSecs <= 0) {
+      countdownSecs = 5 * 60;
+    }
+    countdownSecs--;
+    const min = Math.floor(countdownSecs / 60);
+    const sec = countdownSecs % 60;
+    el.textContent = `${min < 10 ? '0' : ''}${min}:${sec < 10 ? '0' : ''}${sec}`;
+  }, 1000);
+}
+
+// Website contact form submit leads pipeline
+const webForm = document.getElementById('web-contact-form');
+if (webForm) {
+  webForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const nameInput = webForm.querySelector('input[placeholder="Tu Nombre"]').value.trim();
+    const emailInput = webForm.querySelector('input[placeholder="Tu Correo Electrónico"]').value.trim();
+    const msgInput = webForm.querySelector('textarea').value.trim();
+    
+    if (!nameInput) return;
+    
+    // Inject to active branch CRM
+    const activeBranch = document.getElementById('erp-branch-select').value;
+    const branchData = profile.branchFinancials[activeBranch];
+    if (branchData && branchData.leads) {
+      branchData.leads.unshift({
+        name: nameInput,
+        contact: emailInput || 'Email',
+        note: msgInput || 'Interés general en servicios',
+        status: 'Cotizando'
+      });
+      updateERPCRM();
+      printToolLog(`[PÁGINA WEB] Nuevo prospecto registrado: "${nameInput}" asignado a sucursal ${activeBranch.toUpperCase()}.`);
+    }
+    
+    alert(`📩 Mensaje enviado con éxito!\n\nEl Asistente IA ha registrado al lead "${nameInput}" en tu CRM de la Sucursal ${activeBranch.toUpperCase()}.`);
+    webForm.reset();
+  });
+}
+
 // ── MOCKUP D: ERP CONTROLLER ──
+function updateERPPL() {
+  const branch = document.getElementById('erp-branch-select').value;
+  const branchData = profile.branchFinancials[branch];
+  if (!branchData) return;
+  
+  // Calculate dynamic sales
+  let dynamicRev = 0;
+  let dynamicCOGS = 0;
+  
+  // If the active branch is the selected one in the dropdown, we add POS sales
+  if (branch === 'centro') {
+    dynamicRev = totalCashSales + totalCardSales;
+    dynamicCOGS = dynamicRev * 0.35; // 35% COGS for food or items
+  }
+  
+  const totalRev = branchData.revenue + dynamicRev;
+  const totalCOGS = branchData.cogs + dynamicCOGS;
+  const gross = totalRev - totalCOGS;
+  const expenses = branchData.expenses;
+  const taxes = branchData.taxes + (dynamicRev * 0.16);
+  const net = gross - expenses - taxes;
+  
+  document.getElementById('erp-pl-revenue').textContent = `$${totalRev.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
+  document.getElementById('erp-pl-cogs').textContent = `$${totalCOGS.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
+  document.getElementById('erp-pl-gross').textContent = `$${gross.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
+  document.getElementById('erp-pl-expenses').textContent = `$${expenses.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
+  document.getElementById('erp-pl-taxes').textContent = `$${taxes.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
+  
+  const netEl = document.getElementById('erp-pl-net');
+  netEl.textContent = `$${net.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
+  if (net < 0) {
+    netEl.style.color = '#ef4444';
+  } else {
+    netEl.style.color = '#10b981';
+  }
+  
+  // Also refresh alerts, CRM and Tasks
+  updateERPALerts();
+  updateERPCRM();
+  updateERPTasks();
+}
+
+function updateERPCRM() {
+  const branch = document.getElementById('erp-branch-select').value;
+  const branchData = profile.branchFinancials[branch];
+  const tbody = document.getElementById('erp-crm-table-body');
+  if (!tbody || !branchData || !branchData.leads) return;
+  
+  tbody.innerHTML = '';
+  
+  branchData.leads.forEach((lead, idx) => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+    tr.innerHTML = `
+      <td style="padding: 8px 5px; font-weight: bold; color: #fff;">${lead.name}</td>
+      <td style="padding: 8px 5px; color: var(--text-muted); font-family: monospace;">${lead.contact}</td>
+      <td style="padding: 8px 5px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lead.note}</td>
+      <td style="padding: 8px 5px;">
+        <span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; background: ${lead.status === 'Cerrado' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(251, 191, 36, 0.15)'}; color: ${lead.status === 'Cerrado' ? '#10b981' : '#fbbf24'};">
+          ${lead.status}
+        </span>
+      </td>
+      <td style="padding: 8px 5px; text-align: right;">
+        <button class="action-crm-btn" style="background:none; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 10px; cursor: pointer; font-family: inherit;">
+          ${lead.status === 'Cotizando' ? '📞 Cerrar' : '✔ Listo'}
+        </button>
+      </td>
+    `;
+    
+    // Bind click to status change
+    const btn = tr.querySelector('.action-crm-btn');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        if (lead.status === 'Cotizando' || lead.status === 'En Espera') {
+          lead.status = 'Cerrado';
+          // Accumulate a mockup sale to branch revenue!
+          branchData.revenue += 4500;
+          printToolLog(`[CRM] Lead "${lead.name}" cerrado con éxito. Registro de ingresos extraordinarios: +$4,500.00 MXN.`);
+          updateERPPL();
+          if (typeof confetti === 'function') {
+            confetti({ particleCount: 30, spread: 30 });
+          }
+        } else {
+          alert('Lead ya procesado por el Asistente IA.');
+        }
+      });
+    }
+    
+    tbody.appendChild(tr);
+  });
+}
+
+function updateERPTasks() {
+  const branch = document.getElementById('erp-branch-select').value;
+  const branchData = profile.branchFinancials[branch];
+  const todoContainer = document.getElementById('erp-tasks-todo');
+  const doneContainer = document.getElementById('erp-tasks-done');
+  if (!todoContainer || !doneContainer || !branchData || !branchData.tasks) return;
+  
+  todoContainer.innerHTML = '';
+  doneContainer.innerHTML = '';
+  
+  branchData.tasks.todo.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'erp-task-card';
+    card.innerHTML = `
+      <strong style="color: #fff; font-size: 11px;">${t.title}</strong>
+      <span style="font-size: 10px; color: var(--text-muted);">${t.desc}</span>
+      <button class="solve-task-btn" style="width: 100%; padding: 4px; border-radius: 4px; background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.4); color: #fff; font-size: 9.5px; font-weight: bold; cursor: pointer; margin-top: 3px; font-family: inherit;">🚀 Resolver con IA</button>
+    `;
+    
+    card.querySelector('.solve-task-btn').addEventListener('click', () => {
+      // Move to done
+      branchData.tasks.todo = branchData.tasks.todo.filter(item => item.id !== t.id);
+      branchData.tasks.done.push(t);
+      printToolLog(`[OPERACIONES] Tarea "${t.title}" completada autónomamente por Agente Hermes.`);
+      updateERPTasks();
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 40, spread: 35 });
+      }
+    });
+    
+    todoContainer.appendChild(card);
+  });
+  
+  branchData.tasks.done.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'erp-task-card';
+    card.style.borderColor = 'rgba(16, 185, 129, 0.15)';
+    card.innerHTML = `
+      <strong style="color: #cbd5e1; font-size: 11px; text-decoration: line-through;">${t.title}</strong>
+      <span style="font-size: 10px; color: #94a3b8; font-style: italic;">Resuelta por Hermes IA</span>
+    `;
+    doneContainer.appendChild(card);
+  });
+}
+
+function updateERPALerts() {
+  const branch = document.getElementById('erp-branch-select').value;
+  const branchData = profile.branchFinancials[branch];
+  const container = document.getElementById('erp-alerts-container');
+  if (!container || !branchData) return;
+  
+  container.innerHTML = '';
+  
+  // Inject branch specific alerts
+  branchData.alerts.forEach(alert => {
+    const div = document.createElement('div');
+    div.className = `erp-alert-item ${alert.type === 'warning' ? 'warning' : alert.type === 'success' ? 'success' : 'info'}`;
+    let icon = alert.type === 'warning' ? '⚠️' : alert.type === 'success' ? '✅' : 'ℹ️';
+    div.innerHTML = `<span>${icon}</span> <span>${alert.text}</span>`;
+    container.appendChild(div);
+  });
+  
+  // Inject global stock warning alert if inventory is low
+  if (profile.inventory) {
+    profile.inventory.forEach(item => {
+      if (item.qty <= item.min) {
+        const div = document.createElement('div');
+        div.className = 'erp-alert-item warning';
+        div.innerHTML = `<span>🚨</span> <span><strong>Stock Crítico:</strong> Quedan solo ${item.qty} ${item.unit} de "${item.name}".</span>`;
+        container.appendChild(div);
+      }
+    });
+  }
+}
+
+// Subtab switcher
+document.querySelectorAll('.erp-subtab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.erp-subtab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    const selectedSub = btn.getAttribute('data-subtab');
+    document.querySelectorAll('.erp-subtab-content').forEach(view => {
+      view.style.display = 'none';
+    });
+    
+    const matched = document.getElementById(`erp-view-${selectedSub}`);
+    if (matched) {
+      if (selectedSub === 'tasks') {
+        matched.style.display = 'grid'; // Uses grid
+      } else {
+        matched.style.display = 'flex';
+        matched.style.flexDirection = 'column';
+      }
+    }
+  });
+});
+
+// Dropdown change updates branch title and P&L
+document.getElementById('erp-branch-select').addEventListener('change', (e) => {
+  const name = e.target.options[e.target.selectedIndex].text;
+  document.getElementById('erp-pl-branch-title').textContent = name;
+  updateERPPL();
+});
+
+// Optimizer toggle switch
 document.getElementById('erp-optimize-toggle').addEventListener('change', (e) => {
   const node = document.getElementById('erp-bottleneck-node');
   const statusVal = document.getElementById('erp-status-val');
@@ -811,7 +1598,7 @@ document.getElementById('erp-optimize-toggle').addEventListener('change', (e) =>
     node.className = 'flow-node success';
     node.innerHTML = `
       ${profile.erpOptimizeNode}
-      <div style="font-size: 11px; font-weight: 500; opacity: 0.8; margin-top: 4px;">${profile.erpOptimizeDesc}</div>
+      <div style="font-size: 10px; font-weight: 500; opacity: 0.8; margin-top: 3px;">${profile.erpOptimizeDesc}</div>
     `;
     statusVal.textContent = '🟢 Prototipo Óptimo (100% Eficiente)';
     statusVal.style.color = '#10b981';
@@ -821,16 +1608,18 @@ document.getElementById('erp-optimize-toggle').addEventListener('change', (e) =>
     if (typeof confetti === 'function') {
       confetti({ particleCount: 60, spread: 40 });
     }
+    printToolLog(`[OPTIMIZADOR ERP] Algoritmo IA de optimización de flujo activado. Erradicado: "${profile.erpBottleneck}".`);
   } else {
     node.className = 'flow-node error';
     node.innerHTML = `
       ❌ Cuello de Botella Operativo
-      <div id="erp-bottleneck-desc" style="font-size: 11px; font-weight: 500; opacity: 0.8; margin-top: 4px;">Cuello de botella: "${profile.erpBottleneck}"</div>
+      <div id="erp-bottleneck-desc" style="font-size: 10px; font-weight: 500; opacity: 0.8; margin-top: 3px;">Cuello de botella: ${profile.erpBottleneck}</div>
     `;
     statusVal.textContent = '⚠️ Ineficiencias Detectadas';
     statusVal.style.color = '#ef4444';
     timeVal.textContent = '0 horas/semana';
     timeVal.style.color = '#fff';
+    printToolLog(`[OPTIMIZADOR ERP] Algoritmo desactivado. Estado operacional degradado a ineficiente.`);
   }
 });
 

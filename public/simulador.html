@@ -114,17 +114,49 @@
                   <span class="biz-sector" style="font-size: 11px; color: var(--primary); font-weight: 700; text-transform: uppercase;"></span>
                 </div>
               </div>
-              <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5; margin: 0;">
-                Tu Asistente IA lee las solicitudes entrantes por WhatsApp y asiste a tus directivos y clientes resolviendo cuellos de botella.
-              </p>
-              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
-                <span style="font-size: 12px; font-weight: 700; color: #fff; display: block; margin-bottom: 10px;">Preguntas Frecuentes de Prueba:</span>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
+
+              <!-- AI Agent Selector -->
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 11px; font-weight: 700; color: #fff;">Agente Cognitivo IA Activo:</label>
+                <select id="agent-type-select" style="width: 100%; padding: 8px; border-radius: 8px; background: rgba(15,23,42,0.95); border: 1px solid var(--border-color); color: #fff; font-size: 12px; cursor: pointer; font-family: inherit; outline: none;">
+                  <option value="ventas" selected>🛍️ Agente de Ventas y Cotización</option>
+                  <option value="soporte">🛠️ Soporte Técnico Especializado</option>
+                  <option value="citas">📅 Coordinador de Citas y Reservas</option>
+                  <option value="cobranza">💰 Agente de Cobranza y Facturación</option>
+                </select>
+              </div>
+
+              <!-- Real-time Sentiment Detector -->
+              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
+                <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Sentimiento del Cliente:</span>
+                <span id="chat-sentiment" style="font-size: 11px; font-weight: 800; color: #10b981; display: flex; align-items: center; gap: 4px;">🟢 Feliz / Satisfecho</span>
+              </div>
+
+              <!-- Live Tool Calling Logs (Hermes Agent Console) -->
+              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+                <span style="font-size: 11px; font-weight: 700; color: #fff; display: flex; justify-content: space-between; align-items: center;">
+                  <span>⚙️ Logs de Herramientas IA (Hermes)</span>
+                  <span id="tool-status-dot" style="width: 6px; height: 6px; background: #6b7280; border-radius: 50%; display: inline-block;"></span>
+                </span>
+                <div id="agent-tool-logs" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); font-family: monospace; font-size: 10px; color: #38bdf8; padding: 8px 10px; border-radius: 8px; height: 85px; overflow-y: auto; line-height: 1.4; box-sizing: border-box;">
+                  &gt;_ Esperando interacción del usuario...
+                </div>
+              </div>
+
+              <!-- Sample Questions -->
+              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                <span style="font-size: 11px; font-weight: 700; color: #fff; display: block; margin-bottom: 8px;">Preguntas de Prueba del Sector:</span>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
                   <button class="sample-msg-btn" data-msg="¿Cuáles son los precios de sus servicios y formas de pago?">💰 Consultar Precios y Pago</button>
                   <button class="sample-msg-btn" data-msg="Hola, quiero programar una cita de atención técnica urgente.">📅 Agendar Cita Técnica</button>
                   <button class="sample-msg-btn" data-msg="Tengo problemas con el servicio anterior, ¿me pueden ayudar?">⚠️ Solicitar Soporte Técnico</button>
                 </div>
               </div>
+
+              <!-- Human Transfer Button -->
+              <button id="human-transfer-btn" style="width: 100%; padding: 8px 12px; border-radius: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; font-size: 11.5px; font-weight: bold; cursor: pointer; transition: background 0.2s; border: 1px solid rgba(239, 68, 68, 0.3); font-family: inherit;">
+                🚨 Transferir a Operador Humano
+              </button>
             </div>
 
             <!-- Right Chat Frame -->
@@ -181,13 +213,21 @@
                 <!-- Products dynamically updated by sector -->
               </div>
 
+              <!-- Real-time Predictive Inventory Section -->
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                <span style="font-size: 12.5px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">📦 Inventario en Tiempo Real (IA Predictivo)</span>
+                <div id="pos-inventory-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                  <!-- Injected dynamically: Insumos and stock bars -->
+                </div>
+              </div>
+
               <!-- Low Stock Warning Banner -->
-              <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.15); padding: 12px 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+              <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.15); padding: 12px 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
                 <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #fecaca;">
                   <span>⚠️</span>
-                  <span><strong>Alerta Predictiva IA:</strong> Nivel bajo de stock en insumo crítico del sector. ¿Reabastecer?</span>
+                  <span><strong>Alerta Predictiva IA:</strong> Insumos del sector en nivel crítico. ¿Reabastecer?</span>
                 </div>
-                <button onclick="alert('IA reabasteció el insumo automáticamente. Proveedor notificado por API.')" style="background: #ef4444; border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; color: #fff; cursor: pointer;">Autocomprar</button>
+                <button id="pos-reorder-btn" style="background: #ef4444; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; color: #fff; cursor: pointer; font-family: inherit;">Compra Directa IA</button>
               </div>
             </div>
 
@@ -198,29 +238,78 @@
                   <span style="font-size: 14px; font-weight: 700; color: #fff;">Detalle del Pedido</span>
                   <button id="clear-cart-btn" style="background: none; border: none; color: var(--text-muted); font-size: 11.5px; text-decoration: underline; cursor: pointer;">Vaciar</button>
                 </div>
+                
+                <!-- Loyalty System Dropdown -->
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <label style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Cliente Frecuente / Lealtad:</label>
+                  <select id="pos-loyalty-select" style="width: 100%; padding: 8px; border-radius: 8px; background: rgba(15,23,42,0.95); border: 1px solid var(--border-color); color: #fff; font-size: 12px; outline: none; cursor: pointer; font-family: inherit;">
+                    <option value="none" selected>👤 Venta al Público General</option>
+                    <option value="vip">⭐ Juan Pérez - Cliente VIP (10% Desc.)</option>
+                    <option value="frecuente">💎 María Gómez - Cliente Frecuente (5% Desc.)</option>
+                  </select>
+                </div>
+
                 <!-- Cart Items Container -->
-                <div id="pos-cart-items" style="display: flex; flex-direction: column; gap: 10px; max-height: 220px; overflow-y: auto; min-height: 120px;">
+                <div id="pos-cart-items" style="display: flex; flex-direction: column; gap: 10px; max-height: 180px; overflow-y: auto; min-height: 100px;">
                   <!-- Dynamic items -->
                 </div>
               </div>
 
               <!-- Cart Totals -->
-              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted);">
-                  <span>Subtotal:</span>
-                  <span id="pos-subtotal">$0.00 MXN</span>
+              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <!-- Tip Selection Panel -->
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Agregar Propina Sugerida:</span>
+                  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+                    <button class="tip-btn active" data-tip="0" style="padding: 6px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-family: inherit;">0%</button>
+                    <button class="tip-btn" data-tip="10" style="padding: 6px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); color: #fff; font-family: inherit;">10%</button>
+                    <button class="tip-btn" data-tip="15" style="padding: 6px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); color: #fff; font-family: inherit;">15%</button>
+                    <button class="tip-btn" data-tip="20" style="padding: 6px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); color: #fff; font-family: inherit;">20%</button>
+                  </div>
                 </div>
-                <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted);">
-                  <span>IVA (16%):</span>
-                  <span id="pos-iva">$0.00 MXN</span>
+
+                <!-- Complex Discount Coupon Selection -->
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Aplicar Promoción / Cupón:</span>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <button class="coupon-btn" data-coupon="BOGO" style="padding: 6px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); color: #fff; font-family: inherit;">🎟️ BOGO (2x1)</button>
+                    <button class="coupon-btn" data-coupon="DESC15" style="padding: 6px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); color: #fff; font-family: inherit;">🎟️ Cupón 15%</button>
+                  </div>
                 </div>
-                <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 700; color: #fff; padding: 5px 0;">
-                  <span>Total Neto:</span>
-                  <span id="pos-total">$0.00 MXN</span>
+
+                <!-- Detailed Breakdown -->
+                <div style="display: flex; flex-direction: column; gap: 6px; background: rgba(0,0,0,0.15); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.03);">
+                  <div style="display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-muted);">
+                    <span>Subtotal:</span>
+                    <span id="pos-subtotal">$0.00 MXN</span>
+                  </div>
+                  <div id="pos-discount-row" style="display: none; justify-content: space-between; font-size: 12.5px; color: #fb7185;">
+                    <span>Descuento Aplicado:</span>
+                    <span id="pos-discount-val">-$0.00 MXN</span>
+                  </div>
+                  <div id="pos-tip-row" style="display: none; justify-content: space-between; font-size: 12.5px; color: #34d399;">
+                    <span>Propina:</span>
+                    <span id="pos-tip-val">$0.00 MXN</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-muted);">
+                    <span>IVA (16%):</span>
+                    <span id="pos-iva">$0.00 MXN</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 700; color: #fff; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 6px;">
+                    <span>Total Neto:</span>
+                    <span id="pos-total">$0.00 MXN</span>
+                  </div>
                 </div>
-                <button id="checkout-pos-btn" style="width: 100%; padding: 12px; border-radius: 10px; background: linear-gradient(135deg, #a855f7, #ec4899); border: none; color: #fff; font-weight: 700; font-size: 13.5px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;">
-                  💳 Cobrar e Imprimir con Factura IA
-                </button>
+
+                <!-- Action Triggers -->
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 5px;">
+                  <button id="checkout-pos-btn" style="width: 100%; padding: 12px; border-radius: 10px; background: linear-gradient(135deg, #a855f7, #ec4899); border: none; color: #fff; font-weight: 800; font-size: 13.5px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;">
+                    💳 Cobrar e Imprimir con Factura IA
+                  </button>
+                  <button id="trigger-corte-btn" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; transition: background 0.2s;">
+                    🔑 Realizar Corte de Caja (Arqueo)
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -266,26 +355,91 @@
               </div>
               
               <!-- Mock Web Site Content Inside Sandbox -->
-              <div id="mock-web-preview" class="theme-ciberpunk" style="min-height: 400px; padding: 30px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px; transition: all 0.3s ease;">
+              <div id="mock-web-preview" class="theme-ciberpunk" style="min-height: 480px; padding: 25px; box-sizing: border-box; display: flex; flex-direction: column; gap: 15px; transition: all 0.3s ease;">
                 <!-- Mini-web header -->
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
                   <div style="display: flex; align-items: center; gap: 8px;">
-                    <div class="business-logo-container" style="width: 32px; height: 32px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;"></div>
-                    <span class="biz-name" style="font-size: 13.5px; font-weight: 700; color: #fff;"></span>
+                    <div class="business-logo-container" style="width: 28px; height: 28px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;"></div>
+                    <span class="biz-name" style="font-size: 13px; font-weight: 700; color: #fff;"></span>
                   </div>
-                  <div style="display: flex; gap: 15px; font-size: 12px; color: #fff; font-weight: 500;">
-                    <span>Servicios</span>
-                    <span>Nosotros</span>
-                    <span>Contacto</span>
+                  <div style="display: flex; gap: 12px; font-size: 11.5px; color: #fff; font-weight: 600;">
+                    <span id="web-nav-home" style="cursor: pointer; transition: opacity 0.2s; border-bottom: 2px solid var(--primary); padding-bottom: 2px;">Inicio</span>
+                    <span id="web-nav-services" style="cursor: pointer; transition: opacity 0.2s;">Servicios</span>
+                    <span id="web-nav-about" style="cursor: pointer; transition: opacity 0.2s;">Nosotros</span>
+                    <span id="web-nav-contact" style="cursor: pointer; transition: opacity 0.2s;">Contacto</span>
                   </div>
                 </div>
-                <!-- Mini-web Hero -->
-                <div style="text-align: center; margin: 40px auto 20px auto; max-width: 550px; display: flex; flex-direction: column; gap: 15px;">
-                  <h1 style="font-size: 26px; font-weight: 800; color: #fff; line-height: 1.25; font-family: var(--font-title);">El Futuro de <span id="mock-web-title" class="web-accent-text" style="background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></span></h1>
-                  <p id="mock-web-slogan" style="font-size: 13px; color: #cbd5e1; line-height: 1.5;"></p>
-                  <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
-                    <button class="web-btn-primary" style="padding: 10px 20px; border-radius: 8px; font-size: 12.5px; font-weight: 700; color: #fff; border: none; cursor: pointer;">Comenzar Ahora</button>
-                    <button style="padding: 10px 20px; border-radius: 8px; font-size: 12.5px; font-weight: 700; color: #fff; border: 1px solid rgba(255,255,255,0.1); background: transparent; cursor: pointer;">Saber Más</button>
+
+                <!-- Section: HOME -->
+                <div id="web-section-home" class="web-page-section" style="display: flex; flex-direction: column; gap: 15px;">
+                  <div style="text-align: center; margin: 25px auto 10px auto; max-width: 500px; display: flex; flex-direction: column; gap: 12px;">
+                    <h1 style="font-size: 24px; font-weight: 800; color: #fff; line-height: 1.25; font-family: var(--font-title); margin: 0;">El Futuro de <span id="mock-web-title" class="web-accent-text" style="background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></span></h1>
+                    <p id="mock-web-slogan" style="font-size: 12.5px; color: #cbd5e1; line-height: 1.5; margin: 0;"></p>
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 5px;">
+                      <button class="web-btn-primary" id="web-cta-btn" style="padding: 8px 16px; border-radius: 6px; font-size: 11.5px; font-weight: 700; color: #fff; border: none; cursor: pointer;">Comenzar Ahora</button>
+                      <button id="web-secondary-btn" style="padding: 8px 16px; border-radius: 6px; font-size: 11.5px; font-weight: 700; color: #fff; border: 1px solid rgba(255,255,255,0.1); background: transparent; cursor: pointer;">Saber Más</button>
+                    </div>
+                  </div>
+                  <!-- Hot Deals Promo Section with Live Countdown -->
+                  <div style="background: rgba(244,63,94,0.08); border: 1px solid rgba(244,63,94,0.25); border-radius: 10px; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                    <div style="display: flex; flex-direction: column; gap: 3px;">
+                      <span style="font-size: 11px; text-transform: uppercase; color: #fb7185; font-weight: bold; letter-spacing: 0.5px;">🔥 Oferta por Tiempo Limitado</span>
+                      <span id="web-promo-text" style="font-size: 12px; color: #fff; font-weight: 600;"></span>
+                    </div>
+                    <div style="text-align: right;">
+                      <div id="web-countdown" style="font-family: monospace; font-size: 14px; font-weight: 800; color: #fb7185; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 6px;">04:59</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section: SERVICES -->
+                <div id="web-section-services" class="web-page-section" style="display: none; flex-direction: column; gap: 12px;">
+                  <h4 style="font-size: 14px; font-weight: bold; color: #fff; margin: 0 0 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">Nuestros Servicios Especializados</h4>
+                  <div id="web-services-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                    <!-- 3 dynamic service cards injected here -->
+                  </div>
+                </div>
+
+                <!-- Section: ABOUT (Nosotros) -->
+                <div id="web-section-about" class="web-page-section" style="display: none; flex-direction: column; gap: 12px;">
+                  <h4 style="font-size: 14px; font-weight: bold; color: #fff; margin: 0 0 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">Sobre Nosotros</h4>
+                  <p id="web-about-slogan" style="font-size: 12px; font-style: italic; color: var(--primary); margin: 0;"></p>
+                  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 5px;">
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 8px;">
+                      <strong style="font-size: 11px; color: #fff; display: block; margin-bottom: 3px;">🎯 Misión</strong>
+                      <span id="web-about-mission" style="font-size: 10px; color: var(--text-muted); line-height: 1.3; display: block;"></span>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 8px;">
+                      <strong style="font-size: 11px; color: #fff; display: block; margin-bottom: 3px;">👁️ Visión</strong>
+                      <span id="web-about-vision" style="font-size: 10px; color: var(--text-muted); line-height: 1.3; display: block;"></span>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 8px;">
+                      <strong style="font-size: 11px; color: #fff; display: block; margin-bottom: 3px;">💎 Valores</strong>
+                      <span id="web-about-values" style="font-size: 10px; color: var(--text-muted); line-height: 1.3; display: block;"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section: CONTACT -->
+                <div id="web-section-contact" class="web-page-section" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px;">
+                  <!-- Left: Contact Form -->
+                  <form id="web-contact-form" style="display: flex; flex-direction: column; gap: 8px;" onsubmit="event.preventDefault(); alert('📩 Mensaje enviado. El Asistente IA de tu negocio lo procesará de inmediato.'); this.reset();">
+                    <span style="font-size: 12px; font-weight: bold; color: #fff;">Envíanos un Mensaje</span>
+                    <input type="text" placeholder="Tu Nombre" required style="padding: 6px 10px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: #fff; font-size: 11px; outline: none; font-family: inherit;">
+                    <input type="email" placeholder="Tu Correo Electrónico" required style="padding: 6px 10px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: #fff; font-size: 11px; outline: none; font-family: inherit;">
+                    <textarea placeholder="¿Cómo te podemos ayudar?" required rows="2" style="padding: 6px 10px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); color: #fff; font-size: 11px; resize: none; outline: none; font-family: inherit;"></textarea>
+                    <button type="submit" class="web-btn-primary" style="padding: 6px 12px; border-radius: 6px; border: none; color: #fff; font-size: 11px; font-weight: bold; cursor: pointer; font-family: inherit;">Enviar Mensaje</button>
+                  </form>
+                  <!-- Right: Map/Address details -->
+                  <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <span style="font-size: 12px; font-weight: bold; color: #fff;">Nuestra Ubicación</span>
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; flex: 1; display: flex; flex-direction: column; gap: 6px; justify-content: center;">
+                      <span style="font-size: 11px; color: #fff; font-weight: bold;">🏢 Dirección Corporativa:</span>
+                      <span id="web-contact-address" style="font-size: 10.5px; color: var(--text-muted); line-height: 1.4;"></span>
+                      <div style="height: 60px; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px dashed rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text-muted);">
+                        🗺️ [Simulación de Mapa Google Maps]
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -302,14 +456,30 @@
           <div class="erp-layout" style="display: grid; grid-template-columns: 320px 1fr; gap: 24px;">
             <!-- ERP Control Panel -->
             <div class="glass-card" style="padding: 24px; border-radius: 16px; display: flex; flex-direction: column; gap: 15px;">
-              <h4 style="font-size: 16px; font-weight: bold; color: #fff; margin: 0;">🛠️ Optimizador ERP</h4>
-              <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5; margin: 0;">
-                Tu software no se tiene que amoldar a un sistema genérico, nuestro algoritmo IA detecta y optimiza los cuellos de botella de tu proceso.
-              </p>
+              <h4 style="font-size: 16px; font-weight: bold; color: #fff; margin: 0;">🛠️ Control Corporativo</h4>
               
-              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; display: flex; flex-direction: column; gap: 15px;">
+              <!-- Multisucursal Selection -->
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 11px; font-weight: 700; color: #fff;">Sucursal Activa (Multisucursal):</label>
+                <select id="erp-branch-select" style="width: 100%; padding: 8px; border-radius: 8px; background: rgba(15,23,42,0.95); border: 1px solid var(--border-color); color: #fff; font-size: 12px; cursor: pointer; font-family: inherit; outline: none;">
+                  <option value="centro" selected>🏢 Sucursal Centro (Matriz)</option>
+                  <option value="norte">🏢 Sucursal Norte</option>
+                  <option value="sur">🏢 Sucursal Sur</option>
+                </select>
+              </div>
+
+              <!-- AI Operational Anomaly Alerts -->
+              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+                <span style="font-size: 11px; font-weight: 700; color: #fff;">🚨 Alertas IA Operacionales:</span>
+                <div id="erp-alerts-container" style="display: flex; flex-direction: column; gap: 6px;">
+                  <!-- Injected dynamically -->
+                </div>
+              </div>
+
+              <!-- Process Optimizer Section -->
+              <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; display: flex; flex-direction: column; gap: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 12px; font-weight: 700; color: #fff;">Algoritmo IA Optimizador</span>
+                  <span style="font-size: 11.5px; font-weight: 700; color: #fff;">Algoritmo IA Optimizador</span>
                   <label class="switch" style="position: relative; display: inline-block; width: 44px; height: 22px;">
                     <input type="checkbox" id="erp-optimize-toggle" style="opacity: 0; width: 0; height: 0;">
                     <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 34px;"></span>
@@ -319,46 +489,132 @@
                 <div id="erp-stats" style="display: flex; flex-direction: column; gap: 8px;">
                   <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
                     <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Estado de Procesos</div>
-                    <div id="erp-status-val" style="font-size: 13.5px; font-weight: bold; color: #ef4444; margin-top: 2px;">⚠️ Ineficiencias Detectadas</div>
+                    <div id="erp-status-val" style="font-size: 13px; font-weight: bold; color: #ef4444; margin-top: 2px;">⚠️ Ineficiencias Detectadas</div>
                   </div>
                   <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
                     <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Ahorro de Tiempo Estimado</div>
-                    <div id="erp-time-val" style="font-size: 13.5px; font-weight: bold; color: #fff; margin-top: 2px;">0 horas/semana</div>
+                    <div id="erp-time-val" style="font-size: 13px; font-weight: bold; color: #fff; margin-top: 2px;">0 horas/semana</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- ERP Visualizer Node Graph -->
-            <div class="glass-card" style="padding: 24px; border-radius: 16px; display: flex; flex-direction: column; gap: 20px; justify-content: center; min-height: 400px; border-color: rgba(255,255,255,0.08); background: rgba(0,0,0,0.15);">
-              <h5 style="font-size: 13.5px; font-weight: bold; color: #fff; margin: 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">Diagrama de Flujo de Operaciones: <span class="biz-name"></span></h5>
-              
-              <!-- Flow Nodes Container -->
-              <div class="erp-flow-container" style="display: flex; flex-direction: column; gap: 30px; align-items: center; margin: 20px 0;">
-                <!-- Node 1 -->
-                <div class="flow-node" style="padding: 10px 20px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; font-size: 12px; font-weight: bold; z-index: 2;">
-                  📥 Entrada de Solicitud de Cliente
-                </div>
-                
-                <!-- Connector Arrow 1 -->
-                <div style="height: 25px; width: 2px; background: rgba(255,255,255,0.1); position: relative;">
-                  <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid rgba(255,255,255,0.2);"></div>
-                </div>
-                
-                <!-- Node 2 (BOTTLENECK NODE) -->
-                <div id="erp-bottleneck-node" class="flow-node error" style="padding: 12px 24px; border-radius: 12px; font-size: 12.5px; font-weight: bold; z-index: 2; transition: all 0.5s ease; text-align: center;">
-                  ❌ Cuello de Botella Operativo
-                  <div id="erp-bottleneck-desc" style="font-size: 11px; font-weight: 500; opacity: 0.8; margin-top: 4px;"></div>
-                </div>
-                
-                <!-- Connector Arrow 2 -->
-                <div style="height: 25px; width: 2px; background: rgba(255,255,255,0.1); position: relative;">
-                  <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid rgba(255,255,255,0.2);"></div>
-                </div>
+            <!-- ERP Content Dashboard -->
+            <div class="glass-card" style="padding: 20px; border-radius: 16px; display: flex; flex-direction: column; gap: 15px; border-color: rgba(255,255,255,0.08); background: rgba(0,0,0,0.15);">
+              <!-- Sub-tab headers -->
+              <div style="display: flex; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; flex-wrap: wrap;">
+                <button class="erp-subtab-btn active" data-subtab="pl" style="padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: #fff; cursor: pointer; font-family: inherit;">📊 Estado de Resultados</button>
+                <button class="erp-subtab-btn" data-subtab="crm" style="padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: #fff; cursor: pointer; font-family: inherit;">👥 Leads / CRM</button>
+                <button class="erp-subtab-btn" data-subtab="tasks" style="padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: #fff; cursor: pointer; font-family: inherit;">📋 Kanban de Tareas</button>
+                <button class="erp-subtab-btn" data-subtab="flow" style="padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: #fff; cursor: pointer; font-family: inherit;">⚙️ Diagrama de Procesos</button>
+              </div>
 
-                <!-- Node 3 -->
-                <div class="flow-node" style="padding: 10px 20px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; font-size: 12px; font-weight: bold; z-index: 2;">
-                  📊 Registro Contable, Factura y Entrega de Servicio
+              <!-- Sub-tab contents -->
+              <!-- SUBTAB: P&L -->
+              <div id="erp-view-pl" class="erp-subtab-content" style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 13px; font-weight: bold; color: #fff;">Pérdidas y Ganancias (Mensual) - <span id="erp-pl-branch-title">Sucursal Centro</span></span>
+                  <span style="font-size: 11px; color: #10b981; font-weight: bold;">Auditoría Contable SAT Sincronizada</span>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; color: #cbd5e1; text-align: left;">
+                  <tbody>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                      <td style="padding: 8px 0; font-weight: bold; color: #fff;">(+) Ingresos Operativos (Ventas):</td>
+                      <td id="erp-pl-revenue" style="padding: 8px 0; text-align: right; font-weight: bold; color: #10b981;">$0.00 MXN</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                      <td style="padding: 8px 0;">(-) Costo de Ventas (COGS):</td>
+                      <td id="erp-pl-cogs" style="padding: 8px 0; text-align: right; color: #f87171;">$0.00 MXN</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.01);">
+                      <td style="padding: 8px 0; font-weight: bold; color: #fff;">(=) Utilidad Bruta:</td>
+                      <td id="erp-pl-gross" style="padding: 8px 0; text-align: right; font-weight: bold; color: #fff;">$0.00 MXN</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                      <td style="padding: 8px 0;">(-) Gastos Operativos (Nóminas y Licencias):</td>
+                      <td id="erp-pl-expenses" style="padding: 8px 0; text-align: right; color: #f87171;">$0.00 MXN</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                      <td style="padding: 8px 0;">(-) Retención de Impuestos (ISR/IVA SAT):</td>
+                      <td id="erp-pl-taxes" style="padding: 8px 0; text-align: right; color: #f87171;">$0.00 MXN</td>
+                    </tr>
+                    <tr style="background: rgba(16, 185, 129, 0.05); font-weight: bold;">
+                      <td style="padding: 10px; border-radius: 6px 0 0 6px; color: #fff;">(=) Utilidad Neta AI:</td>
+                      <td id="erp-pl-net" style="padding: 10px; text-align: right; color: #10b981; border-radius: 0 6px 6px 0;">$0.00 MXN</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- SUBTAB: CRM -->
+              <div id="erp-view-crm" class="erp-subtab-content" style="display: none; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 13px; font-weight: bold; color: #fff;">Base de Datos de Prospectos (Leads)</span>
+                  <span style="font-size: 11px; color: var(--primary);">Sincronizado con Asistente Chat</span>
+                </div>
+                <div style="overflow-x: auto;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 11.5px; color: #cbd5e1; text-align: left;">
+                    <thead>
+                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #fff; font-weight: bold;">
+                        <th style="padding: 8px 5px;">Prospecto</th>
+                        <th style="padding: 8px 5px;">Contacto</th>
+                        <th style="padding: 8px 5px;">Interés / Nota</th>
+                        <th style="padding: 8px 5px;">Estado</th>
+                        <th style="padding: 8px 5px; text-align: right;">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="erp-crm-table-body">
+                      <!-- Dynamic leads list -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- SUBTAB: KANBAN -->
+              <div id="erp-view-tasks" class="erp-subtab-content" style="display: none; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 13px; font-weight: bold; color: #fff;">Tablero de Tareas Operativas</span>
+                  <span style="font-size: 11px; color: #10b981;">Automatizado con Agente Hermes</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                  <!-- Pending Column -->
+                  <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px;">
+                    <strong style="font-size: 11px; color: #fb7185; display: block; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">⏳ Pendientes</strong>
+                    <div id="erp-tasks-todo" style="display: flex; flex-direction: column; gap: 8px;">
+                      <!-- Task cards -->
+                    </div>
+                  </div>
+                  <!-- Done Column -->
+                  <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px;">
+                    <strong style="font-size: 11px; color: #34d399; display: block; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">✅ Completadas por IA</strong>
+                    <div id="erp-tasks-done" style="display: flex; flex-direction: column; gap: 8px;">
+                      <!-- Done task cards -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SUBTAB: FLOW (Diagrama de Procesos) -->
+              <div id="erp-view-flow" class="erp-subtab-content" style="display: none; flex-direction: column; align-items: center;">
+                <h5 style="font-size: 12.5px; font-weight: bold; color: #fff; margin: 0 0 10px 0; align-self: flex-start; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">Diagrama de Flujo de Operaciones: <span class="biz-name"></span></h5>
+                <!-- Flow Nodes Container -->
+                <div class="erp-flow-container" style="display: flex; flex-direction: column; gap: 20px; align-items: center; margin: 10px 0; width: 100%;">
+                  <div class="flow-node" style="padding: 8px 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 11.5px; font-weight: bold; z-index: 2;">
+                    📥 Entrada de Solicitud de Cliente
+                  </div>
+                  <div style="height: 15px; width: 2px; background: rgba(255,255,255,0.1); position: relative;">
+                    <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 4px solid rgba(255,255,255,0.2);"></div>
+                  </div>
+                  <div id="erp-bottleneck-node" class="flow-node error" style="padding: 10px 20px; border-radius: 10px; font-size: 12px; font-weight: bold; z-index: 2; transition: all 0.5s ease; text-align: center; max-width: 320px;">
+                    ❌ Cuello de Botella Operativo
+                    <div id="erp-bottleneck-desc" style="font-size: 10px; font-weight: 500; opacity: 0.8; margin-top: 3px;"></div>
+                  </div>
+                  <div style="height: 15px; width: 2px; background: rgba(255,255,255,0.1); position: relative;">
+                    <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 4px solid rgba(255,255,255,0.2);"></div>
+                  </div>
+                  <div class="flow-node" style="padding: 8px 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 11.5px; font-weight: bold; z-index: 2;">
+                    📊 Registro Contable, Factura y Entrega de Servicio
+                  </div>
                 </div>
               </div>
             </div>
@@ -383,6 +639,65 @@
     </div>
 
   </main>
+
+  <!-- CORTE DE CAJA / ARQUEO MODAL -->
+  <div id="corte-caja-overlay" style="display: none; position: fixed; inset: 0; background: rgba(6, 8, 12, 0.95); z-index: 2000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(10px);">
+    <div class="glass-card" style="width: 100%; max-width: 500px; border-color: rgba(16, 185, 129, 0.4); background: rgba(15, 23, 42, 0.98); border-radius: 20px; padding: 25px; box-sizing: border-box; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.8); position: relative; animation: fadeIn 0.3s ease-out;">
+      <button id="close-corte-btn" style="position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; border: none; font-size: 12px; font-family: inherit;">✕</button>
+      
+      <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+        <span style="font-size: 24px;">🔑</span>
+        <div>
+          <h3 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0; font-family: var(--font-title);">Arqueo y Corte de Caja</h3>
+          <span style="font-size: 11px; color: var(--text-muted);">Auditoría Contable del Turno Activo</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted);">
+          <span>Ventas Registradas en Efectivo:</span>
+          <span id="corte-efectivo-reg" style="font-weight: bold; color: #fff;">$0.00 MXN</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted);">
+          <span>Ventas Registradas con Tarjeta:</span>
+          <span id="corte-tarjeta-reg" style="font-weight: bold; color: #fff;">$0.00 MXN</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; color: #fff; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 8px;">
+          <span>Total en Caja Esperado:</span>
+          <span id="corte-total-reg" style="color: var(--primary);">$0.00 MXN</span>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 5px;">
+          <label style="font-size: 12px; font-weight: bold; color: #fff;">Contar Efectivo Físico en Caja ($):</label>
+          <input type="number" id="corte-cash-counted" placeholder="Ingresa el monto de efectivo físico" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 13.5px; box-sizing: border-box; outline: none; font-family: inherit;">
+        </div>
+
+        <button id="calculate-arqueo-btn" style="width: 100%; padding: 10px; border-radius: 8px; background: #10b981; border: none; color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 5px;">
+          🔍 Auditar y Calcular Desviaciones
+        </button>
+
+        <!-- Variance Result Panel -->
+        <div id="corte-variance-panel" style="display: none; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; margin-top: 5px; animation: fadeIn 0.3s;">
+          <div style="display: flex; justify-content: space-between; font-size: 13px;">
+            <span style="color: var(--text-muted);">Diferencia / Desviación:</span>
+            <span id="corte-variance-val" style="font-weight: 800;">$0.00 MXN</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px;">
+            <span style="color: var(--text-muted);">Estado del Arqueo:</span>
+            <span id="corte-variance-status" style="font-weight: 800;">🟢 Cuadrado</span>
+          </div>
+          <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; margin-top: 4px;">
+            <strong style="color: #60cdff; display: block; font-size: 11px; margin-bottom: 2px;">🤖 Auditoría de Desviación IA:</strong>
+            <p id="corte-audit-log" style="font-size: 11px; color: #cbd5e1; line-height: 1.4; margin: 0;"></p>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; display: flex; justify-content: flex-end; margin-top: 5px;">
+        <button id="submit-corte-btn" style="padding: 8px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 8px; color: #fff; font-size: 12px; cursor: pointer; font-family: inherit;">Guardar y Cerrar Turno</button>
+      </div>
+    </div>
+  </div>
 
   <!-- DIAGNOSTIC OVERLAY MODAL -->
   <div id="diagnostic-overlay" style="display: none; position: fixed; inset: 0; background: rgba(6, 8, 12, 0.95); z-index: 2000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(10px);">
