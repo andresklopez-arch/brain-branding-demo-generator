@@ -187,12 +187,39 @@
       animation: logo-pulse 3s infinite ease-in-out;
     }
 
-    /* DYNAMIC SMART HEADER & GOLD/CIAN PULSING RAYO */
+    /* DYNAMIC SMART CAPSULE HEADER & GOLD/CIAN PULSING RAYO */
     header {
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      position: fixed;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%) translateY(0);
+      width: 90%;
+      max-width: 1100px;
+      height: 60px;
+      background: rgba(6, 8, 12, 0.75) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-radius: 30px !important;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 25px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(99, 102, 241, 0.05);
+    }
+    header.scrolled {
+      top: 10px;
+      height: 56px;
+      width: 85%;
+      max-width: 1000px;
+      background: rgba(6, 8, 12, 0.85) !important;
+      border-color: rgba(0, 229, 255, 0.2) !important;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6), 0 0 25px rgba(0, 229, 255, 0.1);
     }
     header.header-hidden {
-      transform: translateY(-110%);
+      transform: translateX(-50%) translateY(-130%) !important;
     }
     @keyframes rayo-pulse {
       0% { box-shadow: 0 0 5px rgba(0, 229, 255, 0.2); border-color: rgba(0, 229, 255, 0.3); }
@@ -206,24 +233,38 @@
     /* FINE-TUNED MOBILE HEADER */
     @media (max-width: 768px) {
       header {
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%) translateY(0) !important;
+        width: 95%;
+        padding: 10px 15px;
+        height: auto !important;
         flex-direction: column;
-        gap: 12px;
-        padding: 12px 10px;
-        height: auto;
-        align-items: center;
-        text-align: center;
+        gap: 8px;
+        border-radius: 20px !important;
+      }
+      header.header-hidden {
+        transform: translateX(-50%) translateY(-120%) !important;
       }
       header nav {
-        margin: 5px 0;
-        gap: 8px;
+        margin: 2px 0;
+        gap: 6px;
       }
       header nav a {
-        width: 35px !important;
-        height: 35px !important;
-        font-size: 17px !important;
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 16px !important;
       }
-      header .logo-area {
-        margin-right: 0;
+      header .logo-area img {
+        height: 30px !important;
+      }
+      header .logo-text {
+        font-size: 13px !important;
+      }
+      header #theme-toggle-btn {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 13px !important;
       }
     }
   </style>
@@ -257,7 +298,9 @@
       <a href="/propuesta_campana/" class="nav-link custom-tooltip" data-tooltip="Campaña IA" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0; color: #00e5ff; font-weight: bold;">⚡</a>
     </nav>
     <button id="pwa-install-btn" style="display: none !important;"></button>
-    <div id="scroll-progress" style="position: absolute; bottom: 0; left: 0; height: 2px; width: 0%; background: linear-gradient(90deg, var(--primary), #00e5ff); transition: width 0.1s ease; z-index: 101; box-shadow: 0 0 8px #00e5ff;"></div>
+    <div style="position: absolute; bottom: 0; left: 25px; right: 25px; height: 2px; background: rgba(255, 255, 255, 0.03); border-radius: 1px;">
+      <div id="scroll-progress" style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), #00e5ff); transition: width 0.1s ease; box-shadow: 0 0 8px #00e5ff; border-radius: 1px;"></div>
+    </div>
   </header>
 
   <!-- MAIN VIEWPORT -->
