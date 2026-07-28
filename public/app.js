@@ -1,11 +1,32 @@
+// Safe storage wrapper to prevent crashes in strict privacy settings / custom domains
+const safeStorage = (type) => {
+  try {
+    const storage = window[type];
+    const testKey = '__test_store__';
+    storage.setItem(testKey, '1');
+    storage.removeItem(testKey);
+    return storage;
+  } catch (e) {
+    const memory = {};
+    return {
+      getItem: (key) => (key in memory ? memory[key] : null),
+      setItem: (key, value) => { memory[key] = String(value); },
+      removeItem: (key) => { delete memory[key]; },
+      clear: () => { Object.keys(memory).forEach(k => delete memory[k]); }
+    };
+  }
+};
+const safeLocalStorage = safeStorage('localStorage');
+const safeSessionStorage = safeStorage('sessionStorage');
+
 /* Brain Branding - Interactive Scripts */
 
 document.addEventListener('DOMContentLoaded', () => {
-  const redirectReason = localStorage.getItem('sim_redirect_reason');
+  const redirectReason = safeLocalStorage.getItem('sim_redirect_reason');
   if (redirectReason) {
     console.warn("REDIRECTED REASON:", redirectReason);
     alert("Simulador Cerrado / Redirigido: " + redirectReason);
-    localStorage.removeItem('sim_redirect_reason');
+    safeLocalStorage.removeItem('sim_redirect_reason');
   }
 
   
@@ -291,22 +312,22 @@ document.addEventListener('DOMContentLoaded', () => {
       const bizProblem = document.getElementById('sim-business-problem').value.trim();
       const bizStyle = document.getElementById('sim-business-style').value;
 
-      // Store in sessionStorage
-      sessionStorage.setItem('sim_session_active', 'true');
-      sessionStorage.setItem('sim_session_start', Date.now().toString());
-      sessionStorage.setItem('sim_biz_name', bizName);
-      sessionStorage.setItem('sim_biz_sector', bizSector);
-      sessionStorage.setItem('sim_biz_problem', bizProblem);
-      sessionStorage.setItem('sim_biz_style', bizStyle);
-      sessionStorage.setItem('sim_biz_logo', uploadedLogoDataUrl || '');
-      sessionStorage.setItem('sim_active_service', activeSimulatorService);
+      // Store in safeSessionStorage
+      safeSessionStorage.setItem('sim_session_active', 'true');
+      safeSessionStorage.setItem('sim_session_start', Date.now().toString());
+      safeSessionStorage.setItem('sim_biz_name', bizName);
+      safeSessionStorage.setItem('sim_biz_sector', bizSector);
+      safeSessionStorage.setItem('sim_biz_problem', bizProblem);
+      safeSessionStorage.setItem('sim_biz_style', bizStyle);
+      safeSessionStorage.setItem('sim_biz_logo', uploadedLogoDataUrl || '');
+      safeSessionStorage.setItem('sim_active_service', activeSimulatorService);
 
-      localStorage.setItem('sim_biz_name', bizName);
-      localStorage.setItem('sim_biz_sector', bizSector);
-      localStorage.setItem('sim_biz_problem', bizProblem);
-      localStorage.setItem('sim_biz_style', bizStyle);
-      localStorage.setItem('sim_biz_logo', uploadedLogoDataUrl || '');
-      localStorage.setItem('sim_active_service', activeSimulatorService);
+      safeLocalStorage.setItem('sim_biz_name', bizName);
+      safeLocalStorage.setItem('sim_biz_sector', bizSector);
+      safeLocalStorage.setItem('sim_biz_problem', bizProblem);
+      safeLocalStorage.setItem('sim_biz_style', bizStyle);
+      safeLocalStorage.setItem('sim_biz_logo', uploadedLogoDataUrl || '');
+      safeLocalStorage.setItem('sim_active_service', activeSimulatorService);
 
       // Close modal
       hideSimModal();
@@ -576,13 +597,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const cookieBanner = document.getElementById('cookie-banner');
   const acceptCookiesBtn = document.getElementById('accept-cookies-btn');
   if (cookieBanner && acceptCookiesBtn) {
-    if (!localStorage.getItem('cookies_accepted')) {
+    if (!safeLocalStorage.getItem('cookies_accepted')) {
       setTimeout(() => {
         cookieBanner.style.display = 'block';
       }, 1000);
     }
     acceptCookiesBtn.addEventListener('click', () => {
-      localStorage.setItem('cookies_accepted', 'true');
+      safeLocalStorage.setItem('cookies_accepted', 'true');
       cookieBanner.style.opacity = '0';
       setTimeout(() => {
         cookieBanner.style.display = 'none';
@@ -593,7 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 7. Light/Dark Theme Toggle Logic
   const themeToggleBtn = document.getElementById('theme-toggle-btn');
   if (themeToggleBtn) {
-    if (localStorage.getItem('theme') === 'light') {
+    if (safeLocalStorage.getItem('theme') === 'light') {
       document.body.classList.add('light-theme');
       themeToggleBtn.textContent = '🌙';
     } else {
@@ -603,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
     themeToggleBtn.addEventListener('click', () => {
       document.body.classList.toggle('light-theme');
       const isLight = document.body.classList.contains('light-theme');
-      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+      safeLocalStorage.setItem('theme', isLight ? 'light' : 'dark');
       themeToggleBtn.textContent = isLight ? '🌙' : '☀️';
       themeToggleBtn.classList.toggle('rotated');
     });
@@ -842,7 +863,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (data.success && data.redirectUrl) {
           passcodeAttempts = 0;
-          sessionStorage.setItem('demo_key', cleanCode);
+          safeSessionStorage.setItem('demo_key', cleanCode);
           if (typeof gtag === 'function') {
             gtag('event', 'unlock_private_demo_api', { event_category: 'security', event_label: data.clientName });
           }
@@ -1023,7 +1044,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (currentSectionId) {
-      sessionStorage.setItem('activeSection', currentSectionId);
+      safeSessionStorage.setItem('activeSection', currentSectionId);
     }
 
     navLinks.forEach(link => {
@@ -1075,7 +1096,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // 23. Scroll State Restoration
-  const savedSection = sessionStorage.getItem('activeSection');
+  const savedSection = safeSessionStorage.getItem('activeSection');
   if (savedSection && window.location.hash === '') {
     setTimeout(() => {
       const targetSec = document.getElementById(savedSection);
@@ -1155,13 +1176,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById(id);
     const key = draftFields[id];
     if (el) {
-      const savedVal = localStorage.getItem(key);
+      const savedVal = safeLocalStorage.getItem(key);
       if (savedVal) {
         el.value = savedVal;
         el.dispatchEvent(new Event('input'));
       }
       el.addEventListener('input', () => {
-        localStorage.setItem(key, sanitizeInput(el.value));
+        safeLocalStorage.setItem(key, sanitizeInput(el.value));
       });
     }
   });
@@ -1170,7 +1191,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const agencyContactForm = document.getElementById('agency-contact-form');
   if (agencyContactForm) {
     agencyContactForm.addEventListener('submit', () => {
-      Object.values(draftFields).forEach(key => localStorage.removeItem(key));
+      Object.values(draftFields).forEach(key => safeLocalStorage.removeItem(key));
     });
   }
 

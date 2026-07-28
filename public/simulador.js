@@ -1,3 +1,24 @@
+// Safe storage wrapper to prevent crashes in strict privacy settings / custom domains
+const safeStorage = (type) => {
+  try {
+    const storage = window[type];
+    const testKey = '__test_store__';
+    storage.setItem(testKey, '1');
+    storage.removeItem(testKey);
+    return storage;
+  } catch (e) {
+    const memory = {};
+    return {
+      getItem: (key) => (key in memory ? memory[key] : null),
+      setItem: (key, value) => { memory[key] = String(value); },
+      removeItem: (key) => { delete memory[key]; },
+      clear: () => { Object.keys(memory).forEach(k => delete memory[k]); }
+    };
+  }
+};
+const safeLocalStorage = safeStorage('localStorage');
+const safeSessionStorage = safeStorage('sessionStorage');
+
 // ── READ SESSION DATA & AUTOCORRECT SPELLING ──
 function cleanSpelling(text) {
   if (!text) return "";
@@ -36,52 +57,52 @@ function sanitizeInput(text) {
   return text.replace(/<[^>]*>?/gm, '').trim();
 }
 
-// Validate active session (must exist in sessionStorage, i.e., tab was not closed)
-if (!sessionStorage.getItem('sim_session_active')) {
-  localStorage.setItem('sim_redirect_reason', 'No sim_session_active in sessionStorage. sessionStorage keys: ' + Object.keys(sessionStorage).join(', '));
-  sessionStorage.clear();
-  localStorage.clear();
+// Validate active session (must exist in safeSessionStorage, i.e., tab was not closed)
+if (!safeSessionStorage.getItem('sim_session_active')) {
+  safeLocalStorage.setItem('sim_redirect_reason', 'No sim_session_active in safeSessionStorage. safeSessionStorage keys: ' + Object.keys(safeSessionStorage).join(', '));
+  safeSessionStorage.clear();
+  safeLocalStorage.clear();
   window.location.href = '/';
   throw new Error("No active session found. Redirecting to root...");
 }
 
-const rawBizName = sessionStorage.getItem('sim_biz_name') || localStorage.getItem('sim_biz_name') || "";
-const rawBizSector = sessionStorage.getItem('sim_biz_sector') || localStorage.getItem('sim_biz_sector') || "";
-const rawBizProblem = sessionStorage.getItem('sim_biz_problem') || localStorage.getItem('sim_biz_problem') || "";
+const rawBizName = safeSessionStorage.getItem('sim_biz_name') || safeLocalStorage.getItem('sim_biz_name') || "";
+const rawBizSector = safeSessionStorage.getItem('sim_biz_sector') || safeLocalStorage.getItem('sim_biz_sector') || "";
+const rawBizProblem = safeSessionStorage.getItem('sim_biz_problem') || safeLocalStorage.getItem('sim_biz_problem') || "";
 
 const bizName = sanitizeInput(cleanSpelling(rawBizName));
 const bizSector = sanitizeInput(cleanSpelling(rawBizSector));
 const bizProblem = sanitizeInput(cleanSpelling(rawBizProblem));
-const bizStyle = sanitizeInput(sessionStorage.getItem('sim_biz_style') || localStorage.getItem('sim_biz_style') || 'ultra-moderno');
-let bizLogo = sessionStorage.getItem('sim_biz_logo') || localStorage.getItem('sim_biz_logo') || '';
-const activeService = sanitizeInput(sessionStorage.getItem('sim_active_service') || localStorage.getItem('sim_active_service') || 'asistente');
+const bizStyle = sanitizeInput(safeSessionStorage.getItem('sim_biz_style') || safeLocalStorage.getItem('sim_biz_style') || 'ultra-moderno');
+let bizLogo = safeSessionStorage.getItem('sim_biz_logo') || safeLocalStorage.getItem('sim_biz_logo') || '';
+const activeService = sanitizeInput(safeSessionStorage.getItem('sim_active_service') || safeLocalStorage.getItem('sim_active_service') || 'asistente');
 
 // Redirect if no data
 if (!bizName || !bizSector || !bizProblem) {
-  localStorage.setItem('sim_redirect_reason', 'Missing fields: bizName=' + bizName + ', bizSector=' + bizSector + ', bizProblem=' + bizProblem);
+  safeLocalStorage.setItem('sim_redirect_reason', 'Missing fields: bizName=' + bizName + ', bizSector=' + bizSector + ', bizProblem=' + bizProblem);
   window.location.href = '/';
   throw new Error("No session data found. Redirecting to root...");
 }
 
 // Synchronize storage
-sessionStorage.setItem('sim_biz_name', bizName);
-sessionStorage.setItem('sim_biz_sector', bizSector);
-sessionStorage.setItem('sim_biz_problem', bizProblem);
-sessionStorage.setItem('sim_biz_style', bizStyle);
-sessionStorage.setItem('sim_biz_logo', bizLogo);
-sessionStorage.setItem('sim_active_service', activeService);
+safeSessionStorage.setItem('sim_biz_name', bizName);
+safeSessionStorage.setItem('sim_biz_sector', bizSector);
+safeSessionStorage.setItem('sim_biz_problem', bizProblem);
+safeSessionStorage.setItem('sim_biz_style', bizStyle);
+safeSessionStorage.setItem('sim_biz_logo', bizLogo);
+safeSessionStorage.setItem('sim_active_service', activeService);
 
-localStorage.setItem('sim_biz_name', bizName);
-localStorage.setItem('sim_biz_sector', bizSector);
-localStorage.setItem('sim_biz_problem', bizProblem);
-localStorage.setItem('sim_biz_style', bizStyle);
-localStorage.setItem('sim_biz_logo', bizLogo);
-localStorage.setItem('sim_active_service', activeService);
+safeLocalStorage.setItem('sim_biz_name', bizName);
+safeLocalStorage.setItem('sim_biz_sector', bizSector);
+safeLocalStorage.setItem('sim_biz_problem', bizProblem);
+safeLocalStorage.setItem('sim_biz_style', bizStyle);
+safeLocalStorage.setItem('sim_biz_logo', bizLogo);
+safeLocalStorage.setItem('sim_active_service', activeService);
 
 // ── AUTOGENERATE LOGO IF EMPTY ──
 if (!bizLogo) {
   bizLogo = generateAvatar(bizName);
-  sessionStorage.setItem('sim_biz_logo', bizLogo);
+  safeSessionStorage.setItem('sim_biz_logo', bizLogo);
 }
 
 function generateAvatar(name) {
@@ -174,7 +195,7 @@ function generateAvatar(name) {
 })();
 
 // ── SESSION TIMER (15 MINUTES HARD LIMIT) ──
-const sessionStart = parseInt(sessionStorage.getItem('sim_session_start') || Date.now().toString(), 10);
+const sessionStart = parseInt(safeSessionStorage.getItem('sim_session_start') || Date.now().toString(), 10);
 const timerEl = document.getElementById('countdown-timer');
 
 function updateTimer() {
@@ -208,8 +229,8 @@ updateTimer();
 
 function destroySession() {
   clearInterval(timerInterval);
-  sessionStorage.clear();
-  localStorage.clear();
+  safeSessionStorage.clear();
+  safeLocalStorage.clear();
   
   document.body.innerHTML = `
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#06080c; color:#fff; font-family:sans-serif; gap:20px; text-align:center; padding: 20px; box-sizing: border-box;">
@@ -2107,7 +2128,7 @@ function initMockups() {
   const chatMessages = document.getElementById('chat-messages');
   chatMessages.innerHTML = '';
   
-  const chatHistoryStr = sessionStorage.getItem('sim_chat_history');
+  const chatHistoryStr = safeSessionStorage.getItem('sim_chat_history');
   if (chatHistoryStr) {
     try {
       const history = JSON.parse(chatHistoryStr);
@@ -2115,7 +2136,7 @@ function initMockups() {
         addChatMessage(msg.sender, msg.text, true);
       });
     } catch(e) {
-      sessionStorage.removeItem('sim_chat_history');
+      safeSessionStorage.removeItem('sim_chat_history');
     }
   } else {
     const initMsg = profile.chatInit
@@ -2374,14 +2395,14 @@ function addChatMessage(sender, text, isLoad = false) {
   chatMessages.appendChild(bubble);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 
-  // Persist chat message inside sessionStorage
+  // Persist chat message inside safeSessionStorage
   if (!isLoad) {
     let history = [];
     try {
-      history = JSON.parse(sessionStorage.getItem('sim_chat_history') || '[]');
+      history = JSON.parse(safeSessionStorage.getItem('sim_chat_history') || '[]');
     } catch(e) {}
     history.push({ sender, text });
-    sessionStorage.setItem('sim_chat_history', JSON.stringify(history));
+    safeSessionStorage.setItem('sim_chat_history', JSON.stringify(history));
   }
 }
 
