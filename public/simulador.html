@@ -651,6 +651,23 @@
                   </tbody>
                 </table>
 
+                <!-- Stacked P&L Composition Chart -->
+                <div id="erp-pl-visual-chart" style="margin-top: 15px; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; display: flex; flex-direction: column; gap: 8px;">
+                  <span style="font-size: 11px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">📊 Distribución de Gastos e Ingresos</span>
+                  <div style="width: 100%; height: 16px; background: rgba(255,255,255,0.05); border-radius: 8px; overflow: hidden; display: flex; border: 1px solid rgba(255,255,255,0.08);">
+                    <div id="pl-bar-cogs" style="width: 0%; height: 100%; background: #ef4444; transition: width 0.5s ease;" title="COGS"></div>
+                    <div id="pl-bar-expenses" style="width: 0%; height: 100%; background: #f97316; transition: width 0.5s ease;" title="Gastos"></div>
+                    <div id="pl-bar-taxes" style="width: 0%; height: 100%; background: #eab308; transition: width 0.5s ease;" title="Impuestos"></div>
+                    <div id="pl-bar-net" style="width: 0%; height: 100%; background: #10b981; transition: width 0.5s ease;" title="Utilidad Neta"></div>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 9px; flex-wrap: wrap; gap: 6px; color: var(--text-muted);">
+                    <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: #ef4444; border-radius: 50%;"></span>COGS: <span id="pl-pct-cogs">0%</span></div>
+                    <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: #f97316; border-radius: 50%;"></span>Gastos: <span id="pl-pct-expenses">0%</span></div>
+                    <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: #eab308; border-radius: 50%;"></span>Impuestos: <span id="pl-pct-taxes">0%</span></div>
+                    <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span>Neta: <span id="pl-pct-net">0%</span></div>
+                  </div>
+                </div>
+
                 <!-- Sales Trend Chart Container -->
                 <div style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 12px; margin-top: 5px; display: flex; flex-direction: column; gap: 6px;">
                   <span style="font-size: 11px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">📈 Histórico de Ventas (Sucursal Seleccionada)</span>

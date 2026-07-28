@@ -749,6 +749,39 @@ function buildProblemProfile(rawProfile) {
             { id: 3, title: 'Enviar avisos preventivos de pago por WhatsApp', desc: 'Completado por Asistente IA' }
           ]
         }
+      },
+      norte: {
+        revenue: 215000, cogs: 72000, expenses: 48000, taxes: 22880,
+        alerts: [
+          { type: 'info', text: 'Sucursal Norte: Enlace contable SAT sincronizado.' },
+          { type: 'warning', text: 'Retraso de abonos detectado en 3 clientes locales.' }
+        ],
+        leads: [
+          { name: 'María Gómez', contact: '525531984210', note: 'Consulta de enganche inicial de recámara', status: 'Seguimiento' }
+        ],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Validar historial crediticio local', desc: 'Uso de buró regional' }
+          ],
+          done: [
+            { id: 2, title: 'Llamar a clientes con aviso vencido', desc: 'Realizado por bot de cobranza' }
+          ]
+        }
+      },
+      sur: {
+        revenue: 189000, cogs: 63000, expenses: 41000, taxes: 20160,
+        alerts: [
+          { type: 'success', text: 'Cobros domiciliados conciliados con terminal física.' }
+        ],
+        leads: [
+          { name: 'Fernando Ortíz', contact: '525590123847', note: 'Liquidación anticipada de comedor rústico', status: 'Aprobado' }
+        ],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Revisión de pagarés en bóveda de sucursal', desc: 'Auditoría interna semanal' }
+          ],
+          done: []
+        }
       }
     };
     prof.erpBottleneck = "Gestión manual de abonos y control de cuentas a crédito.";
@@ -792,6 +825,36 @@ function buildProblemProfile(rawProfile) {
           done: [
             { id: 3, title: 'Actualizar precios de catálogo por lote', desc: 'Completado por IA' }
           ]
+        }
+      },
+      norte: {
+        revenue: 198000, cogs: 64000, expenses: 51000, taxes: 21440,
+        alerts: [
+          { type: 'warning', text: 'Inventario local: Stock bajo en insumos básicos de ' + cap(kw2) + '.' }
+        ],
+        leads: [
+          { name: 'Sofía Lira', contact: '525567312903', note: 'Consultó disponibilidad de ensamble rápido', status: 'Seguimiento' }
+        ],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Revisión periódica de mermas locales', desc: 'Control físico semanal' }
+          ],
+          done: [
+            { id: 2, title: 'Ordenar kit accesorios de ensamble', desc: 'Completado por IA' }
+          ]
+        }
+      },
+      sur: {
+        revenue: 165000, cogs: 53000, expenses: 43000, taxes: 17920,
+        alerts: [
+          { type: 'success', text: 'Conciliación de inventario con terminal central aprobada.' }
+        ],
+        leads: [],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Descargar facturas de remisión locales', desc: 'Pendiente' }
+          ],
+          done: []
         }
       }
     };
@@ -838,6 +901,36 @@ function buildProblemProfile(rawProfile) {
             { id: 3, title: 'Campaña de retención de clientes inactivos', desc: 'Auto-ejecutado por IA' }
           ]
         }
+      },
+      norte: {
+        revenue: 220000, cogs: 68000, expenses: 45000, taxes: 24320,
+        alerts: [
+          { type: 'info', text: 'Sucursal Norte: 8 prospectos asignados al cotizador automático.' }
+        ],
+        leads: [
+          { name: 'Carlos Sosa', contact: '525529847120', note: 'Solicitó información sobre promociones', status: 'Aprobado' }
+        ],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Llamar a cotizaciones vencidas de la semana', desc: 'Fila de ventas local' }
+          ],
+          done: [
+            { id: 2, title: 'Enviar encuesta de satisfacción automatizada', desc: 'Completado por IA' }
+          ]
+        }
+      },
+      sur: {
+        revenue: 175000, cogs: 54000, expenses: 38000, taxes: 19360,
+        alerts: [
+          { type: 'success', text: 'Conversión local: Se incrementó la recompensa por lealtad a clientes.' }
+        ],
+        leads: [],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Revisión de ofertas de cashback aplicadas', desc: 'Reporte mensual' }
+          ],
+          done: []
+        }
       }
     };
 
@@ -882,6 +975,36 @@ function buildProblemProfile(rawProfile) {
           done: [
             { id: 3, title: 'Notificar entrega de orden de servicio #409', desc: 'Completado por IA' }
           ]
+        }
+      },
+      norte: {
+        revenue: 180000, cogs: 56000, expenses: 52000, taxes: 19840,
+        alerts: [
+          { type: 'warning', text: 'Sucursal Norte: Esperando arribo de refacciones de importación.' }
+        ],
+        leads: [
+          { name: 'David Flores', contact: '525531920384', note: 'Ingresó equipo para cambio de circuito de carga', status: 'En Taller' }
+        ],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Diagnóstico express en banco de trabajo 3', desc: 'Asignado a técnico local' }
+          ],
+          done: [
+            { id: 2, title: 'Sincronizar pólizas de garantía de equipos entregados', desc: 'Completado por IA' }
+          ]
+        }
+      },
+      sur: {
+        revenue: 145000, cogs: 45000, expenses: 40000, taxes: 16000,
+        alerts: [
+          { type: 'success', text: 'Control de calidad: 100% de equipos reparados pasaron prueba de estrés.' }
+        ],
+        leads: [],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Limpieza e inspección de herramientas del taller', desc: 'Mantenimiento preventivo local' }
+          ],
+          done: []
         }
       }
     };
@@ -928,6 +1051,36 @@ function buildProblemProfile(rawProfile) {
             { id: 3, title: 'Generar acuses digitales POD del día', desc: 'Completado por IA' }
           ]
         }
+      },
+      norte: {
+        revenue: 210000, cogs: 68000, expenses: 54000, taxes: 22720,
+        alerts: [
+          { type: 'warning', text: 'Sucursal Norte: Operador demorado en caseta regional.' }
+        ],
+        leads: [
+          { name: 'Carlos Sosa', contact: '525529847120', note: 'Agendó mudanza foránea para el fin de semana', status: 'Aprobado' }
+        ],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Mantenimiento correctivo de unidad TR-102', desc: 'Falla mecánica menor' }
+          ],
+          done: [
+            { id: 2, title: 'Timbrar Cartas Porte SAT del turno matutino', desc: 'Completado por IA' }
+          ]
+        }
+      },
+      sur: {
+        revenue: 165000, cogs: 52000, expenses: 44000, taxes: 18080,
+        alerts: [
+          { type: 'success', text: 'Logística Sur: Coordinación de acuses POD al 100%.' }
+        ],
+        leads: [],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Revisión de bitácoras de operadores locales', desc: 'Entrega semanal' }
+          ],
+          done: []
+        }
       }
     };
 
@@ -972,6 +1125,36 @@ function buildProblemProfile(rawProfile) {
           done: [
             { id: 3, title: 'Archivar facturas y conciliaciones bancarias', desc: 'Completado por IA' }
           ]
+        }
+      },
+      norte: {
+        revenue: 195000, cogs: 62000, expenses: 51000, taxes: 21280,
+        alerts: [
+          { type: 'info', text: 'Sucursal Norte: Servidor local de automatización operativo.' }
+        ],
+        leads: [
+          { name: 'Sofía Lira', contact: '525567312903', note: 'Agendó llamada de soporte operativo', status: 'Seguimiento' }
+        ],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Revisión periódica de procesos administrativos', desc: 'Auditoría local' }
+          ],
+          done: [
+            { id: 2, title: 'Archivar auditorías de XML del mes pasado', desc: 'Completado por IA' }
+          ]
+        }
+      },
+      sur: {
+        revenue: 160000, cogs: 51000, expenses: 43000, taxes: 17440,
+        alerts: [
+          { type: 'success', text: 'Eficiencia Sur: Procesamiento contable e informes al 100%.' }
+        ],
+        leads: [],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Inspección de sistemas de red locales', desc: 'Mantenimiento rutinario' }
+          ],
+          done: []
         }
       }
     };
@@ -2174,28 +2357,43 @@ function handleUserChatSend() {
   setTimeout(() => {
     const activeAgent = document.getElementById('agent-type-select').value;
     let reply = "";
+    const lowerText = text.toLowerCase();
     
-    if (activeAgent === 'ventas') {
-      printToolLog(`Ejecutando herramienta query_pricing_database()...`);
-      if (text.toLowerCase().match(/(precio|costo|cuanto cuesta|pagar|comprar|servicio|cotiza)/)) {
-        reply = `[PAYMENT_CARD]|Servicio de ${bizSector}|Cotización de servicio a la medida para solucionar ${bizProblem}|${profile.posProducts[1] ? '$' + profile.posProducts[1].price + '.00 MXN' : '$1,500.00 MXN'}`;
-      } else {
-        reply = `Hola, como Agente de Ventas de **${bizName}**, te comento que podemos solucionar tu problema de *"${bizProblem}"* implementando un flujo digital optimizado con IA. ¿Deseas que te genere un link de pago con tu cotización?`;
-      }
-    } else if (activeAgent === 'soporte') {
-      printToolLog(`Ejecutando herramienta check_system_status()...`);
-      reply = `Hola, soy tu Agente de Soporte Técnico de **${bizName}**. He revisado el estado del servidor y los flujos relacionados con *"${bizProblem}"*. Todo está listo para optimizarse. ¿Deseas levantar un ticket técnico?`;
-    } else if (activeAgent === 'citas') {
-      printToolLog(`Ejecutando herramienta check_google_calendar()...`);
-      reply = `Hola, soy el Coordinador de Citas de **${bizName}**. He verificado nuestra agenda para ${bizSector}. Tenemos espacio disponible mañana a las 11:00 AM y a las 4:30 PM. ¿Cuál prefieres agendar?`;
+    // Dynamic Semantic Local Routing
+    if (lowerText.includes("contacto") || lowerText.includes("telefono") || lowerText.includes("whatsapp") || lowerText.includes("llamar")) {
+      printToolLog(`[CHAT] Procesando duda sobre contacto / comunicación...`);
+      reply = `¡Claro! Puedes contactar a **${bizName}** directamente a nuestro WhatsApp oficial: [525638165507](https://api.whatsapp.com/send?phone=525638165507). Estaremos encantados de atenderte en tiempo real para tu negocio de ${bizSector}.`;
+    } else if (lowerText.includes("direccion") || lowerText.includes("sucursal") || lowerText.includes("donde estan") || lowerText.includes("ubicacion") || lowerText.includes("donde queda")) {
+      printToolLog(`[CHAT] Procesando duda sobre sucursales / ubicación...`);
+      reply = `**${bizName}** cuenta con tres sucursales activas en el ERP corporativo:\n📍 **Sucursal Centro**: Oficina corporativa principal (CDMX).\n📍 **Sucursal Norte**: Almacén y taller de operaciones locales.\n📍 **Sucursal Sur**: Punto de distribución de envíos y fletes.`;
+    } else if (lowerText.includes("factura") || lowerText.includes("sat") || lowerText.includes("xml") || lowerText.includes("cfdi")) {
+      printToolLog(`[CHAT] Procesando duda sobre timbrado contable SAT...`);
+      reply = `En **${bizName}**, todas las facturas y CFDI 4.0 se timbran autónomamente en el ERP en cuanto se confirma el cobro. Puedes descargar tus XML/PDF directamente desde el módulo **Software a Medida** -> pestaña **SAT CFDI 4.0**.`;
+    } else if (lowerText.includes("problema") || lowerText.includes("falla") || lowerText.includes("error") || lowerText.includes("no funciona")) {
+      printToolLog(`[CHAT] Procesando reporte de problema...`);
+      reply = `Lamento escuchar eso. El Asistente IA de **${bizName}** ya tiene registrado el cuello de botella: *"${bizProblem}"*. He generado un ticket automático en el ERP para resolverlo de inmediato.`;
+    } else if (lowerText.includes("precio") || lowerText.includes("costo") || lowerText.includes("cuanto cuesta") || lowerText.includes("pagar") || lowerText.includes("comprar") || lowerText.includes("cotiza")) {
+      printToolLog(`[CHAT] Generando cotización dinámica por Stripe...`);
+      reply = `[PAYMENT_CARD]|Servicio de ${bizSector}|Cotización de servicio a la medida para solucionar ${bizProblem}|${profile.posProducts[1] ? '$' + profile.posProducts[1].price + '.00 MXN' : '$1,500.00 MXN'}`;
     } else {
-      printToolLog(`Ejecutando herramienta query_billing_status()...`);
-      reply = `Hola, soy el Agente de Cobranza de **${bizName}**. He consultado el sistema contable y no tienes facturas pendientes. ¿Deseas emitir un CFDI o descargar tu Estado de Resultados del ERP?`;
+      // Agent specific defaults
+      if (activeAgent === 'ventas') {
+        reply = `Hola, como Agente de Ventas de **${bizName}**, te comento que podemos solucionar tu problema de *"${bizProblem}"* implementando un flujo digital optimizado con IA. ¿Deseas que te genere un link de pago con tu cotización?`;
+      } else if (activeAgent === 'soporte') {
+        printToolLog(`Ejecutando herramienta check_system_status()...`);
+        reply = `Hola, soy tu Agente de Soporte Técnico de **${bizName}**. He revisado el estado del servidor y los flujos relacionados con *"${bizProblem}"*. Todo está listo para optimizarse. ¿Deseas levantar un ticket técnico?`;
+      } else if (activeAgent === 'citas') {
+        printToolLog(`Ejecutando herramienta check_google_calendar()...`);
+        reply = `Hola, soy el Coordinador de Citas de **${bizName}**. He verificado nuestra agenda para ${bizSector}. Tenemos espacio disponible mañana a las 11:00 AM y a las 4:30 PM. ¿Cuál prefieres agendar?`;
+      } else {
+        printToolLog(`Ejecutando herramienta query_billing_status()...`);
+        reply = `Hola, soy el Agente de Cobranza de **${bizName}**. He consultado el sistema contable y no tienes facturas pendientes. ¿Deseas emitir un CFDI o descargar tu Estado de Resultados del ERP?`;
+      }
     }
     
     // Update memory
     memoryVariables.sentiment = document.getElementById('chat-sentiment').textContent.split(' ')[1] || "Neutro";
-    memoryVariables.last_intent = text.toLowerCase().match(/(precio|costo|cuanto cuesta|pagar|comprar|servicio|cotiza)/) ? "ventas_cotizacion" : "consulta_general";
+    memoryVariables.last_intent = lowerText.match(/(precio|costo|cuanto cuesta|pagar|comprar|servicio|cotiza)/) ? "ventas_cotizacion" : "consulta_general";
     
     addChatMessage('outgoing', reply);
     updateTelemetry(text, reply, latency);
@@ -3124,9 +3322,34 @@ function updateERPPL() {
     netEl.style.color = '#10b981';
   }
 
+  // Update stacked P&L composition chart
+  const pctCOGS = totalRev > 0 ? (totalCOGS / totalRev * 100) : 0;
+  const pctExpenses = totalRev > 0 ? (expenses / totalRev * 100) : 0;
+  const pctTaxes = totalRev > 0 ? (taxes / totalRev * 100) : 0;
+  const pctNet = totalRev > 0 ? (net / totalRev * 100) : 0;
+
+  const barCogs = document.getElementById('pl-bar-cogs');
+  const barExpenses = document.getElementById('pl-bar-expenses');
+  const barTaxes = document.getElementById('pl-bar-taxes');
+  const barNet = document.getElementById('pl-bar-net');
+
+  if (barCogs) barCogs.style.width = Math.max(0, pctCOGS) + '%';
+  if (barExpenses) barExpenses.style.width = Math.max(0, pctExpenses) + '%';
+  if (barTaxes) barTaxes.style.width = Math.max(0, pctTaxes) + '%';
+  if (barNet) barNet.style.width = Math.max(0, pctNet) + '%';
+
+  const pctCogsEl = document.getElementById('pl-pct-cogs');
+  const pctExpensesEl = document.getElementById('pl-pct-expenses');
+  const pctTaxesEl = document.getElementById('pl-pct-taxes');
+  const pctNetEl = document.getElementById('pl-pct-net');
+
+  if (pctCogsEl) pctCogsEl.textContent = Math.round(pctCOGS) + '%';
+  if (pctExpensesEl) pctExpensesEl.textContent = Math.round(pctExpenses) + '%';
+  if (pctTaxesEl) pctTaxesEl.textContent = Math.round(pctTaxes) + '%';
+  if (pctNetEl) pctNetEl.textContent = Math.round(pctNet) + '%';
+
   // Update Sales Trend Chart July bar (scaled dynamically)
   const julyTotalK = totalRev / 1000;
-  // Scale bar height: let max 25k represent 80px
   const barHeight = Math.max(5, Math.min(90, Math.round((julyTotalK / 25) * 80)));
   const bar6 = document.getElementById('chart-bar-6');
   const lbl6 = document.getElementById('chart-lbl-6');
