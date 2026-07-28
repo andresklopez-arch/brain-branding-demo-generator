@@ -429,51 +429,89 @@ document.addEventListener('DOMContentLoaded', () => {
   let passcodeLockoutTimer = null;
 
   if (submitPasscodeBtn) {
-    const checkPasscode = () => {
+    const checkPasscode = async () => {
       if (passcodeAttempts >= 5) return;
       
       const enteredCode = passcodeInput ? passcodeInput.value.trim() : '';
-      if (enteredCode === 'BB2026') {
+      if (!enteredCode) return;
+      
+      // Master Passcode logic
+      if (enteredCode.toUpperCase() === 'BB2026') {
         passcodeAttempts = 0;
         if (typeof gtag === 'function') {
-          gtag('event', 'unlock_private_portal', { event_category: 'security', event_label: 'Success' });
+          gtag('event', 'unlock_private_portal', { event_category: 'security', event_label: 'Success Master' });
         }
         window.location.href = targetPortalUrl;
-      } else {
-        passcodeAttempts++;
-        if (typeof gtag === 'function') {
-          gtag('event', 'unlock_private_portal_fail', { event_category: 'security', event_label: `Attempt ${passcodeAttempts}` });
-        }
+        return;
+      }
+      
+      // Dynamic Passcode API validation
+      submitPasscodeBtn.disabled = true;
+      if (passcodeError) {
+        passcodeError.style.display = 'block';
+        passcodeError.textContent = 'Validando clave...';
+        passcodeError.style.color = 'var(--text-muted)';
+      }
+      
+      try {
+        const res = await fetch(`https://brain-branding-demo-generator.onrender.com/api/validate-passcode?code=${encodeURIComponent(enteredCode)}`);
+        const data = await res.json();
         
-        if (passcodeAttempts >= 5) {
-          submitPasscodeBtn.disabled = true;
-          if (passcodeInput) passcodeInput.disabled = true;
-          if (passcodeError) {
-            passcodeError.style.display = 'block';
-            let timeLeft = 60;
-            passcodeError.textContent = `Demasiados intentos. Bloqueado por ${timeLeft}s.`;
-            
-            passcodeLockoutTimer = setInterval(() => {
-              timeLeft--;
-              passcodeError.textContent = `Demasiados intentos. Bloqueado por ${timeLeft}s.`;
-              if (timeLeft <= 0) {
-                clearInterval(passcodeLockoutTimer);
-                passcodeAttempts = 0;
-                submitPasscodeBtn.disabled = false;
-                if (passcodeInput) {
-                  passcodeInput.disabled = false;
-                  passcodeInput.value = '';
-                  passcodeInput.focus();
-                }
-                passcodeError.style.display = 'none';
-              }
-            }, 1000);
+        if (data.success && data.redirectUrl) {
+          passcodeAttempts = 0;
+          if (typeof gtag === 'function') {
+            gtag('event', 'unlock_private_demo_api', { event_category: 'security', event_label: data.clientName });
           }
+          const finalUrl = data.redirectUrl.startsWith('http') 
+            ? data.redirectUrl 
+            : `https://brain-branding.web.app${data.redirectUrl}`;
+          window.location.href = finalUrl;
         } else {
-          if (passcodeError) {
-            passcodeError.style.display = 'block';
-            passcodeError.textContent = `Clave incorrecta. (${passcodeAttempts}/5 intentos)`;
-          }
+          handleFail(data.error || 'Código incorrecto.');
+        }
+      } catch (err) {
+        console.error('[API Passcode] Error:', err);
+        handleFail('Error al conectar con el servidor.');
+      }
+    };
+    
+    const handleFail = (errorMessage) => {
+      submitPasscodeBtn.disabled = false;
+      passcodeAttempts++;
+      if (typeof gtag === 'function') {
+        gtag('event', 'unlock_private_portal_fail', { event_category: 'security', event_label: `Attempt ${passcodeAttempts}` });
+      }
+      
+      if (passcodeAttempts >= 5) {
+        submitPasscodeBtn.disabled = true;
+        if (passcodeInput) passcodeInput.disabled = true;
+        if (passcodeError) {
+          passcodeError.style.display = 'block';
+          passcodeError.style.color = 'var(--secondary)';
+          let timeLeft = 60;
+          passcodeError.textContent = `Demasiados intentos. Bloqueado por ${timeLeft}s.`;
+          
+          passcodeLockoutTimer = setInterval(() => {
+            timeLeft--;
+            passcodeError.textContent = `Demasiados intentos. Bloqueado por ${timeLeft}s.`;
+            if (timeLeft <= 0) {
+              clearInterval(passcodeLockoutTimer);
+              passcodeAttempts = 0;
+              submitPasscodeBtn.disabled = false;
+              if (passcodeInput) {
+                passcodeInput.disabled = false;
+                passcodeInput.value = '';
+                passcodeInput.focus();
+              }
+              passcodeError.style.display = 'none';
+            }
+          }, 1000);
+        }
+      } else {
+        if (passcodeError) {
+          passcodeError.style.display = 'block';
+          passcodeError.style.color = 'var(--secondary)';
+          passcodeError.textContent = `${errorMessage} (${passcodeAttempts}/5 intentos)`;
         }
       }
     };
