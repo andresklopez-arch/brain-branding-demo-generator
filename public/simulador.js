@@ -2306,6 +2306,145 @@ function generateDynamicScenarios(category) {
   }
 }
 
+function completeProfileData(prof, sectorName, bizName) {
+  if (!prof) return;
+  // 1. Mission / Vision / Values
+  if (!prof.mission) {
+    prof.mission = `Proveer soluciones de alta calidad en ${sectorName} para potenciar el éxito y bienestar de nuestros clientes.`;
+  }
+  if (!prof.vision) {
+    prof.vision = `Ser líderes reconocidos en el sector de ${sectorName}, impulsando la innovación y excelencia operativa con IA.`;
+  }
+  if (!prof.values) {
+    prof.values = "Innovación, Integridad, Compromiso, Excelencia y Enfoque en el Cliente.";
+  }
+  if (!prof.address) {
+    prof.address = "Av. Paseo de la Reforma 405, Piso 12, Lomas de Chapultepec, CDMX, C.P. 11000";
+  }
+  if (!prof.specialOffer) {
+    prof.specialOffer = `¡20% de descuento en tu primer servicio de ${sectorName} contratando hoy!`;
+  }
+  
+  // 2. Services Catalog
+  if (!prof.detailedServices) {
+    const prods = prof.posProducts || [];
+    prof.detailedServices = [
+      {
+        icon: prods[0] ? prods[0].icon : '⚡',
+        name: prods[0] ? prods[0].name : 'Servicio Básico',
+        desc: `Solución de entrada ideal para optimizar tus operaciones diarias de ${sectorName}.`,
+        price: prods[0] ? prods[0].price : 1000
+      },
+      {
+        icon: prods[1] ? prods[1].icon : '💎',
+        name: prods[1] ? prods[1].name : 'Servicio Premium',
+        desc: `Implementación avanzada con inteligencia y control completo a la medida del negocio.`,
+        price: prods[1] ? prods[1].price : 2500
+      },
+      {
+        icon: prods[5] ? prods[5].icon : '📈',
+        name: prods[5] ? prods[5].name : 'Consultoría de Expansión',
+        desc: `Estrategia de crecimiento acelerado y automatización de procesos mediante IA avanzada.`,
+        price: prods[5] ? prods[5].price : 4500
+      }
+    ];
+  }
+  
+  // 3. Inventory Stock Insumos Key
+  if (!prof.inventory) {
+    const isRest = sectorName.toLowerCase().includes("restaurante");
+    const isCom = sectorName.toLowerCase().includes("tienda") || sectorName.toLowerCase().includes("comercio");
+    
+    if (isRest) {
+      prof.inventory = [
+        { key: 'insumo1', name: 'Materia Prima (Carnes/Verduras)', qty: 65, unit: 'kg', speed: 'Alta (Agotamiento en 2 días)', min: 30 },
+        { key: 'insumo2', name: 'Bebidas y Licores', qty: 110, unit: 'pzas', speed: 'Media (Agotamiento en 7 días)', min: 40 },
+        { key: 'insumo3', name: 'Detergentes y Suministros', qty: 15, unit: 'lts', speed: 'Baja (Agotamiento en 14 días)', min: 10 }
+      ];
+    } else if (isCom) {
+      prof.inventory = [
+        { key: 'insumo1', name: 'Mercancía Premium (Tenis/Prendas)', qty: 45, unit: 'pzas', speed: 'Alta (Agotamiento en 3 días)', min: 25 },
+        { key: 'insumo2', name: 'Bolsas y Empaques', qty: 400, unit: 'pzas', speed: 'Media (Agotamiento en 10 días)', min: 150 },
+        { key: 'insumo3', name: 'Etiquetas de Código de Barras', qty: 250, unit: 'pzas', speed: 'Baja (Agotamiento en 20 días)', min: 80 }
+      ];
+    } else {
+      prof.inventory = [
+        { key: 'insumo1', name: 'Licencias de Software Activadas', qty: 12, unit: 'pzas', speed: 'Alta (Agotamiento en 1 día)', min: 10 },
+        { key: 'insumo2', name: 'Papelería y Suministros de Oficina', qty: 85, unit: 'pzas', speed: 'Media (Agotamiento en 12 días)', min: 30 },
+        { key: 'insumo3', name: 'Ancho de Banda de Servidor Cloud', qty: 92, unit: 'GB', speed: 'Baja (Agotamiento en 30 días)', min: 20 }
+      ];
+    }
+  }
+
+  // 4. Financial P&L branch data structure
+  if (!prof.branchFinancials) {
+    prof.branchFinancials = {
+      centro: {
+        revenue: 285000,
+        cogs: 95000,
+        expenses: 74000,
+        taxes: 30400,
+        alerts: [
+          { type: 'info', text: 'Sucursal Centro operando al 92% de capacidad.' },
+          { type: 'success', text: 'Retención de Impuestos SAT completada sin discrepancias.' }
+        ],
+        leads: [
+          { name: 'Ricardo Ruiz', contact: '525541298471', note: 'Interés en auditoría fiscal completa', status: 'Cotizando' },
+          { name: 'Sofía Lira', contact: '525567312903', note: 'Consulta sobre planes de expansión corporativa', status: 'Cerrado' }
+        ],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Revisar balance de caja del día de ayer', desc: 'Asignado a Asistente IA' },
+            { id: 2, title: 'Conciliación fiscal SAT de cierre de mes', desc: 'Asignado a Contador Principal' }
+          ],
+          done: [
+            { id: 3, title: 'Renovación de licencias de facturación en la nube', desc: 'Auto-completado por IA' }
+          ]
+        }
+      },
+      norte: {
+        revenue: 145000,
+        cogs: 52000,
+        expenses: 42000,
+        taxes: 16480,
+        alerts: [
+          { type: 'warning', text: 'Fuga de clientes detectada: 3 clientes VIP inactivos hace 45 días.' },
+          { type: 'info', text: 'Nivel medio de stock en insumo crítico de almacén.' }
+        ],
+        leads: [
+          { name: 'Arturo Neri', contact: '525571930284', note: 'Requiere demo en vivo del sistema corporativo', status: 'En Espera' }
+        ],
+        tasks: {
+          todo: [
+            { id: 4, title: 'Enviar cupones de WhatsApp a clientes inactivos', desc: 'Acción sugerida por IA' }
+          ],
+          done: [
+            { id: 5, title: 'Reabastecer insumos agotados por fin de semana', desc: 'Auto-completado por IA' }
+          ]
+        }
+      },
+      sur: {
+        revenue: 95000,
+        cogs: 31000,
+        expenses: 28000,
+        taxes: 10240,
+        alerts: [
+          { type: 'warning', text: 'Desviación de arqueo inusual detectada en caja del turno matutino.' }
+        ],
+        leads: [
+          { name: 'Lucía Mendoza', contact: '525510293847', note: 'Interés en servicios básicos', status: 'Cotizando' }
+        ],
+        tasks: {
+          todo: [
+            { id: 6, title: 'Auditar caja de sucursal Sur con auditoría IA', desc: 'Urgente por desviación' }
+          ],
+          done: []
+        }
+      }
+    };
+  }
+}
+
 // Global reference to active profile
 const rawProfile = getSectorProfile(bizSector);
 const profile = buildProblemProfile(rawProfile);
@@ -2313,93 +2452,112 @@ completeProfileData(profile, bizSector, bizName);
 
 // ── INITIALIZE DATA IN MOCKUPS ──
 function initMockups() {
-  // Update names
-  document.querySelectorAll('.biz-name').forEach(el => el.textContent = bizName);
-  document.querySelectorAll('.biz-sector').forEach(el => el.textContent = bizSector);
+  try {
+    // Update names
+    document.querySelectorAll('.biz-name').forEach(el => el.textContent = bizName);
+    document.querySelectorAll('.biz-sector').forEach(el => el.textContent = bizSector);
+  } catch(e) { console.warn('initMockups: names failed', e); }
   
-  // Inject Logos
-  document.querySelectorAll('.business-logo-container').forEach(el => {
-    if (!bizLogo || bizLogo === "null" || bizLogo === "undefined" || bizLogo === "" || bizLogo.includes("placeholder") || bizLogo.includes("logo_placeholder")) {
-      const initials = bizName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-      const hue1 = (bizName.length * 12) % 360;
-      const hue2 = (hue1 + 140) % 360;
-      el.style.background = `linear-gradient(135deg, hsl(${hue1}, 80%, 40%), hsl(${hue2}, 85%, 50%))`;
-      el.style.color = '#fff';
-      el.style.fontWeight = '900';
-      el.style.fontFamily = 'var(--font-title)';
-      el.style.display = 'flex';
-      el.style.alignItems = 'center';
-      el.style.justifyContent = 'center';
-      el.style.border = '2px solid rgba(255,255,255,0.25)';
-      el.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
-      el.style.textShadow = '0 2px 4px rgba(0,0,0,0.3)';
-      // Size responsive initials font size
-      const currentWidth = el.style.width || el.offsetWidth;
-      el.style.fontSize = (currentWidth === '68px' || currentWidth === 68) ? '24px' : '18px';
-      el.textContent = initials;
-    } else {
-      el.style.background = 'transparent';
-      el.innerHTML = `<img src="${bizLogo}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">`;
+  try {
+    // Inject Logos
+    document.querySelectorAll('.business-logo-container').forEach(el => {
+      if (!bizLogo || bizLogo === "null" || bizLogo === "undefined" || bizLogo === "" || bizLogo.includes("placeholder") || bizLogo.includes("logo_placeholder")) {
+        const initials = bizName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        const hue1 = (bizName.length * 12) % 360;
+        const hue2 = (hue1 + 140) % 360;
+        el.style.background = `linear-gradient(135deg, hsl(${hue1}, 80%, 40%), hsl(${hue2}, 85%, 50%))`;
+        el.style.color = '#fff';
+        el.style.fontWeight = '900';
+        el.style.fontFamily = 'var(--font-title)';
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+        el.style.border = '2px solid rgba(255,255,255,0.25)';
+        el.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+        el.style.textShadow = '0 2px 4px rgba(0,0,0,0.3)';
+        const currentWidth = el.style.width || el.offsetWidth;
+        el.style.fontSize = (currentWidth === '68px' || currentWidth === 68) ? '24px' : '18px';
+        el.textContent = initials;
+      } else {
+        el.style.background = 'transparent';
+        el.innerHTML = `<img src="${bizLogo}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">`;
+      }
+    });
+  } catch(e) { console.warn('initMockups: logos failed', e); }
+
+  try {
+    // Setup dynamic URLs
+    const cleanUrl = bizName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com.mx';
+    const urlEl = document.getElementById('mock-browser-url');
+    if (urlEl) urlEl.textContent = `https://www.${cleanUrl}`;
+  } catch(e) { console.warn('initMockups: url failed', e); }
+
+  try {
+    // 1. WhatsApp Chat Init with Memory
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatMessages) {
+      chatMessages.innerHTML = '';
+      
+      const chatHistoryStr = safeSessionStorage.getItem('sim_chat_history');
+      if (chatHistoryStr) {
+        try {
+          const history = JSON.parse(chatHistoryStr);
+          history.forEach(msg => {
+            addChatMessage(msg.sender, msg.text, true);
+          });
+        } catch(e) {
+          safeSessionStorage.removeItem('sim_chat_history');
+        }
+      } else {
+        const initMsg = profile.chatInit
+          .replace(/{bizName}/g, bizName)
+          .replace(/{bizProblem}/g, bizProblem);
+        const replyMsg = profile.chatReply
+          .replace(/{bizName}/g, bizName)
+          .replace(/{bizProblem}/g, bizProblem);
+
+        addChatMessage('incoming', initMsg);
+        setTimeout(() => {
+          addChatMessage('outgoing', replyMsg);
+        }, 1000);
+      }
     }
-  });
+  } catch(e) { console.warn('initMockups: chat failed', e); }
 
-  // Setup dynamic URLs
-  const cleanUrl = bizName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com.mx';
-  document.getElementById('mock-browser-url').textContent = `https://www.${cleanUrl}`;
+  try {
+    // 2. POS Grid Init
+    initPOSProducts();
+  } catch(e) { console.warn('initMockups: POS failed', e); }
 
-  // 1. WhatsApp Chat Init with Memory
-  const chatMessages = document.getElementById('chat-messages');
-  chatMessages.innerHTML = '';
-  
-  const chatHistoryStr = safeSessionStorage.getItem('sim_chat_history');
-  if (chatHistoryStr) {
-    try {
-      const history = JSON.parse(chatHistoryStr);
-      history.forEach(msg => {
-        addChatMessage(msg.sender, msg.text, true);
-      });
-    } catch(e) {
-      safeSessionStorage.removeItem('sim_chat_history');
-    }
-  } else {
-    const initMsg = profile.chatInit
-      .replace(/{bizName}/g, bizName)
-      .replace(/{bizProblem}/g, bizProblem);
-    const replyMsg = profile.chatReply
-      .replace(/{bizName}/g, bizName)
-      .replace(/{bizProblem}/g, bizProblem);
+  try {
+    // 3. Mini Web Title & Slogan
+    const webTitle = document.getElementById('mock-web-title');
+    const webSlogan = document.getElementById('mock-web-slogan');
+    if (webTitle) webTitle.textContent = profile.webTitle;
+    if (webSlogan) webSlogan.textContent = profile.webSlogan;
+    applyWebTheme(bizStyle);
+  } catch(e) { console.warn('initMockups: web failed', e); }
 
-    addChatMessage('incoming', initMsg);
-    setTimeout(() => {
-      addChatMessage('outgoing', replyMsg);
-    }, 1000);
-  }
+  try {
+    // 3.5 AI Advisor Card
+    const advEl = document.getElementById('ai-advisor-advice');
+    if (advEl) advEl.textContent = profile.aiAdvice;
+  } catch(e) {}
 
-  // 2. POS Grid Init
-  initPOSProducts();
+  try {
+    // 4. ERP Workflow Problem Description
+    const erpDesc = document.getElementById('erp-bottleneck-desc');
+    if (erpDesc) erpDesc.textContent = `Cuello de botella: ${profile.erpBottleneck}`;
+  } catch(e) {}
 
-  // 3. Mini Web Title & Slogan
-  document.getElementById('mock-web-title').textContent = profile.webTitle;
-  document.getElementById('mock-web-slogan').textContent = profile.webSlogan;
-
-  // Initialize Website Theme based on user choice
-  applyWebTheme(bizStyle);
-
-  // 3.5 AI Advisor Card
-  const advEl = document.getElementById('ai-advisor-advice');
-  if (advEl) advEl.textContent = profile.aiAdvice;
-
-  // 4. ERP Workflow Problem Description
-  document.getElementById('erp-bottleneck-desc').textContent = `Cuello de botella: ${profile.erpBottleneck}`;
-
-  // Hydrate high fidelity sub-simulators
-  initPOSInventory();
-  initWebData();
-  startWebCountdown();
-  updateERPPL();
-
-  // Update final WhatsApp link
-  updateWhatsAppLink();
+  try {
+    // Hydrate high fidelity sub-simulators
+    initPOSInventory();
+  } catch(e) { console.warn('initMockups: inventory failed', e); }
+  try { initWebData(); } catch(e) {}
+  try { startWebCountdown(); } catch(e) {}
+  try { updateERPPL(); } catch(e) {}
+  try { updateWhatsAppLink(); } catch(e) {}
 
   // ── LAUNCH AUTO-DEMO ENGINE AFTER 2 SECONDS ──
   setTimeout(startAutoDemo, 2000);
