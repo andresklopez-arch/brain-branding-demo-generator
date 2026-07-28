@@ -257,6 +257,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const totalDisplay = document.getElementById('calc-total-price');
   
   if (totalDisplay && calcChecks.length > 0) {
+    const svgCircle = document.getElementById('calc-svg-progress');
+    const pctLabel = document.getElementById('calc-pct-label');
+
     const updateEstimate = () => {
       let total = basePrice;
       calcChecks.forEach(chk => {
@@ -265,9 +268,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
       totalDisplay.textContent = `$${total.toLocaleString()} MXN`;
+      
+      const pct = Math.round((total / 35000) * 100);
+      if (pctLabel) pctLabel.textContent = `${pct}%`;
+      
+      if (svgCircle) {
+        const strokeOffset = 345.57 - (345.57 * pct) / 100;
+        svgCircle.style.strokeDashoffset = strokeOffset;
+      }
     };
     
     calcChecks.forEach(chk => chk.addEventListener('change', updateEstimate));
+    updateEstimate(); // Inicializar gráfico
     
     const calcSubmitBtn = document.getElementById('calc-submit-btn');
     if (calcSubmitBtn) {
@@ -373,5 +385,71 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pwaInstallBtn) {
       pwaInstallBtn.style.display = 'none';
     }
+  });
+
+  // 14. Passcode Gate for Private Portal Demos
+  const passcodeModal = document.getElementById('passcode-modal');
+  const passcodeInput = document.getElementById('passcode-input');
+  const passcodeError = document.getElementById('passcode-error');
+  const submitPasscodeBtn = document.getElementById('submit-passcode-btn');
+  const closePasscodeBtn = document.getElementById('close-passcode-btn');
+  let targetPortalUrl = '/portal/';
+
+  document.querySelectorAll('a[href^="/portal"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      targetPortalUrl = link.getAttribute('href');
+      if (passcodeModal) {
+        passcodeModal.style.display = 'flex';
+        if (passcodeInput) {
+          passcodeInput.value = '';
+          passcodeInput.focus();
+        }
+        if (passcodeError) passcodeError.style.display = 'none';
+      }
+    });
+  });
+
+  if (closePasscodeBtn && passcodeModal) {
+    closePasscodeBtn.addEventListener('click', () => {
+      passcodeModal.style.display = 'none';
+    });
+  }
+
+  if (submitPasscodeBtn) {
+    const checkPasscode = () => {
+      if (passcodeInput && passcodeInput.value.trim() === 'BB2026') {
+        window.location.href = targetPortalUrl;
+      } else {
+        if (passcodeError) passcodeError.style.display = 'block';
+      }
+    };
+    submitPasscodeBtn.addEventListener('click', checkPasscode);
+    if (passcodeInput) {
+      passcodeInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkPasscode();
+      });
+    }
+  }
+
+  // 15. 3D Tilt Hover Effect for Service Cards
+  document.querySelectorAll('.service-card').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const xc = rect.width / 2;
+      const yc = rect.height / 2;
+      
+      const angleX = (yc - y) / 15;
+      const angleY = (x - xc) / 15;
+      
+      card.style.transform = `perspective(1000px) rotateX(${angleX}deg) rotateY(${angleY}deg) translateY(-8px)`;
+    });
+    
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)';
+    });
   });
 });

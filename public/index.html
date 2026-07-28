@@ -2,6 +2,14 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <!-- Google Analytics (GA4) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6366f1">
@@ -284,6 +292,24 @@
 
         <!-- Price display and CTA -->
         <div class="glass-card" style="padding: 40px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; border-color: rgba(236, 72, 153, 0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+          <!-- Dynamic Budget SVG Chart -->
+          <div style="margin-bottom: 25px; display: flex; align-items: center; justify-content: center; position: relative; width: 140px; height: 140px;">
+            <svg width="140" height="140" viewBox="0 0 140 140" style="transform: rotate(-90deg);">
+              <circle cx="70" cy="70" r="55" fill="transparent" stroke="rgba(255, 255, 255, 0.03)" stroke-width="12"></circle>
+              <circle id="calc-svg-progress" cx="70" cy="70" r="55" fill="transparent" stroke="url(#gradient-chart)" stroke-dasharray="345.57" stroke-dashoffset="345.57" stroke-width="12" style="transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1); stroke-linecap: round;"></circle>
+              <defs>
+                <linearGradient id="gradient-chart" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="var(--primary)"></stop>
+                  <stop offset="100%" stop-color="var(--secondary)"></stop>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div style="position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <span style="font-size: 22px; font-weight: 800; color: #fff; font-family: var(--font-title);" id="calc-pct-label">34%</span>
+              <span style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">SaaS</span>
+            </div>
+          </div>
+
           <div style="font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Presupuesto Estimado</div>
           <div id="calc-total-price" style="font-family: var(--font-title); font-size: 42px; font-weight: 900; color: #fff; text-shadow: var(--glow-secondary); margin-bottom: 15px;">$21,500 MXN</div>
           <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 30px;">
@@ -550,6 +576,43 @@
     <div style="display: flex; gap: 15px; justify-content: flex-end; align-items: center;">
       <a href="/privacidad.html" style="font-size: 11.5px; color: var(--text-muted); text-decoration: underline;">Leer más</a>
       <button id="accept-cookies-btn" class="btn" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; background: var(--primary); border: none; color: #fff; cursor: pointer; font-weight: 700;">Aceptar</button>
+    </div>
+  </div>
+
+  <!-- FLOATING WHATSAPP BUTTON WITH TYPING INDICATOR -->
+  <div id="float-whatsapp" class="float-wa-container" style="position: fixed; bottom: 20px; left: 20px; z-index: 998; display: flex; align-items: center; gap: 10px;">
+    <!-- Typing indicator speech bubble -->
+    <div class="wa-typing-bubble glass-card" style="padding: 10px 14px; border-radius: 12px; border-color: rgba(99, 102, 241, 0.2); box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 8px;">
+      <div style="font-size: 11.5px; font-weight: 600; color: #fff;">Cerebro está escribiendo</div>
+      <div class="typing-dot-loader" style="display: flex; gap: 3px;">
+        <span class="typing-dot" style="width: 5px; height: 5px; background: var(--primary); border-radius: 50%;"></span>
+        <span class="typing-dot" style="width: 5px; height: 5px; background: var(--secondary); border-radius: 50%;"></span>
+        <span class="typing-dot" style="width: 5px; height: 5px; background: var(--primary); border-radius: 50%;"></span>
+      </div>
+    </div>
+    <a href="https://api.whatsapp.com/send?phone=525540326090&text=Hola%20Brain%20Branding,%20vi%20su%20p%C3%A1gina%20web%20y%20me%20gustar%C3%ADa%20cotizar%20un%20proyecto." target="_blank" class="float-wa-btn" style="width: 50px; height: 50px; border-radius: 50%; background: #25d366; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 20px rgba(37, 211, 102, 0.4); text-decoration: none; font-size: 24px; transition: transform 0.3s;" title="Hablar por WhatsApp">
+      💬
+    </a>
+  </div>
+
+  <!-- PASSCODE GATE MODAL -->
+  <div id="passcode-modal" class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(6, 8, 12, 0.95); z-index: 1000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+    <div class="glass-card modal-content" style="max-width: 400px; padding: 40px; border-radius: 20px; text-align: center; display: flex; flex-direction: column; gap: 20px; border-color: rgba(99, 102, 241, 0.2); box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
+      <div style="font-size: 40px;">🔑</div>
+      <h3 style="font-size: 20px; font-weight: 700; color: #fff; font-family: var(--font-title);">Acceso Privado a Demostraciones</h3>
+      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+        Ingresa el código de acceso proporcionado por nuestro equipo comercial para desbloquear las maquetas interactivas privadas.
+      </p>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <input type="password" id="passcode-input" placeholder="Ingresar clave (Ej: BB2026)" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; text-align: center; font-size: 14.5px; font-weight: 700; letter-spacing: 2px;">
+        <span id="passcode-error" style="font-size: 12px; color: var(--secondary); display: none;">Código incorrecto. Inténtalo de nuevo.</span>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 10px;">
+        <button id="close-passcode-btn" class="btn" style="flex: 1; padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); cursor: pointer;">Cancelar</button>
+        <button id="submit-passcode-btn" class="btn btn-primary" style="flex: 1; padding: 10px; border-radius: 10px; cursor: pointer;">Desbloquear</button>
+      </div>
     </div>
   </div>
 
