@@ -242,6 +242,7 @@
       margin: 0 auto !important;
       min-height: 70vh !important;
       padding-top: 100px !important;
+      overscroll-behavior-y: contain !important;
     }
     .hero-title {
       font-size: 52px !important;
@@ -259,7 +260,12 @@
       --font-body: 'Plus Jakarta Sans', sans-serif !important;
     }
     .hero-desc {
-      transition: opacity 0.3s ease-in-out;
+      transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+      transform: translateX(0);
+    }
+    .hero-desc.fade-out {
+      opacity: 0;
+      transform: translateX(-10px);
     }
     #typing-text::after {
       content: '|';

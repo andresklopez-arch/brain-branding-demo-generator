@@ -76,14 +76,31 @@ document.addEventListener('DOMContentLoaded', () => {
         wordIndex = (wordIndex + 1) % words.length;
         typeSpeed = 500; // Pause before typing next word
         
-        // Update description dynamically with opacity transition
+        // Update description dynamically with opacity transition & slide
         const descElement = document.querySelector('.hero-desc');
         if (descElement) {
-          descElement.style.opacity = '0';
+          descElement.classList.add('fade-out');
           setTimeout(() => {
             descElement.textContent = descriptions[wordIndex];
-            descElement.style.opacity = '1';
+            descElement.classList.remove('fade-out');
           }, 250);
+        }
+        
+        // Update contact form message input dynamically if empty or template
+        const templates = [
+          "Hola! Me interesa diseñar mi Asistente Personal de IA para automatizar mis procesos.",
+          "Hola! Me interesa cotizar un Sistema de Punto de Venta a la medida.",
+          "Hola! Me interesa crear mi Página Web corporativa premium.",
+          "Hola! Me interesa cotizar un Software a Medida para mi empresa."
+        ];
+        const descField = document.getElementById('contact-desc');
+        if (descField) {
+          const currentVal = descField.value.trim();
+          const isTemplate = currentVal === "" || templates.includes(currentVal);
+          if (isTemplate) {
+            descField.value = templates[wordIndex];
+            descField.dispatchEvent(new Event('input'));
+          }
         }
       }
       
