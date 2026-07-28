@@ -41,11 +41,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. Dynamic typing text for the Hero
   const typingElement = document.getElementById('typing-text');
   if (typingElement) {
-    const words = ["Asistentes Personales IA", "Puntos de Venta", "Páginas Web"];
+    const words = ["Asistente Personal IA", "Punto de Venta", "Página Web", "Software a Medida"];
     const descriptions = [
-      "En Brain Branding desarrollamos e implementamos Asistentes Personales con motores avanzados de Inteligencia Artificial que automatizan la operación, agendan citas y atienden a tus clientes las 24 horas del día de forma autónoma.",
-      "Controla y optimiza el flujo de tu negocio con nuestros Sistemas de Punto de Venta a la medida. Administra inventarios, sucursales, facturación y cobros de forma ágil desde cualquier dispositivo.",
-      "Establece una presencia digital corporativa premium con nuestras páginas web de alta conversión. Desarrolladas con diseño UI/UX personalizado para captar prospectos y reprogramar la mente de tus clientes."
+      "En Brain Branding desarrollamos e implementamos tu Asistente Personal con motores avanzados de Inteligencia Artificial para automatizar tu operación, agendar tus citas y atender a tus clientes de forma autónoma las 24 horas del día.",
+      "Controla y optimiza el flujo de tu negocio con nuestro Sistema de Punto de Venta a la medida. Administra tus inventarios, sucursales, facturación y cobros de forma ágil y transparente desde cualquier dispositivo.",
+      "Establece una presencia digital corporativa premium con tu Página Web de alta conversión. Desarrolladas con diseño UI/UX personalizado para captar prospectos y reprogramar la mente de tus clientes recurrentes.",
+      "La principal ventaja de tu Software a Medida es que no te adaptas a un programa genérico: el sistema se amolda a tu forma exacta de trabajar. Aumenta la eficiencia, elimina cuellos de botella y escala tu negocio sin límites."
     ];
     let wordIndex = 0;
     let charIndex = 0;
