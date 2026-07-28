@@ -310,3 +310,50 @@
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* ── INTERACTIVE DIAGNOSTIC LIST ITEMS ── */
+#diag-steps {
+  list-style: none !important;
+  padding-left: 15px !important;
+}
+
+#diag-steps li {
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+  border: 1px solid transparent;
+}
+
+#diag-steps li::before {
+  content: "▶";
+  font-size: 8px;
+  position: absolute;
+  left: -12px;
+  top: 13px;
+  color: var(--primary);
+  transition: transform 0.2s ease;
+}
+
+#diag-steps li:hover {
+  background: rgba(168, 85, 247, 0.08);
+  border-color: rgba(168, 85, 247, 0.2);
+  transform: translateX(4px);
+}
+
+#diag-steps li:hover::before {
+  transform: rotate(90deg);
+  color: var(--secondary);
+}
+
+#diag-steps li.selected-phase {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: rgba(168, 85, 247, 0.4);
+  font-weight: 500;
+}
+
+#diag-steps li.selected-phase::before {
+  transform: rotate(90deg);
+  color: var(--secondary);
+}

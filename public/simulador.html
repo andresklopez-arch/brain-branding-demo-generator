@@ -406,14 +406,43 @@
       </div>
 
       <!-- ROI Summary Metrics -->
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-        <div style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); padding: 15px; border-radius: 12px; text-align: center;">
-          <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Ahorro de Tiempo IA</span>
-          <div style="font-size: 24px; font-weight: 800; color: #a855f7; font-family: var(--font-title);"><span id="diag-time-saved">22</span> hrs <span style="font-size:14px; font-weight:500; color:#fff;">/sem</span></div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+        <div style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); padding: 12px 8px; border-radius: 12px; text-align: center;">
+          <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Ahorro Tiempo IA</span>
+          <div style="font-size: 20px; font-weight: 800; color: #a855f7; font-family: var(--font-title);"><span id="diag-time-saved">22</span> hrs <span style="font-size:12px; font-weight:500; color:#fff;">/sem</span></div>
         </div>
-        <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); padding: 15px; border-radius: 12px; text-align: center;">
-          <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Eficiencia de Operación</span>
-          <div style="font-size: 24px; font-weight: 800; color: #10b981; font-family: var(--font-title);">+<span id="diag-efficiency">45</span>%</div>
+        <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); padding: 12px 8px; border-radius: 12px; text-align: center;">
+          <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Eficiencia Global</span>
+          <div style="font-size: 20px; font-weight: 800; color: #10b981; font-family: var(--font-title);">+<span id="diag-efficiency">45</span>%</div>
+        </div>
+        <div style="background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(14, 165, 233, 0.2); padding: 12px 8px; border-radius: 12px; text-align: center;">
+          <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Retorno Estimado</span>
+          <div style="font-size: 20px; font-weight: 800; color: #0ea5e9; font-family: var(--font-title);">$<span id="diag-roi-savings">6,400</span> <span style="font-size:11px; font-weight:500; color:#fff;">MXN/m</span></div>
+        </div>
+      </div>
+
+      <!-- Curva de capacidad bar chart (Efecto Wow) -->
+      <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+        <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Curva de Eficiencia Operativa</span>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #fda4af; margin-bottom: 4px;">
+              <span>Estado Actual (Manual / Ineficiente)</span>
+              <span style="font-weight: bold;">35% de capacidad</span>
+            </div>
+            <div style="height: 10px; background: rgba(239, 68, 68, 0.1); border-radius: 5px; overflow: hidden; border: 1px solid rgba(239, 68, 68, 0.2);">
+              <div style="width: 35%; height: 100%; background: linear-gradient(90deg, #ef4444, #f43f5e); border-radius: 5px;"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #a7f3d0; margin-bottom: 4px;">
+              <span>Optimizado con Inteligencia Artificial</span>
+              <span id="diag-chart-capacity" style="font-weight: bold;">95% de capacidad</span>
+            </div>
+            <div style="height: 10px; background: rgba(16, 185, 129, 0.1); border-radius: 5px; overflow: hidden; border: 1px solid rgba(16, 185, 129, 0.2);">
+              <div id="diag-chart-bar" style="width: 95%; height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 5px; transition: width 1.2s ease-out;"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -425,10 +454,16 @@
         </div>
 
         <div>
-          <h4 style="font-size: 13.5px; font-weight: 700; color: #fff; margin: 0 0 8px 0; display: flex; align-items: center; gap: 6px;">⚡ <span style="color:#a7f3d0;">Plan de Acción Exponencial (Sugerido)</span></h4>
+          <h4 style="font-size: 13.5px; font-weight: 700; color: #fff; margin: 0 0 8px 0; display: flex; align-items: center; gap: 6px;">⚡ <span style="color:#a7f3d0;">Plan de Acción Exponencial (Haz clic en una fase para ver el detalle técnico)</span></h4>
           <ul id="diag-steps" style="font-size: 12.5px; color: #cbd5e1; line-height: 1.6; margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
             <!-- Will be populated dynamically -->
           </ul>
+        </div>
+        
+        <!-- Interactive details drawer -->
+        <div id="diag-step-details" style="display: none; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.15); border-radius: 12px; padding: 15px; font-size: 12px; color: #e2e8f0; line-height: 1.5; animation: fadeIn 0.3s;">
+          <strong style="color: #a855f7; display: block; margin-bottom: 4px;" id="diag-step-details-title">Detalle Técnico de la Fase</strong>
+          <span id="diag-step-details-body"></span>
         </div>
       </div>
 

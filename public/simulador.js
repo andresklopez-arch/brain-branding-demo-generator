@@ -877,6 +877,7 @@ document.getElementById('trigger-diagnostic-btn').addEventListener('click', () =
     let efficiencyInc = 45;
     let analysisText = "";
     let steps = [];
+    let technicalDetails = {};
     
     if (bizSector.toLowerCase().includes("restaurante")) {
       hrsSaved = 18;
@@ -887,6 +888,11 @@ document.getElementById('trigger-diagnostic-btn').addEventListener('click', () =
         "**Fase 2 (Día 16-30)**: Integrar bases de datos de inventario con predicción de demanda para ingredientes perecederos.",
         "**Fase 3 (Día 31+)**: Habilitar autofacturación vía QR en tickets y encuestas de satisfacción automatizadas."
       ];
+      technicalDetails = {
+        0: `Para la Fase 1 en ${bizName}, implementaremos una interfaz táctil PWA responsiva conectada por WebSockets directos a una pantalla de cocina. Los pedidos ingresan de inmediato con prioridad automática de preparación, reduciendo el papeleo y eliminando el 100% de los errores de comanda escrita.`,
+        1: `En la Fase 2, programaremos un motor lógico local en NodeJS que cruza el historial de platos vendidos con la disponibilidad de ingredientes en el POS. Al predecir el flujo de comensales semanales, te sugerirá las cantidades óptimas de compra para pescados, carnes y verduras, evitando mermas.`,
+        2: `Para la Fase 3, integraremos un generador de CFDI con timbrado automático directo a la pasarela de pagos SAT. El cliente final puede escanear su ticket físico, ingresar su RFC y descargar su factura fiscal en PDF/XML en menos de 2 minutos sin intervención del cajero.`
+      };
     } else if (bizSector.toLowerCase().includes("tienda") || bizSector.toLowerCase().includes("comercio")) {
       hrsSaved = 20;
       efficiencyInc = 40;
@@ -896,6 +902,11 @@ document.getElementById('trigger-diagnostic-btn').addEventListener('click', () =
         "**Fase 2 (Día 16-30)**: Automatizar alertas de stock crítico y reordenes de proveedores con reglas lógicas de negocio.",
         "**Fase 3 (Día 31+)**: Lanzar campañas automatizadas de retención de clientes inactivos basadas en historial de compras."
       ];
+      technicalDetails = {
+        0: `La Fase 1 en ${bizName} conectará el software de cobro físico (POS) con las APIs de tu tienda en línea (Shopify/WooCommerce). Cada transacción en caja descuenta stock de forma inmediata en la web, previniendo compras accidentales de artículos agotados.`,
+        1: `Para la Fase 2, desarrollaremos un gestor de almacenes centralizado que detecta niveles mínimos de stock. Cuando un producto de alta rotación baja del límite de seguridad, el sistema redacta y envía automáticamente una orden de compra en PDF al proveedor correspondiente.`,
+        2: `En la Fase 3, usaremos algoritmos de retención (CRM) que identifican comportamientos de compra. Si un cliente frecuente deja de comprar por 45 días, el sistema le enviará un cupón dinámico del 15% por WhatsApp de forma autónoma.`
+      };
     } else {
       // Custom / generic
       // Deterministic but random-looking numbers based on string lengths
@@ -907,18 +918,60 @@ document.getElementById('trigger-diagnostic-btn').addEventListener('click', () =
         `**Fase 2 (Día 16-30)**: Diseñar un flujo en la nube a medida para organizar y erradicar tareas repetitivas relacionadas con "${bizProblem}".`,
         `**Fase 3 (Día 31+)**: Establecer dashboards en tiempo real con alertas preventivas para evitar que el cuello de botella vuelva a surgir.`
       ];
+      technicalDetails = {
+        0: `En la Fase 1, desplegaremos un bot conversacional con procesamiento de lenguaje natural (NLP) entrenado específicamente con las políticas y tarifas de ${bizName}. Resolverá el 80% de preguntas frecuentes por WhatsApp en segundos.`,
+        1: `La Fase 2 estructurará una base de datos relacional PostgreSQL con un frontend web responsivo a medida. Automatizará los registros de entrada/salida y las notificaciones para erradicar las tareas manuales repetitivas que provocan: "${bizProblem}".`,
+        2: `En la Fase 3, configuraremos un panel de control con métricas clave (KPIs) e integraciones Webhook para monitorear el desempeño del negocio de ${bizSector} en vivo, alertando por correo y chat si ocurren anomalías operativas.`
+      };
     }
+    
+    // Calculate Return on Investment savings
+    // Costo promedio de hora operativa = $75 MXN
+    const monthlySavingsVal = Math.round(hrsSaved * 75 * 4.33);
+    const formattedSavings = monthlySavingsVal.toLocaleString('es-MX');
     
     document.getElementById('diag-time-saved').textContent = hrsSaved;
     document.getElementById('diag-efficiency').textContent = efficiencyInc;
+    document.getElementById('diag-roi-savings').textContent = formattedSavings;
     document.getElementById('diag-analysis-text').textContent = analysisText;
+    
+    // Animate capacity chart
+    const targetCapacity = 80 + (efficiencyInc % 18);
+    document.getElementById('diag-chart-capacity').textContent = `${targetCapacity}% de capacidad`;
+    const chartBar = document.getElementById('diag-chart-bar');
+    chartBar.style.width = '0%';
+    setTimeout(() => {
+      chartBar.style.width = `${targetCapacity}%`;
+    }, 100);
     
     const stepsUl = document.getElementById('diag-steps');
     stepsUl.innerHTML = '';
-    steps.forEach(step => {
+    
+    const detailsDrawer = document.getElementById('diag-step-details');
+    const detailsTitle = document.getElementById('diag-step-details-title');
+    const detailsBody = document.getElementById('diag-step-details-body');
+    
+    // Reset details drawer
+    detailsDrawer.style.display = 'none';
+    
+    steps.forEach((step, idx) => {
       const li = document.createElement('li');
-      // Format bold text
-      li.innerHTML = step.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      li.innerHTML = step.replace(/\*\frac{.*?}{.*?}/g, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      li.addEventListener('click', () => {
+        // Toggle selected styling
+        stepsUl.querySelectorAll('li').forEach(item => item.classList.remove('selected-phase'));
+        li.classList.add('selected-phase');
+        
+        // Show detail in drawer
+        detailsDrawer.style.display = 'block';
+        detailsTitle.textContent = `Detalle Técnico: Fase ${idx + 1}`;
+        detailsBody.textContent = technicalDetails[idx];
+        
+        // Soft scroll into view
+        detailsDrawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+      
       stepsUl.appendChild(li);
     });
     
