@@ -22,7 +22,7 @@ if %errorlevel% equ 0 (
     echo [INFO] Subiendo cambios a GitHub (git push)...
     git push origin main
 ) else (
-    echo [WARNING] No hay repositorio remoto "origin" configurado. Agrega uno con: git remote add origin ^<url^>
+    echo [WARNING] No hay repositorio remoto origin configurado.
 )
 
 echo [SUCCESS] Cambios locales confirmados en Git.
