@@ -1251,9 +1251,12 @@ document.getElementById('calculate-arqueo-btn').addEventListener('click', () => 
 // ── MOCKUP C: WEBSITE CONTROLLER ──
 function applyWebTheme(theme) {
   const preview = document.getElementById('mock-web-preview');
-  if (!preview) return;
+  if (preview) {
+    preview.className = `theme-${theme}`;
+  }
   
-  preview.className = `theme-${theme}`;
+  // Apply globally to the entire simulator dashboard body!
+  document.body.className = `sim-body theme-${theme}`;
   
   document.querySelectorAll('.web-color-btn').forEach(btn => {
     btn.classList.remove('active');
