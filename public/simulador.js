@@ -36,6 +36,14 @@ function sanitizeInput(text) {
   return text.replace(/<[^>]*>?/gm, '').trim();
 }
 
+// Validate active session (must exist in sessionStorage, i.e., tab was not closed)
+if (!sessionStorage.getItem('sim_session_active')) {
+  sessionStorage.clear();
+  localStorage.clear();
+  window.location.href = '/';
+  throw new Error("No active session found. Redirecting to root...");
+}
+
 const rawBizName = sessionStorage.getItem('sim_biz_name') || localStorage.getItem('sim_biz_name') || "";
 const rawBizSector = sessionStorage.getItem('sim_biz_sector') || localStorage.getItem('sim_biz_sector') || "";
 const rawBizProblem = sessionStorage.getItem('sim_biz_problem') || localStorage.getItem('sim_biz_problem') || "";
@@ -163,30 +171,26 @@ function generateAvatar(name) {
   resize(); initStars(); animateStars();
 })();
 
-// ── INACTIVITY TIMER (15 MINUTES) ──
-let timeLeft = 15 * 60; // 900 seconds
+// ── SESSION TIMER (15 MINUTES HARD LIMIT) ──
+const sessionStart = parseInt(sessionStorage.getItem('sim_session_start') || Date.now().toString(), 10);
 const timerEl = document.getElementById('countdown-timer');
 
 function updateTimer() {
+  const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+  const timeLeft = Math.max(0, 15 * 60 - elapsed);
+  
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
-  timerEl.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  if (timerEl) {
+    timerEl.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  }
   
   if (timeLeft <= 0) {
     destroySession();
-  } else {
-    timeLeft--;
   }
 }
 const timerInterval = setInterval(updateTimer, 1000);
-
-// Reset timer on user activity
-function resetTimer() {
-  timeLeft = 15 * 60;
-}
-['mousemove', 'keydown', 'click', 'scroll'].forEach(evt => {
-  window.addEventListener(evt, resetTimer, { passive: true });
-});
+updateTimer();
 
 function destroySession() {
   clearInterval(timerInterval);

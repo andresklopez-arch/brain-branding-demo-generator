@@ -285,6 +285,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const bizStyle = document.getElementById('sim-business-style').value;
 
       // Store in sessionStorage
+      sessionStorage.setItem('sim_session_active', 'true');
+      sessionStorage.setItem('sim_session_start', Date.now().toString());
       sessionStorage.setItem('sim_biz_name', bizName);
       sessionStorage.setItem('sim_biz_sector', bizSector);
       sessionStorage.setItem('sim_biz_problem', bizProblem);
