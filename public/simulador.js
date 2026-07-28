@@ -465,39 +465,47 @@ if (vcardBtn) {
 }
 
 // ── TERMINAL LOGS INITIALIZATION ──
-const terminal = document.getElementById('terminal-logs');
-const progressBar = document.getElementById('loader-progress-bar');
+const terminal = document.getElementById('search-terminal-logs') || document.getElementById('terminal-logs');
+const progressBar = document.getElementById('search-progress-bar') || document.getElementById('loader-progress-bar');
+const aiSearchModal = document.getElementById('ai-search-modal');
+const simLoader = document.getElementById('sim-loader');
+
 const logs = [
-  `[BOOT] Conectando con el motor cognitivo de Brain Branding v4.2...`,
-  `[BÚSQUEDA_IA] Escaneando internet en vivo en busca de soluciones de software para: "${bizSector}"...`,
-  `[BÚSQUEDA_IA] Buscando mejores prácticas sectoriales aplicables a "${bizName}"...`,
-  `[DIAGNÓSTICO] Analizando cuello de botella crítico: "${bizProblem}"...`,
-  `[INTEGRACIÓN] Extrayendo patrones y automatizaciones cognitivas para erradicar: "${bizProblem}"...`,
-  `[COMPILANDO] Estructurando simuladores: Chatbot 24/7, POS Inteligente, Web Adaptativa y ERP Contable...`,
-  `[SINCRO] Enlazando base de datos simulada y pasarelas de pago con el ERP de ${bizName}...`,
-  `[SUCCESS] Algoritmos aplicados con éxito. Iniciando sandbox interactivo.`
+  `Conectando con el motor cognitivo de Brain Branding v4.2...`,
+  `Escaneando internet en vivo para solucionar sector: "${bizSector}"...`,
+  `Buscando mejores prácticas de automatización aplicables a "${bizName}"...`,
+  `Analizando cuello de botella: "${bizProblem}"...`,
+  `Diseñando arquitectura para erradicar: "${bizProblem}"...`,
+  `Estructurando simuladores: Chatbot 24/7, POS Inteligente, Web Adaptativa y ERP...`,
+  `Enlazando base de datos simulada de ${bizName}...`,
+  `Algoritmos aplicados con éxito. Abración de Sandbox Interactivo.`
 ];
 
 let logIndex = 0;
 function printLog() {
   if (logIndex < logs.length) {
-    const div = document.createElement('div');
-    div.textContent = logs[logIndex];
-    terminal.appendChild(div);
+    if (terminal) {
+      const div = document.createElement('div');
+      div.textContent = '> ' + logs[logIndex];
+      terminal.appendChild(div);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
     
     if (progressBar) {
       progressBar.style.width = ((logIndex + 1) / logs.length * 100) + '%';
     }
     
     logIndex++;
-    setTimeout(printLog, 600);
+    setTimeout(printLog, 450);
   } else {
     setTimeout(() => {
-      document.getElementById('sim-loader').style.display = 'none';
-      document.getElementById('sim-dashboard').style.display = 'flex';
+      if (aiSearchModal) aiSearchModal.style.display = 'none';
+      if (simLoader) simLoader.style.display = 'none';
+      const dashboard = document.getElementById('sim-dashboard');
+      if (dashboard) dashboard.style.display = 'flex';
       initTabs();
       initMockups();
-    }, 600);
+    }, 450);
   }
 }
 printLog();
