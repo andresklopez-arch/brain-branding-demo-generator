@@ -464,12 +464,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       try {
-        const res = await fetch(`https://brain-branding-demo-generator.onrender.com/api/validate-passcode?code=${encodeURIComponent(enteredCode)}`);
+        const cleanCode = enteredCode.trim().toUpperCase();
+        
+        // Derive SHA-256 hash natively in client browser
+        const encoder = new TextEncoder();
+        const hashBuffer = await window.crypto.subtle.digest('SHA-256', encoder.encode(cleanCode));
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const cleanHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        
+        const res = await fetch(`https://brain-branding-demo-generator.onrender.com/api/validate-passcode?hash=${cleanHash}`);
         const data = await res.json();
         
         if (data.success && data.redirectUrl) {
           passcodeAttempts = 0;
-          sessionStorage.setItem('demo_key', enteredCode.trim().toUpperCase());
+          sessionStorage.setItem('demo_key', cleanCode);
           if (typeof gtag === 'function') {
             gtag('event', 'unlock_private_demo_api', { event_category: 'security', event_label: data.clientName });
           }
