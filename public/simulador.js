@@ -712,7 +712,28 @@ function initMockups() {
   
   // Inject Logos
   document.querySelectorAll('.business-logo-container').forEach(el => {
-    el.innerHTML = `<img src="${bizLogo}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">`;
+    if (!bizLogo || bizLogo === "null" || bizLogo === "undefined" || bizLogo === "" || bizLogo.includes("placeholder") || bizLogo.includes("logo_placeholder")) {
+      const initials = bizName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      const hue1 = (bizName.length * 12) % 360;
+      const hue2 = (hue1 + 140) % 360;
+      el.style.background = `linear-gradient(135deg, hsl(${hue1}, 80%, 40%), hsl(${hue2}, 85%, 50%))`;
+      el.style.color = '#fff';
+      el.style.fontWeight = '900';
+      el.style.fontFamily = 'var(--font-title)';
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+      el.style.border = '2px solid rgba(255,255,255,0.25)';
+      el.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+      el.style.textShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      // Size responsive initials font size
+      const currentWidth = el.style.width || el.offsetWidth;
+      el.style.fontSize = (currentWidth === '68px' || currentWidth === 68) ? '24px' : '18px';
+      el.textContent = initials;
+    } else {
+      el.style.background = 'transparent';
+      el.innerHTML = `<img src="${bizLogo}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">`;
+    }
   });
 
   // Setup dynamic URLs
@@ -746,7 +767,8 @@ function initMockups() {
   applyWebTheme(bizStyle);
 
   // 3.5 AI Advisor Card
-  document.getElementById('ai-advisor-advice').textContent = profile.aiAdvice;
+  const advEl = document.getElementById('ai-advisor-advice');
+  if (advEl) advEl.textContent = profile.aiAdvice;
 
   // 4. ERP Workflow Problem Description
   document.getElementById('erp-bottleneck-desc').textContent = `Cuello de botella: ${profile.erpBottleneck}`;
@@ -2191,10 +2213,12 @@ function updateAIAdvice(tabId) {
 }
 
 // ── AUTONOMOUS PERSONAL ASSISTANT DEMO ENGINE ──
-let assistantAutoInterval = null;
-let assistantStepIndex = 0;
-let isSimulationPaused = false;
-let userResumeTimeout = null;
+// ── UNIFIED MULTI-PRODUCT AUTONOMOUS RUNNER ──
+let activeLoopInterval = null;
+let activeLoopTimeout = null;
+let currentLoopTab = null;
+let activeLoopStep = 0;
+let tabPauseTimeout = {};
 
 const assistantScenarios = [
   {
@@ -2323,110 +2347,386 @@ const assistantScenarios = [
   }
 ];
 
-function runAutonomousAssistantStep() {
-  if (isSimulationPaused) return;
-
-  const panel = document.getElementById('panel-asistente');
-  if (!panel || !panel.classList.contains('active')) return;
-
-  const step = assistantScenarios[assistantStepIndex];
-  
-  const themeBtn = document.querySelector(`.chat-theme-toggle-btn[data-theme="${step.channel}"]`);
-  if (themeBtn) {
-    themeBtn.click();
-  }
-
-  if (assistantStepIndex === 0) {
-    document.getElementById('chat-messages').innerHTML = '';
-  }
-
-  const statusEl = document.getElementById('chat-simulation-status');
-  if (statusEl) {
-    statusEl.textContent = `Paso: ${step.title}`;
-  }
-
-  const logsEl = document.getElementById('agent-tool-logs');
-  if (logsEl) {
-    logsEl.innerHTML = '';
-  }
-  
-  step.logs.forEach((log, index) => {
-    setTimeout(() => {
-      if (logsEl) {
-        logsEl.innerHTML += `<div>&gt; ${log}</div>`;
-        logsEl.scrollTop = logsEl.scrollHeight;
-      }
-    }, index * 300);
-  });
-
-  setTimeout(() => {
-    if (isSimulationPaused) return;
-    addChatMessage('incoming', step.incoming.replace(/{bizName}/g, bizName).replace(/{bizSector}/g, bizSector).replace(/{bizProblem}/g, bizProblem));
-    
-    setTimeout(() => {
-      if (isSimulationPaused) return;
-      
-      const outgoingMsg = step.outgoing.replace(/{bizName}/g, bizName).replace(/{bizSector}/g, bizSector).replace(/{bizProblem}/g, bizProblem);
-      addChatMessage('outgoing', outgoingMsg);
-      
-      memoryVariables = { ...memoryVariables, ...step.vars };
-      
-      const latency = Math.round(Math.random() * 220 + 80);
-      updateTelemetry(step.incoming, outgoingMsg, latency);
-      
-      assistantStepIndex = (assistantStepIndex + 1) % assistantScenarios.length;
-    }, 1800);
-
-  }, 1000);
+function addTypingIndicator(side) {
+  removeTypingIndicator();
+  const chatMessages = document.getElementById('chat-messages');
+  if (!chatMessages) return;
+  const bubble = document.createElement('div');
+  bubble.id = 'chat-typing-indicator';
+  bubble.className = `chat-bubble ${side}`;
+  bubble.style.display = 'flex';
+  bubble.style.alignItems = 'center';
+  bubble.style.gap = '4px';
+  bubble.style.padding = '10px 15px';
+  bubble.innerHTML = `
+    <span class="typing-dot" style="width:6px; height:6px; background:#fff; border-radius:50%; animation: pulse 1s infinite alternate;"></span>
+    <span class="typing-dot" style="width:6px; height:6px; background:#fff; border-radius:50%; animation: pulse 1s infinite alternate; animation-delay: 0.2s;"></span>
+    <span class="typing-dot" style="width:6px; height:6px; background:#fff; border-radius:50%; animation: pulse 1s infinite alternate; animation-delay: 0.4s;"></span>
+  `;
+  chatMessages.appendChild(bubble);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-function startAutonomousAssistantLoop() {
-  if (assistantAutoInterval) clearInterval(assistantAutoInterval);
-  
-  runAutonomousAssistantStep();
-  
-  assistantAutoInterval = setInterval(() => {
-    runAutonomousAssistantStep();
-  }, 7500);
+function removeTypingIndicator() {
+  const el = document.getElementById('chat-typing-indicator');
+  if (el) el.remove();
 }
 
-function pauseSimulationOnUserAction() {
-  isSimulationPaused = true;
-  const statusEl = document.getElementById('chat-simulation-status');
-  if (statusEl) {
-    statusEl.textContent = "Interrupción Manual Activa";
-    statusEl.style.color = "#ef4444";
-  }
+function clearActiveLoop() {
+  if (activeLoopInterval) clearInterval(activeLoopInterval);
+  if (activeLoopTimeout) clearTimeout(activeLoopTimeout);
+  activeLoopInterval = null;
+  activeLoopTimeout = null;
+}
+
+function startActiveTabLoop(tabId) {
+  clearActiveLoop();
+  currentLoopTab = tabId;
+  activeLoopStep = 0;
   
-  if (userResumeTimeout) clearTimeout(userResumeTimeout);
-  
-  userResumeTimeout = setTimeout(() => {
-    isSimulationPaused = false;
+  if (tabPauseTimeout[tabId]) {
+    const statusEl = document.getElementById('chat-simulation-status');
     if (statusEl) {
-      statusEl.textContent = "Simulación Autónoma Activa";
-      statusEl.style.color = "#fbbf24";
+      statusEl.textContent = "Interrupción Manual Activa";
+      statusEl.style.color = "#ef4444";
     }
-    printToolLog("[SYSTEM] Reanudando ciclo autónomo del Asistente...");
-    runAutonomousAssistantStep();
+    return;
+  }
+
+  const statusEl = document.getElementById('chat-simulation-status');
+  if (statusEl) {
+    statusEl.textContent = "Simulación Autónoma Activa";
+    statusEl.style.color = "#fbbf24";
+  }
+
+  if (tabId === 'asistente') {
+    runAsistenteLoop();
+  } else if (tabId === 'pos') {
+    runPOSLoop();
+  } else if (tabId === 'web') {
+    runWebLoop();
+  } else if (tabId === 'erp') {
+    runERPLoop();
+  }
+}
+
+function pauseActiveTabLoop(tabId) {
+  if (tabPauseTimeout[tabId]) clearTimeout(tabPauseTimeout[tabId]);
+  
+  clearActiveLoop();
+  
+  if (currentLoopTab === tabId) {
+    const statusEl = document.getElementById('chat-simulation-status');
+    if (statusEl) {
+      statusEl.textContent = "Interrupción Manual Activa";
+      statusEl.style.color = "#ef4444";
+    }
+  }
+
+  tabPauseTimeout[tabId] = setTimeout(() => {
+    delete tabPauseTimeout[tabId];
+    if (currentLoopTab === tabId) {
+      printToolLog(`[SISTEMA] Reanudando ciclo autónomo para: ${tabId}...`);
+      startActiveTabLoop(tabId);
+    }
   }, 22000);
 }
 
-document.getElementById('chat-user-input').addEventListener('focus', pauseSimulationOnUserAction);
-document.getElementById('chat-user-input').addEventListener('keypress', (e) => {
-  pauseSimulationOnUserAction();
+// ── 1. ASISTENTE LOOP ──
+function runAsistenteLoop() {
+  const step = () => {
+    if (currentLoopTab !== 'asistente') return;
+    
+    if (activeLoopStep === 0) {
+      document.getElementById('chat-messages').innerHTML = '';
+    }
+    
+    const scenario = assistantScenarios[activeLoopStep];
+    activeLoopStep = (activeLoopStep + 1) % assistantScenarios.length;
+    
+    const themeBtn = document.querySelector(`.chat-theme-toggle-btn[data-theme="${scenario.channel}"]`);
+    if (themeBtn) themeBtn.click();
+
+    const statusEl = document.getElementById('chat-simulation-status');
+    if (statusEl) statusEl.textContent = `Paso: ${scenario.title}`;
+
+    const logsEl = document.getElementById('agent-tool-logs');
+    if (logsEl) logsEl.innerHTML = '';
+    scenario.logs.forEach((log, index) => {
+      setTimeout(() => {
+        if (logsEl && currentLoopTab === 'asistente') {
+          logsEl.innerHTML += `<div>&gt; ${log}</div>`;
+          logsEl.scrollTop = logsEl.scrollHeight;
+        }
+      }, index * 200);
+    });
+
+    setTimeout(() => {
+      if (currentLoopTab !== 'asistente') return;
+      addTypingIndicator('incoming');
+      
+      setTimeout(() => {
+        if (currentLoopTab !== 'asistente') return;
+        removeTypingIndicator();
+        addChatMessage('incoming', scenario.incoming.replace(/{bizName}/g, bizName).replace(/{bizSector}/g, bizSector).replace(/{bizProblem}/g, bizProblem));
+        
+        setTimeout(() => {
+          if (currentLoopTab !== 'asistente') return;
+          addTypingIndicator('outgoing');
+          
+          setTimeout(() => {
+            if (currentLoopTab !== 'asistente') return;
+            removeTypingIndicator();
+            const outgoingMsg = scenario.outgoing.replace(/{bizName}/g, bizName).replace(/{bizSector}/g, bizSector).replace(/{bizProblem}/g, bizProblem);
+            addChatMessage('outgoing', outgoingMsg);
+            
+            playBeep(980, 'sine', 0.08);
+            setTimeout(() => playBeep(1280, 'sine', 0.1), 100);
+            
+            memoryVariables = { ...memoryVariables, ...scenario.vars };
+            const latency = Math.round(Math.random() * 220 + 80);
+            updateTelemetry(scenario.incoming, outgoingMsg, latency);
+            
+            activeLoopTimeout = setTimeout(step, 6500);
+          }, 1500);
+        }, 1000);
+      }, 1200);
+    }, 500);
+  };
+  step();
+}
+
+// ── 2. POS LOOP ──
+function runPOSLoop() {
+  const step = () => {
+    if (currentLoopTab !== 'pos') return;
+
+    if (activeLoopStep === 0) {
+      const clearBtn = document.getElementById('clear-cart-btn');
+      if (clearBtn) clearBtn.click();
+      
+      const loyaltySelect = document.getElementById('pos-loyalty-select');
+      if (loyaltySelect) {
+        loyaltySelect.value = 'none';
+        loyaltySelect.dispatchEvent(new Event('change'));
+      }
+      
+      const prods = document.querySelectorAll('.pos-prod-card');
+      if (prods.length > 0) {
+        prods[0].click();
+        printToolLog(`[POS AUTÓNOMO] Añadiendo: ${profile.posProducts[0].name} al carrito.`);
+      }
+      activeLoopStep = 1;
+      activeLoopTimeout = setTimeout(step, 2000);
+    } 
+    else if (activeLoopStep === 1) {
+      const prods = document.querySelectorAll('.pos-prod-card');
+      if (prods.length > 2) {
+        prods[2].click();
+        printToolLog(`[POS AUTÓNOMO] Añadiendo: ${profile.posProducts[2].name} al carrito.`);
+      }
+      activeLoopStep = 2;
+      activeLoopTimeout = setTimeout(step, 2000);
+    } 
+    else if (activeLoopStep === 2) {
+      const coupons = document.querySelectorAll('.coupon-btn');
+      if (coupons.length > 0) {
+        coupons[0].click();
+        printToolLog(`[POS AUTÓNOMO] Aplicando Cupón BOGO.`);
+      }
+      
+      const loyaltySelect = document.getElementById('pos-loyalty-select');
+      if (loyaltySelect) {
+        loyaltySelect.value = 'vip';
+        loyaltySelect.dispatchEvent(new Event('change'));
+        printToolLog(`[POS AUTÓNOMO] Cliente VIP seleccionado.`);
+      }
+      activeLoopStep = 3;
+      activeLoopTimeout = setTimeout(step, 2000);
+    } 
+    else if (activeLoopStep === 3) {
+      const checkoutBtn = document.getElementById('checkout-pos-btn');
+      if (checkoutBtn) {
+        checkoutBtn.click();
+        printToolLog(`[POS AUTÓNOMO] Iniciando Checkout. Esperando cobro Contactless.`);
+      }
+      activeLoopStep = 4;
+      activeLoopTimeout = setTimeout(step, 2000);
+    } 
+    else if (activeLoopStep === 4) {
+      const tapBtn = document.getElementById('simulate-tap-btn');
+      if (tapBtn) {
+        tapBtn.click();
+        printToolLog(`[POS AUTÓNOMO] Leyendo tarjeta contactless en terminal Stripe.`);
+      }
+      activeLoopStep = 0;
+      activeLoopTimeout = setTimeout(step, 6500);
+    }
+  };
+  step();
+}
+
+// ── 3. WEBSITE LOOP ──
+function runWebLoop() {
+  const step = () => {
+    if (currentLoopTab !== 'web') return;
+
+    const sections = ['services', 'about', 'contact', 'home'];
+    const currentSection = sections[activeLoopStep];
+    
+    const navLink = document.getElementById(`web-nav-${currentSection}`);
+    if (navLink) {
+      navLink.click();
+      printToolLog(`[WEB AUTÓNOMO] Navegando a la sección: ${currentSection.toUpperCase()}`);
+    }
+    
+    if (currentSection === 'services') {
+      const accordions = document.querySelectorAll('.faq-accordion-header');
+      if (accordions.length > 0) {
+        setTimeout(() => {
+          if (currentLoopTab === 'web') {
+            accordions[0].click();
+            printToolLog(`[WEB AUTÓNOMO] Desplegando acordeón FAQ: "¿Cómo funciona el servicio?"`);
+          }
+        }, 1000);
+      }
+    } 
+    else if (currentSection === 'contact') {
+      printToolLog(`[WEB AUTÓNOMO] Inicializando Canvas interactivo de Google Maps.`);
+    }
+
+    activeLoopStep = (activeLoopStep + 1) % sections.length;
+    activeLoopTimeout = setTimeout(step, 3500);
+  };
+  step();
+}
+
+// ── 4. ERP LOOP ──
+function runERPLoop() {
+  const step = () => {
+    if (currentLoopTab !== 'erp') return;
+
+    const subtabs = ['pl', 'crm', 'tasks', 'sat', 'flow'];
+    const currentSubtab = subtabs[activeLoopStep];
+
+    const btn = document.querySelector(`.erp-subtab-btn[data-subtab="${currentSubtab}"]`);
+    if (btn) {
+      btn.click();
+      printToolLog(`[ERP AUTÓNOMO] Abriendo módulo ERP: ${btn.textContent.trim()}`);
+    }
+
+    if (currentSubtab === 'pl') {
+      const branchSelect = document.getElementById('erp-branch-select');
+      if (branchSelect) {
+        branchSelect.value = 'norte';
+        branchSelect.dispatchEvent(new Event('change'));
+        printToolLog(`[ERP AUTÓNOMO] Cambiando consolidado a Sucursal Norte.`);
+      }
+    } 
+    else if (currentSubtab === 'tasks') {
+      const cards = document.querySelectorAll('.kanban-card');
+      if (cards.length > 0) {
+        setTimeout(() => {
+          if (currentLoopTab === 'erp') {
+            cards[0].click();
+            printToolLog(`[ERP AUTÓNOMO] Sincronizando tarea Kanban.`);
+          }
+        }, 1000);
+      }
+    } 
+    else if (currentSubtab === 'flow') {
+      const toggle = document.getElementById('erp-optimize-toggle');
+      if (toggle) {
+        setTimeout(() => {
+          if (currentLoopTab === 'erp') {
+            toggle.click();
+            printToolLog(`[ERP AUTÓNOMO] Alternando Algoritmo de Optimización IA.`);
+          }
+        }, 1000);
+      }
+    }
+
+    activeLoopStep = (activeLoopStep + 1) % subtabs.length;
+    activeLoopTimeout = setTimeout(step, 4000);
+  };
+  step();
+}
+
+function attachPauseListeners() {
+  // Asistente
+  const assistantInputs = [
+    document.getElementById('chat-user-input'),
+    document.getElementById('send-chat-btn')
+  ];
+  assistantInputs.forEach(el => {
+    if (el) {
+      el.addEventListener('focus', () => pauseActiveTabLoop('asistente'));
+      el.addEventListener('click', () => pauseActiveTabLoop('asistente'));
+      el.addEventListener('keypress', () => pauseActiveTabLoop('asistente'));
+    }
+  });
+  document.querySelectorAll('.chat-theme-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => pauseActiveTabLoop('asistente'));
+  });
+
+  // POS
+  document.querySelectorAll('.pos-prod-card').forEach(btn => {
+    btn.addEventListener('click', () => pauseActiveTabLoop('pos'));
+  });
+  document.querySelectorAll('.tip-btn').forEach(btn => {
+    btn.addEventListener('click', () => pauseActiveTabLoop('pos'));
+  });
+  document.querySelectorAll('.coupon-btn').forEach(btn => {
+    btn.addEventListener('click', () => pauseActiveTabLoop('pos'));
+  });
+  const posSelects = [
+    document.getElementById('pos-loyalty-select'),
+    document.getElementById('pos-reorder-btn'),
+    document.getElementById('checkout-pos-btn'),
+    document.getElementById('simulate-tap-btn'),
+    document.getElementById('clear-cart-btn')
+  ];
+  posSelects.forEach(el => {
+    if (el) el.addEventListener('click', () => pauseActiveTabLoop('pos'));
+  });
+
+  // Web
+  const webBtns = [
+    document.getElementById('web-fullscreen-btn'),
+    document.getElementById('web-nav-home'),
+    document.getElementById('web-nav-services'),
+    document.getElementById('web-nav-about'),
+    document.getElementById('web-nav-contact')
+  ];
+  webBtns.forEach(el => {
+    if (el) el.addEventListener('click', () => pauseActiveTabLoop('web'));
+  });
+  
+  // ERP
+  const erpBtns = [
+    document.getElementById('erp-branch-select'),
+    document.getElementById('erp-optimize-toggle')
+  ];
+  erpBtns.forEach(el => {
+    if (el) el.addEventListener('click', () => pauseActiveTabLoop('erp'));
+  });
+  document.querySelectorAll('.erp-subtab-btn').forEach(btn => {
+    btn.addEventListener('click', () => pauseActiveTabLoop('erp'));
+  });
+}
+
+// ── LISTENERS FOR TAB SYSTEM ──
+document.querySelectorAll('.tab-link').forEach(link => {
+  link.addEventListener('click', () => {
+    const tabId = link.getAttribute('data-tab');
+    setTimeout(() => startActiveTabLoop(tabId), 150);
+  });
 });
-document.getElementById('send-chat-btn').addEventListener('click', pauseSimulationOnUserAction);
 
 window.addEventListener('load', () => {
   setTimeout(() => {
-    startAutonomousAssistantLoop();
-  }, 8000);
-});
-
-document.querySelectorAll('.tab-link').forEach(link => {
-  link.addEventListener('click', () => {
-    if (link.getAttribute('data-tab') === 'asistente') {
-      setTimeout(startAutonomousAssistantLoop, 200);
-    }
-  });
+    attachPauseListeners();
+    const defaultTab = (activeService === 'all') ? 'asistente' : activeService;
+    startActiveTabLoop(defaultTab);
+  }, 1500);
 });
