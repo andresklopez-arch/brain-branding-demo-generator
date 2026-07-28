@@ -841,4 +841,31 @@ document.addEventListener('DOMContentLoaded', () => {
       Object.values(draftFields).forEach(key => localStorage.removeItem(key));
     });
   }
+
+  // 28. Scroll Progress Bar Update
+  const progressBar = document.getElementById('scroll-progress');
+  if (progressBar) {
+    window.addEventListener('scroll', () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+      progressBar.style.width = scrolled + '%';
+    }, { passive: true });
+  }
+
+  // 29. Anti-spam link validation for form submit
+  const descField = document.getElementById('contact-desc');
+  const operationField = document.getElementById('contact-operation');
+  if (agencyContactForm) {
+    agencyContactForm.addEventListener('submit', (e) => {
+      const urlPattern = /https?:\/\/[^\s$.?#].[^\s]*/i;
+      const hasUrl = (descField && urlPattern.test(descField.value)) || 
+                     (operationField && urlPattern.test(operationField.value));
+      
+      if (hasUrl) {
+        e.preventDefault();
+        alert('Por razones de seguridad, no se permiten enlaces HTTP/HTTPS en la descripción o detalles de la operación.');
+      }
+    });
+  }
 });
