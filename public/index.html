@@ -156,6 +156,17 @@
       box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
     }
 
+    /* LOGO NEON BREATHING GLOW */
+    @keyframes logo-pulse {
+      0% { filter: drop-shadow(0 0 2px rgba(99, 102, 241, 0.3)); }
+      50% { filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.8)) drop-shadow(0 0 12px rgba(99, 102, 241, 0.4)); }
+      100% { filter: drop-shadow(0 0 2px rgba(99, 102, 241, 0.3)); }
+    }
+    header .logo-area img {
+      border-radius: 50%;
+      animation: logo-pulse 3s infinite ease-in-out;
+    }
+
     /* FINE-TUNED MOBILE HEADER */
     @media (max-width: 768px) {
       header {

@@ -700,6 +700,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    if (currentSectionId) {
+      sessionStorage.setItem('activeSection', currentSectionId);
+    }
+
     navLinks.forEach(link => {
       const href = link.getAttribute('href');
       // Reset active states
@@ -732,4 +736,30 @@ document.addEventListener('DOMContentLoaded', () => {
       clearTimeout(hoverTimer);
     });
   });
+
+  // 22. Click Spark for Nav Links
+  navLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      link.style.borderColor = '#00e5ff';
+      link.style.background = 'rgba(0, 229, 255, 0.2)';
+      link.style.boxShadow = '0 0 15px rgba(0, 229, 255, 0.6)';
+      
+      setTimeout(() => {
+        link.style.borderColor = '';
+        link.style.background = '';
+        link.style.boxShadow = '';
+      }, 400);
+    });
+  });
+
+  // 23. Scroll State Restoration
+  const savedSection = sessionStorage.getItem('activeSection');
+  if (savedSection && window.location.hash === '') {
+    setTimeout(() => {
+      const targetSec = document.getElementById(savedSection);
+      if (targetSec) {
+        targetSec.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 600);
+  }
 });
