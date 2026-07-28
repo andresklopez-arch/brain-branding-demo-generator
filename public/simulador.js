@@ -225,7 +225,8 @@ const sectorProfiles = {
     webSlogan: "Explora nuestro menú artesanal e interactivo. Pide en línea, reserva tu mesa y disfruta de la mejor atención gastronómica de la ciudad.",
     erpBottleneck: "Retrasos y confusión en comandas físicas entre meseros y cocina.",
     erpOptimizeNode: "✅ Comandas Digitales en Tiempo Real",
-    erpOptimizeDesc: "Pedidos directo a cocina desde tablet. Reduce el tiempo de entrega un 35% y elimina mermas por errores."
+    erpOptimizeDesc: "Pedidos directo a cocina desde tablet. Reduce el tiempo de entrega un 35% y elimina mermas por errores.",
+    aiAdvice: "En el sector restaurantero, implementar un control de comandas digital sincronizado y predicción de demanda para ingredientes perecederos reduce las mermas de insumos críticos hasta en un 22% anual."
   },
   "comercio": {
     logoName: "Comercio / Tienda (Retail)",
@@ -243,7 +244,8 @@ const sectorProfiles = {
     webSlogan: "Descubre nuestra colección exclusiva. Compra online de forma segura con envío rápido a domicilio y devoluciones sin costo.",
     erpBottleneck: "Falta de sincronización de stock físico y digital en tiempo real.",
     erpOptimizeNode: "✅ Control de Inventario Omnicanal",
-    erpOptimizeDesc: "Stock sincronizado automáticamente en web, POS y almacén. Reduce faltantes de stock un 40%."
+    erpOptimizeDesc: "Stock sincronizado automáticamente en web, POS y almacén. Reduce faltantes de stock un 40%.",
+    aiAdvice: "Para comercios minoristas (Retail), la integración de inventario omnicanal automatizado previene ventas de productos agotados y disminuye pérdidas de conversión por quiebres de stock en un 28%."
   },
   "servicios": {
     logoName: "Servicios Profesionales / Consultoría",
@@ -261,7 +263,8 @@ const sectorProfiles = {
     webSlogan: "Impulsamos tu negocio con consultoría de alto nivel. Agenda citas de asesoría, firma contratos digitalmente y accede a tu panel de cliente.",
     erpBottleneck: "Lentitud en la preparación y envío de cotizaciones y contratos.",
     erpOptimizeNode: "✅ Generador Automático de Propuestas",
-    erpOptimizeDesc: "Cotizaciones en PDF autogeneradas y firma electrónica instantánea. Reduce el ciclo de venta en un 50%."
+    erpOptimizeDesc: "Cotizaciones en PDF autogeneradas y firma electrónica instantánea. Reduce el ciclo de venta en un 50%.",
+    aiAdvice: "En empresas de consultoría y servicios, automatizar la generación de propuestas comerciales y habilitar firmas digitales acorta el proceso de cierre de contratos comerciales de 9 días a menos de 24 horas."
   },
   "salud": {
     logoName: "Salud / Clínica",
@@ -279,7 +282,8 @@ const sectorProfiles = {
     webSlogan: "Reserva tus citas médicas en línea 24/7 de forma inmediata, consulta nuestro directorio de especialistas y accede a tu historial médico.",
     erpBottleneck: "Alta tasa de inasistencia a consultas y citas duplicadas.",
     erpOptimizeNode: "✅ Agenda y Recordatorios Automatizados",
-    erpOptimizeDesc: "Confirmaciones automáticas vía WhatsApp integradas a la agenda. Reduce ausentismo en un 45%."
+    erpOptimizeDesc: "Confirmaciones automáticas vía WhatsApp integradas a la agenda. Reduce ausentismo en un 45%.",
+    aiAdvice: "El uso de asistentes conversacionales para confirmación y recordatorio automático de consultas médicas disminuye el ausentismo (no-show) del 24% a menos del 5%, maximizando la ocupación del staff."
   },
   "educacion": {
     logoName: "Educación / Cursos",
@@ -297,7 +301,8 @@ const sectorProfiles = {
     webSlogan: "Explora nuestra oferta académica. Inscripciones 100% online, pagos automatizados de colegiaturas y clases virtuales de última generación.",
     erpBottleneck: "Proceso manual y tardado de cobranza de colegiaturas pendientes.",
     erpOptimizeNode: "✅ Cobranza Recurrente y Automatizada",
-    erpOptimizeDesc: "Cargos recurrentes con recordatorios de pago automáticos vía WhatsApp. Disminuye cartera vencida en un 60%."
+    erpOptimizeDesc: "Cargos recurrentes con recordatorios de pago automáticos vía WhatsApp. Disminuye cartera vencida en un 60%.",
+    aiAdvice: "Implementar pagos recurrentes automáticos integrados a notificaciones preventivas vía chat reduce la cartera en mora en instituciones educativas hasta en un 55% desde el primer trimestre."
   },
   "inmobiliaria": {
     logoName: "Inmobiliaria / Bienes Raíces",
@@ -315,7 +320,8 @@ const sectorProfiles = {
     webSlogan: "Buscador inteligente de casas, oficinas y departamentos. Recorridos virtuales, mapas interactivos e información detallada al instante.",
     erpBottleneck: "Retrasos en el envío de fichas y listados de propiedades a leads.",
     erpOptimizeNode: "✅ CRM de Propiedades Inteligente",
-    erpOptimizeDesc: "Mapeo automático de preferencias del cliente con fichas en PDF enviadas de inmediato. Agiliza cierres en un 40%."
+    erpOptimizeDesc: "Mapeo automático de preferencias del cliente con fichas en PDF enviadas de inmediato. Agiliza cierres en un 40%.",
+    aiAdvice: "En el sector inmobiliario, enviar propuestas perfiladas y recorridos 3D de forma autónoma dentro de los primeros 5 minutos de contacto eleva la tasa de conversión y agendamiento de visitas un 38%."
   },
   "manufactura": {
     logoName: "Manufactura / Distribución",
@@ -333,7 +339,122 @@ const sectorProfiles = {
     webSlogan: "Portal corporativo para clientes mayoristas. Levanta órdenes de compra, cotiza fletes y rastrea el avance de tu producción en tiempo real.",
     erpBottleneck: "Falta de coordinación entre órdenes de venta y capacidad de planta.",
     erpOptimizeNode: "✅ Planificación de Producción (MRP)",
-    erpOptimizeDesc: "Generación automática de órdenes de producción basadas en inventarios y ventas. Reduce retrasos un 30%."
+    erpOptimizeDesc: "Generación automática de órdenes de producción basadas en inventarios y ventas. Reduce retrasos un 30%.",
+    aiAdvice: "Sincronizar las órdenes de venta directamente con el inventario de almacén e insumos en planta mediante reglas lógicas MRP reduce los tiempos muertos de producción un 22% y los retrasos en fletes un 30%."
+  },
+  "gimnasio": {
+    logoName: "Gimnasio / Fitness",
+    chatInit: "Hola! Quisiera informes sobre el costo mensual de las membresías de pesas y spinning.",
+    chatReply: "¡Hola! En **{bizName}** la *Membresía Mensual* que incluye pesas y clases grupales de spinning es de $650. También te recomiendo reservar con nuestro *Entrenador Personal*. ¿Te gustaría agendar cita hoy?",
+    posProducts: [
+      { id: 1, icon: '🎫', name: 'Membresía Mensual', price: 650 },
+      { id: 2, icon: '🏋️', name: 'Entrenador Personal', price: 1500 },
+      { id: 3, icon: '🥤', name: 'Proteína Whey Shake', price: 65 },
+      { id: 4, icon: '🎫', name: 'Pase Individual Día', price: 120 },
+      { id: 5, icon: '🔒', name: 'Renta Locker Anual', price: 800 },
+      { id: 6, icon: '👟', name: 'Toalla y Kit Accesorios', price: 250 }
+    ],
+    webTitle: "Transforma tu Cuerpo y Mente",
+    webSlogan: "El mejor equipamiento y clases grupales guiadas por expertos. Inscríbete en línea, reserva tus lockers y gestiona tu membresía digitalmente.",
+    erpBottleneck: "Deserción de socios por falta de seguimiento preventivo e inasistencias.",
+    erpOptimizeNode: "✅ CRM de Retención Predictiva IA",
+    erpOptimizeDesc: "Envío automatizado de ofertas y recordatorios vía WhatsApp al cumplir 10 días de inasistencia. Baja cancelaciones un 32%.",
+    aiAdvice: "En el sector Fitness, el costo de adquisición de clientes es 5 veces mayor que el de retención. Integrar alertas automatizadas de inasistencia para reactivar socios inactivos reduce la deserción anual hasta en un 28%."
+  },
+  "automotriz": {
+    logoName: "Taller Mecánico / Automotriz",
+    chatInit: "Hola, mi coche hace un ruido extraño en los frenos, ¿puedo llevarlo hoy a revisión?",
+    chatReply: "¡Hola! Sí, por supuesto. Podemos agendar una cita para evaluar los *Frenos Nuevos* o mantenimiento hoy mismo en **{bizName}**. He apartado el espacio de las 4:00 PM. Al ingresar tu auto, recibirás el diagnóstico y presupuesto detallado vía WhatsApp. ¿Confirmamos?",
+    posProducts: [
+      { id: 1, icon: '🔧', name: 'Afinación Mayor', price: 1800 },
+      { id: 2, icon: '🛢️', name: 'Cambio Aceite Sintético', price: 850 },
+      { id: 3, icon: '🚗', name: 'Diagnóstico Scanner', price: 400 },
+      { id: 4, icon: '🛑', name: 'Balatas / Frenos Delanteros', price: 1200 },
+      { id: 5, icon: '🛞', name: 'Alineación y Balanceo', price: 600 },
+      { id: 6, icon: '🔩', name: 'Cambio de Amortiguadores', price: 3200 }
+    ],
+    webTitle: "Ingeniería y Cuidado Automotriz Profesional",
+    webSlogan: "Reserva tu cita de servicio en línea, autoriza presupuestos directo en tu celular y consulta el historial clínico de tu vehículo.",
+    erpBottleneck: "Tiempos muertos por demerito en autorización de presupuestos de refacciones.",
+    erpOptimizeNode: "✅ Cotización y Aprobación Digital Móvil",
+    erpOptimizeDesc: "Presupuestos interactivos detallados con fotos enviados por WhatsApp para aprobación en un clic. Acelera reparaciones un 40%.",
+    aiAdvice: "Enviar cotizaciones interactivas de fallas mecánicas con evidencia fotográfica directo al WhatsApp del dueño del auto reduce el tiempo de aprobación de presupuestos a un promedio de 14 minutos, elevando la rotación en rampa."
+  },
+  "estetica": {
+    logoName: "Estética / Salón de Belleza",
+    chatInit: "Hola! Buenas tardes, ¿tienen disponibilidad para un tinte y corte de cabello mañana?",
+    chatReply: "¡Buenas tardes! Sí, tenemos citas disponibles para *Corte y Tinte* mañana a las 11:00 AM y 4:00 PM con nuestra estilista principal en **{bizName}**. He apartado el horario de las 11:00 AM tentativamente. ¿Te gustaría confirmar?",
+    posProducts: [
+      { id: 1, icon: '💇‍♀️', name: 'Corte de Cabello Premium', price: 350 },
+      { id: 2, icon: '🎨', name: 'Tinte Completo / Balayage', price: 1800 },
+      { id: 3, icon: '💅', name: 'Manicura y Pedicura Gel', price: 650 },
+      { id: 4, icon: '💆‍♀️', name: 'Tratamiento Capilar Keratina', price: 1200 },
+      { id: 5, icon: '🧖‍♀️', name: 'Masaje Facial e Hidratación', price: 750 },
+      { id: 6, icon: '💄', name: 'Maquillaje Social Eventos', price: 950 }
+    ],
+    webTitle: "Saca a Relucir tu Mejor Versión",
+    webSlogan: "Reserva con tus estilistas favoritos en línea, acumula puntos en tu monedero digital y consulta tendencias personalizadas.",
+    erpBottleneck: "Cancelaciones de última hora que dejan vacíos los horarios del staff.",
+    erpOptimizeNode: "✅ Sistema de Citas con Garantía Anticipada",
+    erpOptimizeDesc: "Solicitud automática de un depósito parcial de garantía vía link de pago al agendar. Reduce inasistencias al 1.5%.",
+    aiAdvice: "Implementar micropagos de garantía para agendar citas estéticas en línea disminuye drásticamente el ausentismo imprevisto, asegurando una ocupación del estilista por encima del 92% de su jornada laboral."
+  },
+  "veterinaria": {
+    logoName: "Mascotas / Veterinaria",
+    chatInit: "Hola, quisiera saber los costos de la vacuna quíntuple y si tienen estética canina.",
+    chatReply: "¡Hola! En **{bizName}** la *Vacuna Quíntuple* tiene un costo de $450 y ofrecemos servicio de *Estética Canina* desde $350 (dependiendo de la raza). ¿Te gustaría agendar cita médica o baño hoy mismo?",
+    posProducts: [
+      { id: 1, icon: '🐶', name: 'Estética Canina Completa', price: 400 },
+      { id: 2, icon: '🩺', name: 'Consulta Médica Veterinaria', price: 450 },
+      { id: 3, icon: '💉', name: 'Vacuna Quíntuple Mascota', price: 450 },
+      { id: 4, icon: '🧴', name: 'Baño Antiparasitario', price: 300 },
+      { id: 5, icon: '🦴', name: 'Alimento Premium Bolsa', price: 850 },
+      { id: 6, icon: '🩹', name: 'Desparasitación Interna', price: 250 }
+    ],
+    webTitle: "Amor y Cuidado para tus Compañeros",
+    webSlogan: "Agenda citas veterinarias y estéticas, consulta el expediente de vacunación de tu mascota y compra sus alimentos en línea.",
+    erpBottleneck: "Olvidos de dueños en renovar vacunas y desparasitaciones preventivas.",
+    erpOptimizeNode: "✅ Alertas Preventivas de Cartilla Médica",
+    erpOptimizeDesc: "Avisos automáticos WhatsApp de próxima dosis de vacunas y baños basados en historial médico. Eleva recurrencia un 45%.",
+    aiAdvice: "El envío proactivo de recordatorios de cartilla de salud animal vía WhatsApp (vacunación, desparasitante, corte de uñas) activa a dueños recurrentes e incrementa los ingresos veterinarios recurrentes un 35%."
+  },
+  "tecnologia": {
+    logoName: "Soporte Técnico / Tecnología",
+    chatInit: "Hola! Mi laptop no enciende y se queda la pantalla en negro, ¿hacen reparaciones?",
+    chatReply: "¡Hola! Claro que sí, en **{bizName}** realizamos diagnósticos avanzados. El *Mantenimiento y Diagnóstico* tiene un costo base de $400. Puedes traer tu equipo o programar recolección a domicilio. Recibirás actualizaciones de reparación en tiempo real vía WhatsApp.",
+    posProducts: [
+      { id: 1, icon: '💻', name: 'Diagnóstico y Limpieza Laptop', price: 450 },
+      { id: 2, icon: '💾', name: 'Recuperación de Datos HDD', price: 1500 },
+      { id: 3, icon: '📱', name: 'Cambio de Pantalla Celular', price: 1800 },
+      { id: 4, icon: '🔌', name: 'Reparación de Centro de Carga', price: 650 },
+      { id: 5, icon: '⚙️', name: 'Instalación de Sistema Operativo', price: 800 },
+      { id: 6, icon: '🔋', name: 'Cambio de Batería Original', price: 950 }
+    ],
+    webTitle: "Soporte Técnico Especializado en Dispositivos",
+    webSlogan: "Rastrea el estado de tu equipo en línea en tiempo real. Autoriza presupuestos digitales y recibe garantía de satisfacción.",
+    erpBottleneck: "Exceso de llamadas de clientes preguntando por el estado de su equipo.",
+    erpOptimizeNode: "✅ Notificación Automatizada de Status",
+    erpOptimizeDesc: "Actualizaciones WhatsApp autónomas del flujo de reparación (Ingresado, En Espera de Pieza, Listo). Baja llamadas un 60%.",
+    aiAdvice: "Notificar de forma autónoma cada fase del diagnóstico y reparación de equipos electrónicos reduce un 60% la carga administrativa telefónica, liberando tiempo valioso de los técnicos para reparar más rápido."
+  },
+  "logistica": {
+    logoName: "Logística / Distribución / Mudanzas",
+    chatInit: "Hola! Requiero cotizar una mudanza residencial local de 2 habitaciones.",
+    chatReply: "¡Hola! Con gusto. En **{bizName}** ofrecemos la *Mudanza Local* con servicio de carga y embalaje desde $2,500. ¿Para qué fecha tienes planeado tu traslado? Te puedo generar una reserva provisional de camión ahora.",
+    posProducts: [
+      { id: 1, icon: '🚛', name: 'Flete Residencial Local', price: 2500 },
+      { id: 2, icon: '📦', name: 'Material Embalaje Kit', price: 450 },
+      { id: 3, icon: '🚛', name: 'Flete Foráneo / Kilómetro', price: 6500 },
+      { id: 4, icon: '🛡️', name: 'Seguro de Carga / Tránsito', price: 800 },
+      { id: 5, icon: '📦', name: 'Maniobra Especial Volado', price: 1200 },
+      { id: 6, icon: '📋', name: 'Renta de Unidad por Día', price: 4500 }
+    ],
+    webTitle: "Mudanzas y Transportes de Confianza",
+    webSlogan: "Cotiza tu envío o mudanza al instante, agenda recolectores con unidades equipadas y rastrea tu flete en tiempo real.",
+    erpBottleneck: "Coordinación manual ineficiente de rutas y retraso de operadores.",
+    erpOptimizeNode: "✅ Asignador de Rutas y POD Digital",
+    erpOptimizeDesc: "Rutas óptimas autogeneradas por GPS con captura digital de firma de entrega del operador. Reduce retrasos un 25%.",
+    aiAdvice: "Sustituir el papeleo de acuses de recibo tradicionales por confirmaciones digitales con firma y foto (Proof of Delivery) reduce las disputas de entrega al instante y acelera el proceso de facturación."
   },
   "otro": {
     logoName: "Otro Sector",
@@ -351,29 +472,62 @@ const sectorProfiles = {
     webSlogan: "Desarrollamos soluciones de software robustas e inteligentes. Automatizamos procesos, conectamos tus sistemas y expandimos tu negocio.",
     erpBottleneck: "Inoperancia y pérdida de tiempo por tareas manuales repetitivas.",
     erpOptimizeNode: "✅ Automatización de Procesos (RPA)",
-    erpOptimizeDesc: "Robotización de flujos de trabajo administrativos. Ahorra hasta 20 horas semanales de trabajo manual."
+    erpOptimizeDesc: "Robotización de flujos de trabajo administrativos. Ahorra hasta 20 horas semanales de trabajo manual.",
+    aiAdvice: "Implementar integraciones personalizadas vía API y flujos automatizados de datos elimina errores de captura humana en un 95% y eleva la productividad global de tu administración."
   }
 };
 
 function getSectorProfile(sector) {
   if (!sector) return sectorProfiles.otro;
   const norm = sector.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  if (norm.includes("restaurante") || norm.includes("cafe") || norm.includes("comida") || norm.includes("bistro") || norm.includes("alimento")) {
+  
+  if (norm.includes("restaurante") || norm.includes("cafe") || norm.includes("comida") || norm.includes("bistro") || norm.includes("alimento") || norm.includes("panaderia") || norm.includes("taqueria") || norm.includes("pizzeria") || norm.includes("pasteleria") || norm.includes("cena")) {
     return sectorProfiles.restaurante;
-  } else if (norm.includes("tienda") || norm.includes("comercio") || norm.includes("retail") || norm.includes("ropa") || norm.includes("ventas") || norm.includes("boutique") || norm.includes("supermercado")) {
+  } else if (norm.includes("gimnasio") || norm.includes("gym") || norm.includes("fitness") || norm.includes("deporte") || norm.includes("entrenam") || norm.includes("cruzfit") || norm.includes("crossfit") || norm.includes("yoga") || norm.includes("box") || norm.includes("spa") || norm.includes("ejercicio")) {
+    return sectorProfiles.gimnasio;
+  } else if (norm.includes("mecanico") || norm.includes("automotriz") || norm.includes("taller") || norm.includes("auto") || norm.includes("coche") || norm.includes("carro") || norm.includes("llanta") || norm.includes("motor") || norm.includes("refaccion")) {
+    return sectorProfiles.automotriz;
+  } else if (norm.includes("estetica") || norm.includes("barber") || norm.includes("unas") || norm.includes("cabello") || norm.includes("corte") || norm.includes("salon") || norm.includes("peluquer") || norm.includes("maquillaje") || norm.includes("belleza")) {
+    return sectorProfiles.estetica;
+  } else if (norm.includes("veterinaria") || norm.includes("mascota") || norm.includes("perro") || norm.includes("gato") || norm.includes("canina") || norm.includes("animal")) {
+    return sectorProfiles.veterinaria;
+  } else if (norm.includes("reparacion") || norm.includes("computador") || norm.includes("celular") || norm.includes("laptop") || norm.includes("iphone") || norm.includes("tecnico") || norm.includes("soporte")) {
+    return sectorProfiles.tecnologia;
+  } else if (norm.includes("logistica") || norm.includes("transporte") || norm.includes("flete") || norm.includes("envio") || norm.includes("mudanza") || norm.includes("paqueteria") || norm.includes("distribucion") || norm.includes("almacen") || norm.includes("bodega")) {
+    return sectorProfiles.logistica;
+  } else if (norm.includes("tienda") || norm.includes("comercio") || norm.includes("retail") || norm.includes("ropa") || norm.includes("ventas") || norm.includes("boutique") || norm.includes("supermercado") || norm.includes("abarrotes") || norm.includes("compras")) {
     return sectorProfiles.comercio;
-  } else if (norm.includes("servicio") || norm.includes("consultor") || norm.includes("abogado") || norm.includes("despacho") || norm.includes("oficina") || norm.includes("agencia") || norm.includes("asesor")) {
+  } else if (norm.includes("servicio") || norm.includes("consultor") || norm.includes("abogado") || norm.includes("despacho") || norm.includes("oficina") || norm.includes("agencia") || norm.includes("asesor") || norm.includes("contador")) {
     return sectorProfiles.servicios;
-  } else if (norm.includes("salud") || norm.includes("clinica") || norm.includes("doctor") || norm.includes("dentista") || norm.includes("medico") || norm.includes("hospital") || norm.includes("odontol")) {
+  } else if (norm.includes("salud") || norm.includes("clinica") || norm.includes("doctor") || norm.includes("dentista") || norm.includes("medico") || norm.includes("hospital") || norm.includes("odontol") || norm.includes("pediatra")) {
     return sectorProfiles.salud;
-  } else if (norm.includes("educacion") || norm.includes("curso") || norm.includes("escuela") || norm.includes("academia") || norm.includes("colegio") || norm.includes("clase")) {
+  } else if (norm.includes("educacion") || norm.includes("curso") || norm.includes("escuela") || norm.includes("academia") || norm.includes("colegio") || norm.includes("clase") || norm.includes("taller") || norm.includes("universidad")) {
     return sectorProfiles.educacion;
   } else if (norm.includes("inmobiliaria") || norm.includes("raices") || norm.includes("casa") || norm.includes("departamento") || norm.includes("inmueble") || norm.includes("terreno")) {
     return sectorProfiles.inmobiliaria;
-  } else if (norm.includes("manufactura") || norm.includes("distribucion") || norm.includes("fabrica") || norm.includes("almacen") || norm.includes("logistica") || norm.includes("produccion")) {
+  } else if (norm.includes("manufactura") || norm.includes("fabrica") || norm.includes("produccion") || norm.includes("industrial")) {
     return sectorProfiles.manufactura;
   } else {
-    return sectorProfiles.otro;
+    // If it's a completely custom activity entered by the client, build a dynamic profile based on what they typed!
+    return {
+      logoName: sector,
+      chatInit: `Hola! Me gustaría cotizar un servicio y horarios para mi actividad: ${sector}.`,
+      chatReply: `¡Hola! Con gusto te atendemos en **{bizName}**. Optimizamos tu sector de forma autónoma. Específicamente, solucionamos tu problema: *"{bizProblem}"*. ¿Te interesa que coordinemos un diagnóstico?`,
+      posProducts: [
+        { id: 1, icon: '⚙️', name: `Servicio ${sector}`, price: 1200 },
+        { id: 2, icon: '💻', name: `Software a Medida`, price: 8500 },
+        { id: 3, icon: '📊', name: `Optimización IA`, price: 4500 },
+        { id: 4, icon: '🧠', name: `Consultoría Integral`, price: 2500 },
+        { id: 5, icon: '🔧', name: `Soporte Técnico`, price: 1500 },
+        { id: 6, icon: '📈', name: `Integración Automatizada`, price: 3000 }
+      ],
+      webTitle: `Servicios Profesionales de ${sector}`,
+      webSlogan: `Digitalizamos e impulsamos tu negocio de ${sector} con soluciones avanzadas e Inteligencia Artificial a la medida.`,
+      erpBottleneck: `Cuello de botella en ${sector}: ${bizProblem}`,
+      erpOptimizeNode: `✅ Flujo de ${sector} Optimizado`,
+      erpOptimizeDesc: `Reglas de negocio inteligentes aplicadas para erradicar: "${bizProblem}". Ahorra hasta 22 horas semanales.`,
+      aiAdvice: `En el negocio de ${sector}, implementar automatización IA de procesos en tareas administrativas repetitivas reduce los costos de operación hasta un 30% y erradica errores de captura manual en un 95%.`
+    };
   }
 }
 
@@ -417,6 +571,9 @@ function initMockups() {
   // 3. Mini Web Title & Slogan
   document.getElementById('mock-web-title').textContent = profile.webTitle;
   document.getElementById('mock-web-slogan').textContent = profile.webSlogan;
+
+  // 3.5 AI Advisor Card
+  document.getElementById('ai-advisor-advice').textContent = profile.aiAdvice;
 
   // 4. ERP Workflow Problem Description
   document.getElementById('erp-bottleneck-desc').textContent = `Cuello de botella: ${profile.erpBottleneck}`;
