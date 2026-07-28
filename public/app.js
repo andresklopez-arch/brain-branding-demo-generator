@@ -25,7 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const redirectReason = safeLocalStorage.getItem('sim_redirect_reason');
   if (redirectReason) {
     console.warn("REDIRECTED REASON:", redirectReason);
-    alert("Simulador Cerrado / Redirigido: " + redirectReason);
     safeLocalStorage.removeItem('sim_redirect_reason');
   }
 
