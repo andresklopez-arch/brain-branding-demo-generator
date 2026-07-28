@@ -101,6 +101,70 @@
     .giro-chip {
       user-select: none;
     }
+
+    /* CUSTOM NEON TOOLTIPS */
+    .custom-tooltip {
+      position: relative;
+    }
+    .custom-tooltip::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: -38px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-6px);
+      background: rgba(6, 8, 12, 0.95);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #fff;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 6px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 10px rgba(99, 102, 241, 0.15);
+      z-index: 1000;
+    }
+    .custom-tooltip:hover::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* MICRO-INTERACTIONS FOR NAV BUTTONS */
+    header nav .nav-link {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    header nav .nav-link:hover {
+      background: rgba(99, 102, 241, 0.15) !important;
+      border-color: var(--primary) !important;
+      transform: scale(1.1) rotate(8deg);
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+    }
+
+    /* FINE-TUNED MOBILE HEADER */
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px 10px;
+        height: auto;
+        align-items: center;
+        text-align: center;
+      }
+      header nav {
+        margin: 5px 0;
+        gap: 8px;
+      }
+      header nav a {
+        width: 35px !important;
+        height: 35px !important;
+        font-size: 17px !important;
+      }
+      header .logo-area {
+        margin-right: 0;
+      }
+    }
   </style>
 </head>
 <body>
@@ -121,12 +185,12 @@
       <div class="logo-text" style="line-height: 1.1; font-size: 15px;">Empoderando <span>Marcas</span><br><span style="font-size: 10px; font-weight: 500; color: var(--text-muted); -webkit-text-fill-color: initial; background: none; letter-spacing: 0.5px; display: block; margin-top: 1px;">Reprogramando Mentes</span></div>
     </a>
     <nav style="display: flex; gap: 10px; align-items: center;">
-      <a href="#inicio" class="nav-link" title="Inicio" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">🏠</a>
-      <a href="#servicios" class="nav-link" title="Servicios" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">🛠️</a>
-      <a href="#prototipos" class="nav-link" title="Showcase" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">🖥️</a>
-      <a href="#testimonios" class="nav-link" title="Opiniones" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">💬</a>
-      <a href="#contacto" class="nav-link" title="Contacto" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">✉️</a>
-      <a href="/propuesta_campana/" class="nav-link" title="Campaña IA" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0; color: #00e5ff; font-weight: bold;">⚡</a>
+      <a href="#inicio" class="nav-link custom-tooltip" data-tooltip="Inicio" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">🏠</a>
+      <a href="#servicios" class="nav-link custom-tooltip" data-tooltip="Servicios" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">🛠️</a>
+      <a href="#prototipos" class="nav-link custom-tooltip" data-tooltip="Showcase" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">🖥️</a>
+      <a href="#testimonios" class="nav-link custom-tooltip" data-tooltip="Opiniones" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">💬</a>
+      <a href="#contacto" class="nav-link custom-tooltip" data-tooltip="Contacto" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">✉️</a>
+      <a href="/propuesta_campana/" class="nav-link custom-tooltip" data-tooltip="Campaña IA" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0; color: #00e5ff; font-weight: bold;">⚡</a>
     </nav>
     <div style="display: flex; gap: 12px; align-items: center;">
       <button id="pwa-install-btn" class="header-btn" style="display: none; padding: 0 15px; align-items: center; justify-content: center; height: 40px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.02); color: var(--text-main); gap: 6px;" title="Instalar aplicación">📲 Instalar App</button>
