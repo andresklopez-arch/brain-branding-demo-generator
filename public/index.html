@@ -193,8 +193,7 @@
       top: 15px;
       left: 50%;
       transform: translateX(-50%) translateY(0);
-      width: 90%;
-      max-width: 1100px;
+      width: max-content;
       height: 60px;
       background: rgba(6, 8, 12, 0.75) !important;
       backdrop-filter: blur(20px) !important;
@@ -203,7 +202,8 @@
       border-radius: 30px !important;
       z-index: 100;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
+      gap: 25px;
       align-items: center;
       padding: 0 25px;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -212,8 +212,6 @@
     header.scrolled {
       top: 10px;
       height: 56px;
-      width: 85%;
-      max-width: 1000px;
       background: rgba(6, 8, 12, 0.85) !important;
       border-color: rgba(0, 229, 255, 0.2) !important;
       box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6), 0 0 25px rgba(0, 229, 255, 0.1);
