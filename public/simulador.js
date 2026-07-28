@@ -596,9 +596,696 @@ function getSectorProfile(sector) {
       aiAdvice: `En el negocio de ${sector}, implementar automatización IA de procesos en tareas administrativas repetitivas reduce los costos de operación hasta un 30% y erradica errores de captura manual en un 95%.`
     };
   }
+function buildProblemProfile(rawProfile) {
+  const prof = { ...rawProfile };
+  const prob = bizProblem.toLowerCase();
+  
+  prof.chatInit = `Hola, ¿cómo está funcionando el Asistente IA de mi negocio hoy?`;
+  prof.chatReply = `¡Hola! El Asistente IA de **${bizName}** está activo y operando 24/7. He automatizado la gestión de tu problema principal: *"${bizProblem}"*. Todo está sincronizado con tu ERP y punto de venta en tiempo real.`;
+
+  if (prob.includes("credito") || prob.includes("cobro") || prob.includes("cobranza") || prob.includes("pago") || prob.includes("abono") || prob.includes("mensualidad") || prob.includes("cartera")) {
+    prof.posProducts = [
+      { id: 1, icon: '🪑', name: 'Sofá Modular Premium', price: 12000 },
+      { id: 2, icon: '🛏️', name: 'Recámara King Size', price: 18000 },
+      { id: 3, icon: '💳', name: 'Abono de Crédito Semanal', price: 1500 },
+      { id: 4, icon: '💰', name: 'Enganche Inicial Mueble', price: 3000 },
+      { id: 5, icon: '🪟', name: 'Comedor de Madera 6S', price: 9500 },
+      { id: 6, icon: '💡', name: 'Pago Mensual Mueble', price: 2500 }
+    ];
+    prof.webTitle = `Muebles a Crédito para tu Hogar`;
+    prof.webSlogan = `Equipa tu casa hoy mismo. Autorización de crédito inmediata con nuestra IA en 5 minutos en línea, con plazos flexibles a tu medida.`;
+    
+    prof.detailedServices = [
+      { icon: '💳', name: 'Crédito Express IA', desc: 'Pre-aprobación en línea usando tu identificación y firma biométrica en 3 minutos.', price: 0 },
+      { icon: '📅', name: 'Abono Flexible', desc: 'Realiza tus pagos semanales o mensuales por WhatsApp con links seguros de Stripe.', price: 0 },
+      { icon: '🛡️', name: 'Protección de Saldo', desc: 'Seguro de pagos incluido para mantener tu cuenta al corriente ante imprevistos.', price: 0 }
+    ];
+    
+    prof.branchFinancials = {
+      centro: {
+        revenue: 342000,
+        cogs: 110000,
+        expenses: 65000,
+        taxes: 37120,
+        alerts: [
+          { type: 'success', text: 'Cobranza automática: 48 pagos de abonos conciliados hoy.' },
+          { type: 'info', text: 'Monitoreo de Cartera: Cartera vencida reducida al 2.5%.' }
+        ],
+        leads: [
+          { name: 'Ricardo Ruiz', contact: '525541298471', note: 'Solicitó crédito para comedor de madera', status: 'Aprobado' },
+          { name: 'Sofía Lira', contact: '525567312903', note: 'Liquidó saldo pendiente de crédito', status: 'Cerrado' }
+        ],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Auditar solicitudes de crédito del día', desc: 'Verificadas por IA' },
+            { id: 2, title: 'Conciliación de mensualidades por transferencia', desc: 'Automatizado con SAT' }
+          ],
+          done: [
+            { id: 3, title: 'Enviar avisos preventivos de pago por WhatsApp', desc: 'Completado por Asistente IA' }
+          ]
+        }
+      }
+    };
+    
+    prof.erpBottleneck = `Gestión manual de abonos y control de cuentas a crédito.`;
+    prof.erpOptimizeNode = `✅ Gestor de Créditos e IA de Cobranza`;
+    prof.erpOptimizeDesc = `Monitoreo automático de saldos y alertas dinámicas de pago. Reduce la morosidad un 75%.`;
+    prof.aiAdvice = `Automatizar la facturación de cuotas, el cálculo de intereses y las notificaciones de cobranza mediante el Asistente IA disminuye la cartera vencida en un 40% y te ahorra 18 horas de trabajo administrativo a la semana.`;
+  }
+  else if (prob.includes("inventario") || prob.includes("stock") || prob.includes("almacen") || prob.includes("existencias") || prob.includes("insumos") || prob.includes("comandas")) {
+    prof.posProducts = [
+      { id: 1, icon: '🪑', name: 'Sofá Modular Premium', price: 12000 },
+      { id: 2, icon: '🛏️', name: 'Recámara King Size', price: 18000 },
+      { id: 3, icon: '🪵', name: 'Lote de Madera Premium', price: 7500 },
+      { id: 4, icon: '🪟', name: 'Comedor de Madera 6S', price: 9500 },
+      { id: 5, icon: '🛠️', name: 'Kit Herrajes y Tornillos', price: 1200 },
+      { id: 6, icon: '🎨', name: 'Barniz y Acabados Kit', price: 800 }
+    ];
+    prof.webTitle = `Catálogo Digital Sincronizado`;
+    prof.webSlogan = `Muebles fabricados con los mejores materiales de alta calidad, siempre disponibles en tiempo real en nuestra tienda física y web.`;
+    
+    prof.detailedServices = [
+      { icon: '📦', name: 'Sincronización de Stock', desc: 'Catálogo omnicanal. Cada venta física descuenta piezas de la tienda online de inmediato.', price: 0 },
+      { icon: '🔔', name: 'Alertas de Stock Mínimo', desc: 'El sistema notifica al administrador cuando la materia prima llega al nivel de seguridad.', price: 0 },
+      { icon: '🚛', name: 'Envío y Distribución', desc: 'Logística automatizada con rastreo satelital desde la salida de nuestro almacén.', price: 0 }
+    ];
+
+    prof.branchFinancials = {
+      centro: {
+        revenue: 295000,
+        cogs: 95000,
+        expenses: 74000,
+        taxes: 32000,
+        alerts: [
+          { type: 'success', text: 'Reabastecimiento automático: Orden de compra enviada al proveedor.' },
+          { type: 'info', text: 'Inventario cuadriplicado y conciliado con el POS físico.' }
+        ],
+        leads: [
+          { name: 'Ricardo Ruiz', contact: '525541298471', note: 'Consultó stock de Sofá Modular', status: 'Enviado' }
+        ],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Auditar existencias de maderas en almacén', desc: 'Sincronizado' },
+            { id: 2, title: 'Conciliación de stock físico vs virtual', desc: 'Automatizado' }
+          ],
+          done: [
+            { id: 3, title: 'Actualizar precios de catálogo por lote', desc: 'Completado por IA' }
+          ]
+        }
+      }
+    };
+
+    prof.erpBottleneck = `Desfase de stock entre ventas físicas y tienda en línea.`;
+    prof.erpOptimizeNode = `✅ Inventario Omnicanal Predictivo`;
+    prof.erpOptimizeDesc = `Control de stock al segundo y generación autónoma de órdenes de compra. Evita el quiebre de inventario.`;
+    prof.aiAdvice = `Sincronizar existencias mediante un motor lógico disminuye en un 100% las ventas incidentales de artículos agotados y automatiza los pedidos a proveedores al instante.`;
+  }
+  else if (prob.includes("venta") || prob.includes("cliente") || prob.includes("marketing") || prob.includes("prospecto") || prob.includes("vender") || prob.includes("cotizar")) {
+    prof.posProducts = [
+      { id: 1, icon: '🪑', name: 'Sofá Modular Premium', price: 12000 },
+      { id: 2, icon: '🛏️', name: 'Recámara King Size', price: 18000 },
+      { id: 3, icon: '✨', name: 'Diseño Personalizado Sala', price: 3500 },
+      { id: 4, icon: '🪟', name: 'Comedor de Madera 6S', price: 9500 },
+      { id: 5, icon: '🚚', name: 'Envío Express a Domicilio', price: 1200 },
+      { id: 6, icon: '🛡️', name: 'Garantía Extendida Mueble', price: 1500 }
+    ];
+    prof.webTitle = `Diseño de Muebles de Alta Gama`;
+    prof.webSlogan = `Cotiza tu proyecto a la medida al instante. Nuestro Asistente IA te guía para elegir texturas, maderas y dimensiones perfectas.`;
+
+    prof.detailedServices = [
+      { icon: '✨', name: 'Cotizador Interactivo', desc: 'Calcula el precio de tu mueble personalizado en segundos según medidas y acabados.', price: 0 },
+      { icon: '🗣️', name: 'Atención Inteligente 24/7', desc: 'Respuestas automáticas sobre tarifas, tiempos de entrega y métodos de pago.', price: 0 },
+      { icon: '🎁', name: 'Recompensas de Lealtad', desc: 'Acumula 5% de cashback en cada compra y accede a promociones exclusivas.', price: 0 }
+    ];
+
+    prof.branchFinancials = {
+      centro: {
+        revenue: 315000,
+        cogs: 98000,
+        expenses: 60000,
+        taxes: 34720,
+        alerts: [
+          { type: 'success', text: 'CRM: 15 nuevos leads clasificados con alta intención de compra.' },
+          { type: 'info', text: 'Tasa de conversión web aumentada un 28% gracias al cotizador IA.' }
+        ],
+        leads: [
+          { name: 'Ricardo Ruiz', contact: '525541298471', note: 'Solicitó cotización de comedor premium', status: 'Seguimiento' }
+        ],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Clasificar prospectos de WhatsApp entrantes', desc: 'Asistente IA' },
+            { id: 2, title: 'Enviar propuestas de diseño personalizadas', desc: 'Pendiente' }
+          ],
+          done: [
+            { id: 3, title: 'Campaña de retención de clientes inactivos', desc: 'Auto-ejecutado por IA' }
+          ]
+        }
+      }
+    };
+
+    prof.erpBottleneck = `Pérdida de prospectos y demora al generar cotizaciones de proyectos.`;
+    prof.erpOptimizeNode = `✅ CRM IA de Ventas y Seguimiento`;
+    prof.erpOptimizeDesc = `Clasificación automática de leads y generación de cotizaciones dinámicas. Incrementa cierres un 30%.`;
+    prof.aiAdvice = `Automatizar el seguimiento de prospectos por WhatsApp e implementar un cotizador inteligente reduce el tiempo de respuesta de horas a segundos, duplicando las posibilidades de conversión.`;
+  }
+  else {
+    prof.posProducts = [
+      { id: 1, icon: '🪑', name: 'Sofá Modular Premium', price: 12000 },
+      { id: 2, icon: '🛏️', name: 'Recámara King Size', price: 18000 },
+      { id: 3, icon: '📦', name: 'Mueble Organizador Multi', price: 4500 },
+      { id: 4, icon: '🪟', name: 'Comedor de Madera 6S', price: 9500 },
+      { id: 5, icon: '📚', name: 'Librero Minimalista Roble', price: 5500 },
+      { id: 6, icon: '🪞', name: 'Espejo de Piso Decorativo', price: 2200 }
+    ];
+    prof.webTitle = `Líderes en Fabricación de Muebles`;
+    prof.webSlogan = `Innovación y diseño funcional para tu hogar. Procesos automatizados para garantizar la entrega más rápida del mercado.`;
+
+    prof.detailedServices = [
+      { icon: '⚙️', name: 'Procesos Optimizados', desc: 'Flujo administrativo digital de extremo a extremo sin errores de captura humana.', price: 0 },
+      { icon: '📋', name: 'Agenda Coordinada', desc: 'Programación automática de entregas y visitas técnicas directamente en calendario.', price: 0 },
+      { icon: '🛡️', name: 'Garantía Total', desc: 'Seguimiento y auditoría de calidad permanente de cada pieza producida.', price: 0 }
+    ];
+
+    prof.branchFinancials = {
+      centro: {
+        revenue: 275000,
+        cogs: 88000,
+        expenses: 70000,
+        taxes: 29920,
+        alerts: [
+          { type: 'success', text: 'Eficiencia operativa: Tareas repetitivas reducidas un 80%.' },
+          { type: 'info', text: 'Tableros de productividad del equipo actualizados en vivo.' }
+        ],
+        leads: [
+          { name: 'Ricardo Ruiz', contact: '525541298471', note: 'Agendó visita técnica a sucursal', status: 'Agendado' }
+        ],
+        tasks: {
+          todo: [
+            { id: 1, title: 'Organizar reportes semanales de producción', desc: 'Asignado a Asistente IA' },
+            { id: 2, title: 'Coordinar entregas de la sucursal Centro', desc: 'Pendiente' }
+          ],
+          done: [
+            { id: 3, title: 'Archivar facturas y conciliaciones bancarias', desc: 'Completado por IA' }
+          ]
+        }
+      }
+    };
+
+    prof.erpBottleneck = `Lentitud operativa y pérdida de tiempo en reportes y tareas repetitivas.`;
+    prof.erpOptimizeNode = `✅ Automatización Operativa Global (RPA)`;
+    prof.erpOptimizeDesc = `Robotización de flujos de trabajo administrativos. Ahorra 22 horas de tareas manuales repetitivas.`;
+    prof.aiAdvice = `Automatizar los flujos de tareas, agendas e informes periódicos mediante un operador cognitivo disminuye drásticamente el tiempo desperdiciado en administración, elevando la eficiencia.`;
+  }
+  
+  prof.mission = `Facilitar la adquisición de muebles de alta calidad a través de esquemas de financiamiento accesibles, impulsando la transformación digital del sector.`;
+  prof.vision = `Consolidar a **${bizName}** como el referente nacional de mueblerías modernas, integrando tecnología IA para optimizar la experiencia de compra y crédito.`;
+  prof.values = "Transparencia, Confianza, Innovación y Enfoque en el Cliente.";
+  
+  return prof;
 }
 
-function completeProfileData(prof, sectorName, bizName) {
+function generateDynamicScenarios(category) {
+  if (category === 'credit') {
+    return [
+      {
+        title: "Autorizando Crédito",
+        channel: "whatsapp",
+        logs: [
+          "[NLP] Analizando solicitud entrante de Juan Pérez...",
+          "[Risk_Engine] Evaluando buró de crédito del cliente...",
+          "[Contract_API] Generando pagaré digital con firma biométrica..."
+        ],
+        incoming: "Hola! Quiero solicitar el crédito para comprar la Recámara King Size, ¿qué necesito?",
+        outgoing: "✅ **Crédito Pre-Aprobado**: ¡Hola, Juan! Tu solicitud para la *Recámara King Size* fue autorizada con éxito. Tu pago será de $1,500 MXN mensuales a 12 meses. Adjunto tu contrato digital firmado para confirmación: [DOCUMENTO]|Contrato de Crédito - Mueblerías Kchin|Pago de $1,500 MXN x 12 meses|AUTORIZADO",
+        vars: { active_credit: "Recámara King Size", monthly_payment: 1500, credit_status: "Autorizado" }
+      },
+      {
+        title: "Notificación de Pago de Mensualidad",
+        channel: "whatsapp",
+        logs: [
+          "[Scheduler] Buscando abonos programados para hoy...",
+          "[Stripe_API] Creando link de pago dinámico seguro para abono..."
+        ],
+        incoming: "🔔 [SISTEMA] Recordatorio automático enviado a María Gómez: Su abono semanal de $350 MXN vence mañana.",
+        outgoing: "✅ **Recordatorio Enviado**: Estimada María, le recordamos que su abono vence mañana. Puede pagar de forma segura aquí: [PAYMENT_CARD]|Abono Semanal de Crédito|Folio de Contrato: C-4091|$350.00 MXN",
+        vars: { overdue_warnings: "Ninguno", last_payment_link: "Generado" }
+      },
+      {
+        title: "Conciliación de Transferencias",
+        channel: "widget",
+        logs: [
+          "[RPA] Leyendo estado de cuenta bancario entrante...",
+          "[OCR] Extrayendo concepto de transferencia 'Abono C-4091'...",
+          "[ERP_API] Aplicando abono al saldo de cuenta del cliente..."
+        ],
+        incoming: "📊 [SISTEMA] Conciliación de transferencia SPEI de María Gómez por $350.00 MXN recibida con éxito.",
+        outgoing: "✅ **Conciliación Exitosa**: El abono de $350.00 MXN fue aplicado automáticamente al contrato C-4091 de María Gómez. Su saldo restante se actualizó en el ERP contable.",
+        vars: { bank_reconciliation: "Completada", processed_payments_today: 12 }
+      },
+      {
+        title: "Reporte de Cartera de Crédito",
+        channel: "messenger",
+        logs: [
+          "[SQL] query_credit_portfolio(status: 'all')",
+          "[NLP] Generando resumen contable para dirección..."
+        ],
+        incoming: "Dame el reporte del estado de la cartera de crédito de hoy.",
+        outgoing: "Aquí tienes el estado actual para **" + bizName + "**:\n📈 **Créditos Activos**: 142 contratos\n💳 **Cobrado este mes**: $98,400.00 MXN\n🟢 **Al corriente**: 97.5% | 🔴 **Vencido**: 2.5%\n*Todos los movimientos conciliados con el SAT de forma autónoma.*",
+        vars: { active_credits_count: 142, delinquency_rate: "2.5%" }
+      },
+      {
+        title: "Dudas sobre Requisitos de Crédito",
+        channel: "whatsapp",
+        logs: [
+          "[NLP] Analizando dudas frecuentes sobre apertura de crédito..."
+        ],
+        incoming: "¿Qué papeles necesito para sacar un comedor a crédito?",
+        outgoing: "Para autorizar tu crédito en **" + bizName + "** solo requiero:\n1. Foto de tu INE vigente.\n2. Comprobante de domicilio reciente.\nEl proceso es 100% digital y te respondo en menos de 3 minutos aquí mismo.",
+        vars: { query_type: "requisitos_credito" }
+      },
+      {
+        title: "Llamada de Cobranza Preventiva",
+        channel: "messenger",
+        logs: [
+          "[SpeechToText] Transcribiendo buzón de voz entrante con Whisper...",
+          "[NLP] Clasificando intención del cliente: 'Compromiso de pago'..."
+        ],
+        incoming: "📞 [SISTEMA] Mensaje de voz de cliente: 'Hola, tuve un retraso pero mañana hago mi transferencia de abono'.",
+        outgoing: "📞 **Llamada de Cobranza Procesada**: El cliente se comprometió a pagar mañana. El Asistente IA agendó la alerta de seguimiento en el CRM y suspendió temporalmente el envío de notificaciones automáticas.",
+        vars: { follow_up_needed: "Mañana", alert_suspended: true }
+      },
+      {
+        title: "Alerta de Cuenta Delicada",
+        channel: "widget",
+        logs: [
+          "[Risk_Engine] Analizando comportamiento de pagos históricos...",
+          "[NLP] Generando alerta de riesgo de impago en panel de control..."
+        ],
+        incoming: "🚨 [SISTEMA] Alerta: El cliente Carlos Sosa ha omitido su abono por segunda semana consecutiva.",
+        outgoing: "🚨 **Alerta de Riesgo**: Se detectó una cuenta con 2 semanas de atraso. He generado una tarea prioritaria en el Kanban del ERP para contacto directo por un asesor humano y pausé los avisos robóticos.",
+        vars: { high_risk_accounts: 1, action_taken: "Kanban ticket created" }
+      },
+      {
+        title: "Liquidación Anticipada de Saldo",
+        channel: "whatsapp",
+        logs: [
+          "[DB] query_credit_balance(client: 'Sofía Lira')",
+          "[Stripe] Calculando descuento por liquidación anticipada (10%)..."
+        ],
+        incoming: "Quiero liquidar mi saldo pendiente de mi comedor, ¿tengo algún descuento?",
+        outgoing: "¡Hola, Sofía! Claro que sí. Tu saldo pendiente al día de hoy es de $4,500 MXN. Al liquidar de forma anticipada, aplicamos un 10% de descuento. El total a pagar es de $4,050 MXN. Puedes pagar aquí: [PAYMENT_CARD]|Liquidación de Crédito Comedor|Descuento 10% aplicado|$4,050.00 MXN",
+        vars: { discount_applied: "10%", total_liquidated: 4050 }
+      },
+      {
+        title: "Abono Exitoso en POS",
+        channel: "widget",
+        logs: [
+          "[POS_API] Registrando pago de abono presencial en sucursal...",
+          "[SAT_API] Generando CFDI 4.0 con método de pago PPD/LPD..."
+        ],
+        incoming: "📊 [SISTEMA] Abono de $1,500.00 MXN cobrado con tarjeta en la sucursal Centro.",
+        outgoing: "✅ **Pago Registrado**: El abono de $1,500.00 MXN fue recibido en caja. El sistema emitió la factura fiscal y actualizó el estado de cuenta del cliente en el ERP de inmediato.",
+        vars: { last_cash_register_sync: "Hace 1 min", active_cash_drawer: "Sincronizada" }
+      },
+      {
+        title: "Geolocalización de Cobros",
+        channel: "messenger",
+        logs: [
+          "[Google_Maps] Buscando ubicaciones de clientes con abonos pendientes hoy..."
+        ],
+        incoming: "¿Me das el mapa de clientes de cobranza del día de hoy?",
+        outgoing: "📍 **Ruta de Cobros**: He mapeado 3 ubicaciones con cobros programados para entrega de recibos físicos. El mapa de cobertura en tu ERP ha sido actualizado con los pines de ruta óptimos.",
+        vars: { active_pins: 3, route_optimized: true }
+      },
+      {
+        title: "Resumen de Contratos Nuevos",
+        channel: "whatsapp",
+        logs: [
+          "[DB] count_new_contracts(date: 'today')",
+          "[NLP] Compilando resumen de cierres de crédito..."
+        ],
+        incoming: "¿Cuántos créditos se abrieron hoy?",
+        outgoing: "📝 **Resumen del Día**: Hoy se abrieron **5 nuevos créditos** de muebles por un valor total de $75,000 MXN. Todos los expedientes cuentan con INE y firma digital válidos.",
+        vars: { new_credits_today: 5, total_credit_value: 75000 }
+      }
+    ];
+  }
+  else if (category === 'inventory') {
+    return [
+      {
+        title: "Alerta de Stock Bajo",
+        channel: "whatsapp",
+        logs: [
+          "[Inventory] check_stock_levels()...",
+          "[DB] Alerta: Insumo 'Madera de Pino' por debajo del mínimo de seguridad..."
+        ],
+        incoming: "🚨 [SISTEMA] Alerta: Quedan solo 2 tableros de Madera de Pino en el almacén de producción.",
+        outgoing: "🚨 **Alerta de Almacén**: He detectado stock crítico de *Madera de Pino*. Para evitar paros en la producción de muebles, redacté una orden de reabastecimiento automática para tu proveedor de confianza.",
+        vars: { low_stock_item: "Madera de Pino", current_qty: 2, safety_min: 10 }
+      },
+      {
+        title: "Reordenando al Proveedor",
+        channel: "widget",
+        logs: [
+          "[Supplier_API] create_purchase_order(item: 'Madera de Pino', qty: 25)...",
+          "[Email_Sender] Enviando orden de compra en PDF al proveedor..."
+        ],
+        incoming: "🔔 [SISTEMA] Orden de compra #PO-902 por 25 tableros enviada automáticamente a Maderas del Norte S.A.",
+        outgoing: "✅ **Orden de Compra Enviada**: Se solicitó el reabastecimiento de 25 tableros de Madera de Pino. El proveedor confirmó entrega para mañana a las 9:00 AM.",
+        vars: { purchase_order_sent: true, eta_delivery: "Mañana 9:00 AM" }
+      },
+      {
+        title: "Ingreso de Mercancía al Almacén",
+        channel: "messenger",
+        logs: [
+          "[RPA] Escaneando nota de remisión entrante del transportista...",
+          "[Inventory_API] Actualizando stock físico de tableros a 27 unidades..."
+        ],
+        incoming: "📥 [SISTEMA] Recepción de 25 tableros de Madera de Pino confirmada e ingresada al almacén.",
+        outgoing: "✅ **Inventario Actualizado**: El stock de Madera de Pino se actualizó a 27 unidades en el ERP. El cuello de botella en producción ha sido resuelto.",
+        vars: { stock_restocked: "Madera de Pino", total_qty: 27 }
+      },
+      {
+        title: "Reporte de Existencias del Día",
+        channel: "whatsapp",
+        logs: [
+          "[SQL] query_inventory_status(branch: 'all')"
+        ],
+        incoming: "Dame el reporte del estado de existencias del almacén.",
+        outgoing: "Aquí tienes el reporte actual de existencias para **" + bizName + "**:\n🪵 **Madera de Pino**: 27 unidades (Suficiente)\n🪛 **Kits de Herrajes**: 45 unidades (Suficiente)\n🎨 **Barnices**: 15 kits (Nivel de seguridad)\n*Inventario físico al 100% cuadriplicado con el POS.*",
+        vars: { in_stock_items: 3, critical_items: 0 }
+      },
+      {
+        title: "Consulta de Stock desde POS",
+        channel: "widget",
+        logs: [
+          "[POS_API] query_available_stock(item: 'Sofá Modular Premium')"
+        ],
+        incoming: "¿Hay existencias disponibles del Sofá Modular Premium para entrega hoy?",
+        outgoing: "🔍 **Existencias en POS**: Sí, tenemos 3 unidades del *Sofá Modular Premium* en la sucursal Centro listas para entrega inmediata. Si se vende una, el catálogo digital se actualizará automáticamente.",
+        vars: { available_qty: 3, warehouse: "Centro" }
+      },
+      {
+        title: "Ajuste de Mermas Físicas",
+        channel: "messenger",
+        logs: [
+          "[Audit_Engine] Comparando reporte de mermas vs stock en sistema..."
+        ],
+        incoming: "Reporto 1 tablero de madera dañado en el área de corte hoy.",
+        outgoing: "🔧 **Ajuste Realizado**: Registré 1 unidad de madera como merma por daño operativo. El inventario en el ERP se ajustó a 26 unidades y el costo fue cargado a la cuenta de gastos operativos del mes.",
+        vars: { adjust_type: "merma", adjusted_qty: 1 }
+      },
+      {
+        title: "Recepción de Muebles Terminados",
+        channel: "whatsapp",
+        logs: [
+          "[Factory_API] Confirmando ensamble de producto terminado..."
+        ],
+        incoming: "🔨 [TALLER] Comedor de Madera de 6 sillas terminado y listo para entrega.",
+        outgoing: "✅ **Comedor de Madera Ingresado**: Registré el ingreso de 1 *Comedor de Madera 6S* a la sucursal Centro. El stock de materias primas fue descontado automáticamente según la receta del mueble.",
+        vars: { product_finished: "Comedor Madera 6S", status: "Listo para entrega" }
+      },
+      {
+        title: "Envío de Alertas a Producción",
+        channel: "widget",
+        logs: [
+          "[Scheduler] Analizando pedidos de clientes pendientes de fabricar..."
+        ],
+        incoming: "¿Qué pedidos están en fila de fabricación hoy?",
+        outgoing: "📋 **Fila de Fabricación**: Tienes 2 comedores y 1 recámara pendientes en el taller. Las materias primas necesarias están reservadas en el almacén de forma exclusiva.",
+        vars: { pending_builds: 3 }
+      },
+      {
+        title: "Conciliación de Almacén Mensual",
+        channel: "messenger",
+        logs: [
+          "[RPA] Comparando inventario teórico vs conteo cíclico físico..."
+        ],
+        incoming: "Ejecuta la conciliación de fin de mes del almacén.",
+        outgoing: "📊 **Conciliación de Fin de Mes**: Procesé 120 partidas. Discrepancia del 0%. El inventario teórico y físico coinciden a la perfección. Reporte enviado al correo del administrador.",
+        vars: { reconciliation_variance: "0%", status: "Aprobada" }
+      },
+      {
+        title: "Sincronización con Tienda Web",
+        channel: "whatsapp",
+        logs: [
+          "[Web_API] push_stock_update(item: 'Recámara King Size', qty: 2)..."
+        ],
+        incoming: "🔔 [SISTEMA] Stock de Recámara King Size actualizado de forma automática en Shopify.",
+        outgoing: "✅ **Sincronización Web**: La disponibilidad de *Recámara King Size* fue actualizada a 2 unidades en tu página web tras completarse la venta en el POS físico.",
+        vars: { web_sync_success: true }
+      },
+      {
+        title: "Resumen de Movimientos de Stock",
+        channel: "widget",
+        logs: [
+          "[DB] count_stock_movements_today()"
+        ],
+        incoming: "¿Cuántos movimientos de almacén se registraron hoy?",
+        outgoing: "🪵 **Movimientos del Día**: Se registraron 18 movimientos de almacén (12 consumos, 2 entradas de proveedores y 4 ingresos de producto terminado). Todo auditado en tiempo real.",
+        vars: { stock_movements_today: 18 }
+      }
+    ];
+  }
+  else if (category === 'sales') {
+    return [
+      {
+        title: "Captura de Lead por Chatbot",
+        channel: "whatsapp",
+        logs: [
+          "[NLP] Detectando prospecto interesado en comedor en WhatsApp...",
+          "[CRM_API] Creando registro de prospecto de forma autónoma..."
+        ],
+        incoming: "Hola, me interesa comprar un comedor de madera pero quiero cotizar a una medida especial.",
+        outgoing: "¡Hola! Con gusto te cotizo. El *Comedor de Madera 6S* personalizado está en promoción. He tomado tus datos y un asesor te enviará los bocetos de medidas. Tu ID de prospecto en el CRM es: [LEAD]|Carlos Sosa|Cotización Comedor Medida Especial|WhatsApp",
+        vars: { active_lead: "Carlos Sosa", interest: "Comedor Medida", status: "Cotizando" }
+      },
+      {
+        title: "Envío Automático de Cotización",
+        channel: "whatsapp",
+        logs: [
+          "[NLP] Formateando propuesta de costo en formato PDF...",
+          "[Email_API] Enviando propuesta a carlossosa@email.com..."
+        ],
+        incoming: "🔔 [SISTEMA] Cotización #QT-201 por $11,500 MXN enviada automáticamente a carlossosa@email.com.",
+        outgoing: "✅ **Cotización Enviada**: Carlos, he enviado la cotización formal a tu correo. Cuenta con un diseño adaptado y desglose de IVA. ¿Te gustaría agendar una llamada con el diseñador?",
+        vars: { quote_sent: true, value: 11500 }
+      },
+      {
+        title: "Recordatorio de Prospecto Frío",
+        channel: "widget",
+        logs: [
+          "[CRM] Buscando cotizaciones sin respuesta hace 3 días...",
+          "[NLP] Redactando mensaje de seguimiento persuasivo..."
+        ],
+        incoming: "🔔 [SISTEMA] Seguimiento enviado automáticamente a Sofía Lira sobre su cotización de Sofá Modular.",
+        outgoing: "✅ **Seguimiento Enviado**: Sofía, te recordamos que tu cotización del *Sofá Modular Premium* con 15% de descuento vence mañana. ¿Te gustaría procesar tu pedido hoy?",
+        vars: { follow_up_leads: 1, active_discount: "15%" }
+      },
+      {
+        title: "Cierre de Venta Exitoso",
+        channel: "messenger",
+        logs: [
+          "[Stripe] Confirmando pago de enganche de Sofía Lira...",
+          "[CRM_API] Marcando Lead como 'CERRADO / GANADO'..."
+        ],
+        incoming: "Listo, acabo de pagar el enganche para apartar mi Sofá Modular.",
+        outgoing: "🎉 **¡Felicidades por tu compra!**: Sofía, recibimos tu pago con éxito. Tu pedido ha ingresado a la fila de fabricación. Tu comprobante de pago fue enviado a tu correo.",
+        vars: { deal_closed: "Sofía Lira", value: 12000, crm_status: "Ganado" }
+      },
+      {
+        title: "Reporte de Conversión de Leads",
+        channel: "whatsapp",
+        logs: [
+          "[SQL] query_crm_conversion_rates()"
+        ],
+        incoming: "Dame el reporte de ventas del CRM de esta semana.",
+        outgoing: "Aquí tienes el reporte para **" + bizName + "**:\n📈 **Nuevos Leads**: 28 prospectos\n🏆 **Ventas Cerradas**: 8 pedidos ($96,000 MXN)\n🟢 **Conversión**: 28.5% (+5% vs semana pasada)\n*Base de datos de clientes actualizada en el ERP.*",
+        vars: { new_leads_this_week: 28, closed_deals: 8 }
+      },
+      {
+        title: "Consulta de Horarios de Sucursal",
+        channel: "messenger",
+        logs: [
+          "[NLP] Buscando horarios de atención de la sucursal..."
+        ],
+        incoming: "¿A qué hora abren la sucursal Centro los fines de semana?",
+        outgoing: "La sucursal Centro de **" + bizName + "** está abierta los sábados de 9:00 AM a 7:00 PM y los domingos de 10:00 AM a 5:00 PM. ¡Te esperamos!",
+        vars: { query: "horarios_sucursal" }
+      },
+      {
+        title: "Solicitud de Soporte Posventa",
+        channel: "whatsapp",
+        logs: [
+          "[Ticket_API] Creando ticket de soporte posventa en el sistema..."
+        ],
+        incoming: "Hola, mi comedor llegó hoy pero tiene un raspón en una pata.",
+        outgoing: "Lamento mucho el inconveniente. He levantado un reporte de garantía de inmediato. Un técnico te contactará mañana para programar la reparación a domicilio sin costo. Folio de Ticket: #TK-802.",
+        vars: { support_ticket_raised: true, ticket_id: "TK-802" }
+      },
+      {
+        title: "Envío de Encuesta de Satisfacción",
+        channel: "widget",
+        logs: [
+          "[Scheduler] Buscando entregas finalizadas hoy para encuesta..."
+        ],
+        incoming: "📊 [SISTEMA] Encuesta de satisfacción enviada automáticamente a Ricardo Ruiz.",
+        outgoing: "✅ **Encuesta Enviada**: Le pedimos a Ricardo evaluar nuestro servicio de entrega. Sus respuestas se registrarán automáticamente en su expediente de cliente del CRM.",
+        vars: { survey_sent: true }
+      },
+      {
+        title: "Feedback Positivo de Cliente",
+        channel: "messenger",
+        logs: [
+          "[NLP] Analizando sentimiento de respuesta de Ricardo Ruiz: 'Excelente'..."
+        ],
+        incoming: "Le doy 5 estrellas al servicio de entrega, el personal fue muy amable y puntual.",
+        outgoing: "🎉 **¡Excelente!**: El cliente evaluó nuestro servicio con 5 estrellas. He registrado la nota de felicitación en la bitácora del equipo de logística.",
+        vars: { rating_received: 5, client_sentiment: "Excelente" }
+      },
+      {
+        title: "Recomendación de Compra Cruzada",
+        channel: "whatsapp",
+        logs: [
+          "[Rec_Engine] Analizando historial de compras del cliente..."
+        ],
+        incoming: "🔔 [SISTEMA] Recomendación de compra cruzada (Cojines Decorativos) enviada a Sofía Lira.",
+        outgoing: "✅ **Oferta Enviada**: Le sugerimos a Sofía añadir cojines decorativos a juego con su Sofá Modular Premium con un 20% de descuento adicional.",
+        vars: { cross_sell_offer: "Cojines", discount: "20%" }
+      },
+      {
+        title: "Resumen de Cierres de Venta",
+        channel: "widget",
+        logs: [
+          "[DB] count_sales_closed_today()"
+        ],
+        incoming: "¿Cuántas ventas cerramos hoy?",
+        outgoing: "🎉 **Resumen de Cierres**: Hoy se cerraron **3 ventas** por un valor total de $39,500 MXN. Todos los clientes recibieron su ticket digital de compra.",
+        vars: { sales_closed_today: 3, total_revenue_today: 39500 }
+      }
+    ];
+  }
+  else {
+    return [
+      {
+        title: "Organizando Agenda del Día",
+        channel: "whatsapp",
+        logs: [
+          "[Calendar] query_today_meetings(status: 'pending')",
+          "[NLP] Ordenando reuniones por prioridad..."
+        ],
+        incoming: "Hola, ¿cuál es mi agenda de reuniones para el resto del día?",
+        outgoing: "📅 **Reuniones de hoy**:\n• 🔴 **Alta (16:30)**: Junta de resultados mensuales con socios (Sala B).\n• 🟡 **Media (17:45)**: Seguimiento de entregas con el equipo de logística.\n• 🟢 **Baja (19:00)**: Revisión de nuevos diseños de catálogo.",
+        vars: { pending_meetings: 3, highest_priority: "Junta de resultados" }
+      },
+      {
+        title: "Auditoría de XML Facturación",
+        channel: "widget",
+        logs: [
+          "[SAT_API] query_issued_cfdi(date: 'today')",
+          "[IA_AUDIT] Verificando timbrado de 12 folios fiscales..."
+        ],
+        incoming: "📊 [SISTEMA] Auditoría SAT completada. 12 facturas timbradas con éxito sin discrepancias.",
+        outgoing: "✅ **Auditoría CFDI Completa**: Verifiqué las 12 facturas del día. El timbrado ante el SAT es correcto. Los archivos XML y PDF fueron indexados en el servidor contable.",
+        vars: { sat_audit_status: "Aprobado", total_audited_cfdi: 12 }
+      },
+      {
+        title: "Alerta de Gasto Inusual",
+        channel: "messenger",
+        logs: [
+          "[ERP_Audit] Analizando transacciones bancarias del mes...",
+          "[NLP] Generando alerta de desviación de presupuesto..."
+        ],
+        incoming: "🚨 [SISTEMA] Alerta: Pago de servicio de luz excedió un 25% el promedio de los últimos 3 meses.",
+        outgoing: "🚨 **Alerta de Gasto**: Detecté un consumo de energía inusual de $8,500 MXN. Generé un reporte de análisis en tus borradores y programé una tarea de inspección física en la sucursal Norte.",
+        vars: { budget_deviation: "25%", total_amount: 8500 }
+      },
+      {
+        title: "Agendando Cita de Mantenimiento",
+        channel: "whatsapp",
+        logs: [
+          "[Calendar_API] insert_event(title: 'Mantenimiento de Maquinaria Taller')"
+        ],
+        incoming: "Agenda la inspección de la cortadora para el próximo viernes a las 10 AM.",
+        outgoing: "📅 **Cita Agendada**: Programé la inspección técnica de la cortadora para el viernes a las 10:00 AM en tu Google Calendar y envié la notificación de confirmación al técnico asignado.",
+        vars: { calendar_synced: true, event_title: "Mantenimiento Cortadora" }
+      },
+      {
+        title: "Reporte de Productividad",
+        channel: "widget",
+        logs: [
+          "[SQL] query_operator_performance_metrics()"
+        ],
+        incoming: "Dame el reporte de eficiencia operativa de esta semana.",
+        outgoing: "Aquí tienes el reporte para **" + bizName + "**:\n📈 **Eficiencia General**: 94% (+4% vs promedio)\n⏱️ **Tiempo de Fabricación**: 4.2 días promedio por mueble\n🟢 **Retrasos**: 0 incidencias\n*Tablero Kanban contable actualizado.*",
+        vars: { general_efficiency: "94%", manufacturing_time_avg: "4.2 días" }
+      },
+      {
+        title: "Transcribiendo Minuta de Junta",
+        channel: "messenger",
+        logs: [
+          "[SpeechToText] Transcribiendo audio 'minuta_operaciones.wav' con Whisper...",
+          "[NLP] Extrayendo puntos de acuerdo y responsabilidades..."
+        ],
+        incoming: "Transcribe y resume el audio de la junta de operaciones de hoy.",
+        outgoing: "📝 **Resumen de Minuta**:\n• **Acuerdo 1**: Cambiar inventario de POS físico (Responsable: Sistemas).\n• **Acuerdo 2**: Reorganizar rutas de entrega (Responsable: Logística).\n*Minuta guardada en la base de conocimiento de " + bizName + ".*",
+        vars: { transcript_length: "8 min", knowledge_base_updated: true }
+      },
+      {
+        title: "Alerta de Incidencia de Entrega",
+        channel: "whatsapp",
+        logs: [
+          "[Logistics] check_delivery_tracking()...",
+          "[NLP] Generando alerta de retraso de operador por tráfico..."
+        ],
+        incoming: "🚨 [SISTEMA] Alerta: Operador de flete F-302 reporta demora de 30 minutos por tráfico en Periférico.",
+        outgoing: "🚨 **Alerta de Ruta**: Flete demorado por tráfico. El Asistente IA envió un WhatsApp automático al cliente reprogramando la entrega y notificó al supervisor de almacén.",
+        vars: { delayed_deliveries: 1, action_taken: "Cliente notificado" }
+      },
+      {
+        title: "Conciliación Bancaria Exitosa",
+        channel: "widget",
+        logs: [
+          "[Excel] parse_csv_rows('estado_cuenta.csv')...",
+          "[ERP] Conciliando movimientos contra facturas emitidas..."
+        ],
+        incoming: "📊 [SISTEMA] Conciliación bancaria exitosa de 85 movimientos correspondientes a esta semana.",
+        outgoing: "📊 **Conciliación de Banco**: Procesé 85 movimientos bancarios. Todos coinciden con las facturas emitidas del mes. El libro contable del ERP se actualizó sin discrepancias.",
+        vars: { reconciled_items: 85, balance_variance: "0.00 MXN" }
+      },
+      {
+        title: "Reporte de Flujo de Efectivo",
+        channel: "messenger",
+        logs: [
+          "[SQL] query_cash_flow_statement(branch: 'all')"
+        ],
+        incoming: "Dame el reporte del flujo de efectivo neto de este mes.",
+        outgoing: "Aquí tienes el flujo de efectivo neto para **" + bizName + "**:\n💰 **Entradas**: $382,000 MXN\n💸 **Salidas**: $195,000 MXN\n🟢 **Flujo Neto**: +$187,000 MXN\n*Reporte financiero de finanzas consolidado.*",
+        vars: { net_cash_flow: 187000, financial_status: "Saludable" }
+      },
+      {
+        title: "Reserva de Comida de Negocios",
+        channel: "whatsapp",
+        logs: [
+          "[OpenTable_API] Buscando mesa hoy a las 3:00 PM para 3 personas..."
+        ],
+        incoming: "Reserva una mesa para comer hoy con 2 proveedores cerca de la sucursal Centro.",
+        outgoing: "🍽️ **Reserva Confirmada**: Mesa reservada para 3 personas hoy a las 3:00 PM en el restaurante *Lalo!* (Zona Centro). He enviado la confirmación y ubicación a tu calendario.",
+        vars: { restaurant_reserved: "Lalo!", party_size: 3 }
+      },
+      {
+        title: "Resumen de Fin de Jornada",
+        channel: "widget",
+        logs: [
+          "[DB] count_total_tasks_completed_today()"
+        ],
+        incoming: "¿Cuántas tareas administrativas se automatizaron hoy?",
+        outgoing: "✅ **Resumen del Día**: Se automatizaron **42 tareas repetitivas** (facturación, avisos de pago, conciliación e inventario), ahorrando un estimado de 3.5 horas de trabajo manual hoy.",
+        vars: { automated_tasks_today: 42, hours_saved_today: 3.5 }
+      }
+    ];
+  }
+}
   // 1. Mission / Vision / Values
   if (!prof.mission) {
     prof.mission = `Proveer soluciones de alta calidad en ${sectorName} para potenciar el éxito y bienestar de nuestros clientes.`;
@@ -737,7 +1424,8 @@ function completeProfileData(prof, sectorName, bizName) {
 }
 
 // Global reference to active profile
-const profile = getSectorProfile(bizSector);
+const rawProfile = getSectorProfile(bizSector);
+const profile = buildProblemProfile(rawProfile);
 completeProfileData(profile, bizSector, bizName);
 
 // ── INITIALIZE DATA IN MOCKUPS ──
@@ -2256,132 +2944,7 @@ let currentLoopTab = null;
 let activeLoopStep = 0;
 let tabPauseTimeout = {};
 
-const assistantScenarios = [
-  {
-    title: "Atendiendo Cliente (Ventas)",
-    channel: "whatsapp",
-    logs: [
-      "[NLP] Detectando intención del usuario: 'Consulta de precios'...",
-      "[DB] query_pricing_database(sector: '" + bizSector + "')",
-      "[Stripe_API] Generando link de pago dinámico seguro..."
-    ],
-    incoming: "Hola! ¿Cuáles son los precios de sus servicios y formas de pago para mi negocio?",
-    outgoing: "[PAYMENT_CARD]|Servicio de " + bizSector + "|Cotización de servicio a la medida para solucionar " + bizProblem + "|" + (profile.posProducts[1] ? '$' + profile.posProducts[1].price + '.00 MXN' : '$1,500.00 MXN'),
-    vars: { last_intent: "cotizacion_precios", active_channel: "whatsapp", client_status: "Interesado" }
-  },
-  {
-    title: "Organizando Correos Entrantes",
-    channel: "widget",
-    logs: [
-      "[RPA] Buscando correos no leídos en Inbox corporativo...",
-      "[OCR_Engine] Procesando archivo adjunto 'factura_proveedor.pdf'...",
-      "[ERP_API] Insertar cuenta por pagar en base de datos contable..."
-    ],
-    incoming: "📩 [SISTEMA: CORREO] Entrada de correo de proveedora@almacen.com con asunto: 'Factura pendiente de pago y actualización de stock'.",
-    outgoing: "✅ **Acción Autónoma**: Recibí el correo de tu proveedor, extraje los datos de la factura e indexé la cuenta por pagar en tu ERP contable. También redacté un correo de confirmación de trámite en tus borradores.",
-    vars: { last_intent: "organizar_correos", active_channel: "widget", accounts_payable: "actualizado" }
-  },
-  {
-    title: "Reporte de Datos Financieros",
-    channel: "messenger",
-    logs: [
-      "[SQL] query_sales_records(branch: 'all', date: 'yesterday')",
-      "[NLP] Formateando resumen de desempeño operativo para chat..."
-    ],
-    incoming: "Hola, ¿me das las estadísticas de ventas generales de ayer?",
-    outgoing: "Aquí tienes el reporte de ayer para **" + bizName + "**:\n📈 **Ventas Totales**: $14,850.00 MXN (+12% vs promedio)\n💳 **Tarjeta**: 65% | 💵 **Efectivo**: 35%\n🏆 **Producto más vendido**: Insumo Premium.\n*Estado de Resultados del ERP totalmente sincronizado.*",
-    vars: { last_intent: "reporte_ventas", active_channel: "messenger", sales_trend: "positivo" }
-  },
-  {
-    title: "Recordatorios de Citas Urgentes",
-    channel: "whatsapp",
-    logs: [
-      "[Calendar] check_meeting_details(id: 'inv-903')",
-      "[Google_Maps_API] Buscando tráfico a Paseo de la Reforma 405...",
-      "[RPA] Solicitando Uber ejecutivo de forma automática..."
-    ],
-    incoming: "📅 [CALENDARIO] Recordatorio: Junta de negocios clave en 15 minutos con cliente corporativo.",
-    outgoing: "🔔 **Recordatorio**: Tienes la junta de negocios en 15 minutos. El tráfico es moderado. He abierto los documentos de presentación en tu laptop y solicité un Uber para tu traslado. ¡Buen viaje!",
-    vars: { last_intent: "recordatorio_citas", active_channel: "whatsapp", uber_requested: true }
-  },
-  {
-    title: "Resumen de Minuta de Junta",
-    channel: "widget",
-    logs: [
-      "[SpeechToText] Procesando audio 'minuta_planeacion.wav' con Whisper...",
-      "[NLP] Extrayendo puntos de acuerdo y asignando responsables..."
-    ],
-    incoming: "🎙️ [SISTEMA: AUDIO] Procesar minuta de la junta de planeación mensual finalizada (12 min).",
-    outgoing: "📝 **Resumen de Junta Procesado**:\n• **Acuerdo 1**: Automatizar stock en POS (Responsable: Sistemas).\n• **Acuerdo 2**: Lanzar campaña de marketing Web (Responsable: Ventas).\n*Minuta guardada en la base de conocimiento de " + bizName + ".*",
-    vars: { last_intent: "resumen_junta", active_channel: "widget", knowledge_base: "actualizada" }
-  },
-  {
-    title: "Agendando Llamadas en Calendario",
-    channel: "messenger",
-    logs: [
-      "[Calendar] search_free_slots(date: 'tomorrow', duration: '30m')",
-      "[Calendar_API] insert_event(title: 'Llamada Técnica - " + bizName + "')"
-    ],
-    incoming: "Hola, ¿tienen espacio mañana para una llamada técnica de soporte?",
-    outgoing: "Entendido. He agendado la llamada técnica para mañana a las 4:30 PM en el espacio libre de tu Google Calendar. He enviado la invitación por correo electrónico al cliente.",
-    vars: { last_intent: "agendar_llamada", active_channel: "messenger", calendar_synced: true }
-  },
-  {
-    title: "Llamadas y Buzón de Voz",
-    channel: "whatsapp",
-    logs: [
-      "[SpeechToText] Transcribiendo mensaje de voz entrante...",
-      "[NLP] Clasificando sentimiento del mensaje: 'Satisfecho'..."
-    ],
-    incoming: "📞 [SISTEMA: BUZÓN] Mensaje de voz entrante de Cliente Satisfecho (0:45s).",
-    outgoing: "📞 **Buzón de Voz Transcrito**: El cliente llamó para felicitarlos por el gran servicio y consultar horarios. Le envié un WhatsApp automatizado con los horarios del fin de semana.",
-    vars: { last_intent: "buzon_voz", active_channel: "whatsapp", client_sentiment: "Feliz" }
-  },
-  {
-    title: "Conciliación de Hojas de Excel",
-    channel: "widget",
-    logs: [
-      "[Excel] parse_csv_rows('conciliaciones_bancarias.csv')...",
-      "[ERP_API] Comparando movimientos bancarios contra facturas...",
-      "[IA_AUDIT] Buscando discrepancias fiscales..."
-    ],
-    incoming: "📊 [SISTEMA: EXCEL] Archivo 'conciliaciones_bancarias.csv' cargado en la nube corporativa.",
-    outgoing: "📊 **Análisis Contable**: Procesé 140 transacciones de Excel. Encontré 1 discrepancia de $120.00 MXN en la factura F-409. He marcado la celda en rojo en la hoja de cálculo y notificado al contador.",
-    vars: { last_intent: "conciliacion_excel", active_channel: "widget", discrepancy_found: true }
-  },
-  {
-    title: "Reservaciones de Restaurante",
-    channel: "messenger",
-    logs: [
-      "[OpenTable_API] Buscando mesas hoy 8:00 PM para 4 personas cerca de Lomas...",
-      "[API] Reservar mesa confirmada en Rosetta..."
-    ],
-    incoming: "Reserva una mesa de negocios para cenar hoy con 3 socios.",
-    outgoing: "🍽️ **Reserva Confirmada**: Mesa reservada para 4 personas hoy a las 8:00 PM en el restaurante *Rosetta*. He enviado la confirmación en formato de tarjeta digital a tu correo y calendario.",
-    vars: { last_intent: "reservacion_restaurante", active_channel: "messenger", reservation_confirmed: true }
-  },
-  {
-    title: "Recomendación de Citas de Negocios",
-    channel: "whatsapp",
-    logs: [
-      "[Google_Maps] query_places(type: 'cafe', rating: '>4.5', keyword: 'business, quiet')"
-    ],
-    incoming: "Recomiéndame un café tranquilo para una junta de negocios rápida cerca de la oficina.",
-    outgoing: "📍 **Lugares recomendados para juntas**:\n1. *Café Toscano* (Terraza tranquila y buen internet).\n2. *Lalo!* (Espacio amplio, ambiente ejecutivo).\n3. *Piso 12 Ejecutivo* (Privacidad total y salas de juntas).",
-    vars: { last_intent: "recomendar_lugares", active_channel: "whatsapp", rating_limit: 4.5 }
-  },
-  {
-    title: "Recordatorio de Juntas por Prioridad",
-    channel: "widget",
-    logs: [
-      "[Calendar] query_today_meetings(status: 'pending')",
-      "[IA_PRIORITY] Clasificando juntas por nivel de importancia y urgencia..."
-    ],
-    incoming: "Dime qué reuniones tengo pendientes para el resto del día.",
-    outgoing: "📅 **Reuniones por Prioridad para hoy**:\n• 🔴 **Alta (16:30)**: Cierre de Contrato con Inversionistas (Sala Principal).\n• 🟡 **Media (17:45)**: Estatus de operaciones de la sucursal Centro.\n• 🟢 **Baja (19:00)**: Charla informal con el equipo de soporte.",
-    vars: { last_intent: "prioridad_juntas", active_channel: "widget", pending_meetings_count: 3 }
-  }
-];
+let assistantScenarios = [];
 
 function addTypingIndicator(side) {
   removeTypingIndicator();
@@ -2792,6 +3355,20 @@ document.querySelectorAll('.tab-link').forEach(link => {
 
 function initSimulationLoop() {
   attachPauseListeners();
+  
+  // Categorize problem to generate custom scenarios
+  const prob = bizProblem.toLowerCase();
+  let category = 'operations';
+  if (prob.includes("credito") || prob.includes("cobro") || prob.includes("cobranza") || prob.includes("pago") || prob.includes("abono") || prob.includes("mensualidad") || prob.includes("cartera")) {
+    category = 'credit';
+  } else if (prob.includes("inventario") || prob.includes("stock") || prob.includes("almacen") || prob.includes("existencias") || prob.includes("insumos") || prob.includes("comandas")) {
+    category = 'inventory';
+  } else if (prob.includes("venta") || prob.includes("cliente") || prob.includes("marketing") || prob.includes("prospecto") || prob.includes("vender") || prob.includes("cotizar")) {
+    category = 'sales';
+  }
+  
+  assistantScenarios = generateDynamicScenarios(category);
+  
   const defaultTab = (activeService === 'all') ? 'asistente' : activeService;
   startActiveTabLoop(defaultTab);
 }
