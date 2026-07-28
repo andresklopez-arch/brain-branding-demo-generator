@@ -83,15 +83,29 @@ function generateAvatar(name) {
     ['#0ea5e9', '#0284c7']
   ];
   const grad = colors[name.length % colors.length];
+  const randId = Math.floor(Math.random() * 1000000);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
     <defs>
-      <linearGradient id="avatar-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <linearGradient id="avatar-grad-${randId}" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stop-color="${grad[0]}" />
         <stop offset="100%" stop-color="${grad[1]}" />
       </linearGradient>
+      <style>
+        @keyframes spinAvatar { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulseAvatar { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.02); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
+        .outer-ring { transform-origin: center; animation: spinAvatar 12s linear infinite; }
+        .glow-avatar { transform-origin: center; animation: pulseAvatar 3s ease-in-out infinite; }
+      </style>
     </defs>
-    <circle cx="50" cy="50" r="48" fill="url(#avatar-grad)" />
-    <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="34" fill="#ffffff">${initials}</text>
+    <!-- Drop Shadow Glow -->
+    <circle cx="50" cy="50" r="45" fill="none" stroke="${grad[1]}" stroke-width="4" opacity="0.3" class="glow-avatar" />
+    <!-- Main Background -->
+    <circle cx="50" cy="50" r="42" fill="url(#avatar-grad-${randId})" />
+    <!-- Tech Ring -->
+    <circle cx="50" cy="50" r="45" fill="none" stroke="#ffffff" stroke-width="2" stroke-dasharray="10 30" opacity="0.75" class="outer-ring" />
+    <circle cx="50" cy="50" r="45" fill="none" stroke="${grad[0]}" stroke-width="1.5" stroke-dasharray="50 150" opacity="0.6" class="outer-ring" style="animation-duration: 6s; animation-direction: reverse;" />
+    <!-- Initials -->
+    <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="'Outfit', sans-serif" font-weight="900" font-size="32" fill="#ffffff" style="letter-spacing: 0.5px;">${initials}</text>
   </svg>`;
   return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
 }

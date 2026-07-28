@@ -226,6 +226,54 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Real-time Form Validation
+  const valInputs = [
+    { id: 'sim-business-name', min: 3, label: 'Nombre', msg: 'Mínimo 3 letras' },
+    { id: 'sim-business-sector', min: 3, label: 'Giro', msg: 'Mínimo 3 letras' },
+    { id: 'sim-business-problem', min: 10, label: 'Problema', msg: 'Mínimo 10 letras' }
+  ];
+
+  valInputs.forEach(item => {
+    const el = document.getElementById(item.id);
+    if (!el) return;
+
+    // Find or create label indicator
+    const labelEl = el.closest('div').querySelector('label');
+    let indicator = labelEl.querySelector('.val-indicator');
+    if (!indicator) {
+      indicator = document.createElement('span');
+      indicator.className = 'val-indicator';
+      indicator.style.fontSize = '10px';
+      indicator.style.fontWeight = 'normal';
+      indicator.style.marginLeft = '8px';
+      indicator.style.opacity = '0.8';
+      indicator.style.transition = 'all 0.3s';
+      labelEl.appendChild(indicator);
+    }
+
+    const validate = () => {
+      const val = el.value.trim();
+      if (val.length === 0) {
+        indicator.textContent = '';
+        el.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+        el.style.boxShadow = 'none';
+      } else if (val.length < item.min) {
+        indicator.textContent = '❌ ' + item.msg;
+        indicator.style.color = '#ef4444';
+        el.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+        el.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.1)';
+      } else {
+        indicator.textContent = '✅ Completo';
+        indicator.style.color = '#10b981';
+        el.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+        el.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.1)';
+      }
+    };
+
+    el.addEventListener('input', validate);
+    el.addEventListener('blur', validate);
+  });
+
   // Handle Form Submit
   if (simSetupForm) {
     simSetupForm.addEventListener('submit', (e) => {
