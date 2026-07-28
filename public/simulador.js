@@ -2400,6 +2400,181 @@ function initMockups() {
 
   // Update final WhatsApp link
   updateWhatsAppLink();
+
+  // ── LAUNCH AUTO-DEMO ENGINE AFTER 2 SECONDS ──
+  setTimeout(startAutoDemo, 2000);
+}
+
+// ══════════════════════════════════════════════
+// 🎬 AUTO-DEMO ENGINE - Simula la app en vivo
+// ══════════════════════════════════════════════
+let autoDemoRunning = false;
+let autoDemoIntervals = [];
+
+function startAutoDemo() {
+  if (autoDemoRunning) return;
+  autoDemoRunning = true;
+
+  // ── 1. CHAT AUTO-CONVERSATION LOOP ──
+  const chatConversations = [
+    {
+      q: `Hola! ¿Cuánto cuesta un mueble de sala en abonos? 💬`,
+      a: `¡Hola! Bienvenido a **${bizName}** 🏡\n\nNuestras salas están desde **$4,500 MXN** con enganches desde **$450 MXN** y mensualidades cómodas. ¿Deseas que te genere un plan de crédito personalizado ahora mismo?`,
+    },
+    {
+      q: `Sí, me interesa! ¿Tienen en negro? 🛋️`,
+      a: `¡Claro que sí! Tenemos disponible la **Sala Neptuno** en color negro, ideal para tu hogar.\n\n💳 **Plan de crédito sugerido:**\n- Precio: $6,200 MXN\n- Enganche: $620 MXN\n- 12 quincenas de $475 MXN\n\n¿Deseas que reserve una pieza con tu nombre ahora? 📦`,
+    },
+    {
+      q: `¿Hacen entregas a domicilio? 🚚`,
+      a: `¡Por supuesto! En **${bizName}** entregamos a todo el estado sin costo adicional en compras mayores a $2,000 MXN.\n\n📍 Tiempo estimado de entrega: **24 a 48 hrs hábiles**\n🔧 Armado e instalación incluida en tu domicilio.`,
+    },
+    {
+      q: `¿Puedo pagar quincenalmente desde WhatsApp? 💰`,
+      a: `¡Sí! Con nuestro **Asistente IA de Cobranza** recibirás recordatorio automático 2 días antes de cada quincena y un **enlace de pago Stripe** directo a tu WhatsApp. Sin filas, sin sucursal. 📲\n\n¿Te agendamos tu primer pago?`,
+    },
+    {
+      q: `Perfecto. ¿Tienen comedores también? 🍽️`,
+      a: `¡Tenemos una gran selección de comedores! 🍽️\n\n✅ Comedor Marbella 4 piezas - desde **$3,200 MXN**\n✅ Comedor Imperial 6 piezas - desde **$5,800 MXN**\n✅ Comedor Tokyo vidrio templado - desde **$4,100 MXN**\n\nTodos con opciones de crédito personalizado desde tu celular.`,
+    },
+    {
+      q: `¿Tienen tienda física o sólo en línea?`,
+      a: `Tenemos **ambas opciones** para tu comodidad 😊\n\n📍 **Showroom principal:** Blvd. Principal #1204\n🕐 Horario: Lun-Sáb 9am - 7pm\n💻 **Tienda en línea 24/7:** ${bizName.toLowerCase().replace(/[^a-z0-9]/g,'')}.com.mx\n\n¿Quieres que te envíe la ubicación en Google Maps directamente?`,
+    },
+  ];
+
+  let chatIdx = 0;
+  function runNextChat() {
+    if (chatIdx >= chatConversations.length) chatIdx = 0;
+    const conv = chatConversations[chatIdx++];
+    addChatMessage('incoming', conv.q);
+    printToolLog(`[IA] Procesando pregunta: "${conv.q.substring(0, 30)}..."`);
+    const delay = 1800 + Math.random() * 600;
+    setTimeout(() => {
+      addChatMessage('outgoing', conv.a);
+      updateTelemetry(conv.q, conv.a, Math.round(120 + Math.random() * 380));
+      printToolLog(`[IA] Respuesta generada. Memoria actualizada.`);
+    }, delay);
+  }
+
+  // Kick off first auto message, then loop every ~12 seconds
+  setTimeout(runNextChat, 1200);
+  const chatTimer = setInterval(runNextChat, 12000);
+  autoDemoIntervals.push(chatTimer);
+
+  // ── 2. POS AUTO-SALES LOOP ──
+  const posItems = profile.posProducts || [
+    { icon: '🛋️', name: 'Sala Neptuno', price: 6200 },
+    { icon: '🍽️', name: 'Comedor Marbella', price: 3200 },
+    { icon: '🛏️', name: 'Recámara Elegance', price: 8500 },
+    { icon: '📺', name: 'Centro Entretenimiento', price: 4100 },
+  ];
+
+  const posClients = ['Juan R.', 'María G.', 'Roberto L.', 'Ana P.', 'Carlos M.', 'Sofía V.', 'Diego H.', 'Fernanda T.'];
+
+  function simulatePOSSale() {
+    const item = posItems[Math.floor(Math.random() * posItems.length)];
+    const client = posClients[Math.floor(Math.random() * posClients.length)];
+    const qty = Math.floor(Math.random() * 2) + 1;
+    const total = item.price * qty;
+
+    // Light up last sale notification
+    const lastSaleEl = document.getElementById('pos-last-sale');
+    if (lastSaleEl) {
+      lastSaleEl.style.animation = 'none';
+      void lastSaleEl.offsetWidth;
+      lastSaleEl.innerHTML = `<span style="color:#34d399;font-weight:700;">✅ Venta: ${item.icon} ${item.name} x${qty}</span> — <span style="color:#fbbf24;">$${total.toLocaleString()} MXN</span> — <span style="color:var(--text-muted);">${client}</span>`;
+      lastSaleEl.style.animation = 'fadeIn 0.5s ease-out';
+    }
+
+    // Update revenue counter
+    const revenueEl = document.getElementById('pos-revenue-today');
+    if (revenueEl) {
+      const current = parseInt((revenueEl.textContent || '0').replace(/[^0-9]/g, '')) || 0;
+      const newTotal = current + total;
+      revenueEl.textContent = `$${newTotal.toLocaleString()} MXN`;
+    }
+
+    // Update sales count
+    const countEl = document.getElementById('pos-sales-count');
+    if (countEl) {
+      const current = parseInt(countEl.textContent || '0') || 0;
+      countEl.textContent = current + qty;
+    }
+    printToolLog(`[POS] Venta registrada: ${item.name} x${qty} → $${total} MXN — ${client}`);
+  }
+  const posTimer = setInterval(simulatePOSSale, 6000);
+  autoDemoIntervals.push(posTimer);
+  setTimeout(simulatePOSSale, 2000);
+
+  // ── 3. WEB PAGE AUTO-VISITOR LOOP ──
+  const webMetrics = [
+    { visitors: 347, sessions: 412, conversion: '4.2%', bounce: '28%' },
+    { visitors: 412, sessions: 501, conversion: '5.1%', bounce: '24%' },
+    { visitors: 289, sessions: 344, conversion: '3.8%', bounce: '31%' },
+    { visitors: 531, sessions: 624, conversion: '6.3%', bounce: '19%' },
+  ];
+  let webMetricIdx = 0;
+  function updateWebMetrics() {
+    const m = webMetrics[webMetricIdx % webMetrics.length];
+    webMetricIdx++;
+    const visEl = document.getElementById('web-visitors-today');
+    const sesEl = document.getElementById('web-sessions-today');
+    const convEl = document.getElementById('web-conversion-rate');
+    const bounceEl = document.getElementById('web-bounce-rate');
+    if (visEl) visEl.textContent = m.visitors;
+    if (sesEl) sesEl.textContent = m.sessions;
+    if (convEl) convEl.textContent = m.conversion;
+    if (bounceEl) bounceEl.textContent = m.bounce;
+
+    // Animate a "new visitor" notification
+    const notifEl = document.getElementById('web-visitor-notif');
+    if (notifEl) {
+      const cities = ['CDMX', 'Monterrey', 'Guadalajara', 'Puebla', 'Tijuana', 'Mérida'];
+      const devices = ['📱 Móvil', '💻 Desktop', '📟 Tablet'];
+      const city = cities[Math.floor(Math.random() * cities.length)];
+      const device = devices[Math.floor(Math.random() * devices.length)];
+      notifEl.innerHTML = `🌐 <strong>Nuevo visitante</strong> desde <span style="color:#38bdf8">${city}</span> · ${device}`;
+      notifEl.style.opacity = '1';
+      setTimeout(() => { notifEl.style.opacity = '0'; }, 4000);
+    }
+    printToolLog(`[WEB] Visita registrada en landing page. Conversión: ${m.conversion}`);
+  }
+  const webTimer = setInterval(updateWebMetrics, 8000);
+  autoDemoIntervals.push(webTimer);
+  setTimeout(updateWebMetrics, 3000);
+
+  // ── 4. ERP AUTO-WORKFLOW LOOP ──
+  const erpEvents = [
+    `✅ Pago recibido: ${bizName} Factura #INV-${1200 + Math.floor(Math.random()*100)} — $4,800 MXN`,
+    `📦 Pedido procesado: Comedor 6pz — Sucursal Norte — Listo para entrega`,
+    `📑 CFDI 4.0 timbrado automáticamente — UUID generado por SAT`,
+    `🔔 Recordatorio de cobro enviado a cliente Carlos M. (quincenal)`,
+    `📊 Inventario actualizado: 3 unidades vendidas, stock restante: 18`,
+    `💳 Pago por Stripe confirmado — $2,400 MXN — María G.`,
+    `📋 Cotización generada: Recámara Elegance x2 → $17,000 MXN`,
+    `📬 WhatsApp enviado: Comprobante de pago para pedido #ORD-0845`,
+    `⚡ Alarma de stock bajo: Sala Neptuno — solo 2 en inventario`,
+    `🏆 Meta del mes alcanzada al 78% — $124,000 de $160,000 MXN`,
+  ];
+  let erpEventIdx = 0;
+  function simulateERPEvent() {
+    const eventText = erpEvents[erpEventIdx % erpEvents.length];
+    erpEventIdx++;
+    const feedEl = document.getElementById('erp-live-feed');
+    if (feedEl) {
+      const div = document.createElement('div');
+      div.style.cssText = 'padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border-left: 3px solid #34d399; font-size: 12px; color: #e2e8f0; animation: fadeIn 0.4s ease-out;';
+      div.innerHTML = `<span style="color:#64748b;font-size:10px;">${new Date().toLocaleTimeString()}</span> ${eventText}`;
+      feedEl.prepend(div);
+      if (feedEl.children.length > 12) feedEl.lastChild.remove();
+    }
+    printToolLog(`[ERP] ${eventText.replace(/[^\w\s:]/g, '').substring(0, 50)}...`);
+  }
+  const erpTimer = setInterval(simulateERPEvent, 5000);
+  autoDemoIntervals.push(erpTimer);
+  setTimeout(simulateERPEvent, 1000);
+  setTimeout(simulateERPEvent, 3000);
 }
 
 // ── MOCKUP A: CHAT CONTROLLER ──
