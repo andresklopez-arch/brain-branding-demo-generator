@@ -793,4 +793,52 @@ document.addEventListener('DOMContentLoaded', () => {
       hideTooltip();
     });
   }
+
+  // 26. Dynamic Smart Header (Slide up/down on scroll)
+  let lastScrollY = window.scrollY;
+  const mainHeader = document.querySelector('header');
+  
+  if (mainHeader) {
+    window.addEventListener('scroll', () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > 150) {
+        mainHeader.classList.add('header-hidden');
+      } else {
+        mainHeader.classList.remove('header-hidden');
+      }
+      lastScrollY = currentScrollY;
+    }, { passive: true });
+  }
+
+  // 27. Form draft auto-save
+  const draftFields = {
+    'contact-name': 'draft_name',
+    'contact-business': 'draft_business',
+    'contact-desc': 'draft_desc',
+    'contact-operation': 'draft_operation'
+  };
+
+  // Restore drafts on load
+  Object.keys(draftFields).forEach(id => {
+    const el = document.getElementById(id);
+    const key = draftFields[id];
+    if (el) {
+      const savedVal = localStorage.getItem(key);
+      if (savedVal) {
+        el.value = savedVal;
+        el.dispatchEvent(new Event('input'));
+      }
+      el.addEventListener('input', () => {
+        localStorage.setItem(key, el.value);
+      });
+    }
+  });
+
+  // Clear drafts on successful submit
+  const agencyContactForm = document.getElementById('agency-contact-form');
+  if (agencyContactForm) {
+    agencyContactForm.addEventListener('submit', () => {
+      Object.values(draftFields).forEach(key => localStorage.removeItem(key));
+    });
+  }
 });

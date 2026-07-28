@@ -187,6 +187,22 @@
       animation: logo-pulse 3s infinite ease-in-out;
     }
 
+    /* DYNAMIC SMART HEADER & GOLD/CIAN PULSING RAYO */
+    header {
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    header.header-hidden {
+      transform: translateY(-110%);
+    }
+    @keyframes rayo-pulse {
+      0% { box-shadow: 0 0 5px rgba(0, 229, 255, 0.2); border-color: rgba(0, 229, 255, 0.3); }
+      50% { box-shadow: 0 0 15px rgba(0, 229, 255, 0.6); border-color: rgba(0, 229, 255, 0.8); }
+      100% { box-shadow: 0 0 5px rgba(0, 229, 255, 0.2); border-color: rgba(0, 229, 255, 0.3); }
+    }
+    header nav .nav-link[data-tooltip="Campaña IA"] {
+      animation: nav-item-entrance 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.55s forwards, rayo-pulse 2s infinite ease-in-out 1.05s !important;
+    }
+
     /* FINE-TUNED MOBILE HEADER */
     @media (max-width: 768px) {
       header {
