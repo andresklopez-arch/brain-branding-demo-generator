@@ -98,13 +98,141 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.readAsDataURL(file);
   }
 
+  // ── GIRO/SECTOR AUTCOMPLETE FUZZY SEARCH LOGIC ──
+  const sectorInput = document.getElementById('sim-business-sector');
+  const autocompleteList = document.getElementById('sim-sector-autocomplete-list');
+
+  const sectorsList = [
+    { name: "Restaurante / Café", icon: "🍳", keywords: ["comida", "alimentos", "cafe", "bar", "cena", "desayuno", "bistro", "taqueria", "restaurante", "pasteleria", "panaderia", "pizzeria"] },
+    { name: "Comercio / Tienda (Retail)", icon: "🛍️", keywords: ["tienda", "comercio", "boutique", "ropa", "calzado", "ventas", "supermercado", "retail", "mercado", "abarrotes"] },
+    { name: "Servicios Profesionales / Consultoría", icon: "💼", keywords: ["consultor", "oficina", "despacho", "abogado", "contador", "freelance", "agencia", "servicios", "asesor"] },
+    { name: "Salud / Clínica", icon: "🏥", keywords: ["doctor", "medico", "dentista", "clinica", "hospital", "farmacia", "odontologo", "pediatra", "terapia"] },
+    { name: "Educación / Cursos", icon: "🎓", keywords: ["escuela", "colegio", "curso", "taller", "universidad", "academia", "clases", "profesor", "docente"] },
+    { name: "Inmobiliaria / Bienes Raíces", icon: "🏠", keywords: ["inmobiliaria", "bienes raices", "renta", "venta de casas", "terrenos", "broker", "agente inmobiliario"] },
+    { name: "Manufactura / Distribución", icon: "🏭", keywords: ["fabrica", "manufactura", "distribuidora", "almacen", "logistica", "bodega", "produccion", "taller industrial"] },
+    { name: "Otro Sector", icon: "✨", keywords: ["otro", "personalizado", "giro diferente"] }
+  ];
+
+  const normalizeStr = (str) => {
+    return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, "").trim();
+  };
+
+  const levenshteinDistance = (str1 = '', str2 = '') => {
+    const track = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+    for (let i = 0; i <= str1.length; i += 1) track[0][i] = i;
+    for (let j = 0; j <= str2.length; j += 1) track[j][0] = j;
+    for (let j = 1; j <= str2.length; j += 1) {
+      for (let i = 1; i <= str1.length; i += 1) {
+        const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        track[j][i] = Math.min(
+          track[j][i - 1] + 1,
+          track[j - 1][i] + 1,
+          track[j - 1][i - 1] + indicator
+        );
+      }
+    }
+    return track[str2.length][str1.length];
+  };
+
+  const showSuggestions = (val) => {
+    if (!autocompleteList) return;
+    autocompleteList.innerHTML = '';
+    
+    const query = normalizeStr(val);
+    
+    const scoredSectors = sectorsList.map(sec => {
+      let score = 0;
+      const normalizedSec = normalizeStr(sec.name);
+      
+      if (normalizedSec.includes(query)) {
+        score += 80;
+      }
+      if (normalizedSec === query) {
+        score += 100;
+      }
+      
+      sec.keywords.forEach(kw => {
+        const normKw = normalizeStr(kw);
+        if (normKw.includes(query) || query.includes(normKw)) {
+          score += 50;
+        }
+        
+        const words = query.split(/\s+/);
+        words.forEach(word => {
+          if (word.length > 2) {
+            const dist = levenshteinDistance(word, normKw);
+            if (dist <= 1) score += 35;
+            else if (dist <= 2) score += 15;
+          }
+        });
+      });
+      
+      return { ...sec, score };
+    });
+    
+    let filtered = scoredSectors.filter(s => s.score > 0 || val === '');
+    filtered.sort((a, b) => b.score - a.score);
+    
+    if (filtered.length === 0 && val.trim().length > 0) {
+      filtered.push({
+        name: val.trim(),
+        icon: "✨",
+        custom: true
+      });
+    }
+    
+    filtered.forEach(sec => {
+      const itemDiv = document.createElement('div');
+      itemDiv.style.cssText = "padding: 10px 15px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;";
+      itemDiv.innerHTML = `
+        <span style="font-size: 16px;">${sec.icon}</span>
+        <div style="flex: 1;">
+          <span style="font-size: 13.5px; color: #fff; font-weight: 600;">${sec.name}</span>
+          ${sec.custom ? `<span style="font-size: 10px; color: var(--primary); display: block; margin-top: 2px;">Giro Personalizado</span>` : ''}
+        </div>
+      `;
+      
+      itemDiv.addEventListener('click', () => {
+        sectorInput.value = sec.name;
+        autocompleteList.style.display = 'none';
+      });
+      
+      itemDiv.addEventListener('mouseover', () => {
+        itemDiv.style.background = 'rgba(168, 85, 247, 0.15)';
+      });
+      itemDiv.addEventListener('mouseout', () => {
+        itemDiv.style.background = 'transparent';
+      });
+      
+      autocompleteList.appendChild(itemDiv);
+    });
+    
+    autocompleteList.style.display = filtered.length > 0 ? 'block' : 'none';
+  };
+
+  if (sectorInput && autocompleteList) {
+    sectorInput.addEventListener('focus', () => {
+      showSuggestions(sectorInput.value);
+    });
+    
+    sectorInput.addEventListener('input', (e) => {
+      showSuggestions(e.target.value);
+    });
+    
+    document.addEventListener('click', (e) => {
+      if (!sectorInput.contains(e.target) && !autocompleteList.contains(e.target)) {
+        autocompleteList.style.display = 'none';
+      }
+    });
+  }
+
   // Handle Form Submit
   if (simSetupForm) {
     simSetupForm.addEventListener('submit', (e) => {
       e.preventDefault();
 
       const bizName = document.getElementById('sim-business-name').value.trim();
-      const bizSector = document.getElementById('sim-business-sector').value;
+      const bizSector = document.getElementById('sim-business-sector').value.trim();
       const bizProblem = document.getElementById('sim-business-problem').value.trim();
 
       // Store in sessionStorage

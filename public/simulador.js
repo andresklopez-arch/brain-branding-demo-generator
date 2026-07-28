@@ -166,37 +166,73 @@ function printLog() {
 }
 printLog();
 
-// ── TAB SYSTEM ──
+// ── TAB NAVIGATION (SCROLL-SPY & SMOOTH SCROLL) ──
 function initTabs() {
   const tabLinks = document.querySelectorAll('.tab-link');
-  const tabPanels = document.querySelectorAll('.tab-panel');
   
-  // Set initial active tab
+  // Smooth scroll when tab is clicked
   tabLinks.forEach(link => {
-    if (link.getAttribute('data-tab') === activeService) {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      tabLinks.forEach(l => l.classList.remove('active'));
       link.classList.add('active');
-    } else {
-      link.classList.remove('active');
-    }
+      
+      const tabId = link.getAttribute('data-tab');
+      const targetPanel = document.getElementById(`panel-${tabId}`);
+      if (targetPanel) {
+        // Offset for the fixed header
+        const headerOffset = 90;
+        const elementPosition = targetPanel.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
+    });
   });
-  tabPanels.forEach(panel => {
-    if (panel.id === `panel-${activeService}`) {
-      panel.classList.add('active');
-    } else {
-      panel.classList.remove('active');
+
+  // Highlight tab based on scroll position (Scroll-Spy)
+  window.addEventListener('scroll', () => {
+    let current = '';
+    const scrollPos = window.scrollY + 140; // Offset threshold
+    
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    tabPanels.forEach(panel => {
+      const top = panel.offsetTop;
+      const height = panel.offsetHeight;
+      if (scrollPos >= top && scrollPos < top + height) {
+        current = panel.id.replace('panel-', '');
+      }
+    });
+    
+    if (current) {
+      tabLinks.forEach(link => {
+        if (link.getAttribute('data-tab') === current) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
     }
   });
 
-  tabLinks.forEach(link => {
-    link.addEventListener('click', () => {
-      tabLinks.forEach(l => l.classList.remove('active'));
-      tabPanels.forEach(p => p.classList.remove('active'));
-      
-      link.classList.add('active');
-      const tabId = link.getAttribute('data-tab');
-      document.getElementById(`panel-${tabId}`).classList.add('active');
-    });
-  });
+  // Initial scroll if a specific service (other than all) was selected
+  if (activeService && activeService !== 'all') {
+    setTimeout(() => {
+      const target = document.getElementById(`panel-${activeService}`);
+      if (target) {
+        const headerOffset = 90;
+        const elementPosition = target.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
+    }, 800);
+  }
 }
 
 // ── INITIALIZE DATA IN MOCKUPS ──
