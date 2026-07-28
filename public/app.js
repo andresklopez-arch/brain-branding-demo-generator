@@ -126,10 +126,29 @@ document.addEventListener('DOMContentLoaded', () => {
       const phone = "525638165507"; // WhatsApp comercial
       const text = `Hola *Brain Branding*, mi nombre es *${name}* de la empresa *${business}* (Giro: *${vertical}*).\n\nMe interesa solicitar un prototipo descriptivo de software de IA para mi negocio. Aquí te comparto la idea general:\n\n_"${desc}"_`;
       
-      const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const waUrl = isMobile 
+        ? `whatsapp://send?phone=${phone}&text=${encodeURIComponent(text)}`
+        : `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`;
       
-      // Open in new tab
-      window.open(waUrl, '_blank');
+      // Visual feedback on button
+      const submitBtn = contactForm.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '✓ ¡Estructurando idea! Abriendo WhatsApp...';
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.7';
+
+      setTimeout(() => {
+        window.open(waUrl, '_blank');
+        
+        // Reset button after redirect
+        setTimeout(() => {
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = '1';
+          contactForm.reset();
+        }, 1000);
+      }, 600);
     });
   }
 });
