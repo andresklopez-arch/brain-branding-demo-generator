@@ -38,6 +38,7 @@ function sanitizeInput(text) {
 
 // Validate active session (must exist in sessionStorage, i.e., tab was not closed)
 if (!sessionStorage.getItem('sim_session_active')) {
+  localStorage.setItem('sim_redirect_reason', 'No sim_session_active in sessionStorage. sessionStorage keys: ' + Object.keys(sessionStorage).join(', '));
   sessionStorage.clear();
   localStorage.clear();
   window.location.href = '/';
@@ -57,6 +58,7 @@ const activeService = sanitizeInput(sessionStorage.getItem('sim_active_service')
 
 // Redirect if no data
 if (!bizName || !bizSector || !bizProblem) {
+  localStorage.setItem('sim_redirect_reason', 'Missing fields: bizName=' + bizName + ', bizSector=' + bizSector + ', bizProblem=' + bizProblem);
   window.location.href = '/';
   throw new Error("No session data found. Redirecting to root...");
 }

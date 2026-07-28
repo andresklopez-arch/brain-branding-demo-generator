@@ -1,6 +1,13 @@
 /* Brain Branding - Interactive Scripts */
 
 document.addEventListener('DOMContentLoaded', () => {
+  const redirectReason = localStorage.getItem('sim_redirect_reason');
+  if (redirectReason) {
+    console.warn("REDIRECTED REASON:", redirectReason);
+    alert("Simulador Cerrado / Redirigido: " + redirectReason);
+    localStorage.removeItem('sim_redirect_reason');
+  }
+
   
   
   // ── IA SIMULATOR SETUP MODAL LOGIC ──
