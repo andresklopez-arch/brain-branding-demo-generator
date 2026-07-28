@@ -868,4 +868,45 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+
+  // 31. Custom Smooth Scroll Physics for Nav links with Offset
+  const smoothLinks = document.querySelectorAll('header nav a[href^="#"], .hero-btns a[href^="#"]');
+  smoothLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      const targetId = link.getAttribute('href');
+      if (targetId.startsWith('#')) {
+        const targetElement = document.querySelector(targetId);
+        if (targetElement) {
+          e.preventDefault();
+          const headerOffset = 80;
+          const elementPosition = targetElement.getBoundingClientRect().top + window.scrollY;
+          const offsetPosition = elementPosition - headerOffset;
+          
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
+      }
+    });
+  });
+
+  // 32. Anti-spam / Debouncing on WhatsApp conversion buttons
+  const waLinks = document.querySelectorAll('a[href*="api.whatsapp.com"], a[href*="web.whatsapp.com"]');
+  waLinks.forEach(link => {
+    let clickDisabled = false;
+    link.addEventListener('click', (e) => {
+      if (clickDisabled) {
+        e.preventDefault();
+        return;
+      }
+      clickDisabled = true;
+      link.style.pointerEvents = 'none';
+      setTimeout(() => {
+        clickDisabled = false;
+        link.style.pointerEvents = 'auto';
+      }, 1000);
+    });
+  });
 });
