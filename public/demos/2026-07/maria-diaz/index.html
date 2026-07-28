@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo Personalizada | Brain Branding</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* CSS CUSTOM PROPERTIES (Variables) injected dynamically */
+    :root {
+      --primary: #6366f1;
+      --secondary: #ec4899;
+      --bg-dark: #090d16;
+      --bg-card: rgba(17, 25, 40, 0.75);
+      --bg-sidebar: #0b1120;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --glow-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+      --font-title: 'Outfit', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body.light-theme {
+      --bg-dark: #f1f5f9;
+      --bg-card: rgba(255, 255, 255, 0.85);
+      --bg-sidebar: #ffffff;
+      --border-color: rgba(0, 0, 0, 0.08);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --glow-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.1);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 3px;
+    }
+
+    /* Sidebar Layout */
+    .sidebar {
+      width: 280px;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      padding: 30px 20px;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 800;
+      font-size: 20px;
+      box-shadow: var(--glow-shadow);
+    }
+
+    .brand-info h2 {
+      font-family: var(--font-title);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-info p {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .nav-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-grow: 1;
+    }
+
+    .nav-item a {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 14px 16px;
+      color: var(--text-muted);
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .nav-item.active a, .nav-item a:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    body.light-theme .nav-item.active a, body.light-theme .nav-item a:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
+
+    .nav-item.active a {
+      border-left: 4px solid var(--primary);
+      border-radius: 4px 12px 12px 4px;
+      padding-left: 12px;
+      font-weight: 600;
+    }
+
+    .nav-icon {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    .sidebar-footer {
+      border-top: 1px solid var(--border-color);
+      padding-top: 20px;
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .sidebar-footer p {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Main Container */
+    .main-container {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* Header */
+    header {
+      height: 80px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      background: rgba(9, 13, 22, 0.4);
+      backdrop-filter: blur(10px);
+      z-index: 5;
+    }
+
+    body.light-theme header {
+      background: rgba(241, 245, 249, 0.4);
+    }
+
+    .header-title h1 {
+      font-family: var(--font-title);
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s ease;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    body.light-theme .btn-outline:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      box-shadow: var(--glow-shadow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 25px rgba(99, 102, 241, 0.5);
+    }
+
+    /* Content Area */
+    .content {
+      padding: 40px;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+
+    .section-view {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .section-view.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 30px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      margin-bottom: 30px;
+    }
+
+    body.light-theme .card {
+      box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.06);
+    }
+
+    /* Grid layouts */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+      margin-bottom: 35px;
+    }
+
+    /* Metrics Cards */
+    .metric-card {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+    }
+
+    .metric-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .metric-value {
+      font-family: var(--font-title);
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .metric-change {
+      font-size: 12px;
+      color: #10b981;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .metric-change.negative {
+      color: #ef4444;
+    }
+
+    /* Custom CSS Neon Chart */
+    .chart-container {
+      height: 250px;
+      width: 100%;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      gap: 15px;
+      padding-top: 20px;
+      border-bottom: 2px solid var(--border-color);
+      border-left: 2px solid var(--border-color);
+      padding-left: 10px;
+    }
+
+    .chart-bar-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .chart-bar {
+      width: 70%;
+      max-width: 45px;
+      background: linear-gradient(to top, var(--primary), var(--secondary));
+      border-radius: 8px 8px 0 0;
+      animation: growUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0.85;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+      position: relative;
+    }
+
+    .chart-bar:hover {
+      opacity: 1;
+      box-shadow: 0 0 20px var(--primary);
+    }
+
+    .chart-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    @keyframes growUp {
+      from { height: 0; }
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      padding: 16px;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 18px 16px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 14px;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-success { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+    .badge-warning { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+    .badge-danger { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+
+    /* Interactive Virtual Cerebro Guide */
+    .cerebro-container {
+      position: fixed;
+      bottom: 40px;
+      right: 40px;
+      display: flex;
+      align-items: flex-end;
+      gap: 20px;
+      z-index: 100;
+    }
+
+    .cerebro-dialog {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 20px;
+      width: 320px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      position: relative;
+      animation: popOpen 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      transform-origin: bottom right;
+    }
+
+    body.light-theme .cerebro-dialog {
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    .cerebro-dialog::after {
+      content: '';
+      position: absolute;
+      bottom: 25px;
+      right: -8px;
+      width: 16px;
+      height: 16px;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      transform: rotate(-45deg);
+    }
+
+    .cerebro-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      color: var(--secondary);
+      font-weight: 700;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .cerebro-text {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-main);
+      margin-bottom: 12px;
+    }
+
+    .cerebro-options {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .cerebro-opt-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      text-align: left;
+      cursor: pointer;
+      color: var(--text-main);
+      transition: all 0.2s ease;
+    }
+
+    .cerebro-opt-btn:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .cerebro-avatar {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--secondary) 0%, var(--primary) 100%);
+      box-shadow: 0 0 30px rgba(99, 102, 241, 0.6);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      animation: pulseGlow 3s infinite ease-in-out;
+    }
+
+    .cerebro-avatar:hover {
+      transform: scale(1.08);
+    }
+
+    .cerebro-icon-svg {
+      width: 36px;
+      height: 36px;
+      fill: white;
+      filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% {
+        box-shadow: 0 0 25px rgba(99, 102, 241, 0.5), inset 0 0 15px rgba(255,255,255,0.2);
+        transform: translateY(0);
+      }
+      50% {
+        box-shadow: 0 0 40px rgba(236, 72, 153, 0.8), inset 0 0 20px rgba(255,255,255,0.4);
+        transform: translateY(-5px);
+      }
+    }
+
+    @keyframes popOpen {
+      from { opacity: 0; transform: scale(0.85) translate(-10px, 10px); }
+      to { opacity: 1; transform: scale(1) translate(0, 0); }
+    }
+
+    /* Modal (Pop-up) styles for descriptive feature notification */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 40px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      text-align: center;
+      transform: scale(0.9);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: scale(1);
+    }
+
+    .modal-icon {
+      width: 70px;
+      height: 70px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 2px solid var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      color: var(--primary);
+      animation: pulseBorder 2s infinite;
+    }
+
+    @keyframes pulseBorder {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+      50% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+    }
+
+    .modal-title {
+      font-family: var(--font-title);
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .modal-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-muted);
+      margin-bottom: 30px;
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal-close-link {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .modal-close-link:hover {
+      color: var(--text-main);
+    }
+
+    /* POS Simulator Layout */
+    .pos-layout {
+      display: flex;
+      gap: 30px;
+    }
+
+    .pos-items {
+      flex: 3;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .pos-item-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 16px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .pos-item-card:hover {
+      border-color: var(--primary);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .pos-item-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .pos-item-name {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .pos-item-price {
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .pos-cart {
+      flex: 1.5;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    /* Expiration Screen */
+    #expiration-screen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #090d16;
+      color: white;
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    #expiration-screen.active {
+      display: flex;
+    }
+
+    .exp-icon {
+      font-size: 80px;
+      margin-bottom: 24px;
+      animation: floatEffect 3s infinite ease-in-out;
+    }
+
+    @keyframes floatEffect {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .exp-title {
+      font-family: var(--font-title);
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #f43f5e, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .exp-text {
+      color: #94a3b8;
+      max-width: 500px;
+      margin: 0 auto 35px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- EXPIRATION OVERLAY BARRIER -->
+  <div id="expiration-screen">
+    <div>
+      <div class="exp-icon">⌛</div>
+      <h1 class="exp-title">Acceso Demo Expirado</h1>
+      <p class="exp-text">El periodo de prueba de 15 días para este prototipo interactivo ha finalizado. Ponte en contacto con Brain Branding para reactivar el acceso o para migrar tu proyecto a una versión de producción estable.</p>
+      <button class="btn btn-primary" onclick="openContact()" style="margin: 0 auto;">Contactar Soporte Técnico</button>
+    </div>
+  </div>
+
+  <!-- SIDEBAR MENU -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">B</div>
+      <div class="brand-info">
+        <h2 id="sidebar-business-name">Business Name</h2>
+        <p>Software Prototipo</p>
+      </div>
+    </div>
+    
+    <ul class="nav-menu" id="sidebar-nav">
+      <!-- Injected modules menu here dynamically -->
+    </ul>
+
+    <div class="sidebar-footer">
+      <p>Desarrollado por</p>
+      <p style="font-weight:700; color:var(--text-main); margin-top:2px;">Brain Branding</p>
+    </div>
+  </aside>
+
+  <!-- MAIN WINDOW -->
+  <main class="main-container">
+    <header>
+      <div class="header-title">
+        <h1 id="view-title">Dashboard</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline" id="theme-toggle-btn" onclick="toggleTheme()">
+          <span>🌓</span> Modo Claro/Oscuro
+        </button>
+        <button class="btn btn-primary" onclick="triggerCta('Header Activar App')">
+          Activar Producción
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTENT VIEWS -->
+    <div class="content" id="content-container">
+      
+      <!-- DASHBOARD VIEW -->
+      <div id="view-dashboard" class="section-view">
+        <div class="grid-3" id="dashboard-metrics-container">
+          <!-- Metrics cards injected dynamically -->
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom: 20px;" id="chart-title">Rendimiento Semanal</h3>
+          <div class="chart-container" id="chart-bar-container">
+            <!-- Simulated chart bars injected here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- CRM VIEW -->
+      <div id="view-crm" class="section-view">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3>Directorio de Clientes / Leads</h3>
+            <button class="btn btn-outline" style="padding: 6px 12px; font-size:12px;" onclick="openProductionModal('Agregar Contacto CRM')">+ Nuevo Cliente</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Contacto</th>
+                  <th>Estatus</th>
+                  <th>Valor Proyecto</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="crm-table-body">
+                <!-- CRM Table Content -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVENTORY VIEW -->
+      <div id="view-inventory" class="section-view">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3>Control de Almacén y Productos</h3>
+            <button class="btn btn-outline" style="padding: 6px 12px; font-size:12px;" onclick="openProductionModal('Crear Item Inventario')">+ Registrar Stock</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Producto/Servicio</th>
+                  <th>Categoría</th>
+                  <th>Stock Físico</th>
+                  <th>Precio Venta</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table-body">
+                <!-- Inventory rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- POS VIEW -->
+      <div id="view-pos" class="section-view">
+        <div class="pos-layout">
+          <div class="pos-items" id="pos-items-grid">
+            <!-- Items grids -->
+          </div>
+          <div class="pos-cart">
+            <h3 style="border-bottom:1px solid var(--border-color); padding-bottom:10px;">Carrito de Cobro</h3>
+            <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center; align-items:center; color:var(--text-muted);" id="pos-cart-content">
+              <span>🛒</span>
+              <p style="font-size:13px; margin-top:8px;">Selecciona productos de la izquierda</p>
+            </div>
+            <div style="border-top:1px solid var(--border-color); padding-top:15px; display:flex; justify-content:space-between; font-weight:700;">
+              <span>Total</span>
+              <span id="pos-cart-total">$0.00</span>
+            </div>
+            <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="openProductionModal('Cobrar en Punto de Venta')">Cobrar / Generar Ticket</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CALENDAR VIEW -->
+      <div id="view-calendar" class="section-view">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3>Calendario de Actividades y Reservas</h3>
+            <button class="btn btn-outline" style="padding: 6px 12px; font-size:12px;" onclick="openProductionModal('Agendar Evento')">+ Agendar Cita</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Actividad / Evento</th>
+                  <th>Fecha y Hora</th>
+                  <th>Duración</th>
+                  <th>Estatus</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="calendar-table-body">
+                <!-- Calendar events -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIGURATION VIEW -->
+      <div id="view-settings" class="section-view">
+        <div class="card">
+          <h3 style="margin-bottom: 20px;">Configuración del Ecosistema</h3>
+          <p style="color:var(--text-muted); font-size:14px; margin-bottom:25px;">
+            Ajustes avanzados del software. Aquí se pueden configurar integraciones con APIs externas, roles de administración y métodos de pago remotos.
+          </p>
+          <div style="display:flex; flex-direction:column; gap:16px; max-width:500px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:rgba(255,255,255,0.02); border-radius:10px;">
+              <div>
+                <p style="font-weight:600; font-size:14px;">Pasarela Stripe</p>
+                <p style="font-size:12px; color:var(--text-muted);">Sincronizada para cobros remotos</p>
+              </div>
+              <button class="btn btn-outline" style="padding:4px 10px; font-size:11px;" onclick="openProductionModal('Configurar Stripe')">Ajustar</button>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:rgba(255,255,255,0.02); border-radius:10px;">
+              <div>
+                <p style="font-weight:600; font-size:14px;">WhatsApp Gateway</p>
+                <p style="font-size:12px; color:var(--text-muted);">Configuración de bots de alerta automática</p>
+              </div>
+              <button class="btn btn-outline" style="padding:4px 10px; font-size:11px;" onclick="openProductionModal('Configurar WhatsApp Gateway')">Conectar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- CEREBRO FLOATING GUIDE -->
+  <div class="cerebro-container">
+    <div class="cerebro-dialog" id="cerebro-dialog-box">
+      <div class="cerebro-header">
+        <span>🧠</span> Cerebro Virtual
+      </div>
+      <div class="cerebro-text" id="cerebro-speech-text">
+        Cargando asistente de negocio inteligente...
+      </div>
+      <div class="cerebro-options">
+        <button class="cerebro-opt-btn" onclick="openProductionModal('Consulta IA Asistente')">💡 ¿Cómo optimiza esto mi negocio?</button>
+        <button class="cerebro-opt-btn" onclick="triggerCta('Cerebro WhatsApp Contacto')">📞 Hablar con un especialista de Brain Branding</button>
+      </div>
+    </div>
+    
+    <div class="cerebro-avatar" onclick="toggleCerebroBubble()">
+      <svg class="cerebro-icon-svg" viewBox="0 0 24 24">
+        <!-- SVG Path of a modern digital brain -->
+        <path d="M12,3c-4.97,0-9,4.03-9,9c0,2.12,0.74,4.07,1.97,5.61L4.35,19.4c-0.39,0.39-0.39,1.02,0,1.41s1.02,0.39,1.41,0l1.79-1.79C9.09,19.64,10.5,20,12,20c4.97,0,9-4.03,9-9S16.97,3,12,3z M12,18c-3.31,0-6-2.69-6-6s2.69-6,6-6s6,2.69,6,6S15.31,18,12,18z"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- LIMITATION MODAL (POPUP) -->
+  <div class="modal-overlay" id="production-modal">
+    <div class="modal-card">
+      <div class="modal-icon">🔐</div>
+      <h3 class="modal-title" id="modal-action-title">Funcionalidad Completa</h3>
+      <p class="modal-text">
+        Este prototipo visual tiene inoperable esta acción en un 98% con el fin de agilizar su demostración. En la versión de producción implementada por **Brain Branding**, esto procesa transacciones, lee registros de bases de datos y ejecuta la lógica real en la nube.
+      </p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" style="justify-content:center;" onclick="triggerCta('Modal Producción WhatsApp')">
+          Activar Software Completo
+        </button>
+        <a class="modal-close-link" onclick="closeProductionModal()">Seguir explorando el Demo</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Injected Data Container
+    window.DEMO_DATA = {
+  "clientName": "Maria Diaz",
+  "businessName": "Camaron",
+  "vertical": "Tienda de Ropa / Retail",
+  "colors": {
+    "primary": "#6366f1",
+    "secondary": "#ec4899",
+    "background": "#090d16"
+  },
+  "modules": [
+    "dashboard",
+    "crm",
+    "inventory",
+    "pos",
+    "calendar"
+  ],
+  "generated": {
+    "introMessage": "¡Hola! Soy el Cerebro de Brain Branding. Te guiaré por este demo interactivo creado para Camaron. Haz clic en cualquiera de los módulos para conocer cómo podemos transformar tu negocio.",
+    "modulesData": {
+      "dashboard": {
+        "title": "Resumen de Rendimiento de Camaron",
+        "metrics": [
+          {
+            "label": "Ventas del Mes",
+            "value": "$45,280 MXN",
+            "change": "+12.4% vs mes anterior"
+          },
+          {
+            "label": "Clientes Nuevos",
+            "value": "142",
+            "change": "+8.1% vs mes anterior"
+          },
+          {
+            "label": "Ticket Promedio",
+            "value": "$318.80 MXN",
+            "change": "+2.3% vs mes anterior"
+          }
+        ],
+        "chartData": [
+          45,
+          52,
+          49,
+          62,
+          58,
+          68,
+          74
+        ]
+      },
+      "crm": {
+        "title": "Gestión de Relaciones con Clientes (CRM)",
+        "contacts": [
+          {
+            "name": "Sofía Martínez",
+            "email": "sofia.m@gmail.com",
+            "phone": "55-1234-5678",
+            "status": "Prospecto Calificado",
+            "value": "$2,400"
+          },
+          {
+            "name": "Carlos González",
+            "email": "carlos.g@outlook.com",
+            "phone": "55-8765-4321",
+            "status": "Negociación",
+            "value": "$8,500"
+          },
+          {
+            "name": "Alejandro Ruiz",
+            "email": "aruiz@empresa.com",
+            "phone": "55-5555-4444",
+            "status": "Cliente Ganado",
+            "value": "$12,000"
+          }
+        ]
+      },
+      "inventory": {
+        "title": "Control de Inventario y Stock",
+        "items": [
+          {
+            "code": "PRD-001",
+            "name": "Producto Premium A",
+            "category": "General",
+            "stock": 45,
+            "price": "$299.00"
+          },
+          {
+            "code": "PRD-002",
+            "name": "Servicio Especial B",
+            "category": "Servicios",
+            "stock": 999,
+            "price": "$1,200.00"
+          },
+          {
+            "code": "PRD-003",
+            "name": "Insumo Básico C",
+            "category": "Insumos",
+            "stock": 12,
+            "price": "$85.00"
+          }
+        ]
+      },
+      "pos": {
+        "title": "Terminal de Punto de Venta (POS)",
+        "recentSales": [
+          {
+            "id": "#TX-9081",
+            "date": "Hoy, 14:22",
+            "total": "$598.00",
+            "payment": "Tarjeta"
+          },
+          {
+            "id": "#TX-9080",
+            "date": "Hoy, 13:05",
+            "total": "$1,200.00",
+            "payment": "Transferencia"
+          },
+          {
+            "id": "#TX-9079",
+            "date": "Ayer, 18:40",
+            "total": "$85.00",
+            "payment": "Efectivo"
+          }
+        ]
+      },
+      "calendar": {
+        "title": "Agenda de Actividades y Reservas",
+        "events": [
+          {
+            "title": "Reunión Comercial - Empresa Alfa",
+            "start": "Mañana, 10:00",
+            "duration": "1 hora"
+          },
+          {
+            "title": "Servicio de Consultoría - Cliente Beta",
+            "start": "Jueves, 15:30",
+            "duration": "2 horas"
+          },
+          {
+            "title": "Mantenimiento Preventivo Programado",
+            "start": "Sábado, 09:00",
+            "duration": "4 horas"
+          }
+        ]
+      }
+    },
+    "cerebroGuides": {
+      "dashboard": "Este Dashboard consolida las ventas y el flujo financiero en tiempo real. Ayuda a tomar decisiones estratégicas basadas en números, no en suposiciones.",
+      "crm": "El CRM asegura que ningún cliente potencial se pierda. Puedes rastrear cada conversación, asignar tareas a tu equipo y cerrar ventas un 40% más rápido.",
+      "inventory": "Controla entradas y salidas de stock automáticamente. Evita fugas financieras y quiebres de inventario con notificaciones inteligentes antes de que te quedes sin stock.",
+      "pos": "Una caja registradora en la nube ultra-rápida. Permite cobrar en efectivo, tarjeta o transferencias, emitiendo comprobantes digitales en segundos.",
+      "calendar": "El calendario centralizado previene empalmes de citas. Automatiza los recordatorios para tus clientes y reduce las ausencias hasta en un 80%."
+    },
+    "suggestedModules": [
+      {
+        "name": "Automatización de WhatsApp",
+        "description": "Envío automático de notificaciones de compra, recordatorios de citas y marketing segmentado al instante."
+      },
+      {
+        "name": "Reportes Inteligentes con IA",
+        "description": "Análisis mensual automatizado de ventas y comportamientos de clientes, aconsejando qué comprar e inventariar."
+      }
+    ]
+  },
+  "createdAt": "2026-07-28T00:31:57.905Z"
+};
+
+    // Standard fallback if injection did not run
+    if (!window.DEMO_DATA) {
+      window.DEMO_DATA = {
+        clientName: "Cliente",
+        businessName: "Demo Corporativo",
+        vertical: "Giro General",
+        colors: { primary: "#6366f1", secondary: "#ec4899", background: "#090d16" },
+        modules: ["dashboard", "crm", "inventory", "pos", "calendar"],
+        createdAt: new Date().toISOString(),
+        generated: {
+          introMessage: "Hola, te doy la bienvenida. Explora el software y consulta las guías de cada sección.",
+          modulesData: {},
+          cerebroGuides: {},
+          suggestedModules: []
+        }
+      };
+    }
+
+    const { clientName, businessName, colors, modules, generated, createdAt } = window.DEMO_DATA;
+
+    // Apply colors to root variables
+    document.documentElement.style.setProperty('--primary', colors.primary || '#6366f1');
+    document.documentElement.style.setProperty('--secondary', colors.secondary || '#ec4899');
+    if (colors.background) {
+      document.documentElement.style.setProperty('--bg-dark', colors.background);
+    }
+
+    // Check expiration (15 days)
+    const creationTime = new Date(createdAt).getTime();
+    const fifteenDays = 15 * 24 * 60 * 60 * 1000;
+    if (Date.now() - creationTime > fifteenDays) {
+      document.getElementById('expiration-screen').classList.add('active');
+    }
+
+    // Map module names to icons and titles
+    const moduleMap = {
+      dashboard: { name: 'Dashboard', icon: '📊', id: 'dashboard' },
+      crm: { name: 'CRM Clientes', icon: '👥', id: 'crm' },
+      inventory: { name: 'Inventario', icon: '📦', id: 'inventory' },
+      pos: { name: 'Punto de Venta', icon: '🛒', id: 'pos' },
+      calendar: { name: 'Agenda Citas', icon: '📅', id: 'calendar' },
+      settings: { name: 'Configuraciones', icon: '⚙️', id: 'settings' }
+    };
+
+    // Render Sidebar Navigation Menu based on active modules
+    const sidebarNav = document.getElementById('sidebar-nav');
+    document.getElementById('sidebar-business-name').textContent = businessName;
+    
+    // Always append Settings module in client demo to make it look professional
+    const activeModulesList = [...modules];
+    if (!activeModulesList.includes('settings')) {
+      activeModulesList.push('settings');
+    }
+
+    activeModulesList.forEach((modId, index) => {
+      const info = moduleMap[modId];
+      if (!info) return;
+
+      const li = document.createElement('li');
+      li.className = `nav-item ${index === 0 ? 'active' : ''}`;
+      li.id = `menu-item-${modId}`;
+      li.innerHTML = `
+        <a href="#" onclick="switchView('${modId}')">
+          <span style="font-size: 16px;">${info.icon}</span>
+          ${info.name}
+        </a>
+      `;
+      sidebarNav.appendChild(li);
+    });
+
+    // Populate Initial Data
+    // 1. Dashboard
+    if (generated.modulesData.dashboard) {
+      const data = generated.modulesData.dashboard;
+      const metricsContainer = document.getElementById('dashboard-metrics-container');
+      metricsContainer.innerHTML = '';
+      
+      data.metrics.forEach(m => {
+        metricsContainer.innerHTML += `
+          <div class="card metric-card">
+            <div class="metric-label">${m.label}</div>
+            <div class="metric-value">${m.value}</div>
+            <div class="metric-change">${m.change}</div>
+          </div>
+        `;
+      });
+
+      // Chart
+      const chartContainer = document.getElementById('chart-bar-container');
+      chartContainer.innerHTML = '';
+      const days = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
+      data.chartData.forEach((val, i) => {
+        chartContainer.innerHTML += `
+          <div class="chart-bar-wrapper">
+            <div class="chart-bar" style="height: ${val}%"></div>
+            <div class="chart-label">${days[i]}</div>
+          </div>
+        `;
+      });
+      document.getElementById('chart-title').textContent = data.title || 'Rendimiento';
+    }
+
+    // 2. CRM
+    if (generated.modulesData.crm) {
+      const data = generated.modulesData.crm;
+      const tableBody = document.getElementById('crm-table-body');
+      tableBody.innerHTML = '';
+      data.contacts.forEach(c => {
+        tableBody.innerHTML += `
+          <tr>
+            <td style="font-weight:600;">${c.name}</td>
+            <td>
+              <div>${c.email}</div>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${c.phone}</div>
+            </td>
+            <td><span class="badge ${c.status === 'Cliente Ganado' ? 'badge-success' : 'badge-warning'}">${c.status}</span></td>
+            <td style="font-weight:700; color:var(--primary);">${c.value}</td>
+            <td>
+              <button class="btn btn-outline" style="padding: 4px 10px; font-size:12px;" onclick="openProductionModal('Editar Cliente ${c.name}')">Editar</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // 3. Inventory
+    if (generated.modulesData.inventory) {
+      const data = generated.modulesData.inventory;
+      const tableBody = document.getElementById('inventory-table-body');
+      tableBody.innerHTML = '';
+      data.items.forEach(item => {
+        const isLow = item.stock < 20;
+        tableBody.innerHTML += `
+          <tr>
+            <td style="font-family: monospace; font-weight:700;">${item.code}</td>
+            <td style="font-weight:600;">${item.name}</td>
+            <td>${item.category}</td>
+            <td>
+              <span style="font-weight:600;">${item.stock}</span> 
+              <span class="badge ${isLow ? 'badge-danger' : 'badge-success'}" style="padding: 2px 6px; font-size:10px; margin-left:8px;">
+                ${isLow ? 'Stock Bajo' : 'Normal'}
+              </span>
+            </td>
+            <td style="font-weight:700; color:var(--secondary);">${item.price}</td>
+            <td>
+              <button class="btn btn-outline" style="padding: 4px 10px; font-size:12px;" onclick="openProductionModal('Surtir SKU ${item.code}')">Surtir</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // 4. POS (Punto de venta)
+    if (generated.modulesData.pos || generated.modulesData.inventory) {
+      // Use inventory items for POS if POS data is generic
+      const itemsList = (generated.modulesData.inventory && generated.modulesData.inventory.items) || [
+        { code: "A1", name: "Servicio Básico", price: "$499.00" },
+        { code: "A2", name: "Servicio Pro", price: "$999.00" }
+      ];
+
+      const posGrid = document.getElementById('pos-items-grid');
+      posGrid.innerHTML = '';
+      
+      const emojis = ['☕', '🍔', '🎁', '🔌', '📦', '👕', '👠', '🛠️', '💼', '🍦'];
+
+      itemsList.forEach((item, index) => {
+        const emoji = emojis[index % emojis.length];
+        posGrid.innerHTML += `
+          <div class="pos-item-card" onclick="addToCart('${item.name}', '${item.price}')">
+            <div class="pos-item-icon">${emoji}</div>
+            <div class="pos-item-name">${item.name}</div>
+            <div class="pos-item-price">${item.price}</div>
+          </div>
+        `;
+      });
+    }
+
+    // 5. Calendar
+    if (generated.modulesData.calendar) {
+      const data = generated.modulesData.calendar;
+      const tableBody = document.getElementById('calendar-table-body');
+      tableBody.innerHTML = '';
+      data.events.forEach(evt => {
+        tableBody.innerHTML += `
+          <tr>
+            <td style="font-weight:600;">${evt.title}</td>
+            <td>${evt.start}</td>
+            <td>${evt.duration}</td>
+            <td><span class="badge badge-success">Confirmado</span></td>
+            <td>
+              <button class="btn btn-outline" style="padding: 4px 10px; font-size:12px;" onclick="openProductionModal('Cancelar Cita ${evt.title}')">Reagendar</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // Initialize View Navigation
+    let activeViewId = activeModulesList[0];
+    switchView(activeViewId);
+
+    function switchView(viewId) {
+      // Toggle views
+      document.querySelectorAll('.section-view').forEach(view => {
+        view.classList.remove('active');
+      });
+      const targetView = document.getElementById(`view-${viewId}`);
+      if (targetView) targetView.classList.add('active');
+
+      // Toggle active menu in sidebar
+      document.querySelectorAll('.sidebar .nav-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      const activeMenuItem = document.getElementById(`menu-item-${viewId}`);
+      if (activeMenuItem) activeMenuItem.classList.add('active');
+
+      // Set Header Title
+      const viewTitleElement = document.getElementById('view-title');
+      viewTitleElement.textContent = moduleMap[viewId] ? moduleMap[viewId].name : 'Configuración';
+
+      // Update Assistant Speech
+      updateCerebroSpeech(viewId);
+    }
+
+    // Update virtual assistant speech bubble
+    function updateCerebroSpeech(viewId) {
+      const speechBox = document.getElementById('cerebro-speech-text');
+      
+      if (viewId === activeModulesList[0] && generated.introMessage) {
+        // Use general welcome message on dashboard or first view
+        speechBox.textContent = generated.introMessage;
+      } else if (generated.cerebroGuides && generated.cerebroGuides[viewId]) {
+        speechBox.textContent = generated.cerebroGuides[viewId];
+      } else if (viewId === 'settings') {
+        speechBox.textContent = "Aquí ajustas integraciones del sistema como facturación y pasarelas de cobro automáticas. ¡Un espacio clave para digitalizar al máximo tu negocio!";
+      } else {
+        speechBox.textContent = `Este módulo de ${moduleMap[viewId] ? moduleMap[viewId].name : viewId} le permite a tu equipo simplificar la operación diaria y automatizar procesos repetitivos.`;
+      }
+
+      // Add bounce-in animation
+      const dialogBox = document.getElementById('cerebro-dialog-box');
+      dialogBox.style.animation = 'none';
+      dialogBox.offsetHeight; /* trigger reflow */
+      dialogBox.style.animation = null;
+    }
+
+    function toggleCerebroBubble() {
+      const dialogBox = document.getElementById('cerebro-dialog-box');
+      if (dialogBox.style.display === 'none') {
+        dialogBox.style.display = 'block';
+      } else {
+        dialogBox.style.display = 'none';
+      }
+    }
+
+    // POS Cart Simulation
+    const cartItems = [];
+    function addToCart(name, priceStr) {
+      const price = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
+      cartItems.push({ name, price });
+      renderCart();
+    }
+
+    function renderCart() {
+      const cartContainer = document.getElementById('pos-cart-content');
+      const cartTotal = document.getElementById('pos-cart-total');
+      
+      if (cartItems.length === 0) {
+        cartContainer.innerHTML = `
+          <span>🛒</span>
+          <p style="font-size:13px; margin-top:8px;">Selecciona productos de la izquierda</p>
+        `;
+        cartTotal.textContent = "$0.00";
+        return;
+      }
+
+      cartContainer.innerHTML = `<ul style="width:100%; list-style:none; display:flex; flex-direction:column; gap:8px;"></ul>`;
+      const ul = cartContainer.querySelector('ul');
+      let total = 0;
+
+      cartItems.forEach((item, index) => {
+        total += item.price;
+        ul.innerHTML += `
+          <li style="display:flex; justify-content:space-between; font-size:13px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.02)">
+            <span>${item.name}</span>
+            <span style="font-weight:600;">$${item.price.toFixed(2)}</span>
+          </li>
+        `;
+      });
+
+      cartTotal.textContent = `$${total.toFixed(2)} MXN`;
+    }
+
+    // Modal Control
+    function openProductionModal(actionName) {
+      document.getElementById('modal-action-title').textContent = `Módulo: ${actionName}`;
+      document.getElementById('production-modal').classList.add('active');
+    }
+
+    function closeProductionModal() {
+      document.getElementById('production-modal').classList.remove('active');
+    }
+
+    // Toggle Dark/Light Theme
+    function toggleTheme() {
+      document.body.classList.toggle('light-theme');
+    }
+
+    // CTA Contact Trigger
+    function triggerCta(eventContext) {
+      console.log(`[CTA Triggered] Context: ${eventContext}`);
+      openContact();
+    }
+
+    function openContact() {
+      const phone = "525512345678"; // Replace with your actual WhatsApp business number
+      const text = `Hola Brain Branding, estuve revisando la demo personalizada de mi negocio "${businessName}" y me interesa contratar el desarrollo completo de la aplicación de producción.`;
+      const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    }
+  </script>
+</body>
+</html>

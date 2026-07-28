@@ -3,96 +3,330 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Brain Branding — Central Portal</title>
-  <style>
-    :root {
-      --bg: #0b0f19;
-      --card-bg: rgba(255, 255, 255, 0.05);
-      --border: rgba(255, 255, 255, 0.1);
-      --primary: #6366f1;
-      --text: #f3f4f6;
-      --text-muted: #9ca3af;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-    .container {
-      max-width: 800px;
-      width: 90%;
-      text-align: center;
-    }
-    h1 {
-      font-size: 2.5rem;
-      background: linear-gradient(135deg, #a5b4fc, #6366f1, #818cf8);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 0.5rem;
-    }
-    p {
-      color: var(--text-muted);
-      margin-bottom: 2rem;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1.5rem;
-    }
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      text-decoration: none;
-      color: inherit;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(10px);
-    }
-    .card:hover {
-      transform: translateY(-4px);
-      border-color: var(--primary);
-      box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.3);
-    }
-    .card h2 {
-      margin-top: 0;
-      font-size: 1.25rem;
-      color: #fff;
-    }
-    .card p {
-      font-size: 0.9rem;
-      margin-bottom: 0;
-    }
-  </style>
+  <meta name="description" content="Brain Branding — Consultora Premium de Desarrollo de Software, Soluciones de IA a la medida y Diseño UI/UX Corporativo.">
+  <title>Brain Branding — Desarrollo de Software Premium e IA</title>
+  
+  <link rel="stylesheet" href="index.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Brain Branding Hub</h1>
-    <p>Selecciona una aplicación para ingresar:</p>
-    <div class="grid">
-      <a href="/alr-saas/" class="card">
-        <h2>🚀 ALR SaaS Commander</h2>
-        <p>Plataforma de gestión empresarial y licencias ALR SaaS.</p>
-      </a>
-      <a href="/alr-saas-promo/" class="card">
-        <h2>🎬 ALR SaaS Promo</h2>
-        <p>Simulador y editor de campañas promocionales ALR.</p>
-      </a>
-      <a href="/brain-branding-promo/" class="card">
-        <h2>✨ Brain Branding Promo</h2>
-        <p>Presentación interactiva de Brain Branding.</p>
-      </a>
-      <a href="/hermes/" class="card">
-        <h2>🤖 Hermes Agent</h2>
-        <p>Asistente virtual de IA privado controlado desde tu chat.</p>
-      </a>
-    </div>
+
+  <!-- BACKGROUND CYBER NET -->
+  <div class="cyber-grid"></div>
+  <div class="radial-glows">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
   </div>
+
+  <!-- NAVIGATION HEADER -->
+  <header>
+    <a href="#inicio" class="logo-area">
+      <div class="logo-icon">BB</div>
+      <div class="logo-text">Brain <span>Branding</span></div>
+    </a>
+    <nav>
+      <a href="#inicio" class="nav-link">Inicio</a>
+      <a href="#servicios" class="nav-link">Servicios</a>
+      <a href="#prototipos" class="nav-link">Showcase</a>
+      <a href="#testimonios" class="nav-link">Opiniones</a>
+      <a href="#contacto" class="nav-link">Contacto</a>
+    </nav>
+    <a href="/portal/" class="header-btn">Acceder al Portal</a>
+  </header>
+
+  <!-- MAIN VIEWPORT -->
+  <main>
+    
+    <!-- 1. HERO SECTION -->
+    <section id="inicio" class="hero">
+      <div class="hero-content">
+        <span class="section-tag">Desarrollo Tecnológico Premium</span>
+        <h1 class="hero-title">Damos vida digital a tu visión con <span class="accent" id="typing-text">Inteligencia Artificial</span></h1>
+        <p class="hero-desc">
+          Creamos aplicaciones SaaS de alto rendimiento, integramos motores de IA avanzados y diseñamos experiencias UI/UX premium que convierten prospectos en clientes de inmediato.
+        </p>
+        <div class="hero-btns">
+          <a href="#contacto" class="btn btn-primary">Solicitar Prototipo de IA</a>
+          <a href="#servicios" class="btn btn-secondary">Ver Servicios</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="glass-card brain-card">
+          <div class="brain-pulse-ring"></div>
+          <div class="brain-container">
+            <!-- Pulsing Cyber Brain SVG -->
+            <svg class="brain-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <!-- Left Hemisphere (Neural circuits) -->
+              <path d="M50,15 C35,15 25,25 25,40 C25,48 30,55 30,62 C30,70 38,78 45,82 L50,85 Z" fill="none" stroke="url(#circuit-grad)" stroke-width="1.5" />
+              <!-- Right Hemisphere (Digital blocks) -->
+              <path d="M50,15 C65,15 75,25 75,40 C75,48 70,55 70,62 C70,70 62,78 55,82 L50,85 Z" fill="none" stroke="url(#digital-grad)" stroke-width="1.5" />
+              <!-- Neural Connections / Nodes -->
+              <circle cx="35" cy="30" r="2.5" fill="#6366f1" />
+              <line x1="35" y1="30" x2="42" y2="38" stroke="rgba(255,255,255,0.2)" stroke-width="0.8" />
+              
+              <circle cx="42" cy="38" r="2" fill="#ec4899" />
+              <line x1="42" y1="38" x2="30" y2="48" stroke="rgba(255,255,255,0.2)" stroke-width="0.8" />
+              
+              <circle cx="30" cy="48" r="2.5" fill="#06b6d4" />
+              <line x1="30" y1="48" x2="38" y2="58" stroke="rgba(255,255,255,0.2)" stroke-width="0.8" />
+              
+              <circle cx="38" cy="58" r="2" fill="#6366f1" />
+              
+              <circle cx="65" cy="30" r="2.5" fill="#ec4899" />
+              <line x1="65" y1="30" x2="58" y2="38" stroke="rgba(255,255,255,0.2)" stroke-width="0.8" />
+              
+              <circle cx="58" cy="38" r="2" fill="#06b6d4" />
+              <line x1="58" y1="38" x2="70" y2="48" stroke="rgba(255,255,255,0.2)" stroke-width="0.8" />
+              
+              <circle cx="70" cy="48" r="2.5" fill="#6366f1" />
+              <line x1="70" y1="48" x2="62" y2="58" stroke="rgba(255,255,255,0.2)" stroke-width="0.8" />
+              
+              <circle cx="62" cy="58" r="2" fill="#ec4899" />
+              
+              <!-- Center stem -->
+              <line x1="50" y1="15" x2="50" y2="85" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+              <circle cx="50" cy="15" r="3" fill="#f8fafc" />
+              <circle cx="50" cy="50" r="3" fill="#6366f1" />
+              <circle cx="50" cy="85" r="3" fill="#ec4899" />
+
+              <defs>
+                <linearGradient id="circuit-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#6366f1" />
+                  <stop offset="100%" stop-color="#06b6d4" />
+                </linearGradient>
+                <linearGradient id="digital-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ec4899" />
+                  <stop offset="100%" stop-color="#6366f1" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. SERVICES SECTION -->
+    <section id="servicios" class="services">
+      <div style="text-align:center; display:flex; flex-direction:column; align-items:center;">
+        <span class="section-tag">Nuestras Capacidades</span>
+        <h2 class="section-title">Soluciones digitales que <span>impulsan tu negocio</span></h2>
+        <p class="section-subtitle">
+          Diseñamos soluciones tecnológicas a la medida uniendo el poder del desarrollo ágil con automatizaciones neuronales.
+        </p>
+      </div>
+
+      <div class="services-grid">
+        <!-- Card 1 -->
+        <div class="glass-card service-card">
+          <div class="service-icon">💻</div>
+          <h3>Desarrollo Web & SaaS</h3>
+          <p>
+            Plataformas en la nube rápidas y responsivas diseñadas para escalar tus operaciones corporativas con arquitecturas estables.
+          </p>
+        </div>
+        <!-- Card 2 -->
+        <div class="glass-card service-card">
+          <div class="service-icon">🧠</div>
+          <h3>Motores de IA y Redes</h3>
+          <p>
+            Integramos modelos de Inteligencia Artificial avanzados (Gemini, OpenAI) para automatizar la atención a tus clientes y flujos.
+          </p>
+        </div>
+        <!-- Card 3 -->
+        <div class="glass-card service-card">
+          <div class="service-icon">✨</div>
+          <h3>Diseño UI/UX Premium</h3>
+          <p>
+            Creamos interfaces corporativas de alto impacto visual que generan confianza y enganchan a los clientes a primera vista.
+          </p>
+        </div>
+        <!-- Card 4 -->
+        <div class="glass-card service-card">
+          <div class="service-icon">⚡</div>
+          <h3>Prototipos Interactivos</h3>
+          <p>
+            ¿Tienes una idea? Te construimos una maqueta funcional descriptiva de tu software en horas para que cierres tus propuestas de inmediato.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. DEMO SHOWCASE SECTION -->
+    <section id="prototipos" class="showcase">
+      <div class="showcase-container">
+        <div class="showcase-preview">
+          <div class="glass-card showcase-preview-card">
+            <div class="preview-header">
+              <div class="dot dot-red"></div>
+              <div class="dot dot-yellow"></div>
+              <div class="dot dot-green"></div>
+              <div class="preview-address">https://brainbranding.com.mx/demos/restaurant-demo/</div>
+            </div>
+            <div class="preview-body">
+              <!-- Simulated SaaS Dashboard -->
+              <div class="mock-grid">
+                <div class="mock-metric">
+                  <div class="label">Ingresos Mensuales</div>
+                  <div class="val animate-number" data-target="15480" data-prefix="$" data-suffix="">$0</div>
+                  <div class="change">↑ 12% vs mes ant.</div>
+                </div>
+                <div class="mock-metric">
+                  <div class="label">Nuevos Clientes</div>
+                  <div class="val animate-number" data-target="382" data-prefix="" data-suffix="">0</div>
+                  <div class="change">↑ 8% este mes</div>
+                </div>
+                <div class="mock-metric">
+                  <div class="label">Tasa de Conversión</div>
+                  <div class="val animate-number" data-target="98" data-prefix="" data-suffix="%">0%</div>
+                  <div class="change">Garantizada</div>
+                </div>
+              </div>
+              
+              <div class="mock-chart-container">
+                <div style="font-size:11px; color:#fff; font-weight:700; margin-bottom:10px;">Rendimiento Comercial Simulado</div>
+                <div class="mock-chart-bars">
+                  <div class="mock-bar" style="height: 30%"></div>
+                  <div class="mock-bar" style="height: 55%"></div>
+                  <div class="mock-bar" style="height: 45%"></div>
+                  <div class="mock-bar" style="height: 80%"></div>
+                  <div class="mock-bar" style="height: 70%"></div>
+                  <div class="mock-bar" style="height: 95%"></div>
+                </div>
+              </div>
+
+              <!-- Animated Cerebro Bubble -->
+              <div class="floating-cerebro-bubble">
+                <div class="cerebro-avatar-mini">🧠</div>
+                <div class="cerebro-text-mini">
+                  Hola, soy **Cerebro**. Este módulo simula el rendimiento comercial en tiempo real para convencer a tu prospecto.
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        <div class="showcase-content">
+          <span class="section-tag">Showcase Interactivo</span>
+          <h2 class="section-title">Enviamos demostraciones <span>que venden solas</span></h2>
+          <p class="section-subtitle" style="margin-bottom: 30px;">
+            Olvídate de mandar propuestas en PDF. Enviamos a tus clientes un prototipo web 98% interactivo donde verán cómo funcionará su software corporativo.
+          </p>
+          <ul style="list-style:none; display:flex; flex-direction:column; gap:15px; margin-bottom:40px; color:var(--text-muted); font-size:14.5px;">
+            <li>🤖 <strong>Textos generados por IA:</strong> Adaptados exactamente al giro de tu cliente.</li>
+            <li>💬 <strong>Asistente virtual integrado:</strong> Explica cada módulo con argumentos de ROI persuasivos.</li>
+            <li>🔗 <strong>Llamados a WhatsApp:</strong> Todo botón inoperativo los guía directo a tu WhatsApp comercial.</li>
+          </ul>
+          <a href="#contacto" class="btn btn-primary">Crear mi Demo Ahora</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. TESTIMONIALS SECTION -->
+    <section id="testimonios" class="testimonials">
+      <div style="text-align:center; display:flex; flex-direction:column; align-items:center;">
+        <span class="section-tag">Casos de Éxito</span>
+        <h2 class="section-title">Lo que opinan <span>nuestros clientes</span></h2>
+        <p class="section-subtitle">
+          Empresas que aceleraron sus ventas y validaron sus desarrollos de software con nosotros.
+        </p>
+      </div>
+
+      <div class="testimonials-grid">
+        <!-- Card 1 -->
+        <div class="glass-card testimonial-card">
+          <p class="testimonial-text">
+            "Enviar la demo web interactiva antes de firmar el contrato fue clave. El cliente vio proactividad y cerramos el trato el mismo día."
+          </p>
+          <div class="testimonial-user">
+            <div class="user-avatar">AM</div>
+            <div class="user-info">
+              <h4>Alejandro Mendoza</h4>
+              <p>Fundador de Soluciones SaaS</p>
+            </div>
+          </div>
+        </div>
+        <!-- Card 2 -->
+        <div class="glass-card testimonial-card">
+          <p class="testimonial-text">
+            "El asistente Cerebro se encargó de explicar el valor de la base de datos de forma persuasiva. Ahorramos horas de juntas y aclaraciones."
+          </p>
+          <div class="testimonial-user">
+            <div class="user-avatar">SR</div>
+            <div class="user-info">
+              <h4>Sofía Rivas</h4>
+              <p>Directora de Producto en Inmuebles Plus</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. CONTACT / CTA SECTION -->
+    <section id="contacto" class="contact">
+      <div class="contact-container">
+        <div class="contact-info">
+          <span class="section-tag">Lanzemos tu proyecto</span>
+          <h2 class="section-title">¿Listo para dar el <span>salto digital?</span></h2>
+          <p class="section-subtitle" style="margin-bottom: 30px;">
+            Completa el formulario y te crearemos una maqueta interactiva funcional descriptiva de tu software adaptada a tu negocio.
+          </p>
+          <p style="color:var(--text-muted); font-size:14px; line-height:1.7;">
+            Una vez enviado, nuestro sistema procesará los datos para estructurar tu propuesta comercial interactiva y enviarte el enlace directamente.
+          </p>
+        </div>
+        
+        <div class="glass-card contact-card">
+          <form id="agency-contact-form">
+            <div class="form-group">
+              <label for="contact-name">Tu Nombre</label>
+              <input type="text" id="contact-name" placeholder="Ej. Alejandro Torres" required>
+            </div>
+            <div class="form-group">
+              <label for="contact-business">Nombre de tu Empresa</label>
+              <input type="text" id="contact-business" placeholder="Ej. Cafetería La Aroma" required>
+            </div>
+            <div class="form-group">
+              <label for="contact-vertical">Giro del Negocio</label>
+              <select id="contact-vertical">
+                <option value="Restaurante / Cafetería">Restaurante / Cafetería</option>
+                <option value="Clínica / Salud / Dental">Clínica / Salud / Dental</option>
+                <option value="Gimnasio / Fit Studio">Gimnasio / Fit Studio</option>
+                <option value="Inmobiliaria / Bienes Raíces">Inmobiliaria / Bienes Raíces</option>
+                <option value="Tienda de Ropa / Retail">Tienda de Ropa / Retail</option>
+                <option value="Consultoría / Servicios Profesionales">Consultoría / Servicios Profesionales</option>
+                <option value="Otro / General">Otro / General (Personalizado)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="contact-desc">Cuéntanos sobre tu idea de software</label>
+              <textarea id="contact-desc" rows="4" placeholder="Ej. Necesitamos un sistema de pedidos en línea con un panel para cocina y notificaciones por WhatsApp..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;">Enviar Propuesta por WhatsApp 💬</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-left">
+        <a href="#inicio" class="logo-area">
+          <div class="logo-text" style="font-size: 18px;">Brain <span>Branding</span></div>
+        </a>
+        <p>© 2026 Brain Branding. Todos los derechos reservados.</p>
+      </div>
+      <div class="footer-links">
+        <a href="/portal/" class="footer-link">Portal Central</a>
+        <a href="#inicio" class="footer-link">Inicio</a>
+        <a href="#servicios" class="footer-link">Servicios</a>
+        <a href="#contacto" class="footer-link">Contacto</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>
