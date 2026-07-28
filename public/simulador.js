@@ -1,24 +1,3 @@
-// Safe storage wrapper to prevent crashes in strict privacy settings / custom domains
-const safeStorage = (type) => {
-  try {
-    const storage = window[type];
-    const testKey = '__test_store__';
-    storage.setItem(testKey, '1');
-    storage.removeItem(testKey);
-    return storage;
-  } catch (e) {
-    const memory = {};
-    return {
-      getItem: (key) => (key in memory ? memory[key] : null),
-      setItem: (key, value) => { memory[key] = String(value); },
-      removeItem: (key) => { delete memory[key]; },
-      clear: () => { Object.keys(memory).forEach(k => delete memory[k]); }
-    };
-  }
-};
-const safeLocalStorage = safeStorage('localStorage');
-const safeSessionStorage = safeStorage('sessionStorage');
-
 // ── READ SESSION DATA & AUTOCORRECT SPELLING ──
 function cleanSpelling(text) {
   if (!text) return "";
@@ -57,52 +36,50 @@ function sanitizeInput(text) {
   return text.replace(/<[^>]*>?/gm, '').trim();
 }
 
-// Read data from safeLocalStorage or safeSessionStorage
-const rawBizName = safeLocalStorage.getItem('sim_biz_name') || safeSessionStorage.getItem('sim_biz_name') || "";
-const rawBizSector = safeLocalStorage.getItem('sim_biz_sector') || safeSessionStorage.getItem('sim_biz_sector') || "";
-const rawBizProblem = safeLocalStorage.getItem('sim_biz_problem') || safeSessionStorage.getItem('sim_biz_problem') || "";
-const simStart = parseInt(safeLocalStorage.getItem('sim_session_start') || safeSessionStorage.getItem('sim_session_start') || '0', 10);
+// Validate active session (must exist in sessionStorage, i.e., tab was not closed)
+if (!sessionStorage.getItem('sim_session_active')) {
+  sessionStorage.clear();
+  localStorage.clear();
+  window.location.href = '/';
+  throw new Error("No active session found. Redirecting to root...");
+}
+
+const rawBizName = sessionStorage.getItem('sim_biz_name') || localStorage.getItem('sim_biz_name') || "";
+const rawBizSector = sessionStorage.getItem('sim_biz_sector') || localStorage.getItem('sim_biz_sector') || "";
+const rawBizProblem = sessionStorage.getItem('sim_biz_problem') || localStorage.getItem('sim_biz_problem') || "";
 
 const bizName = sanitizeInput(cleanSpelling(rawBizName));
 const bizSector = sanitizeInput(cleanSpelling(rawBizSector));
 const bizProblem = sanitizeInput(cleanSpelling(rawBizProblem));
-const bizStyle = sanitizeInput(safeLocalStorage.getItem('sim_biz_style') || safeSessionStorage.getItem('sim_biz_style') || 'ultra-moderno');
-let bizLogo = safeLocalStorage.getItem('sim_biz_logo') || safeSessionStorage.getItem('sim_biz_logo') || '';
-const activeService = sanitizeInput(safeLocalStorage.getItem('sim_active_service') || safeSessionStorage.getItem('sim_active_service') || 'asistente');
+const bizStyle = sanitizeInput(sessionStorage.getItem('sim_biz_style') || localStorage.getItem('sim_biz_style') || 'ultra-moderno');
+let bizLogo = sessionStorage.getItem('sim_biz_logo') || localStorage.getItem('sim_biz_logo') || '';
+const activeService = sanitizeInput(sessionStorage.getItem('sim_active_service') || localStorage.getItem('sim_active_service') || 'asistente');
 
-// Check 15-minute expiration (15 * 60 * 1000 = 900,000 ms)
-const isExpired = simStart > 0 && (Date.now() - simStart > 15 * 60 * 1000);
-
-// Redirect if missing data or expired
-if (!bizName || !bizSector || !bizProblem || isExpired) {
-  safeLocalStorage.clear();
-  safeSessionStorage.clear();
+// Redirect if no data
+if (!bizName || !bizSector || !bizProblem) {
   window.location.href = '/';
-  throw new Error("No session data found or session expired. Redirecting to root...");
+  throw new Error("No session data found. Redirecting to root...");
 }
 
-// Set session active mark
-safeSessionStorage.setItem('sim_session_active', 'true');
-
 // Synchronize storage
-safeSessionStorage.setItem('sim_biz_name', bizName);
-safeSessionStorage.setItem('sim_biz_sector', bizSector);
-safeSessionStorage.setItem('sim_biz_problem', bizProblem);
-safeSessionStorage.setItem('sim_biz_style', bizStyle);
-safeSessionStorage.setItem('sim_biz_logo', bizLogo);
-safeSessionStorage.setItem('sim_active_service', activeService);
+sessionStorage.setItem('sim_biz_name', bizName);
+sessionStorage.setItem('sim_biz_sector', bizSector);
+sessionStorage.setItem('sim_biz_problem', bizProblem);
+sessionStorage.setItem('sim_biz_style', bizStyle);
+sessionStorage.setItem('sim_biz_logo', bizLogo);
+sessionStorage.setItem('sim_active_service', activeService);
 
-safeLocalStorage.setItem('sim_biz_name', bizName);
-safeLocalStorage.setItem('sim_biz_sector', bizSector);
-safeLocalStorage.setItem('sim_biz_problem', bizProblem);
-safeLocalStorage.setItem('sim_biz_style', bizStyle);
-safeLocalStorage.setItem('sim_biz_logo', bizLogo);
-safeLocalStorage.setItem('sim_active_service', activeService);
+localStorage.setItem('sim_biz_name', bizName);
+localStorage.setItem('sim_biz_sector', bizSector);
+localStorage.setItem('sim_biz_problem', bizProblem);
+localStorage.setItem('sim_biz_style', bizStyle);
+localStorage.setItem('sim_biz_logo', bizLogo);
+localStorage.setItem('sim_active_service', activeService);
 
 // ── AUTOGENERATE LOGO IF EMPTY ──
 if (!bizLogo) {
   bizLogo = generateAvatar(bizName);
-  safeSessionStorage.setItem('sim_biz_logo', bizLogo);
+  sessionStorage.setItem('sim_biz_logo', bizLogo);
 }
 
 function generateAvatar(name) {
@@ -194,47 +171,12 @@ function generateAvatar(name) {
   resize(); initStars(); animateStars();
 })();
 
-// ── SESSION TIMER (15 MINUTES HARD LIMIT WITH EXTENSION TOAST) ──
-let currentSessionStart = parseInt(safeLocalStorage.getItem('sim_session_start') || safeSessionStorage.getItem('sim_session_start') || Date.now().toString(), 10);
+// ── SESSION TIMER (15 MINUTES HARD LIMIT) ──
+const sessionStart = parseInt(sessionStorage.getItem('sim_session_start') || Date.now().toString(), 10);
 const timerEl = document.getElementById('countdown-timer');
-let hasShownExpiryToast = false;
-
-function showExpiryToast() {
-  if (hasShownExpiryToast) return;
-  hasShownExpiryToast = true;
-
-  let toast = document.getElementById('sim-expiry-toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'sim-expiry-toast';
-    toast.style.cssText = `
-      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-      background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(236, 72, 153, 0.5);
-      color: #fff; padding: 14px 24px; border-radius: 16px; font-size: 13px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 20px rgba(236, 72, 153, 0.3);
-      z-index: 1000; display: flex; align-items: center; gap: 15px;
-      backdrop-filter: blur(15px); animation: fadeIn 0.4s ease-out;
-    `;
-    toast.innerHTML = `
-      <span>⏳ Tu sesión de simulación caducará en <strong>menos de 1 minuto</strong>.</span>
-      <button id="extend-timer-btn" style="background: linear-gradient(135deg, #a855f7, #ec4899); border: none; color: #fff; padding: 8px 16px; border-radius: 10px; font-weight: bold; font-size: 12px; cursor: pointer; transition: transform 0.2s;">
-        ⏱️ Extender 15 min
-      </button>
-    `;
-    document.body.appendChild(toast);
-
-    document.getElementById('extend-timer-btn').addEventListener('click', () => {
-      currentSessionStart = Date.now();
-      safeLocalStorage.setItem('sim_session_start', currentSessionStart.toString());
-      safeSessionStorage.setItem('sim_session_start', currentSessionStart.toString());
-      if (toast) toast.remove();
-      hasShownExpiryToast = false;
-    });
-  }
-}
 
 function updateTimer() {
-  const elapsed = Math.floor((Date.now() - currentSessionStart) / 1000);
+  const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
   const timeLeft = Math.max(0, 15 * 60 - elapsed);
   
   const minutes = Math.floor(timeLeft / 60);
@@ -243,27 +185,6 @@ function updateTimer() {
     timerEl.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   }
   
-  if (timeLeft <= 60 && timeLeft > 0) {
-    showExpiryToast();
-  }
-
-  if (timeLeft < 120) {
-    if (timerEl) {
-      timerEl.style.color = '#ef4444';
-      timerEl.style.animation = 'pulse 1s infinite alternate';
-    }
-    const badge = document.getElementById('sim-timer-badge');
-    if (badge) {
-      badge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
-      badge.style.background = 'rgba(239, 68, 68, 0.08)';
-    }
-  } else {
-    if (timerEl) {
-      timerEl.style.color = 'var(--text-main)';
-      timerEl.style.animation = 'none';
-    }
-  }
-
   if (timeLeft <= 0) {
     destroySession();
   }
@@ -271,30 +192,10 @@ function updateTimer() {
 const timerInterval = setInterval(updateTimer, 1000);
 updateTimer();
 
-// Listen for storage changes across tabs
-window.addEventListener('storage', (e) => {
-  if (['sim_biz_name', 'sim_biz_sector', 'sim_biz_problem', 'sim_biz_logo'].includes(e.key)) {
-    const newName = safeLocalStorage.getItem('sim_biz_name');
-    const newSector = safeLocalStorage.getItem('sim_biz_sector');
-    const newProblem = safeLocalStorage.getItem('sim_biz_problem');
-    const newLogo = safeLocalStorage.getItem('sim_biz_logo');
-
-    if (newName && newSector && newProblem) {
-      bizName = sanitizeInput(cleanSpelling(newName));
-      bizSector = sanitizeInput(cleanSpelling(newSector));
-      bizProblem = sanitizeInput(cleanSpelling(newProblem));
-      if (newLogo) bizLogo = newLogo;
-      if (typeof initMockups === 'function') {
-        initMockups();
-      }
-    }
-  }
-});
-
 function destroySession() {
   clearInterval(timerInterval);
-  safeSessionStorage.clear();
-  safeLocalStorage.clear();
+  sessionStorage.clear();
+  localStorage.clear();
   
   document.body.innerHTML = `
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#06080c; color:#fff; font-family:sans-serif; gap:20px; text-align:center; padding: 20px; box-sizing: border-box;">
@@ -308,204 +209,45 @@ function destroySession() {
 }
 
 document.getElementById('destroy-session-btn').addEventListener('click', () => {
-  if (confirm("¿Estás seguro de que deseas finalizar la sesión de simulación? Se borrarán todos los datos.")) {
+  if (confirm('¿Seguro que deseas destruir la sesión de simulación y todos los datos asociados inmediatamente?')) {
     destroySession();
   }
 });
 
-// Copy Diagnosis Summary handler for WhatsApp
-const copyDiagBtn = document.getElementById('copy-diag-btn');
-if (copyDiagBtn) {
-  copyDiagBtn.addEventListener('click', () => {
-    const summaryText = `🤖 *DIAGNÓSTICO INTERACTIVO DE IA - BRAIN BRANDING*\n\n` +
-      `🏢 *Empresa:* ${bizName}\n` +
-      `🏷️ *Sector:* ${bizSector}\n` +
-      `⚠️ *Reto Identificado:* ${bizProblem}\n` +
-      `💡 *Solución Evaluada:* Implementación de Asistente IA 24/7, POS Inteligente, Plataforma Web y ERP a la medida.\n\n` +
-      `🌐 *Solicitar Asesoría Directa por WhatsApp:* https://api.whatsapp.com/send?phone=525638165507&text=Hola%20Brain%20Branding,%20revis%C3%A9%20mi%20diagn%C3%B3stico%20para%20${encodeURIComponent(bizName)}%20y%20quiero%20cotizar.`;
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(summaryText).then(() => {
-        copyDiagBtn.innerHTML = '✅ ¡Copiado!';
-        copyDiagBtn.style.borderColor = '#10b981';
-        copyDiagBtn.style.color = '#10b981';
-        setTimeout(() => {
-          copyDiagBtn.innerHTML = '📋 Copiar Diagnóstico';
-          copyDiagBtn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
-          copyDiagBtn.style.color = '#34d399';
-        }, 3000);
-      }).catch(() => {
-        prompt('Copia este resumen para enviar por WhatsApp:', summaryText);
-      });
-    } else {
-      prompt('Copia este resumen para enviar por WhatsApp:', summaryText);
-    }
-  });
-}
-
-// ── PRINT PDF HANDLER ──
-const printPdfBtn = document.getElementById('print-pdf-btn');
-if (printPdfBtn) {
-  printPdfBtn.addEventListener('click', () => {
-    window.print();
-  });
-}
-
-// ── QR CODE MODAL HANDLER ──
-const qrCodeBtn = document.getElementById('qr-code-btn');
-const qrModal = document.getElementById('qr-modal');
-const closeQrBtn = document.getElementById('close-qr-modal-btn');
-const qrContainer = document.getElementById('qr-code-container');
-
-function generateQrSvg() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 25 25">
-    <rect width="25" height="25" fill="#ffffff" />
-    <path d="M 2,2 H 9 V 9 H 2 Z M 3,3 V 8 H 8 V 3 Z M 4,4 H 7 V 7 H 4 Z" fill="#a855f7" />
-    <path d="M 16,2 H 23 V 9 H 16 Z M 17,3 V 8 H 22 V 3 Z M 18,4 H 21 V 7 H 18 Z" fill="#a855f7" />
-    <path d="M 2,16 H 9 V 23 H 2 Z M 3,17 V 22 H 8 V 17 Z M 4,18 H 7 V 21 H 4 Z" fill="#a855f7" />
-    <rect x="11" y="2" width="2" height="3" fill="#06080c"/>
-    <rect x="14" y="4" width="1" height="4" fill="#06080c"/>
-    <rect x="10" y="7" width="4" height="2" fill="#06080c"/>
-    <rect x="2" y="11" width="5" height="2" fill="#06080c"/>
-    <rect x="8" y="10" width="3" height="3" fill="#06080c"/>
-    <rect x="12" y="12" width="5" height="2" fill="#a855f7"/>
-    <rect x="18" y="11" width="4" height="2" fill="#06080c"/>
-    <rect x="11" y="15" width="3" height="4" fill="#06080c"/>
-    <rect x="15" y="16" width="4" height="2" fill="#06080c"/>
-    <rect x="20" y="15" width="3" height="5" fill="#06080c"/>
-    <rect x="10" y="20" width="4" height="3" fill="#06080c"/>
-    <rect x="16" y="21" width="6" height="2" fill="#a855f7"/>
-  </svg>`;
-}
-
-if (qrCodeBtn && qrModal) {
-  qrCodeBtn.addEventListener('click', () => {
-    if (qrContainer) {
-      qrContainer.innerHTML = generateQrSvg();
-    }
-    qrModal.style.display = 'flex';
-  });
-}
-if (closeQrBtn && qrModal) {
-  closeQrBtn.addEventListener('click', () => {
-    qrModal.style.display = 'none';
-  });
-}
-if (qrModal) {
-  qrModal.addEventListener('click', (e) => {
-    if (e.target === qrModal) qrModal.style.display = 'none';
-  });
-}
-
-// ── ROI CALCULATOR LOGIC ──
-const roiSlider = document.getElementById('roi-staff-slider');
-const roiStaffVal = document.getElementById('roi-staff-val');
-const roiHoursSaved = document.getElementById('roi-hours-saved');
-const roiMoneySaved = document.getElementById('roi-money-saved');
-const roiBizLabel = document.getElementById('roi-biz-name-label');
-const roiToggleBtn = document.getElementById('roi-view-toggle-btn');
-const roiMetricsView = document.getElementById('roi-metrics-view');
-const roiChartView = document.getElementById('roi-chart-view');
-let hasFiredRoiConfetti = false;
-
-if (roiBizLabel && bizName) {
-  roiBizLabel.textContent = bizName;
-}
-
-if (roiSlider) {
-  roiSlider.addEventListener('input', (e) => {
-    const staff = parseInt(e.target.value, 10);
-    if (roiStaffVal) roiStaffVal.textContent = `${staff} ${staff === 1 ? 'persona' : 'personas'}`;
-    const hours = staff * 35;
-    const money = staff * 14500 * 12;
-    if (roiHoursSaved) roiHoursSaved.textContent = `${hours.toLocaleString()} hrs`;
-    if (roiMoneySaved) roiMoneySaved.textContent = `$${money.toLocaleString()} MXN`;
-
-    if (staff >= 10 && !hasFiredRoiConfetti && typeof confetti === 'function') {
-      hasFiredRoiConfetti = true;
-      confetti({ particleCount: 80, spread: 70, origin: { y: 0.8 } });
-    }
-  });
-}
-
-if (roiToggleBtn && roiMetricsView && roiChartView) {
-  roiToggleBtn.addEventListener('click', () => {
-    if (roiChartView.style.display === 'none') {
-      roiChartView.style.display = 'flex';
-      roiMetricsView.style.display = 'none';
-      roiToggleBtn.textContent = '🔢 Ver Métricas Numeradas';
-    } else {
-      roiChartView.style.display = 'none';
-      roiMetricsView.style.display = 'grid';
-      roiToggleBtn.textContent = '📊 Alternar Gráfico / Métricas';
-    }
-  });
-}
-
-// ── VCARD DOWNLOAD & WHATSAPP DIRECT HANDLER ──
-const vcardBtn = document.getElementById('download-vcard-btn');
-if (vcardBtn) {
-  vcardBtn.addEventListener('click', () => {
-    const safeFilename = bizName.replace(/[^a-zA-Z0-9]/g, '_');
-    const vcardContent = `BEGIN:VCARD\nVERSION:3.0\nN:${bizName};;;;\nFN:${bizName}\nORG:${bizName}\nTITLE:${bizSector}\nNOTE:Diagnóstico de IA creado en Brain Branding - ${bizProblem}\nTEL;TYPE=CELL:+525638165507\nURL:https://brainbranding.com.mx\nEND:VCARD`;
-    const blob = new Blob([vcardContent], { type: 'text/vcard;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${safeFilename}_Contacto.vcf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    // Open WhatsApp directly after short delay
-    setTimeout(() => {
-      const waUrl = `https://api.whatsapp.com/send?phone=525638165507&text=Hola%20Brain%20Branding,%20aqu%C3%AD%20est%C3%A1%20la%20vCard%20digital%20de%20mi%20empresa%20${encodeURIComponent(bizName)}%20(${encodeURIComponent(bizSector)}).%20Quiero%20solicitar%20asesor%C3%ADa%20personalizada.`;
-      window.open(waUrl, '_blank');
-    }, 500);
-  });
-}
-
 // ── TERMINAL LOGS INITIALIZATION ──
-const terminal = document.getElementById('search-terminal-logs') || document.getElementById('terminal-logs');
-const progressBar = document.getElementById('search-progress-bar') || document.getElementById('loader-progress-bar');
-const aiSearchModal = document.getElementById('ai-search-modal');
-const simLoader = document.getElementById('sim-loader');
-
+const terminal = document.getElementById('terminal-logs');
+const progressBar = document.getElementById('loader-progress-bar');
 const logs = [
-  `Conectando con el motor cognitivo de Brain Branding v4.2...`,
-  `Escaneando internet en vivo para solucionar sector: "${bizSector}"...`,
-  `Buscando mejores prácticas de automatización aplicables a "${bizName}"...`,
-  `Analizando cuello de botella: "${bizProblem}"...`,
-  `Diseñando arquitectura para erradicar: "${bizProblem}"...`,
-  `Estructurando simuladores: Chatbot 24/7, POS Inteligente, Web Adaptativa y ERP...`,
-  `Enlazando base de datos simulada de ${bizName}...`,
-  `Algoritmos aplicados con éxito. Abración de Sandbox Interactivo.`
+  `[BOOT] Conectando con el motor cognitivo de Brain Branding v4.2...`,
+  `[BÚSQUEDA_IA] Escaneando internet en vivo en busca de soluciones de software para: "${bizSector}"...`,
+  `[BÚSQUEDA_IA] Buscando mejores prácticas sectoriales aplicables a "${bizName}"...`,
+  `[DIAGNÓSTICO] Analizando cuello de botella crítico: "${bizProblem}"...`,
+  `[INTEGRACIÓN] Extrayendo patrones y automatizaciones cognitivas para erradicar: "${bizProblem}"...`,
+  `[COMPILANDO] Estructurando simuladores: Chatbot 24/7, POS Inteligente, Web Adaptativa y ERP Contable...`,
+  `[SINCRO] Enlazando base de datos simulada y pasarelas de pago con el ERP de ${bizName}...`,
+  `[SUCCESS] Algoritmos aplicados con éxito. Iniciando sandbox interactivo.`
 ];
 
 let logIndex = 0;
 function printLog() {
   if (logIndex < logs.length) {
-    if (terminal) {
-      const div = document.createElement('div');
-      div.textContent = '> ' + logs[logIndex];
-      terminal.appendChild(div);
-      terminal.scrollTop = terminal.scrollHeight;
-    }
+    const div = document.createElement('div');
+    div.textContent = logs[logIndex];
+    terminal.appendChild(div);
     
     if (progressBar) {
       progressBar.style.width = ((logIndex + 1) / logs.length * 100) + '%';
     }
     
     logIndex++;
-    setTimeout(printLog, 450);
+    setTimeout(printLog, 600);
   } else {
     setTimeout(() => {
-      if (aiSearchModal) aiSearchModal.style.display = 'none';
-      if (simLoader) simLoader.style.display = 'none';
-      const dashboard = document.getElementById('sim-dashboard');
-      if (dashboard) dashboard.style.display = 'flex';
+      document.getElementById('sim-loader').style.display = 'none';
+      document.getElementById('sim-dashboard').style.display = 'flex';
       initTabs();
       initMockups();
-    }, 450);
+    }, 600);
   }
 }
 printLog();
@@ -539,38 +281,18 @@ function initTabs() {
 
   tabLinks.forEach(link => {
     link.addEventListener('click', () => {
+      tabLinks.forEach(l => l.classList.remove('active'));
+      tabPanels.forEach(p => p.classList.remove('active'));
+      
+      link.classList.add('active');
       const tabId = link.getAttribute('data-tab');
-      const loader = document.getElementById('tab-loader-overlay');
+      document.getElementById(`panel-${tabId}`).classList.add('active');
       
-      if (loader) {
-        loader.style.display = 'flex';
-        const loaderText = loader.querySelector('span');
-        const moduleNames = {
-          asistente: 'Asistente Personal Omnicanal',
-          pos: 'Terminal Punto de Venta (POS)',
-          web: 'Página Web Adaptativa',
-          erp: 'Software ERP Corporativo'
-        };
-        if (loaderText) {
-          loaderText.textContent = `Conectando con sandbox de ${moduleNames[tabId] || 'Módulo'}...`;
-        }
-      }
+      // Update dynamic AI advice!
+      updateAIAdvice(tabId);
       
-      setTimeout(() => {
-        tabLinks.forEach(l => l.classList.remove('active'));
-        tabPanels.forEach(p => p.classList.remove('active'));
-        
-        link.classList.add('active');
-        const matchedPanel = document.getElementById(`panel-${tabId}`);
-        if (matchedPanel) matchedPanel.classList.add('active');
-        
-        updateAIAdvice(tabId);
-        
-        if (loader) loader.style.display = 'none';
-        
-        const contentArea = document.querySelector('.sim-content-area');
-        if (contentArea) contentArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 550);
+      // Reset scroll to top of content area to avoid disorientation
+      document.querySelector('.sim-content-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
 }
@@ -921,6 +643,7 @@ function getSectorProfile(sector) {
       aiAdvice: `En el negocio de ${sector}, implementar automatización IA de procesos en tareas administrativas repetitivas reduce los costos de operación hasta un 30% y erradica errores de captura manual en un 95%.`
     };
   }
+}
 function extractKeywords(text) {
   if (!text) return [];
   const stopwords = new Set([
@@ -967,10 +690,6 @@ function getSectorEmojis(sector) {
 function buildProblemProfile(rawProfile) {
   const prof = { ...rawProfile };
   const prob = bizProblem.toLowerCase();
-  
-  // Detect currency preference from bizProblem or bizSector
-  const isUSD = prob.includes('usd') || prob.includes('dolar') || prob.includes('dólar') || prob.includes('dolares') || prob.includes('dólares');
-  prof.currencySymbol = isUSD ? 'USD' : 'MXN';
   
   const kws = extractKeywords(bizProblem + " " + bizSector);
   let category = 'operations';
@@ -2189,143 +1908,6 @@ function generateDynamicScenarios(category) {
   }
 }
 
-  // 1. Mission / Vision / Values
-  if (!prof.mission) {
-    prof.mission = `Proveer soluciones de alta calidad en ${sectorName} para potenciar el éxito y bienestar de nuestros clientes.`;
-  }
-  if (!prof.vision) {
-    prof.vision = `Ser líderes reconocidos en el sector de ${sectorName}, impulsando la innovación y excelencia operativa con IA.`;
-  }
-  if (!prof.values) {
-    prof.values = "Innovación, Integridad, Compromiso, Excelencia y Enfoque en el Cliente.";
-  }
-  if (!prof.address) {
-    prof.address = "Av. Paseo de la Reforma 405, Piso 12, Lomas de Chapultepec, CDMX, C.P. 11000";
-  }
-  if (!prof.specialOffer) {
-    prof.specialOffer = `¡20% de descuento en tu primer servicio de ${sectorName} contratando hoy!`;
-  }
-  
-  // 2. Services Catalog
-  if (!prof.detailedServices) {
-    const prods = prof.posProducts || [];
-    prof.detailedServices = [
-      {
-        icon: prods[0] ? prods[0].icon : '⚡',
-        name: prods[0] ? prods[0].name : 'Servicio Básico',
-        desc: `Solución de entrada ideal para optimizar tus operaciones diarias de ${sectorName}.`,
-        price: prods[0] ? prods[0].price : 1000
-      },
-      {
-        icon: prods[1] ? prods[1].icon : '💎',
-        name: prods[1] ? prods[1].name : 'Servicio Premium',
-        desc: `Implementación avanzada con inteligencia y control completo a la medida del negocio.`,
-        price: prods[1] ? prods[1].price : 2500
-      },
-      {
-        icon: prods[5] ? prods[5].icon : '📈',
-        name: prods[5] ? prods[5].name : 'Consultoría de Expansión',
-        desc: `Estrategia de crecimiento acelerado y automatización de procesos mediante IA avanzada.`,
-        price: prods[5] ? prods[5].price : 4500
-      }
-    ];
-  }
-  
-  // 3. Inventory Stock Insumos Key
-  if (!prof.inventory) {
-    const isRest = sectorName.toLowerCase().includes("restaurante");
-    const isCom = sectorName.toLowerCase().includes("tienda") || sectorName.toLowerCase().includes("comercio");
-    
-    if (isRest) {
-      prof.inventory = [
-        { key: 'insumo1', name: 'Materia Prima (Carnes/Verduras)', qty: 65, unit: 'kg', speed: 'Alta (Agotamiento en 2 días)', min: 30 },
-        { key: 'insumo2', name: 'Bebidas y Licores', qty: 110, unit: 'pzas', speed: 'Media (Agotamiento en 7 días)', min: 40 },
-        { key: 'insumo3', name: 'Detergentes y Suministros', qty: 15, unit: 'lts', speed: 'Baja (Agotamiento en 14 días)', min: 10 }
-      ];
-    } else if (isCom) {
-      prof.inventory = [
-        { key: 'insumo1', name: 'Mercancía Premium (Tenis/Prendas)', qty: 45, unit: 'pzas', speed: 'Alta (Agotamiento en 3 días)', min: 25 },
-        { key: 'insumo2', name: 'Bolsas y Empaques', qty: 400, unit: 'pzas', speed: 'Media (Agotamiento en 10 días)', min: 150 },
-        { key: 'insumo3', name: 'Etiquetas de Código de Barras', qty: 250, unit: 'pzas', speed: 'Baja (Agotamiento en 20 días)', min: 80 }
-      ];
-    } else {
-      prof.inventory = [
-        { key: 'insumo1', name: 'Licencias de Software Activadas', qty: 12, unit: 'pzas', speed: 'Alta (Agotamiento en 1 día)', min: 10 },
-        { key: 'insumo2', name: 'Papelería y Suministros de Oficina', qty: 85, unit: 'pzas', speed: 'Media (Agotamiento en 12 días)', min: 30 },
-        { key: 'insumo3', name: 'Ancho de Banda de Servidor Cloud', qty: 92, unit: 'GB', speed: 'Baja (Agotamiento en 30 días)', min: 20 }
-      ];
-    }
-  }
-
-  // 4. Financial P&L branch data structure
-  if (!prof.branchFinancials) {
-    prof.branchFinancials = {
-      centro: {
-        revenue: 285000,
-        cogs: 95000,
-        expenses: 74000,
-        taxes: 30400,
-        alerts: [
-          { type: 'info', text: 'Sucursal Centro operando al 92% de capacidad.' },
-          { type: 'success', text: 'Retención de Impuestos SAT completada sin discrepancias.' }
-        ],
-        leads: [
-          { name: 'Ricardo Ruiz', contact: '525541298471', note: 'Interés en auditoría fiscal completa', status: 'Cotizando' },
-          { name: 'Sofía Lira', contact: '525567312903', note: 'Consulta sobre planes de expansión corporativa', status: 'Cerrado' }
-        ],
-        tasks: {
-          todo: [
-            { id: 1, title: 'Revisar balance de caja del día de ayer', desc: 'Asignado a Asistente IA' },
-            { id: 2, title: 'Conciliación fiscal SAT de cierre de mes', desc: 'Asignado a Contador Principal' }
-          ],
-          done: [
-            { id: 3, title: 'Renovación de licencias de facturación en la nube', desc: 'Auto-completado por IA' }
-          ]
-        }
-      },
-      norte: {
-        revenue: 145000,
-        cogs: 52000,
-        expenses: 42000,
-        taxes: 16480,
-        alerts: [
-          { type: 'warning', text: 'Fuga de clientes detectada: 3 clientes VIP inactivos hace 45 días.' },
-          { type: 'info', text: 'Nivel medio de stock en insumo crítico de almacén.' }
-        ],
-        leads: [
-          { name: 'Arturo Neri', contact: '525571930284', note: 'Requiere demo en vivo del sistema corporativo', status: 'En Espera' }
-        ],
-        tasks: {
-          todo: [
-            { id: 4, title: 'Enviar cupones de WhatsApp a clientes inactivos', desc: 'Acción sugerida por IA' }
-          ],
-          done: [
-            { id: 5, title: 'Reabastecer insumos agotados por fin de semana', desc: 'Auto-completado por IA' }
-          ]
-        }
-      },
-      sur: {
-        revenue: 95000,
-        cogs: 31000,
-        expenses: 28000,
-        taxes: 10240,
-        alerts: [
-          { type: 'warning', text: 'Desviación de arqueo inusual detectada en caja del turno matutino.' }
-        ],
-        leads: [
-          { name: 'Lucía Mendoza', contact: '525510293847', note: 'Interés en servicios básicos', status: 'Cotizando' }
-        ],
-        tasks: {
-          todo: [
-            { id: 6, title: 'Auditar caja de sucursal Sur con auditoría IA', desc: 'Urgente por desviación' }
-          ],
-          done: []
-        }
-      }
-    };
-  }
-}
-
 function completeProfileData(prof, sectorName, bizName) {
   if (!prof) return;
   // 1. Mission / Vision / Values
@@ -2472,287 +2054,81 @@ completeProfileData(profile, bizSector, bizName);
 
 // ── INITIALIZE DATA IN MOCKUPS ──
 function initMockups() {
-  try {
-    // Update names
-    document.querySelectorAll('.biz-name').forEach(el => el.textContent = bizName);
-    document.querySelectorAll('.biz-sector').forEach(el => el.textContent = bizSector);
-  } catch(e) { console.warn('initMockups: names failed', e); }
+  // Update names
+  document.querySelectorAll('.biz-name').forEach(el => el.textContent = bizName);
+  document.querySelectorAll('.biz-sector').forEach(el => el.textContent = bizSector);
   
-  try {
-    // Inject Logos
-    document.querySelectorAll('.business-logo-container').forEach(el => {
-      if (!bizLogo || bizLogo === "null" || bizLogo === "undefined" || bizLogo === "" || bizLogo.includes("placeholder") || bizLogo.includes("logo_placeholder")) {
-        const initials = bizName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-        const hue1 = (bizName.length * 12) % 360;
-        const hue2 = (hue1 + 140) % 360;
-        el.style.background = `linear-gradient(135deg, hsl(${hue1}, 80%, 40%), hsl(${hue2}, 85%, 50%))`;
-        el.style.color = '#fff';
-        el.style.fontWeight = '900';
-        el.style.fontFamily = 'var(--font-title)';
-        el.style.display = 'flex';
-        el.style.alignItems = 'center';
-        el.style.justifyContent = 'center';
-        el.style.border = '2px solid rgba(255,255,255,0.25)';
-        el.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
-        el.style.textShadow = '0 2px 4px rgba(0,0,0,0.3)';
-        const currentWidth = el.style.width || el.offsetWidth;
-        el.style.fontSize = (currentWidth === '68px' || currentWidth === 68) ? '24px' : '18px';
-        el.textContent = initials;
-      } else {
-        el.style.background = 'transparent';
-        el.innerHTML = `<img src="${bizLogo}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">`;
-      }
-    });
-  } catch(e) { console.warn('initMockups: logos failed', e); }
-
-  try {
-    // Setup dynamic URLs
-    const cleanUrl = bizName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com.mx';
-    const urlEl = document.getElementById('mock-browser-url');
-    if (urlEl) urlEl.textContent = `https://www.${cleanUrl}`;
-  } catch(e) { console.warn('initMockups: url failed', e); }
-
-  try {
-    // 1. WhatsApp Chat Init with Memory
-    const chatMessages = document.getElementById('chat-messages');
-    if (chatMessages) {
-      chatMessages.innerHTML = '';
-      
-      const chatHistoryStr = safeSessionStorage.getItem('sim_chat_history');
-      if (chatHistoryStr) {
-        try {
-          const history = JSON.parse(chatHistoryStr);
-          history.forEach(msg => {
-            addChatMessage(msg.sender, msg.text, true);
-          });
-        } catch(e) {
-          safeSessionStorage.removeItem('sim_chat_history');
-        }
-      } else {
-        const initMsg = profile.chatInit
-          .replace(/{bizName}/g, bizName)
-          .replace(/{bizProblem}/g, bizProblem);
-        const replyMsg = profile.chatReply
-          .replace(/{bizName}/g, bizName)
-          .replace(/{bizProblem}/g, bizProblem);
-
-        addChatMessage('incoming', initMsg);
-        setTimeout(() => {
-          addChatMessage('outgoing', replyMsg);
-        }, 1000);
-      }
+  // Inject Logos
+  document.querySelectorAll('.business-logo-container').forEach(el => {
+    if (!bizLogo || bizLogo === "null" || bizLogo === "undefined" || bizLogo === "" || bizLogo.includes("placeholder") || bizLogo.includes("logo_placeholder")) {
+      const initials = bizName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      const hue1 = (bizName.length * 12) % 360;
+      const hue2 = (hue1 + 140) % 360;
+      el.style.background = `linear-gradient(135deg, hsl(${hue1}, 80%, 40%), hsl(${hue2}, 85%, 50%))`;
+      el.style.color = '#fff';
+      el.style.fontWeight = '900';
+      el.style.fontFamily = 'var(--font-title)';
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+      el.style.border = '2px solid rgba(255,255,255,0.25)';
+      el.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+      el.style.textShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      // Size responsive initials font size
+      const currentWidth = el.style.width || el.offsetWidth;
+      el.style.fontSize = (currentWidth === '68px' || currentWidth === 68) ? '24px' : '18px';
+      el.textContent = initials;
+    } else {
+      el.style.background = 'transparent';
+      el.innerHTML = `<img src="${bizLogo}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">`;
     }
-  } catch(e) { console.warn('initMockups: chat failed', e); }
+  });
 
-  try {
-    // 2. POS Grid Init
-    initPOSProducts();
-  } catch(e) { console.warn('initMockups: POS failed', e); }
+  // Setup dynamic URLs
+  const cleanUrl = bizName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com.mx';
+  document.getElementById('mock-browser-url').textContent = `https://www.${cleanUrl}`;
 
-  try {
-    // 3. Mini Web Title & Slogan
-    const webTitle = document.getElementById('mock-web-title');
-    const webSlogan = document.getElementById('mock-web-slogan');
-    if (webTitle) webTitle.textContent = profile.webTitle;
-    if (webSlogan) webSlogan.textContent = profile.webSlogan;
-    applyWebTheme(bizStyle);
-  } catch(e) { console.warn('initMockups: web failed', e); }
+  // 1. WhatsApp Chat Init
+  const chatMessages = document.getElementById('chat-messages');
+  chatMessages.innerHTML = '';
+  
+  const initMsg = profile.chatInit
+    .replace(/{bizName}/g, bizName)
+    .replace(/{bizProblem}/g, bizProblem);
+  const replyMsg = profile.chatReply
+    .replace(/{bizName}/g, bizName)
+    .replace(/{bizProblem}/g, bizProblem);
 
-  try {
-    // 3.5 AI Advisor Card
-    const advEl = document.getElementById('ai-advisor-advice');
-    if (advEl) advEl.textContent = profile.aiAdvice;
-  } catch(e) {}
+  addChatMessage('incoming', initMsg);
+  setTimeout(() => {
+    addChatMessage('outgoing', replyMsg);
+  }, 1000);
 
-  try {
-    // 4. ERP Workflow Problem Description
-    const erpDesc = document.getElementById('erp-bottleneck-desc');
-    if (erpDesc) erpDesc.textContent = `Cuello de botella: ${profile.erpBottleneck}`;
-  } catch(e) {}
+  // 2. POS Grid Init
+  initPOSProducts();
 
-  try {
-    // Hydrate high fidelity sub-simulators
-    initPOSInventory();
-  } catch(e) { console.warn('initMockups: inventory failed', e); }
-  try { initWebData(); } catch(e) {}
-  try { startWebCountdown(); } catch(e) {}
-  try { updateERPPL(); } catch(e) {}
-  try { updateWhatsAppLink(); } catch(e) {}
+  // 3. Mini Web Title & Slogan
+  document.getElementById('mock-web-title').textContent = profile.webTitle;
+  document.getElementById('mock-web-slogan').textContent = profile.webSlogan;
 
-  // ── LAUNCH AUTO-DEMO ENGINE AFTER 2 SECONDS ──
-  setTimeout(startAutoDemo, 2000);
-}
+  // Initialize Website Theme based on user choice
+  applyWebTheme(bizStyle);
 
-// ══════════════════════════════════════════════
-// 🎬 AUTO-DEMO ENGINE - Simula la app en vivo
-// ══════════════════════════════════════════════
-let autoDemoRunning = false;
-let autoDemoIntervals = [];
+  // 3.5 AI Advisor Card
+  const advEl = document.getElementById('ai-advisor-advice');
+  if (advEl) advEl.textContent = profile.aiAdvice;
 
-function startAutoDemo() {
-  if (autoDemoRunning) return;
-  autoDemoRunning = true;
+  // 4. ERP Workflow Problem Description
+  document.getElementById('erp-bottleneck-desc').textContent = `Cuello de botella: ${profile.erpBottleneck}`;
 
-  // ── 1. CHAT AUTO-CONVERSATION LOOP ──
-  const chatConversations = [
-    {
-      q: `Hola! ¿Cuánto cuesta un mueble de sala en abonos? 💬`,
-      a: `¡Hola! Bienvenido a **${bizName}** 🏡\n\nNuestras salas están desde **$4,500 MXN** con enganches desde **$450 MXN** y mensualidades cómodas. ¿Deseas que te genere un plan de crédito personalizado ahora mismo?`,
-    },
-    {
-      q: `Sí, me interesa! ¿Tienen en negro? 🛋️`,
-      a: `¡Claro que sí! Tenemos disponible la **Sala Neptuno** en color negro, ideal para tu hogar.\n\n💳 **Plan de crédito sugerido:**\n- Precio: $6,200 MXN\n- Enganche: $620 MXN\n- 12 quincenas de $475 MXN\n\n¿Deseas que reserve una pieza con tu nombre ahora? 📦`,
-    },
-    {
-      q: `¿Hacen entregas a domicilio? 🚚`,
-      a: `¡Por supuesto! En **${bizName}** entregamos a todo el estado sin costo adicional en compras mayores a $2,000 MXN.\n\n📍 Tiempo estimado de entrega: **24 a 48 hrs hábiles**\n🔧 Armado e instalación incluida en tu domicilio.`,
-    },
-    {
-      q: `¿Puedo pagar quincenalmente desde WhatsApp? 💰`,
-      a: `¡Sí! Con nuestro **Asistente IA de Cobranza** recibirás recordatorio automático 2 días antes de cada quincena y un **enlace de pago Stripe** directo a tu WhatsApp. Sin filas, sin sucursal. 📲\n\n¿Te agendamos tu primer pago?`,
-    },
-    {
-      q: `Perfecto. ¿Tienen comedores también? 🍽️`,
-      a: `¡Tenemos una gran selección de comedores! 🍽️\n\n✅ Comedor Marbella 4 piezas - desde **$3,200 MXN**\n✅ Comedor Imperial 6 piezas - desde **$5,800 MXN**\n✅ Comedor Tokyo vidrio templado - desde **$4,100 MXN**\n\nTodos con opciones de crédito personalizado desde tu celular.`,
-    },
-    {
-      q: `¿Tienen tienda física o sólo en línea?`,
-      a: `Tenemos **ambas opciones** para tu comodidad 😊\n\n📍 **Showroom principal:** Blvd. Principal #1204\n🕐 Horario: Lun-Sáb 9am - 7pm\n💻 **Tienda en línea 24/7:** ${bizName.toLowerCase().replace(/[^a-z0-9]/g,'')}.com.mx\n\n¿Quieres que te envíe la ubicación en Google Maps directamente?`,
-    },
-  ];
+  // Hydrate high fidelity sub-simulators
+  initPOSInventory();
+  initWebData();
+  startWebCountdown();
+  updateERPPL();
 
-  let chatIdx = 0;
-  function runNextChat() {
-    if (chatIdx >= chatConversations.length) chatIdx = 0;
-    const conv = chatConversations[chatIdx++];
-    addChatMessage('incoming', conv.q);
-    printToolLog(`[IA] Procesando pregunta: "${conv.q.substring(0, 30)}..."`);
-    const delay = 1800 + Math.random() * 600;
-    setTimeout(() => {
-      addChatMessage('outgoing', conv.a);
-      updateTelemetry(conv.q, conv.a, Math.round(120 + Math.random() * 380));
-      printToolLog(`[IA] Respuesta generada. Memoria actualizada.`);
-    }, delay);
-  }
-
-  // Kick off first auto message, then loop every ~12 seconds
-  setTimeout(runNextChat, 1200);
-  const chatTimer = setInterval(runNextChat, 12000);
-  autoDemoIntervals.push(chatTimer);
-
-  // ── 2. POS AUTO-SALES LOOP ──
-  const posItems = profile.posProducts || [
-    { icon: '🛋️', name: 'Sala Neptuno', price: 6200 },
-    { icon: '🍽️', name: 'Comedor Marbella', price: 3200 },
-    { icon: '🛏️', name: 'Recámara Elegance', price: 8500 },
-    { icon: '📺', name: 'Centro Entretenimiento', price: 4100 },
-  ];
-
-  const posClients = ['Juan R.', 'María G.', 'Roberto L.', 'Ana P.', 'Carlos M.', 'Sofía V.', 'Diego H.', 'Fernanda T.'];
-
-  function simulatePOSSale() {
-    const item = posItems[Math.floor(Math.random() * posItems.length)];
-    const client = posClients[Math.floor(Math.random() * posClients.length)];
-    const qty = Math.floor(Math.random() * 2) + 1;
-    const total = item.price * qty;
-
-    // Light up last sale notification
-    const lastSaleEl = document.getElementById('pos-last-sale');
-    if (lastSaleEl) {
-      lastSaleEl.style.animation = 'none';
-      void lastSaleEl.offsetWidth;
-      lastSaleEl.innerHTML = `<span style="color:#34d399;font-weight:700;">✅ Venta: ${item.icon} ${item.name} x${qty}</span> — <span style="color:#fbbf24;">$${total.toLocaleString()} MXN</span> — <span style="color:var(--text-muted);">${client}</span>`;
-      lastSaleEl.style.animation = 'fadeIn 0.5s ease-out';
-    }
-
-    // Update revenue counter
-    const revenueEl = document.getElementById('pos-revenue-today');
-    if (revenueEl) {
-      const current = parseInt((revenueEl.textContent || '0').replace(/[^0-9]/g, '')) || 0;
-      const newTotal = current + total;
-      revenueEl.textContent = `$${newTotal.toLocaleString()} MXN`;
-    }
-
-    // Update sales count
-    const countEl = document.getElementById('pos-sales-count');
-    if (countEl) {
-      const current = parseInt(countEl.textContent || '0') || 0;
-      countEl.textContent = current + qty;
-    }
-    printToolLog(`[POS] Venta registrada: ${item.name} x${qty} → $${total} MXN — ${client}`);
-  }
-  const posTimer = setInterval(simulatePOSSale, 6000);
-  autoDemoIntervals.push(posTimer);
-  setTimeout(simulatePOSSale, 2000);
-
-  // ── 3. WEB PAGE AUTO-VISITOR LOOP ──
-  const webMetrics = [
-    { visitors: 347, sessions: 412, conversion: '4.2%', bounce: '28%' },
-    { visitors: 412, sessions: 501, conversion: '5.1%', bounce: '24%' },
-    { visitors: 289, sessions: 344, conversion: '3.8%', bounce: '31%' },
-    { visitors: 531, sessions: 624, conversion: '6.3%', bounce: '19%' },
-  ];
-  let webMetricIdx = 0;
-  function updateWebMetrics() {
-    const m = webMetrics[webMetricIdx % webMetrics.length];
-    webMetricIdx++;
-    const visEl = document.getElementById('web-visitors-today');
-    const sesEl = document.getElementById('web-sessions-today');
-    const convEl = document.getElementById('web-conversion-rate');
-    const bounceEl = document.getElementById('web-bounce-rate');
-    if (visEl) visEl.textContent = m.visitors;
-    if (sesEl) sesEl.textContent = m.sessions;
-    if (convEl) convEl.textContent = m.conversion;
-    if (bounceEl) bounceEl.textContent = m.bounce;
-
-    // Animate a "new visitor" notification
-    const notifEl = document.getElementById('web-visitor-notif');
-    if (notifEl) {
-      const cities = ['CDMX', 'Monterrey', 'Guadalajara', 'Puebla', 'Tijuana', 'Mérida'];
-      const devices = ['📱 Móvil', '💻 Desktop', '📟 Tablet'];
-      const city = cities[Math.floor(Math.random() * cities.length)];
-      const device = devices[Math.floor(Math.random() * devices.length)];
-      notifEl.innerHTML = `🌐 <strong>Nuevo visitante</strong> desde <span style="color:#38bdf8">${city}</span> · ${device}`;
-      notifEl.style.opacity = '1';
-      setTimeout(() => { notifEl.style.opacity = '0'; }, 4000);
-    }
-    printToolLog(`[WEB] Visita registrada en landing page. Conversión: ${m.conversion}`);
-  }
-  const webTimer = setInterval(updateWebMetrics, 8000);
-  autoDemoIntervals.push(webTimer);
-  setTimeout(updateWebMetrics, 3000);
-
-  // ── 4. ERP AUTO-WORKFLOW LOOP ──
-  const erpEvents = [
-    `✅ Pago recibido: ${bizName} Factura #INV-${1200 + Math.floor(Math.random()*100)} — $4,800 MXN`,
-    `📦 Pedido procesado: Comedor 6pz — Sucursal Norte — Listo para entrega`,
-    `📑 CFDI 4.0 timbrado automáticamente — UUID generado por SAT`,
-    `🔔 Recordatorio de cobro enviado a cliente Carlos M. (quincenal)`,
-    `📊 Inventario actualizado: 3 unidades vendidas, stock restante: 18`,
-    `💳 Pago por Stripe confirmado — $2,400 MXN — María G.`,
-    `📋 Cotización generada: Recámara Elegance x2 → $17,000 MXN`,
-    `📬 WhatsApp enviado: Comprobante de pago para pedido #ORD-0845`,
-    `⚡ Alarma de stock bajo: Sala Neptuno — solo 2 en inventario`,
-    `🏆 Meta del mes alcanzada al 78% — $124,000 de $160,000 MXN`,
-  ];
-  let erpEventIdx = 0;
-  function simulateERPEvent() {
-    const eventText = erpEvents[erpEventIdx % erpEvents.length];
-    erpEventIdx++;
-    const feedEl = document.getElementById('erp-live-feed');
-    if (feedEl) {
-      const div = document.createElement('div');
-      div.style.cssText = 'padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border-left: 3px solid #34d399; font-size: 12px; color: #e2e8f0; animation: fadeIn 0.4s ease-out;';
-      div.innerHTML = `<span style="color:#64748b;font-size:10px;">${new Date().toLocaleTimeString()}</span> ${eventText}`;
-      feedEl.prepend(div);
-      if (feedEl.children.length > 12) feedEl.lastChild.remove();
-    }
-    printToolLog(`[ERP] ${eventText.replace(/[^\w\s:]/g, '').substring(0, 50)}...`);
-  }
-  const erpTimer = setInterval(simulateERPEvent, 5000);
-  autoDemoIntervals.push(erpTimer);
-  setTimeout(simulateERPEvent, 1000);
-  setTimeout(simulateERPEvent, 3000);
+  // Update final WhatsApp link
+  updateWhatsAppLink();
 }
 
 // ── MOCKUP A: CHAT CONTROLLER ──
@@ -2932,7 +2308,7 @@ document.querySelectorAll('.chat-theme-toggle-btn').forEach(btn => {
   });
 });
 
-function addChatMessage(sender, text, isLoad = false) {
+function addChatMessage(sender, text) {
   const chatMessages = document.getElementById('chat-messages');
   const bubble = document.createElement('div');
   bubble.className = `chat-bubble ${sender}`;
@@ -2943,9 +2319,7 @@ function addChatMessage(sender, text, isLoad = false) {
     const parts = text.split('|');
     const title = parts[1] || 'Pago de Servicio';
     const desc = parts[2] || 'Código de transacción único';
-    // Format payment amount using currency preference
-    const amountVal = parts[3] || '$0.00 MXN';
-    const finalAmount = (profile && profile.currencySymbol === 'USD') ? amountVal.replace('MXN', 'USD') : amountVal;
+    const amount = parts[3] || '$0.00 MXN';
     bubble.style.background = 'transparent';
     bubble.style.border = 'none';
     bubble.style.padding = '0';
@@ -2953,19 +2327,14 @@ function addChatMessage(sender, text, isLoad = false) {
       <div class="glass-card" style="padding: 15px; border-radius: 12px; border: 1px solid rgba(52, 211, 153, 0.4); display: flex; flex-direction: column; gap: 8px; width: 240px; background: rgba(16, 185, 129, 0.08); box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: left;">
         <span style="font-size: 10px; text-transform: uppercase; color: #34d399; font-weight: bold; letter-spacing: 0.5px;">💳 Enlace de Pago Seguro (IA)</span>
         <strong style="font-size: 13.5px; color: #fff;">${title}</strong>
-        <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">${desc}</span>
-        <span style="font-size: 15px; font-weight: 800; color: #34d399; margin-top: 4px;">${finalAmount}</span>
+        <span style="font-size: 11px; color: var(--text-muted);">${desc}</span>
+        <span style="font-size: 15px; font-weight: 800; color: #34d399; margin-top: 4px;">${amount}</span>
         <button onclick="alert('💰 Pago Simulado Exitoso. El Asistente IA de ${bizName} ha timbrado la factura SAT automática en el ERP corporativo.'); console.log('Payment executed');" style="width: 100%; padding: 8px; border-radius: 6px; background: #10b981; border: none; color: #fff; font-size: 11.5px; font-weight: bold; cursor: pointer; margin-top: 5px; font-family: inherit;">Pagar con Stripe</button>
       </div>
       <span class="chat-time" style="display:block; margin-top: 4px;">${time} ✓✓</span>
     `;
   } else {
-    // Replace MXN to USD in outgoing text dynamically if prefered currency is USD
-    let finalText = text;
-    if (profile && profile.currencySymbol === 'USD') {
-      finalText = finalText.replace(/MXN/g, 'USD').replace(/pesos/g, 'dólares').replace(/Pesos/g, 'Dólares');
-    }
-    const formattedText = finalText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');
+    const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');
     const ttsButtonHtml = sender === 'outgoing' ? `<button class="tts-play-btn" style="background: none; border: none; cursor: pointer; font-size: 10px; margin-left: 5px; opacity: 0.6; padding: 2px;" title="Escuchar Mensaje">🔊</button>` : '';
     bubble.innerHTML = `
       <div style="display:flex; align-items:center; gap:4px;">
@@ -2978,16 +2347,6 @@ function addChatMessage(sender, text, isLoad = false) {
   
   chatMessages.appendChild(bubble);
   chatMessages.scrollTop = chatMessages.scrollHeight;
-
-  // Persist chat message inside safeSessionStorage
-  if (!isLoad) {
-    let history = [];
-    try {
-      history = JSON.parse(safeSessionStorage.getItem('sim_chat_history') || '[]');
-    } catch(e) {}
-    history.push({ sender, text });
-    safeSessionStorage.setItem('sim_chat_history', JSON.stringify(history));
-  }
 }
 
 document.getElementById('send-chat-btn').addEventListener('click', handleUserChatSend);
@@ -3951,11 +3310,6 @@ if (webForm) {
 }
 
 // ── MOCKUP D: ERP CONTROLLER ──
-function formatCurrency(amount) {
-  const symbol = (profile && profile.currencySymbol) ? profile.currencySymbol : 'MXN';
-  return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })} ${symbol}`;
-}
-
 function updateERPPL() {
   const branch = document.getElementById('erp-branch-select').value;
   const branchData = profile.branchFinancials[branch];
@@ -3978,14 +3332,14 @@ function updateERPPL() {
   const taxes = branchData.taxes + (dynamicRev * 0.16);
   const net = gross - expenses - taxes;
   
-  document.getElementById('erp-pl-revenue').textContent = formatCurrency(totalRev);
-  document.getElementById('erp-pl-cogs').textContent = formatCurrency(totalCOGS);
-  document.getElementById('erp-pl-gross').textContent = formatCurrency(gross);
-  document.getElementById('erp-pl-expenses').textContent = formatCurrency(expenses);
-  document.getElementById('erp-pl-taxes').textContent = formatCurrency(taxes);
+  document.getElementById('erp-pl-revenue').textContent = `$${totalRev.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
+  document.getElementById('erp-pl-cogs').textContent = `$${totalCOGS.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
+  document.getElementById('erp-pl-gross').textContent = `$${gross.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
+  document.getElementById('erp-pl-expenses').textContent = `$${expenses.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
+  document.getElementById('erp-pl-taxes').textContent = `$${taxes.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
   
   const netEl = document.getElementById('erp-pl-net');
-  netEl.textContent = formatCurrency(net);
+  netEl.textContent = `$${net.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
   if (net < 0) {
     netEl.style.color = '#ef4444';
   } else {
@@ -4258,7 +3612,13 @@ function updateWhatsAppLink() {
   document.getElementById('whatsapp-implement-btn').setAttribute('href', url);
 }
 
-
+// ── UPDATE IA ADVICE BY TAB ──
+function updateAIAdvice(tabId) {
+  const advEl = document.getElementById('ai-advisor-advice');
+  if (advEl && profile && profile.aiAdvices) {
+    advEl.textContent = profile.aiAdvices[tabId] || profile.aiAdvice || '';
+  }
+}
 
 // ── AUTONOMOUS PERSONAL ASSISTANT DEMO ENGINE ──
 // ── UNIFIED MULTI-PRODUCT AUTONOMOUS RUNNER ──
@@ -4678,36 +4038,30 @@ document.querySelectorAll('.tab-link').forEach(link => {
 });
 
 function initSimulationLoop() {
-  try {
-    attachPauseListeners();
-  } catch(e) { console.warn('initSimulationLoop: attachPauseListeners failed', e); }
+  attachPauseListeners();
   
+  // Categorize problem to generate custom scenarios using the extraction helper
+  const kws = extractKeywords(bizProblem + " " + bizSector);
   let category = 'operations';
-  try {
-    const kws = extractKeywords(bizProblem + " " + bizSector);
-    const matches = (list) => kws.some(kw => list.includes(kw));
-    
-    if (matches(["credito", "cobro", "cobranza", "pago", "abono", "mensualidad", "cartera", "cuotas", "financiar", "financiamiento", "moroso", "deuda"])) {
-      category = 'credit';
-    } else if (matches(["inventario", "stock", "almacen", "bodega", "existencias", "insumos", "cocina", "ingredientes", "materia", "refacciones", "piezas"])) {
-      category = 'inventory';
-    } else if (matches(["ventas", "clientes", "marketing", "prospectos", "cotizar", "vender", "atraer", "leads", "publicidad"])) {
-      category = 'sales';
-    } else if (matches(["reparacion", "tecnico", "reparar", "taller", "mantenimiento", "garantia", "soporte", "falla"])) {
-      category = 'repair';
-    } else if (matches(["entrega", "entregas", "domicilio", "flete", "envio", "envios", "transporte", "ruta", "rutas", "camion"])) {
-      category = 'logistics';
-    }
-  } catch(e) { console.warn('initSimulationLoop: categorization failed', e); }
   
-  try {
-    assistantScenarios = generateDynamicScenarios(category);
-  } catch(e) { console.warn('initSimulationLoop: scenarios generation failed', e); }
+  const matches = (list) => kws.some(kw => list.includes(kw));
   
-  try {
-    const defaultTab = (activeService === 'all') ? 'asistente' : activeService;
-    startActiveTabLoop(defaultTab);
-  } catch(e) { console.error('initSimulationLoop: startActiveTabLoop failed', e); }
+  if (matches(["credito", "cobro", "cobranza", "pago", "abono", "mensualidad", "cartera", "cuotas", "financiar", "financiamiento", "moroso", "deuda"])) {
+    category = 'credit';
+  } else if (matches(["inventario", "stock", "almacen", "bodega", "existencias", "insumos", "cocina", "ingredientes", "materia", "refacciones", "piezas"])) {
+    category = 'inventory';
+  } else if (matches(["ventas", "clientes", "marketing", "prospectos", "cotizar", "vender", "atraer", "leads", "publicidad"])) {
+    category = 'sales';
+  } else if (matches(["reparacion", "tecnico", "reparar", "taller", "mantenimiento", "garantia", "soporte", "falla"])) {
+    category = 'repair';
+  } else if (matches(["entrega", "entregas", "domicilio", "flete", "envio", "envios", "transporte", "ruta", "rutas", "camion"])) {
+    category = 'logistics';
+  }
+  
+  assistantScenarios = generateDynamicScenarios(category);
+  
+  const defaultTab = (activeService === 'all') ? 'asistente' : activeService;
+  startActiveTabLoop(defaultTab);
 }
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
