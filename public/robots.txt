@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /demos/
+Disallow: /portal/
+
+Sitemap: https://brainbranding.com.mx/sitemap.xml

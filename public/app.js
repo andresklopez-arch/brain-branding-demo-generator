@@ -151,4 +151,22 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 600);
     });
   }
+
+  // 6. Cookie Consent Logic
+  const cookieBanner = document.getElementById('cookie-banner');
+  const acceptCookiesBtn = document.getElementById('accept-cookies-btn');
+  if (cookieBanner && acceptCookiesBtn) {
+    if (!localStorage.getItem('cookies_accepted')) {
+      setTimeout(() => {
+        cookieBanner.style.display = 'block';
+      }, 1000);
+    }
+    acceptCookiesBtn.addEventListener('click', () => {
+      localStorage.setItem('cookies_accepted', 'true');
+      cookieBanner.style.opacity = '0';
+      setTimeout(() => {
+        cookieBanner.style.display = 'none';
+      }, 300);
+    });
+  }
 });

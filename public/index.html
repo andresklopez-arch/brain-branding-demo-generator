@@ -3,6 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Structured Data JSON-LD (SEO) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ProfessionalService",
+    "name": "Brain Branding",
+    "image": "https://brainbranding.com.mx/assets/og-image.jpg",
+    "@id": "https://brainbranding.com.mx/#organization",
+    "url": "https://brainbranding.com.mx/",
+    "telephone": "+525638165507",
+    "priceRange": "$$",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Ciudad de México",
+      "addressCountry": "MX"
+    }
+  }
+  </script>
+
   <meta name="description" content="Brain Branding — Consultora Premium de Desarrollo de Software, Soluciones de IA a la medida y Diseño UI/UX Corporativo.">
   <title>Brain Branding — Desarrollo de Software Premium e IA</title>
   
@@ -334,12 +354,25 @@
       </div>
       <div class="footer-links">
         <a href="/portal/" class="footer-link">Portal Central</a>
+        <a href="/privacidad.html" class="footer-link">Privacidad</a>
+        <a href="/terminos.html" class="footer-link">Términos</a>
         <a href="#inicio" class="footer-link">Inicio</a>
         <a href="#servicios" class="footer-link">Servicios</a>
         <a href="#contacto" class="footer-link">Contacto</a>
       </div>
     </div>
   </footer>
+
+  <!-- COOKIES CONSENT BANNER -->
+  <div id="cookie-banner" class="glass-card" style="position: fixed; bottom: 20px; right: 20px; max-width: 380px; padding: 20px; z-index: 999; display: none; border-color: rgba(99, 102, 241, 0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 15px;">
+      Este sitio web utiliza cookies para mejorar tu experiencia de navegación y analizar nuestro tráfico. Al continuar navegando, aceptas su uso de acuerdo a nuestra política.
+    </div>
+    <div style="display: flex; gap: 15px; justify-content: flex-end; align-items: center;">
+      <a href="/privacidad.html" style="font-size: 11.5px; color: var(--text-muted); text-decoration: underline;">Leer más</a>
+      <button id="accept-cookies-btn" class="btn" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; background: var(--primary); border: none; color: #fff; cursor: pointer; font-weight: 700;">Aceptar</button>
+    </div>
+  </div>
 
   <script src="app.js?v=1.0.0"></script>
 </body>
