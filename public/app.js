@@ -469,6 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (data.success && data.redirectUrl) {
           passcodeAttempts = 0;
+          sessionStorage.setItem('demo_key', enteredCode.trim().toUpperCase());
           if (typeof gtag === 'function') {
             gtag('event', 'unlock_private_demo_api', { event_category: 'security', event_label: data.clientName });
           }
