@@ -2410,21 +2410,41 @@ function startActiveTabLoop(tabId) {
   }
 }
 
+let pauseCountdownInterval = null;
+let pauseSecondsLeft = 22;
+
 function pauseActiveTabLoop(tabId) {
   if (tabPauseTimeout[tabId]) clearTimeout(tabPauseTimeout[tabId]);
+  if (pauseCountdownInterval) clearInterval(pauseCountdownInterval);
   
   clearActiveLoop();
   
-  if (currentLoopTab === tabId) {
-    const statusEl = document.getElementById('chat-simulation-status');
-    if (statusEl) {
-      statusEl.textContent = "Interrupción Manual Activa";
-      statusEl.style.color = "#ef4444";
+  pauseSecondsLeft = 22;
+  
+  const updateStatusText = () => {
+    if (currentLoopTab === tabId) {
+      const statusEl = document.getElementById('chat-simulation-status');
+      if (statusEl) {
+        statusEl.textContent = `⚠️ Interrupción Manual (Reanudando en ${pauseSecondsLeft}s...)`;
+        statusEl.style.color = "#ef4444";
+      }
     }
-  }
+  };
+  
+  updateStatusText();
+  
+  pauseCountdownInterval = setInterval(() => {
+    pauseSecondsLeft--;
+    if (pauseSecondsLeft <= 0) {
+      clearInterval(pauseCountdownInterval);
+    } else {
+      updateStatusText();
+    }
+  }, 1000);
 
   tabPauseTimeout[tabId] = setTimeout(() => {
     delete tabPauseTimeout[tabId];
+    if (pauseCountdownInterval) clearInterval(pauseCountdownInterval);
     if (currentLoopTab === tabId) {
       printToolLog(`[SISTEMA] Reanudando ciclo autónomo para: ${tabId}...`);
       startActiveTabLoop(tabId);
@@ -2719,7 +2739,18 @@ function attachPauseListeners() {
 document.querySelectorAll('.tab-link').forEach(link => {
   link.addEventListener('click', () => {
     const tabId = link.getAttribute('data-tab');
-    setTimeout(() => startActiveTabLoop(tabId), 150);
+    
+    const loader = document.getElementById('tab-loader-overlay');
+    if (loader) {
+      loader.style.display = 'flex';
+    }
+    
+    setTimeout(() => {
+      if (loader) {
+        loader.style.display = 'none';
+      }
+      startActiveTabLoop(tabId);
+    }, 450);
   });
 });
 
