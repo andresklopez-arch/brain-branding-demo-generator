@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
       hideSimModal();
 
       // Open simulator in new tab
-      window.open('/simulador.html', '_blank');
+      window.location.href = '/simulador.html';
     });
   }
 
