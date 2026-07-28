@@ -41,7 +41,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. Dynamic typing text for the Hero
   const typingElement = document.getElementById('typing-text');
   if (typingElement) {
-    const words = ["Inteligencia Artificial", "Diseño Premium UX/UX", "Automatización SaaS", "Demos Ultra-Rápidas"];
+    const words = ["Asistentes Personales IA", "Puntos de Venta", "Páginas Web"];
+    const descriptions = [
+      "En Brain Branding desarrollamos e implementamos Asistentes Personales con motores avanzados de Inteligencia Artificial que automatizan la operación, agendan citas y atienden a tus clientes las 24 horas del día de forma autónoma.",
+      "Controla y optimiza el flujo de tu negocio con nuestros Sistemas de Punto de Venta a la medida. Administra inventarios, sucursales, facturación y cobros de forma ágil desde cualquier dispositivo.",
+      "Establece una presencia digital corporativa premium con nuestras páginas web de alta conversión. Desarrolladas con diseño UI/UX personalizado para captar prospectos y reprogramar la mente de tus clientes."
+    ];
     let wordIndex = 0;
     let charIndex = 0;
     let isDeleting = false;
@@ -65,6 +70,16 @@ document.addEventListener('DOMContentLoaded', () => {
         isDeleting = false;
         wordIndex = (wordIndex + 1) % words.length;
         typeSpeed = 500; // Pause before typing next word
+        
+        // Update description dynamically with opacity transition
+        const descElement = document.querySelector('.hero-desc');
+        if (descElement) {
+          descElement.style.opacity = '0';
+          setTimeout(() => {
+            descElement.textContent = descriptions[wordIndex];
+            descElement.style.opacity = '1';
+          }, 250);
+        }
       }
       
       setTimeout(type, typeSpeed);
