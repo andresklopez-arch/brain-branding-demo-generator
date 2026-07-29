@@ -1156,10 +1156,6 @@
             <input type="text" id="sim-business-sector" placeholder="Escribe tu sector (ej: Restaurante, Tienda, Consultoría...)" style="width: 100%; padding: 12px 40px 12px 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 14px; box-sizing: border-box;" autocomplete="off">
             <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; font-size: 14px;">🔍</span>
           </div>
-          <!-- Floating Autocomplete List -->
-          <div id="sim-sector-autocomplete-list" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: rgba(15, 23, 42, 0.98); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 10px; max-height: 220px; overflow-y: auto; z-index: 1010; box-shadow: 0 10px 25px rgba(0,0,0,0.8); margin-top: 5px; backdrop-filter: blur(10px);">
-            <!-- Suggestions injected dynamically -->
-          </div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
@@ -1194,6 +1190,20 @@
       bizSector  = bizSector.trim()  || 'General';
 
       var now = Date.now().toString();
+      
+      // Guardar en sessionStorage
+      try {
+        sessionStorage.setItem('sim_session_active', 'true');
+        sessionStorage.setItem('sim_session_start',  now);
+        sessionStorage.setItem('sim_biz_name',    bizName);
+        sessionStorage.setItem('sim_biz_sector',  bizSector);
+        sessionStorage.setItem('sim_biz_problem', 'Optimización de tiempo y control de operaciones');
+        sessionStorage.setItem('sim_biz_style',   'ultra-moderno');
+        sessionStorage.setItem('sim_biz_logo',    '');
+        sessionStorage.setItem('sim_active_service', 'asistente');
+      } catch(e) {}
+
+      // Guardar en localStorage
       _simStorage.setItem('sim_session_active', 'true');
       _simStorage.setItem('sim_session_start',  now);
       _simStorage.setItem('sim_biz_name',    bizName);

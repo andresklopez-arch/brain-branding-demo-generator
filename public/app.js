@@ -136,7 +136,8 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.readAsDataURL(file);
   }
 
-  // ── GIRO/SECTOR AUTCOMPLETE FUZZY SEARCH LOGIC ──
+  // ── GIRO/SECTOR AUTCOMPLETE FUZZY SEARCH LOGIC (DESHABILITADO) ──
+  /*
   const sectorInput = document.getElementById('sim-business-sector');
   const autocompleteList = document.getElementById('sim-sector-autocomplete-list');
 
@@ -263,6 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+  */
 
   // Real-time Form Validation
   const valInputs = [

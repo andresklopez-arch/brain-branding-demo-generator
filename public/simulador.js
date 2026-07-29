@@ -36,12 +36,25 @@ function sanitizeInput(text) {
   return text.replace(/<[^>]*>?/gm, '').trim();
 }
 
-// Validate active session (must exist in sessionStorage, i.e., tab was not closed)
-if (!sessionStorage.getItem('sim_session_active')) {
+// Validate active session (must exist in sessionStorage or localStorage)
+if (!sessionStorage.getItem('sim_session_active') && !localStorage.getItem('sim_session_active')) {
   sessionStorage.clear();
   localStorage.clear();
   window.location.href = '/';
   throw new Error("No active session found. Redirecting to root...");
+}
+
+// Sincronizar sessionStorage si no tenía las llaves pero localStorage sí
+if (!sessionStorage.getItem('sim_session_active') && localStorage.getItem('sim_session_active')) {
+  try {
+    sessionStorage.setItem('sim_session_active', 'true');
+    sessionStorage.setItem('sim_biz_name', localStorage.getItem('sim_biz_name') || '');
+    sessionStorage.setItem('sim_biz_sector', localStorage.getItem('sim_biz_sector') || '');
+    sessionStorage.setItem('sim_biz_problem', localStorage.getItem('sim_biz_problem') || '');
+    sessionStorage.setItem('sim_biz_style', localStorage.getItem('sim_biz_style') || '');
+    sessionStorage.setItem('sim_biz_logo', localStorage.getItem('sim_biz_logo') || '');
+    sessionStorage.setItem('sim_active_service', localStorage.getItem('sim_active_service') || '');
+  } catch(e) {}
 }
 
 const rawBizName = sessionStorage.getItem('sim_biz_name') || localStorage.getItem('sim_biz_name') || "";
