@@ -1754,6 +1754,26 @@ function initMockups() {
     logSysInfo("Enlace WhatsApp de salida configurado.");
   } catch (e) { logSysError("updateWhatsAppLink", e); }
 
+  // Desactivar entrada de chat para evitar interrupciones de simulación
+  try {
+    const inputEl = document.getElementById('chat-user-input');
+    if (inputEl) {
+      inputEl.disabled = true;
+      inputEl.placeholder = "🤖 Monitoreo autónomo activo. Simulación en curso...";
+      inputEl.style.cursor = "not-allowed";
+      inputEl.style.opacity = "0.7";
+    }
+    const sendBtn = document.getElementById('send-chat-btn');
+    if (sendBtn) {
+      sendBtn.disabled = true;
+      sendBtn.style.cursor = "not-allowed";
+      sendBtn.style.opacity = "0.5";
+    }
+    logSysInfo("Controles de chat interactivos desactivados para fluidez.");
+  } catch (e) {
+    logSysError("DisableChatInputs", e);
+  }
+
   logSysInfo("Hidratación de mockups finalizada.");
 }
 
@@ -3722,68 +3742,7 @@ function runERPLoop() {
 }
 
 function attachPauseListeners() {
-  // Asistente
-  const assistantInputs = [
-    document.getElementById('chat-user-input'),
-    document.getElementById('send-chat-btn')
-  ];
-  assistantInputs.forEach(el => {
-    if (el) {
-      el.addEventListener('focus', (e) => { if (e.isTrusted) pauseActiveTabLoop('asistente'); });
-      el.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('asistente'); });
-      el.addEventListener('keypress', (e) => { if (e.isTrusted) pauseActiveTabLoop('asistente'); });
-    }
-  });
-  document.querySelectorAll('.chat-theme-toggle-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      // Ignorar para evitar pausas accidentales en la simulación autónoma
-    });
-  });
-
-  // POS
-  document.querySelectorAll('.pos-prod-card').forEach(btn => {
-    btn.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('pos'); });
-  });
-  document.querySelectorAll('.tip-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('pos'); });
-  });
-  document.querySelectorAll('.coupon-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('pos'); });
-  });
-  const posSelects = [
-    document.getElementById('pos-loyalty-select'),
-    document.getElementById('pos-reorder-btn'),
-    document.getElementById('checkout-pos-btn'),
-    document.getElementById('simulate-tap-btn'),
-    document.getElementById('clear-cart-btn')
-  ];
-  posSelects.forEach(el => {
-    if (el) el.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('pos'); });
-  });
-
-  // Web
-  const webBtns = [
-    document.getElementById('web-fullscreen-btn'),
-    document.getElementById('web-nav-home'),
-    document.getElementById('web-nav-services'),
-    document.getElementById('web-nav-about'),
-    document.getElementById('web-nav-contact')
-  ];
-  webBtns.forEach(el => {
-    if (el) el.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('web'); });
-  });
-  
-  // ERP
-  const erpBtns = [
-    document.getElementById('erp-branch-select'),
-    document.getElementById('erp-optimize-toggle')
-  ];
-  erpBtns.forEach(el => {
-    if (el) el.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('erp'); });
-  });
-  document.querySelectorAll('.erp-subtab-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('erp'); });
-  });
+  // Desactivado: la simulación corre de forma continua y fluida sin interrupciones del usuario
 }
 
 // ── LISTENERS FOR TAB SYSTEM ──
