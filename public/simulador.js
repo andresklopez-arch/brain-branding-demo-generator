@@ -266,6 +266,7 @@ function printLog() {
       document.getElementById('sim-dashboard').style.display = 'flex';
       initTabs();
       initMockups();
+      initSimulationLoop();
     }, 600);
   }
 }
@@ -3683,10 +3684,4 @@ function initSimulationLoop() {
   startActiveTabLoop(defaultTab);
 }
 
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-  setTimeout(initSimulationLoop, 600);
-} else {
-  window.addEventListener('load', () => {
-    setTimeout(initSimulationLoop, 600);
-  });
-}
+// El loop de simulación ahora se inicia al terminar el loader terminal
