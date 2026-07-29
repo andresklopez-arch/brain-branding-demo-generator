@@ -198,7 +198,7 @@
 
               <!-- Chat Input (Allows manual interruption) -->
               <div style="background: rgba(6, 8, 12, 0.4); padding: 15px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 10px; align-items: center;">
-                <input type="text" id="chat-user-input" placeholder="Escribe un mensaje o pregunta para interrumpir la simulación..." style="flex: 1; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 13px; outline: none; font-family: inherit;">
+                <input type="text" id="chat-user-input" placeholder="Escribe un mensaje o pregunta para interrumpir la simulación..." style="flex: 1; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 13px; outline: none; font-family: inherit;" inputmode="none" tabindex="-1">
                 <button id="send-chat-btn" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none; border-radius: 10px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-weight: bold; font-size: 16px;">➔</button>
               </div>
 
@@ -1056,6 +1056,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  <script src="/simulador.js?v=1.7.5"></script>
+  <script src="/simulador.js?v=1.8.0"></script>
 </body>
 </html>

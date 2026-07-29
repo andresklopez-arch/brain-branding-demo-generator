@@ -34,7 +34,14 @@ function cleanSpelling(text) {
 
 function sanitizeInput(text) {
   if (!text) return "";
-  return text.replace(/<[^>]*>?/gm, '').trim();
+  return text
+    .replace(/<[^>]*>?/gm, '')
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
+    .trim();
 }
 
 // Validate active session (must exist in sessionStorage or localStorage)
@@ -334,6 +341,46 @@ function initTabs() {
       document.querySelector('.sim-content-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
+
+  // Sugerencia premium: Inyección de estilos de resplandor pulsante y transiciones en pestañas
+  try {
+    const style = document.createElement('style');
+    style.id = 'dynamic-tab-glow-styles';
+    style.innerHTML = `
+      .tab-link {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      }
+      .tab-link::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        width: 0;
+        height: 2.5px;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        transition: all 0.3s ease;
+        transform: translateX(-50%);
+        border-radius: 2px;
+      }
+      .tab-link:hover::after {
+        width: 75%;
+      }
+      .tab-link:hover {
+        background: rgba(255, 255, 255, 0.04) !important;
+        box-shadow: 0 0 15px rgba(168, 85, 247, 0.12) !important;
+        color: #fff !important;
+      }
+      .tab-link.active {
+        box-shadow: 0 0 20px rgba(168, 85, 247, 0.25) !important;
+      }
+    `;
+    document.head.appendChild(style);
+    logSysInfo("Estilos visuales premium aplicados a las pestañas.");
+  } catch (e) {
+    logSysError("TabsGlowStyles", e);
+  }
 }
 
 // ── SECTOR DYNAMIC PROFILES ──
