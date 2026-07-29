@@ -1680,6 +1680,9 @@ function initMockups() {
   const cleanUrl = bizName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com.mx';
   document.getElementById('mock-browser-url').textContent = `https://www.${cleanUrl}`;
 
+  // Pre-cargar facturas SAT temáticas del sector
+  initERPSATInvoices();
+
   // 1. WhatsApp Chat Init
   const chatMessages = document.getElementById('chat-messages');
   chatMessages.innerHTML = '';
@@ -1773,7 +1776,22 @@ let memoryVariables = {
   last_intent: "ninguno"
 };
 
+let totalHoursSaved = 0.0;
+let totalMoneySaved = 0;
+
 function updateTelemetry(promptText, replyText, latency) {
+  // Incrementar ROI acumulado de automatización de forma dinámica
+  const timeSavedIncrement = 0.15 + (Math.random() * 0.25);
+  const moneySavedIncrement = Math.round(timeSavedIncrement * 120); // 120 pesos por hora de costo de oportunidad
+  
+  totalHoursSaved += timeSavedIncrement;
+  totalMoneySaved += moneySavedIncrement;
+  
+  const roiEl = document.getElementById('telemetry-roi');
+  if (roiEl) {
+    roiEl.textContent = `${totalHoursSaved.toFixed(1)}h / ${totalMoneySaved} MXN`;
+  }
+
   const promptTokens = Math.ceil(promptText.length / 4);
   const replyTokens = Math.ceil(replyText.length / 4);
   const totalThisTurn = promptTokens + replyTokens;
@@ -3403,7 +3421,12 @@ function runAsistenteLoop() {
     activeLoopStep++;
     
     const themeBtn = document.querySelector(`.chat-theme-toggle-btn[data-theme="${scenario.channel}"]`);
-    if (themeBtn) themeBtn.click();
+    if (themeBtn) {
+      themeBtn.click();
+      // Sonido de cambio de canal de chat
+      playBeep(720, 'sine', 0.08);
+      setTimeout(() => playBeep(880, 'sine', 0.08), 80);
+    }
 
     const statusEl = document.getElementById('chat-simulation-status');
     if (statusEl) statusEl.textContent = `Paso: ${scenario.title}`;
@@ -3598,6 +3621,13 @@ function runERPLoop() {
     if (btn) {
       btn.click();
       printToolLog(`[ERP AUTÓNOMO] Abriendo módulo ERP: ${btn.textContent.trim()}`);
+      // Reproducir sonido contable o de click
+      if (currentSubtab === 'pl' || currentSubtab === 'sat') {
+        playBeep(980, 'triangle', 0.08);
+        setTimeout(() => playBeep(1320, 'sine', 0.15), 60);
+      } else {
+        playBeep(600, 'sine', 0.06);
+      }
     }
 
     if (currentSubtab === 'pl') {
@@ -3751,3 +3781,77 @@ function initSimulationLoop() {
 }
 
 // El loop de simulación ahora se inicia al terminar el loader terminal
+
+
+function initERPSATInvoices() {
+  const satTbody = document.getElementById('erp-sat-table-body');
+  if (!satTbody) return;
+  
+  if (satTbody.children.length > 0) return;
+  
+  let concepts = [];
+  if (detectedSectorId === 'automotriz') {
+    concepts = [
+      { client: "Carlos Ruiz Solís", desc: "Afinación Mayor de Motor 4 Cilindros", amount: 1800 },
+      { client: "Diana Gómez Ramos", desc: "Cambio de Balatas Delanteras Cerámicas", amount: 1200 },
+      { client: "Héctor Silva Cruz", desc: "Cambio de Aceite Sintético 5W30", amount: 850 }
+    ];
+  } else if (detectedSectorId === 'billar') {
+    concepts = [
+      { client: "Roberto Medina Leal", desc: "Renta de Mesa de Billar Pool (4 Horas)", amount: 480 },
+      { client: "Sandra Lira Ochoa", desc: "Consumo de Alimentos y Bebidas Nacionales", amount: 650 },
+      { client: "Juan Pablo Torres", desc: "Renta de Mesa de Carambola (2 Horas)", amount: 300 }
+    ];
+  } else if (detectedSectorId === 'dentista') {
+    concepts = [
+      { client: "María José Alanís", desc: "Limpieza Dental con Ultrasonido y Profilaxis", amount: 900 },
+      { client: "Raúl Vázquez Soto", desc: "Tratamiento de Resina Estética Fotocurable", amount: 1100 },
+      { client: "Estela Ríos Pérez", desc: "Diagnóstico Odontológico con Radiografía", amount: 500 }
+    ];
+  } else if (detectedSectorId === 'salud') {
+    concepts = [
+      { client: "Jorge Ortiz Delgado", desc: "Consulta Médica General de Especialidad", amount: 800 },
+      { client: "Elena Méndez Trejo", desc: "Procedimiento de Curación y Sutura Menor", amount: 1200 },
+      { client: "Felipe Neri Alba", desc: "Recetario Clínico y Medicamentos de Control", amount: 650 }
+    ];
+  } else if (detectedSectorId === 'restaurante') {
+    concepts = [
+      { client: "Claudio Ortiz Peña", desc: "Consumo General de Alimentos (Comanda #409)", amount: 950 },
+      { client: "Verónica Rivas Luna", desc: "Servicio de Catering y Bebidas para Evento", amount: 3200 },
+      { client: "Arturo Garza Vega", desc: "Consumo de Menú de Tiempos y Postre", amount: 550 }
+    ];
+  } else if (detectedSectorId === 'gimnasio') {
+    concepts = [
+      { client: "Daniela Sosa Castro", desc: "Inscripción Anual y Membresía VIP Fitness", amount: 4800 },
+      { client: "Mauricio Alanís", desc: "Sesión de Entrenamiento Personalizado (10 Horas)", amount: 2500 },
+      { client: "Gisela Ramos Ortiz", desc: "Suplementos de Proteína y Aminoácidos", amount: 850 }
+    ];
+  } else {
+    concepts = [
+      { client: "Alejandro Vega Ruiz", desc: `Servicio de Consultoría de ${bizSector}`, amount: 2500 },
+      { client: "Karla Delgado Ortiz", desc: `Suministro de Materiales de ${bizSector}`, amount: 1200 }
+    ];
+  }
+  
+  concepts.forEach(c => {
+    const uuid = generateUUID();
+    const folioStr = `F-00${Math.floor(Math.random()*8000+1000)}`;
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+    tr.innerHTML = `
+      <td style="padding: 8px 4px; font-family: monospace; font-size:10px;" title="${uuid}">
+        <strong>${folioStr}</strong><br>
+        <span style="color:var(--text-muted); font-size:8.5px;">${uuid.substring(0,8)}...</span>
+      </td>
+      <td style="padding: 8px 4px;">${c.client}<br><span style="font-size:8.5px; color:var(--text-muted);	">${c.desc}</span></td>
+      <td style="padding: 8px 4px; font-weight:bold; color:#10b981;">$${c.amount.toFixed(2)}</td>
+      <td style="padding: 8px 4px;"><span style="background:rgba(16,185,129,0.1); color:#34d399; padding:2px 6px; border-radius:4px; font-size:9.5px; font-weight:bold;">VIGENTE</span></td>
+      <td style="padding: 8px 4px; text-align:right;">
+        <button class="sat-download-btn" onclick="alert('📥 XML de Factura CFDI descargado.');" style="background:none; border:none; color:var(--primary); font-size:10px; cursor:pointer; text-decoration:underline;">XML</button>
+        <button class="sat-download-btn" onclick="alert('📥 Representación impresa PDF descargada.');" style="background:none; border:none; color:var(--primary); font-size:10px; cursor:pointer; text-decoration:underline; margin-left:4px;">PDF</button>
+      </td>
+    `;
+    satTbody.appendChild(tr);
+  });
+}
+
