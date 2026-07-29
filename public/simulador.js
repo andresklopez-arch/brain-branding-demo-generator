@@ -290,9 +290,24 @@ function printLog() {
     setTimeout(() => {
       document.getElementById('sim-loader').style.display = 'none';
       document.getElementById('sim-dashboard').style.display = 'flex';
-      initTabs();
-      initMockups();
-      initSimulationLoop();
+      try {
+        initTabs();
+        logSysInfo("Pestañas inicializadas con éxito.");
+      } catch (e) {
+        logSysError("initTabs", e);
+      }
+      try {
+        initMockups();
+        logSysInfo("Inicialización de mockups completada.");
+      } catch (e) {
+        logSysError("initMockups", e);
+      }
+      try {
+        initSimulationLoop();
+        logSysInfo("Bucle de simulación iniciado.");
+      } catch (e) {
+        logSysError("initSimulationLoop", e);
+      }
     }, 600);
   }
 }
@@ -1878,37 +1893,49 @@ let totalHoursSaved = 0.0;
 let totalMoneySaved = 0;
 
 function updateTelemetry(promptText, replyText, latency) {
-  // Incrementar ROI acumulado de automatización de forma dinámica
-  const timeSavedIncrement = 0.15 + (Math.random() * 0.25);
-  const moneySavedIncrement = Math.round(timeSavedIncrement * 120); // 120 pesos por hora de costo de oportunidad
-  
-  totalHoursSaved += timeSavedIncrement;
-  totalMoneySaved += moneySavedIncrement;
-  
-  const roiEl = document.getElementById('telemetry-roi');
-  if (roiEl) {
-    roiEl.textContent = `${totalHoursSaved.toFixed(1)}h / ${totalMoneySaved} MXN`;
-  }
+  try {
+    const timeSavedIncrement = 0.15 + (Math.random() * 0.25);
+    const moneySavedIncrement = Math.round(timeSavedIncrement * 120);
+    
+    totalHoursSaved += timeSavedIncrement;
+    totalMoneySaved += moneySavedIncrement;
+    
+    const roiEl = document.getElementById('telemetry-roi');
+    if (roiEl) {
+      roiEl.textContent = `${totalHoursSaved.toFixed(1)}h / ${totalMoneySaved} MXN`;
+    }
 
-  const promptTokens = Math.ceil(promptText.length / 4);
-  const replyTokens = Math.ceil(replyText.length / 4);
-  const totalThisTurn = promptTokens + replyTokens;
-  totalTokensUsed += totalThisTurn;
-  
-  const costThisTurn = (promptTokens * 0.0000015) + (replyTokens * 0.000002);
-  accumulatedCost += costThisTurn;
-  
-  latencySamplesCount++;
-  averageLatency = Math.round(((averageLatency * (latencySamplesCount - 1)) + latency) / latencySamplesCount);
-  
-  document.getElementById('telemetry-tokens').textContent = `${totalTokensUsed} tok`;
-  document.getElementById('telemetry-cost').textContent = `$${accumulatedCost.toFixed(5)} USD`;
-  document.getElementById('telemetry-latency').textContent = `${averageLatency} ms`;
-  
-  const keysCount = Object.keys(memoryVariables).length;
-  document.getElementById('telemetry-memory-size').textContent = `${keysCount} vars`;
-  
-  document.getElementById('agent-memory-inspector').textContent = JSON.stringify(memoryVariables, null, 2);
+    const promptTokens = Math.ceil((promptText || '').length / 4);
+    const replyTokens = Math.ceil((replyText || '').length / 4);
+    const totalThisTurn = promptTokens + replyTokens;
+    totalTokensUsed += totalThisTurn;
+    
+    const costThisTurn = (promptTokens * 0.0000015) + (replyTokens * 0.000002);
+    accumulatedCost += costThisTurn;
+    
+    if (latency) {
+      latencySamplesCount++;
+      averageLatency = Math.round(((averageLatency * (latencySamplesCount - 1)) + latency) / latencySamplesCount);
+    }
+    
+    const tokensEl = document.getElementById('telemetry-tokens');
+    if (tokensEl) tokensEl.textContent = `${totalTokensUsed} tok`;
+    
+    const costEl = document.getElementById('telemetry-cost');
+    if (costEl) costEl.textContent = `${accumulatedCost.toFixed(5)} USD`;
+    
+    const latencyEl = document.getElementById('telemetry-latency');
+    if (latencyEl) latencyEl.textContent = `${averageLatency} ms`;
+    
+    const keysCount = Object.keys(memoryVariables).length;
+    const memorySizeEl = document.getElementById('telemetry-memory-size');
+    if (memorySizeEl) memorySizeEl.textContent = `${keysCount} vars`;
+    
+    const inspectorEl = document.getElementById('agent-memory-inspector');
+    if (inspectorEl) inspectorEl.textContent = JSON.stringify(memoryVariables, null, 2);
+  } catch (e) {
+    console.error("Error al actualizar telemetría:", e);
+  }
 }
 
 let ttsTimeout = null;
@@ -3498,9 +3525,14 @@ function showDemoNarrative(text, activeModule = 'asistente') {
 
 // ── 1. ASISTENTE LOOP ──
 function runAsistenteLoop() {
+  logSysInfo("runAsistenteLoop() invocada. currentLoopTab=" + currentLoopTab);
   const step = () => {
     try {
-      if (currentLoopTab !== 'asistente') return;
+      logSysInfo("runAsistenteLoop step() ejecutada. activeLoopStep=" + activeLoopStep + ", currentLoopTab=" + currentLoopTab);
+      if (currentLoopTab !== 'asistente') {
+        logSysInfo("Saliendo de step() porque currentLoopTab !== 'asistente'");
+        return;
+      }
       
       if (activeLoopStep === 0) {
         const msgsEl = document.getElementById('chat-messages');
@@ -3978,4 +4010,27 @@ function logSysInfo(message) {
     syslogEl.appendChild(div);
     syslogEl.scrollTop = syslogEl.scrollHeight;
   }
+}
+
+// Inyectar listener para botón de copiar diagnóstico de soporte técnico de forma segura
+try {
+  const copyDiagBtn = document.getElementById('copy-diag-btn');
+  if (copyDiagBtn) {
+    copyDiagBtn.addEventListener('click', () => {
+      const logsEl = document.getElementById('erp-syslog-logs');
+      if (logsEl) {
+        const text = logsEl.innerText || logsEl.textContent || "No hay logs de diagnóstico aún.";
+        navigator.clipboard.writeText(text).then(() => {
+          alert("📋 Diagnóstico de sistema copiado al portapapeles. ¡Pégalo en el chat de soporte técnico para ayudarte!");
+        }).catch(err => {
+          console.error("Error al copiar diagnóstico:", err);
+          alert("No se pudo copiar el diagnóstico automáticamente. Por favor copia el texto manualmente desde la pestaña Diagnóstico del ERP.");
+        });
+      } else {
+        alert("No se encontró el contenedor de diagnóstico del ERP.");
+      }
+    });
+  }
+} catch (e) {
+  console.error("Error al registrar listener copy-diag-btn:", e);
 }
