@@ -83,7 +83,14 @@
       <div id="terminal-logs" style="display: flex; flex-direction: column; gap: 8px; min-height: 180px; font-size: 13px; line-height: 1.5; color: #a5f3fc;">
         <!-- Dynamic logs get typed here -->
       </div>
-      <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin: 20px 0 10px 0; border: 1px solid rgba(255,255,255,0.08);">
+      <!-- Panel de estadísticas dinámicas de escaneo -->
+      <div id="terminal-stats-box" style="display: flex; justify-content: space-between; gap: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; font-size: 10px; color: #a5f3fc; margin: 15px 0 10px 0; box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);">
+        <div>🔍 Competidores: <span id="stat-competitors" style="color: #22c55e; font-weight: bold;">0</span></div>
+        <div>📈 Keywords: <span id="stat-keywords" style="color: #a855f7; font-weight: bold;">0</span></div>
+        <div>💡 Slogans: <span id="stat-slogans" style="color: #ec4899; font-weight: bold;">0</span></div>
+        <div>🔌 ERP Link: <span id="stat-erp" style="color: #0ea5e9; font-weight: bold;">0%</span></div>
+      </div>
+      <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin: 10px 0; border: 1px solid rgba(255,255,255,0.08);">
         <div id="loader-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #a855f7, #ec4899); transition: width 0.4s ease-out; box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);"></div>
       </div>
       <div style="display: flex; align-items: center; justify-content: center; margin-top: 25px;">
@@ -1036,6 +1043,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  <script src="/simulador.js?v=1.4.9"></script>
+  <script src="/simulador.js?v=1.5.1"></script>
 </body>
 </html>

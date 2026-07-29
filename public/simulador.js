@@ -258,6 +258,25 @@ function printLog() {
       progressBar.style.width = ((logIndex + 1) / logs.length * 100) + '%';
     }
     
+    // Incrementar estadísticas en cada iteración
+    const compEl = document.getElementById('stat-competitors');
+    const keyEl = document.getElementById('stat-keywords');
+    const slogEl = document.getElementById('stat-slogans');
+    const erpEl = document.getElementById('stat-erp');
+    
+    if (compEl) compEl.textContent = Math.min(15, Math.floor((logIndex + 1) * 1.5));
+    if (keyEl) keyEl.textContent = Math.min(342, Math.floor((logIndex + 1) * 34.2));
+    if (slogEl) slogEl.textContent = Math.min(89, Math.floor((logIndex + 1) * 8.9));
+    if (erpEl) {
+      if (logIndex >= logs.length - 1) {
+        erpEl.textContent = "100% Sincronizado ✅";
+        erpEl.style.color = "#22c55e";
+      } else {
+        erpEl.textContent = `${Math.floor(((logIndex + 1) / logs.length) * 100)}% ⚡`;
+        erpEl.style.color = "#0ea5e9";
+      }
+    }
+
     logIndex++;
     setTimeout(printLog, 600);
   } else {
@@ -3308,10 +3327,53 @@ function pauseActiveTabLoop(tabId) {
   }, 22000);
 }
 
-function showDemoNarrative(text) {
+function showDemoNarrative(text, activeModule = 'asistente') {
   const overlay = document.getElementById('demo-narrative-overlay');
   const txtEl = document.getElementById('demo-narrative-text');
   if (overlay && txtEl) {
+    // Si no tiene el contenedor del flujo, lo inyectamos
+    let flowEl = document.getElementById('demo-flow-indicator');
+    if (!flowEl) {
+      flowEl = document.createElement('div');
+      flowEl.id = 'demo-flow-indicator';
+      flowEl.style.display = 'flex';
+      flowEl.style.alignItems = 'center';
+      flowEl.style.gap = '6px';
+      flowEl.style.fontSize = '10px';
+      flowEl.style.fontWeight = 'bold';
+      flowEl.style.borderLeft = '1px solid rgba(255,255,255,0.15)';
+      flowEl.style.paddingLeft = '10px';
+      flowEl.style.marginLeft = '10px';
+      flowEl.style.flexShrink = '0';
+      overlay.appendChild(flowEl);
+    }
+
+    const steps = [
+      { id: 'asistente', label: '🤖 Asistente', color: '#15803d' },
+      { id: 'web', label: '🌐 Web', color: '#a855f7' },
+      { id: 'erp', label: '📊 ERP', color: '#0ea5e9' }
+    ];
+
+    flowEl.innerHTML = steps.map((s, idx) => {
+      const active = s.id === activeModule;
+      const opacity = active ? '1' : '0.35';
+      const border = active ? `1px solid ${s.color}` : '1px solid transparent';
+      const bg = active ? `rgba(255,255,255,0.06)` : 'transparent';
+      const glow = active ? `0 0 10px ${s.color}` : 'none';
+      const color = active ? s.color : 'rgba(255,255,255,0.4)';
+      
+      const arrow = idx < 2 ? `<span style="opacity: 0.35; margin: 0 1px;">➔</span>` : '';
+      
+      return `
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <div style="padding: 3px 6px; border-radius: 5px; background: ${bg}; border: ${border}; box-shadow: ${glow}; color: ${color}; opacity: ${opacity}; display: flex; align-items: center; gap: 3px; transition: all 0.3s ease;">
+            ${s.label}
+          </div>
+          ${arrow}
+        </div>
+      `;
+    }).join('');
+
     txtEl.innerHTML = text;
     overlay.style.opacity = '1';
     overlay.style.transform = 'translateX(-50%) translateY(0)';
@@ -3325,11 +3387,11 @@ function runAsistenteLoop() {
     
     if (activeLoopStep === 0) {
       document.getElementById('chat-messages').innerHTML = '';
-      showDemoNarrative(`🤖 <strong>Asistente IA:</strong> Cliente real consulta en tu WhatsApp. IA procesa la consulta para el negocio <strong>${bizName}</strong>.`);
+      showDemoNarrative(`🤖 <strong>Asistente IA:</strong> Cliente real consulta en tu WhatsApp. IA procesa la consulta para el negocio <strong>${bizName}</strong>.`, 'asistente');
     }
     
     if (activeLoopStep >= assistantScenarios.length) {
-      showDemoNarrative(`✅ <strong>Asistente IA:</strong> Flujo de control administrativo completado para <strong>${bizName}</strong>. Transicionando a tu Página Web corporativa...`);
+      showDemoNarrative(`✅ <strong>Asistente IA:</strong> Flujo de control administrativo completado para <strong>${bizName}</strong>. Transicionando a tu Página Web corporativa...`, 'asistente');
       activeLoopTimeout = setTimeout(() => {
         const nextTab = document.querySelector('.tab-link[data-tab="web"]');
         if (nextTab) nextTab.click();
@@ -3475,7 +3537,7 @@ function runWebLoop() {
     const sections = ['services', 'about', 'contact', 'home'];
     
     if (activeLoopStep >= sections.length) {
-      showDemoNarrative(`🌐 <strong>Página Web:</strong> Captura de prospectos simulada. Transicionando a tu Software Contable ERP a Medida...`);
+      showDemoNarrative(`🌐 <strong>Página Web:</strong> Captura de prospectos simulada. Transicionando a tu Software Contable ERP a Medida...`, 'web');
       activeLoopTimeout = setTimeout(() => {
         const nextTab = document.querySelector('.tab-link[data-tab="erp"]');
         if (nextTab) nextTab.click();
@@ -3484,7 +3546,7 @@ function runWebLoop() {
     }
 
     const currentSection = sections[activeLoopStep];
-    showDemoNarrative(`🌐 <strong>Página Web:</strong> Landing page de alta conversión para <strong>${bizName}</strong>. Prospectos contactan al instante 24/7.`);
+    showDemoNarrative(`🌐 <strong>Página Web:</strong> Landing page de alta conversión para <strong>${bizName}</strong>. Prospectos contactan al instante 24/7.`, 'web');
     
     const navLink = document.getElementById(`web-nav-${currentSection}`);
     if (navLink) {
@@ -3521,7 +3583,7 @@ function runERPLoop() {
     const subtabs = ['pl', 'crm', 'tasks', 'sat', 'flow'];
     
     if (activeLoopStep >= subtabs.length) {
-      showDemoNarrative(`🧠 <strong>Software ERP a Medida:</strong> Conciliación y automatización completadas. ¡No hay límites, todo se puede potenciar! Reiniciando ciclo del ecosistema...`);
+      showDemoNarrative(`🧠 <strong>Software ERP a Medida:</strong> Conciliación y automatización completadas. ¡No hay límites, todo se puede potenciar! Reiniciando ciclo del ecosistema...`, 'erp');
       activeLoopTimeout = setTimeout(() => {
         const nextTab = document.querySelector('.tab-link[data-tab="asistente"]');
         if (nextTab) nextTab.click();
@@ -3530,7 +3592,7 @@ function runERPLoop() {
     }
 
     const currentSubtab = subtabs[activeLoopStep];
-    showDemoNarrative(`📊 <strong>ERP Administración:</strong> IA procesa reportes y automatiza facturas SAT de tu sector <strong>${bizSector}</strong>.`);
+    showDemoNarrative(`📊 <strong>ERP Administración:</strong> IA procesa reportes y automatiza facturas SAT de tu sector <strong>${bizSector}</strong>.`, 'erp');
 
     const btn = document.querySelector(`.erp-subtab-btn[data-subtab="${currentSubtab}"]`);
     if (btn) {
