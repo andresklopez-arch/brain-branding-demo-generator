@@ -3432,78 +3432,90 @@ function showDemoNarrative(text, activeModule = 'asistente') {
 // ── 1. ASISTENTE LOOP ──
 function runAsistenteLoop() {
   const step = () => {
-    if (currentLoopTab !== 'asistente') return;
-    
-    if (activeLoopStep === 0) {
-      document.getElementById('chat-messages').innerHTML = '';
-      showDemoNarrative(`🤖 <strong>Asistente IA:</strong> Cliente real consulta en tu WhatsApp. IA procesa la consulta para el negocio <strong>${bizName}</strong>.`, 'asistente');
-    }
-    
-    if (activeLoopStep >= assistantScenarios.length) {
-      showDemoNarrative(`✅ <strong>Asistente IA:</strong> Flujo de control administrativo completado para <strong>${bizName}</strong>. Transicionando a tu Página Web corporativa...`, 'asistente');
-      activeLoopTimeout = setTimeout(() => {
-        const nextTab = document.querySelector('.tab-link[data-tab="web"]');
-        if (nextTab) nextTab.click();
-      }, 5000);
-      return;
-    }
-
-    const scenario = assistantScenarios[activeLoopStep];
-    activeLoopStep++;
-    
-    const themeBtn = document.querySelector(`.chat-theme-toggle-btn[data-theme="${scenario.channel}"]`);
-    if (themeBtn) {
-      themeBtn.click();
-      // Sonido de cambio de canal de chat
-      playBeep(720, 'sine', 0.08);
-      setTimeout(() => playBeep(880, 'sine', 0.08), 80);
-    }
-
-    const statusEl = document.getElementById('chat-simulation-status');
-    if (statusEl) statusEl.textContent = `Paso: ${scenario.title}`;
-
-    const logsEl = document.getElementById('agent-tool-logs');
-    if (logsEl) logsEl.innerHTML = '';
-    scenario.logs.forEach((log, index) => {
-      setTimeout(() => {
-        if (logsEl && currentLoopTab === 'asistente') {
-          logsEl.innerHTML += `<div>&gt; ${log}</div>`;
-          logsEl.scrollTop = logsEl.scrollHeight;
-        }
-      }, index * 200);
-    });
-
-    setTimeout(() => {
+    try {
       if (currentLoopTab !== 'asistente') return;
-      addTypingIndicator('incoming');
       
+      if (activeLoopStep === 0) {
+        const msgsEl = document.getElementById('chat-messages');
+        if (msgsEl) msgsEl.innerHTML = '';
+        showDemoNarrative(`🤖 <strong>Asistente IA:</strong> Cliente real consulta en tu WhatsApp. IA procesa la consulta para el negocio <strong>${bizName}</strong>.`, 'asistente');
+      }
+      
+      if (activeLoopStep >= assistantScenarios.length) {
+        showDemoNarrative(`✅ <strong>Asistente IA:</strong> Flujo de control administrativo completado para <strong>${bizName}</strong>. Transicionando a tu Página Web corporativa...`, 'asistente');
+        activeLoopTimeout = setTimeout(() => {
+          const nextTab = document.querySelector('.tab-link[data-tab="web"]');
+          if (nextTab) nextTab.click();
+        }, 5000);
+        return;
+      }
+
+      const scenario = assistantScenarios[activeLoopStep];
+      activeLoopStep++;
+      
+      const themeBtn = document.querySelector(`.chat-theme-toggle-btn[data-theme="${scenario.channel}"]`);
+      if (themeBtn) {
+        themeBtn.click();
+        playBeep(720, 'sine', 0.08);
+        setTimeout(() => playBeep(880, 'sine', 0.08), 80);
+      }
+
+      const statusEl = document.getElementById('chat-simulation-status');
+      if (statusEl) statusEl.textContent = `Paso: ${scenario.title}`;
+
+      const logsEl = document.getElementById('agent-tool-logs');
+      if (logsEl) logsEl.innerHTML = '';
+      scenario.logs.forEach((log, index) => {
+        setTimeout(() => {
+          if (logsEl && currentLoopTab === 'asistente') {
+            logsEl.innerHTML += `<div>&gt; ${log}</div>`;
+            logsEl.scrollTop = logsEl.scrollHeight;
+          }
+        }, index * 200);
+      });
+
       setTimeout(() => {
         if (currentLoopTab !== 'asistente') return;
-        removeTypingIndicator();
-        addChatMessage('incoming', scenario.incoming.replace(/{bizName}/g, bizName).replace(/{bizSector}/g, bizSector).replace(/{bizProblem}/g, bizProblem));
+        addTypingIndicator('incoming');
         
         setTimeout(() => {
           if (currentLoopTab !== 'asistente') return;
-          addTypingIndicator('outgoing');
+          removeTypingIndicator();
+          
+          let incomingTxt = scenario.incoming || '';
+          incomingTxt = incomingTxt.replace(/{bizName}/g, bizName).replace(/{bizSector}/g, bizSector).replace(/{bizProblem}/g, bizProblem);
+          addChatMessage('incoming', incomingTxt);
           
           setTimeout(() => {
             if (currentLoopTab !== 'asistente') return;
-            removeTypingIndicator();
-            const outgoingMsg = scenario.outgoing.replace(/{bizName}/g, bizName).replace(/{bizSector}/g, bizSector).replace(/{bizProblem}/g, bizProblem);
-            addChatMessage('outgoing', outgoingMsg);
+            addTypingIndicator('outgoing');
             
-            playBeep(980, 'sine', 0.08);
-            setTimeout(() => playBeep(1280, 'sine', 0.1), 100);
-            
-            memoryVariables = { ...memoryVariables, ...scenario.vars };
-            const latency = Math.round(Math.random() * 220 + 80);
-            updateTelemetry(scenario.incoming, outgoingMsg, latency);
-            
-            activeLoopTimeout = setTimeout(step, 4000);
-          }, 1500);
-        }, 1000);
-      }, 1200);
-    }, 500);
+            setTimeout(() => {
+              if (currentLoopTab !== 'asistente') return;
+              removeTypingIndicator();
+              
+              let outgoingTxt = scenario.outgoing || '';
+              outgoingTxt = outgoingTxt.replace(/{bizName}/g, bizName).replace(/{bizSector}/g, bizSector).replace(/{bizProblem}/g, bizProblem);
+              addChatMessage('outgoing', outgoingTxt);
+              
+              playBeep(980, 'sine', 0.08);
+              setTimeout(() => playBeep(1280, 'sine', 0.1), 100);
+              
+              memoryVariables = { ...memoryVariables, ...scenario.vars };
+              const latency = Math.round(Math.random() * 220 + 80);
+              updateTelemetry(scenario.incoming, outgoingTxt, latency);
+              
+              activeLoopTimeout = setTimeout(step, 4000);
+            }, 1500);
+          }, 1000);
+        }, 1200);
+      }, 500);
+    } catch (e) {
+      logSysError("runAsistenteLoopStep", e);
+      // Reintentar avanzar al siguiente paso después de 4 segundos en caso de error
+      activeLoopStep++;
+      activeLoopTimeout = setTimeout(step, 4000);
+    }
   };
   step();
 }
@@ -3586,45 +3598,51 @@ function runPOSLoop() {
 // ── 3. WEBSITE LOOP ──
 function runWebLoop() {
   const step = () => {
-    if (currentLoopTab !== 'web') return;
+    try {
+      if (currentLoopTab !== 'web') return;
 
-    const sections = ['services', 'about', 'contact', 'home'];
-    
-    if (activeLoopStep >= sections.length) {
-      showDemoNarrative(`🌐 <strong>Página Web:</strong> Captura de prospectos simulada. Transicionando a tu Software Contable ERP a Medida...`, 'web');
-      activeLoopTimeout = setTimeout(() => {
-        const nextTab = document.querySelector('.tab-link[data-tab="erp"]');
-        if (nextTab) nextTab.click();
-      }, 5000);
-      return;
-    }
-
-    const currentSection = sections[activeLoopStep];
-    showDemoNarrative(`🌐 <strong>Página Web:</strong> Landing page de alta conversión para <strong>${bizName}</strong>. Prospectos contactan al instante 24/7.`, 'web');
-    
-    const navLink = document.getElementById(`web-nav-${currentSection}`);
-    if (navLink) {
-      navLink.click();
-      printToolLog(`[WEB AUTÓNOMO] Navegando a la sección: ${currentSection.toUpperCase()}`);
-    }
-    
-    if (currentSection === 'services') {
-      const accordions = document.querySelectorAll('.faq-accordion-header');
-      if (accordions.length > 0) {
-        setTimeout(() => {
-          if (currentLoopTab === 'web') {
-            accordions[0].click();
-            printToolLog(`[WEB AUTÓNOMO] Desplegando acordeón FAQ: "¿Cómo funciona el servicio?"`);
-          }
-        }, 1000);
+      const sections = ['services', 'about', 'contact', 'home'];
+      
+      if (activeLoopStep >= sections.length) {
+        showDemoNarrative(`🌐 <strong>Página Web:</strong> Captura de prospectos simulada. Transicionando a tu Software Contable ERP a Medida...`, 'web');
+        activeLoopTimeout = setTimeout(() => {
+          const nextTab = document.querySelector('.tab-link[data-tab="erp"]');
+          if (nextTab) nextTab.click();
+        }, 5000);
+        return;
       }
-    } 
-    else if (currentSection === 'contact') {
-      printToolLog(`[WEB AUTÓNOMO] Inicializando Canvas interactivo de Google Maps.`);
-    }
 
-    activeLoopStep++;
-    activeLoopTimeout = setTimeout(step, 4500);
+      const currentSection = sections[activeLoopStep];
+      showDemoNarrative(`🌐 <strong>Página Web:</strong> Landing page de alta conversión para <strong>${bizName}</strong>. Prospectos contactan al instante 24/7.`, 'web');
+      
+      const navLink = document.getElementById(`web-nav-${currentSection}`);
+      if (navLink) {
+        navLink.click();
+        printToolLog(`[WEB AUTÓNOMO] Navegando a la sección: ${currentSection.toUpperCase()}`);
+      }
+      
+      if (currentSection === 'services') {
+        const accordions = document.querySelectorAll('.faq-accordion-header');
+        if (accordions.length > 0) {
+          setTimeout(() => {
+            if (currentLoopTab === 'web') {
+              accordions[0].click();
+              printToolLog(`[WEB AUTÓNOMO] Desplegando acordeón FAQ: "¿Cómo funciona el servicio?"`);
+            }
+          }, 1000);
+        }
+      } 
+      else if (currentSection === 'contact') {
+        printToolLog(`[WEB AUTÓNOMO] Inicializando Canvas interactivo de Google Maps.`);
+      }
+
+      activeLoopStep++;
+      activeLoopTimeout = setTimeout(step, 4500);
+    } catch (e) {
+      logSysError("runWebLoopStep", e);
+      activeLoopStep++;
+      activeLoopTimeout = setTimeout(step, 4500);
+    }
   };
   step();
 }
@@ -3632,68 +3650,73 @@ function runWebLoop() {
 // ── 4. ERP LOOP ──
 function runERPLoop() {
   const step = () => {
-    if (currentLoopTab !== 'erp') return;
+    try {
+      if (currentLoopTab !== 'erp') return;
 
-    const subtabs = ['pl', 'crm', 'tasks', 'sat', 'flow', 'syslog'];
-    
-    if (activeLoopStep >= subtabs.length) {
-      showDemoNarrative(`🧠 <strong>Software ERP a Medida:</strong> Conciliación y automatización completadas. ¡No hay límites, todo se puede potenciar! Reiniciando ciclo del ecosistema...`, 'erp');
-      activeLoopTimeout = setTimeout(() => {
-        const nextTab = document.querySelector('.tab-link[data-tab="asistente"]');
-        if (nextTab) nextTab.click();
-      }, 5000);
-      return;
+      const subtabs = ['pl', 'crm', 'tasks', 'sat', 'flow', 'syslog'];
+      
+      if (activeLoopStep >= subtabs.length) {
+        showDemoNarrative(`🧠 <strong>Software ERP a Medida:</strong> Conciliación y automatización completadas. ¡No hay límites, todo se puede potenciar! Reiniciando ciclo del ecosistema...`, 'erp');
+        activeLoopTimeout = setTimeout(() => {
+          const nextTab = document.querySelector('.tab-link[data-tab="asistente"]');
+          if (nextTab) nextTab.click();
+        }, 5000);
+        return;
+      }
+
+      const currentSubtab = subtabs[activeLoopStep];
+      showDemoNarrative(`📊 <strong>ERP Administración:</strong> IA procesa reportes y automatiza facturas SAT de tu sector <strong>${bizSector}</strong>.`, 'erp');
+
+      const btn = document.querySelector(`.erp-subtab-btn[data-subtab="${currentSubtab}"]`);
+      if (btn) {
+        btn.click();
+        printToolLog(`[ERP AUTÓNOMO] Abriendo módulo ERP: ${btn.textContent.trim()}`);
+        if (currentSubtab === 'pl' || currentSubtab === 'sat') {
+          playBeep(980, 'triangle', 0.08);
+          setTimeout(() => playBeep(1320, 'sine', 0.15), 60);
+        } else {
+          playBeep(600, 'sine', 0.06);
+        }
+      }
+
+      if (currentSubtab === 'pl') {
+        const branchSelect = document.getElementById('erp-branch-select');
+        if (branchSelect) {
+          branchSelect.value = 'norte';
+          branchSelect.dispatchEvent(new Event('change'));
+          printToolLog(`[ERP AUTÓNOMO] Cambiando consolidado a Sucursal Norte.`);
+        }
+      } 
+      else if (currentSubtab === 'tasks') {
+        const cards = document.querySelectorAll('.kanban-card');
+        if (cards.length > 0) {
+          setTimeout(() => {
+            if (currentLoopTab === 'erp') {
+              cards[0].click();
+              printToolLog(`[ERP AUTÓNOMO] Sincronizando tarea Kanban.`);
+            }
+          }, 1000);
+        }
+      } 
+      else if (currentSubtab === 'flow') {
+        const toggle = document.getElementById('erp-optimize-toggle');
+        if (toggle) {
+          setTimeout(() => {
+            if (currentLoopTab === 'erp') {
+              toggle.click();
+              printToolLog(`[ERP AUTÓNOMO] Alternando Algoritmo de Optimización IA.`);
+            }
+          }, 1000);
+        }
+      }
+
+      activeLoopStep++;
+      activeLoopTimeout = setTimeout(step, 4500);
+    } catch (e) {
+      logSysError("runERPLoopStep", e);
+      activeLoopStep++;
+      activeLoopTimeout = setTimeout(step, 4500);
     }
-
-    const currentSubtab = subtabs[activeLoopStep];
-    showDemoNarrative(`📊 <strong>ERP Administración:</strong> IA procesa reportes y automatiza facturas SAT de tu sector <strong>${bizSector}</strong>.`, 'erp');
-
-    const btn = document.querySelector(`.erp-subtab-btn[data-subtab="${currentSubtab}"]`);
-    if (btn) {
-      btn.click();
-      printToolLog(`[ERP AUTÓNOMO] Abriendo módulo ERP: ${btn.textContent.trim()}`);
-      // Reproducir sonido contable o de click
-      if (currentSubtab === 'pl' || currentSubtab === 'sat') {
-        playBeep(980, 'triangle', 0.08);
-        setTimeout(() => playBeep(1320, 'sine', 0.15), 60);
-      } else {
-        playBeep(600, 'sine', 0.06);
-      }
-    }
-
-    if (currentSubtab === 'pl') {
-      const branchSelect = document.getElementById('erp-branch-select');
-      if (branchSelect) {
-        branchSelect.value = 'norte';
-        branchSelect.dispatchEvent(new Event('change'));
-        printToolLog(`[ERP AUTÓNOMO] Cambiando consolidado a Sucursal Norte.`);
-      }
-    } 
-    else if (currentSubtab === 'tasks') {
-      const cards = document.querySelectorAll('.kanban-card');
-      if (cards.length > 0) {
-        setTimeout(() => {
-          if (currentLoopTab === 'erp') {
-            cards[0].click();
-            printToolLog(`[ERP AUTÓNOMO] Sincronizando tarea Kanban.`);
-          }
-        }, 1000);
-      }
-    } 
-    else if (currentSubtab === 'flow') {
-      const toggle = document.getElementById('erp-optimize-toggle');
-      if (toggle) {
-        setTimeout(() => {
-          if (currentLoopTab === 'erp') {
-            toggle.click();
-            printToolLog(`[ERP AUTÓNOMO] Alternando Algoritmo de Optimización IA.`);
-          }
-        }, 1000);
-      }
-    }
-
-    activeLoopStep++;
-    activeLoopTimeout = setTimeout(step, 4500);
   };
   step();
 }
@@ -3783,30 +3806,70 @@ document.querySelectorAll('.tab-link').forEach(link => {
 });
 
 function initSimulationLoop() {
-  attachPauseListeners();
-  
-  // Categorize problem to generate custom scenarios using the extraction helper
-  const kws = extractKeywords(bizProblem + " " + bizSector);
-  let category = 'operations';
-  
-  const matches = (list) => kws.some(kw => list.includes(kw));
-  
-  if (matches(["credito", "cobro", "cobranza", "pago", "abono", "mensualidad", "cartera", "cuotas", "financiar", "financiamiento", "moroso", "deuda"])) {
-    category = 'credit';
-  } else if (matches(["inventario", "stock", "almacen", "bodega", "existencias", "insumos", "cocina", "ingredientes", "materia", "refacciones", "piezas"])) {
-    category = 'inventory';
-  } else if (matches(["ventas", "clientes", "marketing", "prospectos", "cotizar", "vender", "atraer", "leads", "publicidad"])) {
-    category = 'sales';
-  } else if (matches(["reparacion", "tecnico", "reparar", "taller", "mantenimiento", "garantia", "soporte", "falla"])) {
-    category = 'repair';
-  } else if (matches(["entrega", "entregas", "domicilio", "flete", "envio", "envios", "transporte", "ruta", "rutas", "camion"])) {
-    category = 'logistics';
+  try {
+    attachPauseListeners();
+    
+    // Categorize problem to generate custom scenarios using the extraction helper
+    const kws = extractKeywords(bizProblem + " " + bizSector);
+    let category = 'operations';
+    
+    const matches = (list) => kws.some(kw => list.includes(kw));
+    
+    if (matches(["credito", "cobro", "cobranza", "pago", "abono", "mensualidad", "cartera", "cuotas", "financiar", "financiamiento", "moroso", "deuda"])) {
+      category = 'credit';
+    } else if (matches(["inventario", "stock", "almacen", "bodega", "existencias", "insumos", "cocina", "ingredientes", "materia", "refacciones", "piezas"])) {
+      category = 'inventory';
+    } else if (matches(["ventas", "clientes", "marketing", "prospectos", "cotizar", "vender", "atraer", "leads", "publicidad"])) {
+      category = 'sales';
+    } else if (matches(["reparacion", "tecnico", "reparar", "taller", "mantenimiento", "garantia", "soporte", "falla"])) {
+      category = 'repair';
+    } else if (matches(["entrega", "entregas", "domicilio", "flete", "envio", "envios", "transporte", "ruta", "rutas", "camion"])) {
+      category = 'logistics';
+    }
+    
+    assistantScenarios = generateDynamicScenarios(category);
+    logSysInfo("Escenarios de simulación generados con éxito: " + category);
+  } catch (e) {
+    logSysError("initSimulationLoopSetup", e);
+    // Fallback de escenarios seguros para que nunca se congele el chatbot
+    assistantScenarios = generateDynamicScenarios('operations');
   }
-  
-  assistantScenarios = generateDynamicScenarios(category);
-  
+
   const defaultTab = (activeService === 'all') ? 'asistente' : activeService;
-  startActiveTabLoop(defaultTab);
+  try {
+    startActiveTabLoop(defaultTab);
+    logSysInfo("Tabloop inicializado en la pestaña: " + defaultTab);
+  } catch (err) {
+    logSysError("startActiveTabLoop", err);
+  }
+
+  // Notificación visual de inicio exitoso v1.7.0
+  try {
+    const toast = document.createElement('div');
+    toast.style.position = 'fixed';
+    toast.style.bottom = '20px';
+    toast.style.right = '20px';
+    toast.style.background = 'rgba(16, 185, 129, 0.9)';
+    toast.style.color = '#fff';
+    toast.style.padding = '12px 24px';
+    toast.style.borderRadius = '10px';
+    toast.style.fontSize = '12px';
+    toast.style.fontWeight = 'bold';
+    toast.style.zIndex = '99999';
+    toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.3)';
+    toast.style.backdropFilter = 'blur(10px)';
+    toast.style.border = '1px solid rgba(255,255,255,0.1)';
+    toast.style.transition = 'all 0.5s ease';
+    toast.textContent = `⚡ Hermes Agent v1.7.0 activo en ${bizName}`;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(20px)';
+      setTimeout(() => toast.remove(), 500);
+    }, 3500);
+  } catch (e) {
+    console.error("Error al mostrar toast:", e);
+  }
 }
 
 // El loop de simulación ahora se inicia al terminar el loader terminal
