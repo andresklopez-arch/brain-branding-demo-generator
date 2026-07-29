@@ -1272,734 +1272,123 @@ function buildProblemProfile(rawProfile) {
 }
 
 function generateDynamicScenarios(category) {
-  const kws = extractKeywords(bizProblem + " " + bizSector);
-  const kw1 = kws[0] || "servicio";
-  const kw2 = kws[1] || "operación";
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-  const emojis = getSectorEmojis(bizSector);
+  
+  // Mapeos inteligentes para contextualizar con la profesión detectada
+  let insumoName = "materiales y suministros";
+  let insumoItem = "Servicio General";
+  let searchQuery = `proveedores de servicios de ${bizSector}`;
+  
+  if (detectedSectorId === 'automotriz') {
+    insumoName = "aceites, filtros y bujías";
+    insumoItem = "Afinación Mayor y Balatas";
+    searchQuery = "proveedores mayoristas de refacciones automotrices";
+  } else if (detectedSectorId === 'billar') {
+    insumoName = "paños de mesa, tizas y bebidas";
+    insumoItem = "Renta de Mesas de Billar y Bebidas";
+    searchQuery = "proveedores de accesorios para mesas de billar y Pool";
+  } else if (detectedSectorId === 'dentista') {
+    insumoName = "resinas, brackets y anestesia";
+    insumoItem = "Limpiezas con Ultrasonido y Ortodoncia";
+    searchQuery = "distribuidores de insumos dentales y ortodoncia";
+  } else if (detectedSectorId === 'salud') {
+    insumoName = "gasas, jeringas y medicamentos";
+    insumoItem = "Consultas Médicas y Recetas";
+    searchQuery = "distribuidoras farmacéuticas y equipo clínico";
+  } else if (detectedSectorId === 'restaurante') {
+    insumoName = "perecederos, carnes y verduras";
+    insumoItem = "Comandas de Cocina y Bebidas";
+    searchQuery = "proveedores locales de alimentos e ingredientes";
+  } else if (detectedSectorId === 'gimnasio') {
+    insumoName = "suplementos y refacciones de poleas";
+    insumoItem = "Membresías Mensuales e Insumos";
+    searchQuery = "distribuidores de equipo de fitness y pesas";
+  } else {
+    insumoName = `insumos de ${bizSector}`;
+    insumoItem = `Servicios de ${bizSector}`;
+    searchQuery = `proveedores de ${bizSector}`;
+  }
 
-  if (category === 'credit') {
-    return [
-      {
-        title: "Autorizando Crédito",
-        channel: "whatsapp",
-        logs: [
-          "[NLP] Analizando solicitud entrante de Juan Pérez...",
-          "[Risk_Engine] Evaluando buró de crédito del cliente...",
-          "[Contract_API] Generando pagaré digital con firma biométrica..."
-        ],
-        incoming: "Hola! Quiero solicitar el crédito para comprar el producto " + cap(kw1) + ", ¿qué necesito?",
-        outgoing: "✅ **Crédito Pre-Aprobado**: ¡Hola, Juan! Tu solicitud para el/la *" + cap(kw1) + "* fue autorizada con éxito. Tu abono será de $1,500 MXN semanales. Adjunto tu contrato digital firmado para confirmación: [DOCUMENTO]|Contrato de Crédito - " + bizName + "|Pago de $1,500 MXN semanales|AUTORIZADO",
-        vars: { active_credit: cap(kw1), monthly_payment: 1500, credit_status: "Autorizado" }
-      },
-      {
-        title: "Notificación de Pago de Mensualidad",
-        channel: "whatsapp",
-        logs: [
-          "[Scheduler] Buscando abonos programados para hoy...",
-          "[Stripe_API] Creando link de pago dinámico seguro para abono..."
-        ],
-        incoming: "🔔 [SISTEMA] Recordatorio automático enviado a María Gómez: Su abono semanal de $350 MXN vence mañana.",
-        outgoing: "✅ **Recordatorio Enviado**: Estimada María, le recordamos que su abono vence mañana. Puede pagar de forma segura aquí: [PAYMENT_CARD]|Abono Semanal de Crédito|Folio de Contrato: C-4091|$350.00 MXN",
-        vars: { overdue_warnings: "Ninguno", last_payment_link: "Generado" }
-      },
-      {
-        title: "Conciliación de Transferencias",
-        channel: "widget",
-        logs: [
-          "[RPA] Leyendo estado de cuenta bancario entrante...",
-          "[OCR] Extrayendo concepto de transferencia 'Abono C-4091'...",
-          "[ERP_API] Aplicando abono al saldo de cuenta del cliente..."
-        ],
-        incoming: "📊 [SISTEMA] Conciliación de transferencia SPEI de María Gómez por $350.00 MXN recibida con éxito.",
-        outgoing: "✅ **Conciliación Exitosa**: El abono de $350.00 MXN fue aplicado automáticamente al contrato C-4091 de María Gómez. Su saldo restante se actualizó en el ERP contable.",
-        vars: { bank_reconciliation: "Completada", processed_payments_today: 12 }
-      },
-      {
-        title: "Reporte de Cartera de Crédito",
-        channel: "messenger",
-        logs: [
-          "[SQL] query_credit_portfolio(status: 'all')",
-          "[NLP] Generando resumen contable para dirección..."
-        ],
-        incoming: "Dame el reporte del estado de la cartera de crédito de hoy.",
-        outgoing: "Aquí tienes el estado actual para **" + bizName + "**:\n📈 **Créditos Activos**: 142 contratos\n💳 **Cobrado este mes**: $98,400.00 MXN\n🟢 **Al corriente**: 97.5% | 🔴 **Vencido**: 2.5%\n*Todos los movimientos conciliados con el SAT de forma autónoma.*",
-        vars: { active_credits_count: 142, delinquency_rate: "2.5%" }
-      },
-      {
-        title: "Dudas sobre Requisitos de Crédito",
-        channel: "whatsapp",
-        logs: [
-          "[NLP] Analizando dudas frecuentes sobre apertura de crédito..."
-        ],
-        incoming: "¿Qué papeles necesito para sacar un comedor a crédito?",
-        outgoing: "Para autorizar tu crédito en **" + bizName + "** solo requiero:\n1. Foto de tu INE vigente.\n2. Comprobante de domicilio reciente.\nEl proceso es 100% digital y te respondo en menos de 3 minutos aquí mismo.",
-        vars: { query_type: "requisitos_credito" }
-      },
-      {
-        title: "Llamada de Cobranza Preventiva",
-        channel: "messenger",
-        logs: [
-          "[SpeechToText] Transcribiendo buzón de voz entrante con Whisper...",
-          "[NLP] Clasificando intención del cliente: 'Compromiso de pago'..."
-        ],
-        incoming: "📞 [SISTEMA] Mensaje de voz de cliente: 'Hola, tuve un retraso pero mañana hago mi transferencia de abono'.",
-        outgoing: "📞 **Llamada de Cobranza Procesada**: El cliente se comprometió a pagar mañana. El Asistente IA agendó la alerta de seguimiento en el CRM y suspendió de forma preventiva los avisos robóticos.",
-        vars: { follow_up_needed: "Mañana", alert_suspended: true }
-      },
-      {
-        title: "Alerta de Cuenta Delicada",
-        channel: "widget",
-        logs: [
-          "[Risk_Engine] Analizando comportamiento de pagos históricos...",
-          "[NLP] Generando alerta de riesgo de impago en panel de control..."
-        ],
-        incoming: "🚨 [SISTEMA] Alerta: El cliente Carlos Sosa ha omitido su abono por segunda semana consecutiva.",
-        outgoing: "🚨 **Alerta de Riesgo**: Se detectó una cuenta con 2 semanas de atraso. He generado una tarea prioritaria en el Kanban del ERP para contacto directo por un asesor humano y pausé los avisos robóticos.",
-        vars: { high_risk_accounts: 1, action_taken: "Kanban ticket created" }
-      },
-      {
-        title: "Liquidación Anticipada de Saldo",
-        channel: "whatsapp",
-        logs: [
-          "[DB] query_credit_balance(client: 'Sofía Lira')",
-          "[Stripe] Calculando descuento por liquidación anticipada (10%)..."
-        ],
-        incoming: "Quiero liquidar mi saldo pendiente de mi comedor, ¿tengo algún descuento?",
-        outgoing: "¡Hola, Sofía! Claro que sí. Tu saldo pendiente al día de hoy es de $4,500 MXN. Al liquidar de forma anticipada, aplicamos un 10% de descuento. El total a pagar es de $4,050 MXN. Puedes pagar aquí: [PAYMENT_CARD]|Liquidación de Crédito Comedor|Descuento 10% applied|$4,050.00 MXN",
-        vars: { discount_applied: "10%", total_liquidated: 4050 }
-      },
-      {
-        title: "Abono Exitoso en POS",
-        channel: "widget",
-        logs: [
-          "[POS_API] Registrando pago de abono presencial en sucursal...",
-          "[SAT_API] Generando CFDI 4.0 con método de pago PPD/LPD..."
-        ],
-        incoming: "📊 [SISTEMA] Abono de $1,500.00 MXN cobrado con tarjeta en la sucursal Centro.",
-        outgoing: "✅ **Pago Registrado**: El abono de $1,500.00 MXN fue recibido en caja. El sistema emitió la factura fiscal y actualizó el estado de cuenta del cliente en el ERP de de inmediato.",
-        vars: { last_cash_register_sync: "Hace 1 min", active_cash_drawer: "Sincronizada" }
-      },
-      {
-        title: "Geolocalización de Cobros",
-        channel: "messenger",
-        logs: [
-          "[Google_Maps] Buscando ubicaciones de clientes con abonos pendientes hoy..."
-        ],
-        incoming: "¿Me das el mapa de clientes de cobranza del día de hoy?",
-        outgoing: "📍 **Ruta de Cobros**: He mapeado 3 ubicaciones con cobros programados para entrega de recibos físicos. El mapa de cobertura en tu ERP ha sido actualizado con los pines de ruta óptimos.",
-        vars: { active_pins: 3, route_optimized: true }
-      },
-      {
-        title: "Resumen de Contratos Nuevos",
-        channel: "whatsapp",
-        logs: [
-          "[DB] count_new_contracts(date: 'today')",
-          "[NLP] Compilando resumen de cierres de crédito..."
-        ],
-        incoming: "¿Cuántos créditos se abrieron hoy?",
-        outgoing: "📝 **Resumen del Día**: Hoy se abrieron **5 nuevos créditos** de muebles por un valor total de $75,000 MXN. Todos los expedientes cuentan con INE y firma digital válidos.",
-        vars: { new_credits_today: 5, total_credit_value: 75000 }
-      }
-    ];
-  }
-  else if (category === 'inventory') {
-    return [
-      {
-        title: "Alerta de Stock Bajo",
-        channel: "whatsapp",
-        logs: [
-          "[Inventory] check_stock_levels()...",
-          "[DB] Alerta: Insumo '" + cap(kw1) + "' por debajo del mínimo de seguridad..."
-        ],
-        incoming: "🚨 [SISTEMA] Alerta: Quedan solo 2 unidades de " + cap(kw1) + " en el almacén de producción.",
-        outgoing: "🚨 **Alerta de Almacén**: He detectado stock crítico de *" + cap(kw1) + "*. Para evitar paros en la producción, redacté una orden de reabastecimiento automática para tu proveedor de confianza.",
-        vars: { low_stock_item: cap(kw1), current_qty: 2, safety_min: 10 }
-      },
-      {
-        title: "Reordenando al Proveedor",
-        channel: "widget",
-        logs: [
-          "[Supplier_API] create_purchase_order(item: '" + cap(kw1) + "', qty: 25)...",
-          "[Email_Sender] Enviando orden de compra en PDF al proveedor..."
-        ],
-        incoming: "🔔 [SISTEMA] Orden de compra #PO-902 por 25 unidades de " + cap(kw1) + " enviada automáticamente.",
-        outgoing: "✅ **Orden de Compra Enviada**: Se solicitó el reabastecimiento de 25 unidades de " + cap(kw1) + ". El proveedor confirmó entrega para mañana a las 9:00 AM.",
-        vars: { purchase_order_sent: true, eta_delivery: "Mañana 9:00 AM" }
-      },
-      {
-        title: "Ingreso de Mercancía al Almacén",
-        channel: "messenger",
-        logs: [
-          "[RPA] Escaneando nota de remisión entrante del transportista...",
-          "[Inventory_API] Actualizando stock físico de tableros a 27 unidades..."
-        ],
-        incoming: "📥 [SISTEMA] Recepción de 25 unidades de " + cap(kw1) + " confirmada e ingresada al almacén.",
-        outgoing: "✅ **Inventario Actualizado**: El stock de " + cap(kw1) + " se actualizó a 27 unidades en el ERP. El cuello de botella en producción ha sido resuelto.",
-        vars: { stock_restocked: cap(kw1), total_qty: 27 }
-      },
-      {
-        title: "Reporte de Existencias del Día",
-        channel: "whatsapp",
-        logs: [
-          "[SQL] query_inventory_status(branch: 'all')"
-        ],
-        incoming: "Dame el reporte del estado de existencias del almacén.",
-        outgoing: "Aquí tienes el reporte de existencias para **" + bizName + "**:\n🪵 **" + cap(kw1) + "**: 27 unidades (Suficiente)\n🪛 **" + cap(kw2) + "**: 45 unidades (Suficiente)\n*Inventario físico al 100% cuadriplicado con el POS.*",
-        vars: { in_stock_items: 2, critical_items: 0 }
-      },
-      {
-        title: "Consulta de Stock desde POS",
-        channel: "widget",
-        logs: [
-          "[POS_API] query_available_stock(item: '" + cap(kw1) + "')"
-        ],
-        incoming: "¿Hay existencias disponibles de " + cap(kw1) + " para entrega hoy?",
-        outgoing: "🔍 **Existencias en POS**: Sí, tenemos 3 unidades de *" + cap(kw1) + "* en la sucursal Centro listas para entrega inmediata. Si se vende una, el catálogo digital se actualizará automáticamente.",
-        vars: { available_qty: 3, warehouse: "Centro" }
-      },
-      {
-        title: "Ajuste de Mermas Físicas",
-        channel: "messenger",
-        logs: [
-          "[Audit_Engine] Comparando reporte de mermas vs stock en sistema..."
-        ],
-        incoming: "Reporto 1 unidad de " + cap(kw1) + " dañado en el área operativa hoy.",
-        outgoing: "🔧 **Ajuste Realizado**: Registré 1 unidad de " + cap(kw1) + " como merma por daño operativo. El inventario en el ERP se ajustó y el costo fue cargado a la cuenta de gastos contables.",
-        vars: { adjust_type: "merma", adjusted_qty: 1 }
-      },
-      {
-        title: "Recepción de Unidades Terminadas",
-        channel: "whatsapp",
-        logs: [
-          "[Factory_API] Confirmando ensamble de producto terminado..."
-        ],
-        incoming: "🔨 [TALLER] Comedor terminado y listo para entrega.",
-        outgoing: "✅ **Producto Ingresado**: Registré el ingreso de 1 Comedor a la sucursal Centro. El stock de materias primas fue descontado automáticamente según la receta de producción.",
-        vars: { product_finished: "Comedor", status: "Listo para entrega" }
-      },
-      {
-        title: "Envío de Alertas a Producción",
-        channel: "widget",
-        logs: [
-          "[Scheduler] Analizando pedidos de clientes pendientes de fabricar..."
-        ],
-        incoming: "¿Qué pedidos están en fila de fabricación hoy?",
-        outgoing: "📋 **Fila de Fabricación**: Tienes 2 comedores y 1 recámara pendientes en el taller. Las materias primas necesarias están reservadas en el almacén de forma exclusiva.",
-        vars: { pending_builds: 3 }
-      },
-      {
-        title: "Conciliación de Almacén Mensual",
-        channel: "messenger",
-        logs: [
-          "[RPA] Comparando inventario teórico vs conteo cíclico físico..."
-        ],
-        incoming: "Ejecuta la conciliación de fin de mes del almacén.",
-        outgoing: "📊 **Conciliación de Fin de Mes**: Procesé 120 partidas. Discrepancia del 0%. El inventario teórico y físico coinciden a la perfección. Reporte enviado al correo del administrador.",
-        vars: { reconciliation_variance: "0%", status: "Aprobada" }
-      },
-      {
-        title: "Sincronización con Tienda Web",
-        channel: "whatsapp",
-        logs: [
-          "[Web_API] push_stock_update(item: 'Recámara King Size', qty: 2)..."
-        ],
-        incoming: "🔔 [SISTEMA] Stock de Recámara King Size actualizado de forma automática en Shopify.",
-        outgoing: "✅ **Sincronización Web**: La disponibilidad de *Recámara King Size* fue actualizada a 2 unidades en tu página web tras completarse la venta en el POS físico.",
-        vars: { web_sync_success: true }
-      },
-      {
-        title: "Resumen de Movimientos de Stock",
-        channel: "widget",
-        logs: [
-          "[DB] count_stock_movements_today()"
-        ],
-        incoming: "¿Cuántos movimientos de almacén se registraron hoy?",
-        outgoing: "🪵 **Movimientos del Día**: Se registraron 18 movimientos de almacén (12 consumos, 2 entradas de proveedores y 4 ingresos de producto terminado). Todo auditado en tiempo real.",
-        vars: { stock_movements_today: 18 }
-      }
-    ];
-  }
-  else if (category === 'sales') {
-    return [
-      {
-        title: "Captura de Lead por Chatbot",
-        channel: "whatsapp",
-        logs: [
-          "[NLP] Detectando prospecto interesado en comedor en WhatsApp...",
-          "[CRM_API] Creando registro de prospecto de forma autónoma..."
-        ],
-        incoming: "Hola, me interesa comprar un comedor de madera pero quiero cotizar a una medida especial.",
-        outgoing: "¡Hola! Con gusto te cotizo. El *Comedor de Madera 6S* personalizado está en promoción. He tomado tus datos y un asesor te enviará los bocetos de medidas. Tu ID de prospecto en el CRM es: [LEAD]|Carlos Sosa|Cotización Comedor Medida Especial|WhatsApp",
-        vars: { active_lead: "Carlos Sosa", interest: "Comedor Medida", status: "Cotizando" }
-      },
-      {
-        title: "Envío Automático de Cotización",
-        channel: "whatsapp",
-        logs: [
-          "[NLP] Formateando propuesta de costo en formato PDF...",
-          "[Email_API] Enviando propuesta a carlossosa@email.com..."
-        ],
-        incoming: "🔔 [SISTEMA] Cotización #QT-201 por $11,500 MXN enviada automáticamente a carlossosa@email.com.",
-        outgoing: "✅ **Cotización Enviada**: Carlos, he enviado la cotización formal a tu correo. Cuenta con un diseño adaptado y desglose de IVA. ¿Te gustaría agendar una llamada con el diseñador?",
-        vars: { quote_sent: true, value: 11500 }
-      },
-      {
-        title: "Recordatorio de Prospecto Frío",
-        channel: "widget",
-        logs: [
-          "[CRM] Buscando cotizaciones sin respuesta hace 3 días...",
-          "[NLP] Redactando mensaje de seguimiento persuasivo..."
-        ],
-        incoming: "🔔 [SISTEMA] Seguimiento enviado automáticamente a Sofía Lira sobre su cotización de Sofá Modular.",
-        outgoing: "✅ **Seguimiento Enviado**: Sofía, te recordamos que tu cotización del *Sofá Modular Premium* con 15% de descuento vence mañana. ¿Te gustaría procesar tu pedido hoy?",
-        vars: { follow_up_leads: 1, active_discount: "15%" }
-      },
-      {
-        title: "Cierre de Venta Exitoso",
-        channel: "messenger",
-        logs: [
-          "[Stripe] Confirmando pago de enganche de Sofía Lira...",
-          "[CRM_API] Marcando Lead como 'CERRADO / GANADO'..."
-        ],
-        incoming: "Listo, acabo de pagar el enganche para apartar mi Sofá Modular.",
-        outgoing: "🎉 **¡Felicidades por tu compra!**: Sofía, recibimos tu pago con éxito. Tu pedido ha ingresado a la fila de fabricación. Tu comprobante de pago fue enviado a tu correo.",
-        vars: { deal_closed: "Sofía Lira", value: 12000, crm_status: "Ganado" }
-      },
-      {
-        title: "Reporte de Conversión de Leads",
-        channel: "whatsapp",
-        logs: [
-          "[SQL] query_crm_conversion_rates()"
-        ],
-        incoming: "Dame el reporte de ventas del CRM de esta semana.",
-        outgoing: "Aquí tienes el reporte para **" + bizName + "**:\n📈 **Nuevos Leads**: 28 prospectos\n🏆 **Ventas Cerradas**: 8 pedidos ($96,000 MXN)\n🟢 **Conversión**: 28.5% (+5% vs semana pasada)\n*Base de datos de clientes actualizada en el ERP.*",
-        vars: { new_leads_this_week: 28, closed_deals: 8 }
-      },
-      {
-        title: "Consulta de Horarios de Sucursal",
-        channel: "messenger",
-        logs: [
-          "[NLP] Buscando horarios de atención de la sucursal..."
-        ],
-        incoming: "¿A qué hora abren la sucursal Centro los fines de semana?",
-        outgoing: "La sucursal Centro de **" + bizName + "** está abierta los sábados de 9:00 AM a 7:00 PM and los domingos de 10:00 AM a 5:00 PM. ¡Te esperamos!",
-        vars: { query: "horarios_sucursal" }
-      },
-      {
-        title: "Solicitud de Soporte Posventa",
-        channel: "whatsapp",
-        logs: [
-          "[Ticket_API] Creando ticket de soporte posventa en el sistema..."
-        ],
-        incoming: "Hola, mi comedor llegó hoy pero tiene un raspón en una pata.",
-        outgoing: "Lamento mucho el inconveniente. He levantado un reporte de garantía de inmediato. Un técnico te contactará mañana para programar la reparación a domicilio sin costo. Folio de Ticket: #TK-802.",
-        vars: { support_ticket_raised: true, ticket_id: "TK-802" }
-      },
-      {
-        title: "Envío de Encuesta de Satisfacción",
-        channel: "widget",
-        logs: [
-          "[Scheduler] Enviando link de evaluación de servicio técnico..."
-        ],
-        incoming: "📊 [SISTEMA] Encuesta de satisfacción enviada al cliente Carlos Sosa.",
-        outgoing: "✅ **Encuesta Enviada**: Le pedimos a Carlos evaluar nuestro servicio. Sus respuestas se registrarán automáticamente en su expediente de cliente del CRM.",
-        vars: { survey_sent: true }
-      },
-      {
-        title: "Feedback Positivo de Cliente",
-        channel: "messenger",
-        logs: [
-          "[NLP] Analizando sentimiento: 'Excelente y muy rápidos'..."
-        ],
-        incoming: "Excelente servicio, todo quedó perfecto y me atendieron muy rápido.",
-        outgoing: "🎉 **¡Excelente!**: Agradecemos tu calificación. La nota de felicitación por rapidez ha sido añadida al perfil de rendimiento del equipo.",
-        vars: { client_rating: 5, status: "Excelente" }
-      },
-      {
-        title: "Recomendación de Compra Cruzada",
-        channel: "whatsapp",
-        logs: [
-          "[Rec_Engine] Buscando equipos sin mantenimiento preventivo..."
-        ],
-        incoming: "🔔 [SISTEMA] Oferta especial de compra cruzada enviada automáticamente a clientes recurrentes.",
-        outgoing: "✅ **Oferta Enviada**: Le sugerimos al cliente agregar un accesorio de mantenimiento con un 20% de descuento adicional hoy.",
-        vars: { cross_sell: "Accesorios", discount: "20%" }
-      },
-      {
-        title: "Resumen de Cierres de Venta",
-        channel: "widget",
-        logs: [
-          "[DB] count_sales_closed_today()"
-        ],
-        incoming: "¿Cuántas ventas cerramos hoy?",
-        outgoing: "🎉 **Resumen de Cierres**: Hoy se cerraron **3 ventas** por un valor total de $39,500 MXN. Todos los clientes recibieron su ticket digital de compra.",
-        vars: { sales_closed_today: 3, total_revenue_today: 39500 }
-      }
-    ];
-  }
-  else if (category === 'repair') {
-    return [
-      {
-        title: "Ingresando Orden de Servicio",
-        channel: "whatsapp",
-        logs: [
-          "[NLP] Recibiendo solicitud de estatus de reparación...",
-          "[DB] Buscando orden de servicio activa en base de datos..."
-        ],
-        incoming: "Hola! ¿Ya ingresaron mi laptop para reparación?",
-        outgoing: "✅ **Orden Registrada**: ¡Hola! Sí, tu equipo fue registrado en el taller con el Folio #SR-4092. Nuestro técnico IA completó el diagnóstico inicial de hardware. Adjunto tu comprobante de ingreso: [DOCUMENTO]|Comprobante de Ingreso Técnico - " + bizName + "|Folio Orden: SR-4092|INGRESADO",
-        vars: { repair_order: "SR-4092", status: "Diagnóstico inicial" }
-      },
-      {
-        title: "Diagnóstico de Falla por IA",
-        channel: "whatsapp",
-        logs: [
-          "[Diagnostic_Engine] Analizando reporte de voltaje de tarjeta madre...",
-          "[NLP] Redactando cotización de refacciones y mano de obra..."
-        ],
-        incoming: "🔔 [SISTEMA] Alerta: Diagnóstico completado para Folio SR-4092. Falla detectada en chip de carga.",
-        outgoing: "✅ **Diagnóstico Enviado**: El reporte técnico indica falla en el circuito integrado de carga. El costo de reparación es de $1,500 MXN. Puedes autorizar y pagar de forma segura aquí: [PAYMENT_CARD]|Reparación de Circuito de Carga|Folio SR-4092|$1,500.00 MXN",
-        vars: { cost: 1500, parts_needed: "Chip Carga" }
-      },
-      {
-        title: "Reordenando Refacciones",
-        channel: "widget",
-        logs: [
-          "[Supplier_API] Buscando chip de carga en almacén de refacciones...",
-          "[POS_API] Generando orden de compra exprés de autoparte..."
-        ],
-        incoming: "📥 [SISTEMA] Solicitud de reabastecimiento de 'Chip Carga' enviada automáticamente al proveedor de electrónica.",
-        outgoing: "✅ **Refacción Solicitada**: Orden PO-881 enviada. El chip de carga llegará mañana a primera hora al taller de servicio.",
-        vars: { purchase_order: "PO-881", eta_part: "Mañana" }
-      },
-      {
-        title: "Autorización de Presupuesto",
-        channel: "messenger",
-        logs: [
-          "[CRM] Esperando confirmación de cliente...",
-          "[DB] Cliente autorizó presupuesto de reparación vía web..."
-        ],
-        incoming: "Listo, autorizo el presupuesto de $1,500 MXN para proceder con la reparación.",
-        outgoing: "✅ **Presupuesto Autorizado**: Muchas gracias. He cambiado el estatus del equipo SR-4092 a *En Proceso de Reparación*. El técnico iniciará el ensamble del nuevo circuito en cuanto llegue la pieza.",
-        vars: { repair_status: "En Proceso", approval_received: true }
-      },
-      {
-        title: "Reparación Finalizada",
-        channel: "whatsapp",
-        logs: [
-          "[Taller_API] Confirmando pruebas de voltaje exitosas en osciloscopio...",
-          "[NLP] Generando mensaje de entrega lista para cliente..."
-        ],
-        incoming: "🔔 [SISTEMA] Reparación completada y verificada para la Orden SR-4092.",
-        outgoing: "🎉 **¡Tu equipo está listo!**: El circuito de carga fue reemplazado y las pruebas de control de calidad resultaron exitosas. Puedes pasar a recogerlo en la sucursal Centro.",
-        vars: { order_ready: true, status: "Listo para entrega" }
-      },
-      {
-        title: "Consulta de Horarios de Taller",
-        channel: "messenger",
-        logs: [
-          "[NLP] Analizando intenciones sobre horarios del área técnica..."
-        ],
-        incoming: "¿A qué hora puedo pasar a recoger mi equipo en la sucursal?",
-        outgoing: "Nuestros horarios de entrega técnica en **" + bizName + "** son de lunes a viernes de 9:00 AM a 7:00 PM y sábados de 10:00 AM a 3:00 PM. ¡Te esperamos!",
-        vars: { query: "horarios_entrega" }
-      },
-      {
-        title: "Garantía Técnica Levantada",
-        channel: "whatsapp",
-        logs: [
-          "[Ticket_API] Registrando póliza de garantía extendida por 6 meses..."
-        ],
-        incoming: "¿El trabajo cuenta con alguna garantía por si vuelve a fallar?",
-        outgoing: "Por supuesto. Todos nuestros servicios en **" + bizName + "** cuentan con una garantía de 6 meses en mano de obra y refacciones. Tu póliza digital ya está adjunta a tu folio SR-4092.",
-        vars: { warranty_active: true, warranty_months: 6 }
-      },
-      {
-        title: "Encuesta de Satisfacción Técnica",
-        channel: "widget",
-        logs: [
-          "[Scheduler] Enviando link de evaluación de servicio técnico..."
-        ],
-        incoming: "📊 [SISTEMA] Encuesta de servicio técnico enviada al cliente Carlos Sosa.",
-        outgoing: "✅ **Encuesta Enviada**: Le pedimos a Carlos evaluar la atención y el tiempo de respuesta del taller. Los resultados se guardarán automáticamente en su CRM contable.",
-        vars: { survey_sent: true }
-      },
-      {
-        title: "Feedback Técnico de Cliente",
-        channel: "messenger",
-        logs: [
-          "[NLP] Analizando sentimiento: 'Excelente y muy rápidos'..."
-        ],
-        incoming: "Excelente servicio, mi laptop quedó como nueva y me la entregaron en menos de 24 horas.",
-        outgoing: "🎉 **¡Excelente!**: Agradecemos tu calificación. La nota de felicitación por rapidez ha sido añadida al perfil de rendimiento del técnico asignado.",
-        vars: { client_rating: 5, status: "Excelente" }
-      },
-      {
-        title: "Recomendación de Mantenimiento",
-        channel: "whatsapp",
-        logs: [
-          "[Rec_Engine] Buscando equipos sin mantenimiento preventivo hace 6 meses..."
-        ],
-        incoming: "🔔 [SISTEMA] Oferta de mantenimiento preventivo anual enviada automáticamente a clientes recurrentes.",
-        outgoing: "✅ **Mantenimiento Preventivo**: Le sugerimos al cliente realizar una limpieza física y cambio de pasta térmica con un 20% de descuento para prolongar la vida útil de su equipo.",
-        vars: { cross_sell: "Mantenimiento", discount: "20%" }
-      },
-      {
-        title: "Resumen de Órdenes del Taller",
-        channel: "widget",
-        logs: [
-          "[DB] count_repaired_orders_today()"
-        ],
-        incoming: "¿Cuántos servicios técnicos se finalizaron hoy?",
-        outgoing: "🔧 **Resumen de Taller**: Hoy se completaron **14 reparaciones** y se autorizaron **8 nuevos presupuestos**. El ERP contable se actualizó con $21,000 MXN en ingresos de taller.",
-        vars: { completed_repairs_today: 14, revenue_today: 21000 }
-      }
-    ];
-  }
-  else if (category === 'logistics') {
-    return [
-      {
-        title: "Cotizando Flete / Mudanza",
-        channel: "whatsapp",
-        logs: [
-          "[NLP] Analizando origen y destino de flete...",
-          "[Google_Maps_API] Calculando distancia de trayecto (15 km)...",
-          "[Pricing_Engine] Calculando tarifa base de flete residencial..."
-        ],
-        incoming: "Hola! Requiero cotizar una mudanza local para trasladar muebles de una casa de 2 recámaras.",
-        outgoing: "✅ **Cotización de Flete**: ¡Hola! Con gusto. En **" + bizName + "** ofrecemos la *Mudanza Local* con servicio de carga y embalaje desde $4,500 MXN. Te adjunto la propuesta formal con link de pago: [DOCUMENTO]|Propuesta de Flete Residencial - " + bizName + "|Mudanza 2 Recámaras - 15 km|$4,500.00 MXN|VIGENTE",
-        vars: { trip_distance: "15 km", estimated_price: 4500 }
-      },
-      {
-        title: "Asignando Operador y Ruta",
-        channel: "widget",
-        logs: [
-          "[Logistics] check_available_trucks()...",
-          "[GPS_Router] Generando ruta de entrega más eficiente por autopista...",
-          "[RPA] Asignando pedido a la unidad #TR-301..."
-        ],
-        incoming: "🔔 [SISTEMA] Flete programado asignado a la Unidad TR-301 (Operador: Jorge Pérez).",
-        outgoing: "✅ **Logística Programada**: He asignado la mudanza a Jorge Pérez en la unidad TR-301. La ruta óptima ha sido enviada a su terminal móvil para evitar zonas de tráfico.",
-        vars: { truck_assigned: "TR-301", driver: "Jorge Pérez" }
-      },
-      {
-        title: "Envío en Ruta y Link de Tracking",
-        channel: "whatsapp",
-        logs: [
-          "[GPS] Tracking activo en tiempo real para unidad TR-301...",
-          "[Stripe] Generando liga de cobro final para saldo pendiente..."
-        ],
-        incoming: "🔔 [SISTEMA] Mensaje automático de WhatsApp enviado al cliente: Jorge Pérez está en camino a tu domicilio.",
-        outgoing: "✅ **Notificación de Tránsito**: Estimado cliente, Jorge Pérez se encuentra en trayecto y llegará a su domicilio en aproximadamente 15 minutos. Siga el trayecto aquí: [PAYMENT_CARD]|Flete Residencial Local|Estatus: En Trayecto (Jorge Pérez)|Rastrear",
-        vars: { eta_minutes: 15, current_status: "En Trayecto" }
-      },
-      {
-        title: "Entrega Finalizada y POD Digital",
-        channel: "messenger",
-        logs: [
-          "[RPA] Recibiendo acuse de entrega de terminal de operador...",
-          "[OCR] Validando firma y fotografía de acuse digital (Proof of Delivery)..."
-        ],
-        incoming: "Listo, ya llegó el chofer Jorge y entregó todo en excelentes condiciones. Ya firmé el acuse.",
-        outgoing: "🎉 **¡Entrega Finalizada!**: Muchas gracias por confirmar. El acuse digital firmado (POD) se ha indexado en el ERP de la empresa y la orden de mudanza ha sido cerrada como *Entregada con Éxito*.",
-        vars: { delivery_success: true, pod_captured: true }
-      },
-      {
-        title: "Facturación SAT CFDI 4.0",
-        channel: "widget",
-        logs: [
-          "[SAT_API] Generando CFDI 4.0 con complemento de Carta Porte obligatorio...",
-          "[PDF_Engine] Compilando representación impresa de factura..."
-        ],
-        incoming: "📊 [SISTEMA] Factura #F-4091 timbrada automáticamente con Carta Porte digital ante el SAT.",
-        outgoing: "✅ **Facturación Realizada**: Generé la factura fiscal #F-4091 con los datos de Carta Porte y el desglose de IVA correspondientes. Los archivos XML y PDF fueron enviados al correo del cliente.",
-        vars: { invoice_number: "F-4091", sat_status: "Vigente" }
-      },
-      {
-        title: "Alerta de Incidencia de Ruta",
-        channel: "whatsapp",
-        logs: [
-          "[GPS] Detectando retraso por tráfico inusual en periférico...",
-          "[NLP] Redactando aviso preventivo para el cliente..."
-        ],
-        incoming: "🚨 [SISTEMA] Alerta: Operador TR-301 reporta demora de 25 minutos por tráfico pesado en la ruta.",
-        outgoing: "🚨 **Alerta de Trayecto**: Estimado cliente, el flete presenta un retraso de 25 minutos debido al tráfico. He enviado la ubicación del camión en vivo a su WhatsApp y notificado al supervisor.",
-        vars: { delay_minutes: 25, customer_alerted: true }
-      },
-      {
-        title: "Reporte de Desempeño de Fletes",
-        channel: "messenger",
-        logs: [
-          "[SQL] query_flete_performance(date: 'this_week')"
-        ],
-        incoming: "Dame el reporte del desempeño de las entregas de esta semana.",
-        outgoing: "Aquí tienes el estatus para **" + bizName + "**:\n🚚 **Entregas Totales**: 45 fletes\n⏱️ **Tiempos de entrega promedio**: 38 minutos\n🟢 **Entregas puntuales**: 95.8% | 🔴 **Incidencias**: 4.2%\n*Todos los operadores cuentan con POD digital.*",
-        vars: { total_trips_week: 45, on_time_rate: "95.8%" }
-      },
-      {
-        title: "Conciliación de Combustible",
-        channel: "widget",
-        logs: [
-          "[Excel] parse_csv_rows('gastos_combustible.csv')...",
-          "[ERP] Cruzando tickets de gasolina contra kilómetros recorridos..."
-        ],
-        incoming: "📊 [SISTEMA: EXCEL] Archivo 'gastos_combustible.csv' conciliado con el GPS de unidades.",
-        outgoing: "📊 **Conciliación de Gasolina**: Procesé 12 tickets de combustible de las unidades. Discrepancia detectada del 0%. Los viáticos de Jorge Pérez quedaron cuadrando perfectamente con su flete.",
-        vars: { gas_conciled: true, discrepancy_fuel: "0.00 MXN" }
-      },
-      {
-        title: "Feedback de Flete por Cliente",
-        channel: "whatsapp",
-        logs: [
-          "[NLP] Analizando comentario de Jorge Pérez: 'Muy amables y puntuales'..."
-        ],
-        incoming: "Excelente servicio de flete, los muchachos cargaron los muebles pesados con mucho cuidado.",
-        outgoing: "🎉 **¡Excelente!**: El cliente evaluó nuestro servicio con 5 estrellas por cuidado y puntualidad. Se registró la felicitación en la bitácora del operador Jorge Pérez.",
-        vars: { rating_stars: 5, operator_rewarded: true }
-      },
-      {
-        title: "Reserva de Mesa con Proveedor",
-        channel: "messenger",
-        logs: [
-          "[OpenTable_API] Reservar mesa hoy 3:00 PM para 3 personas..."
-        ],
-        incoming: "Reserva una mesa hoy para comer con 2 proveedores de logística cerca de la oficina.",
-        outgoing: "🍽️ **Reserva Confirmada**: Mesa reservada para 3 personas hoy a las 3:00 PM en el restaurante *Lalo!* (Zona Centro). He enviado la confirmación y ubicación a tu calendario.",
-        vars: { restaurant_reserved: "Lalo!", party_size: 3 }
-      },
-      {
-        title: "Resumen de Entregas del Día",
-        channel: "widget",
-        logs: [
-          "[DB] count_total_logistics_tasks()"
-        ],
-        incoming: "¿Cuántas tareas logísticas se automatizaron hoy?",
-        outgoing: "✅ **Resumen del Día**: Se completaron **18 entregas**, se emitieron **18 Cartas Porte SAT** y se optimizaron **6 rutas**, ahorrando 4.5 horas de llamadas de coordinación telefónica.",
-        vars: { deliveries_completed: 18, routes_optimized_count: 6 }
-      }
-    ];
-  }
-  else {
-    return [
-      {
-        title: "Organizando Agenda del Día",
-        channel: "whatsapp",
-        logs: [
-          "[Calendar] query_today_meetings(status: 'pending')",
-          "[NLP] Ordenando reuniones por prioridad..."
-        ],
-        incoming: "Hola, ¿cuál es mi agenda de reuniones para el resto del día?",
-        outgoing: "📅 **Reuniones de hoy**:\n• 🔴 **Alta (16:30)**: Junta de resultados mensuales con socios (Sala B).\n• 🟡 **Media (17:45)**: Seguimiento de entregas con el equipo de logística.\n• 🟢 **Baja (19:00)**: Revisión de nuevos diseños de catálogo.",
-        vars: { pending_meetings: 3, highest_priority: "Junta de resultados" }
-      },
-      {
-        title: "Auditoría de XML Facturación",
-        channel: "widget",
-        logs: [
-          "[SAT_API] query_issued_cfdi(date: 'today')",
-          "[IA_AUDIT] Verificando timbrado de 12 folios fiscales..."
-        ],
-        incoming: "📊 [SISTEMA] Auditoría SAT completada. 12 facturas timbradas con éxito sin discrepancias.",
-        outgoing: "✅ **Auditoría CFDI Completa**: Verifiqué las 12 facturas del día. El timbrado ante el SAT es correcto. Los archivos XML y PDF fueron indexados en el servidor contable.",
-        vars: { sat_audit_status: "Aprobado", total_audited_cfdi: 12 }
-      },
-      {
-        title: "Alerta de Gasto Inusual",
-        channel: "messenger",
-        logs: [
-          "[ERP_Audit] Analizando transacciones bancarias del mes...",
-          "[NLP] Generando alerta de desviación de presupuesto..."
-        ],
-        incoming: "🚨 [SISTEMA] Alerta: Pago de servicio de luz excedió un 25% el promedio de los últimos 3 meses.",
-        outgoing: "🚨 **Alerta de Gasto**: Detecté un consumo de energía inusual de $8,500 MXN. Generé un reporte de análisis en tus borradores y programé una tarea de inspección física en la sucursal Norte.",
-        vars: { budget_deviation: "25%", total_amount: 8500 }
-      },
-      {
-        title: "Agendando Cita de Mantenimiento",
-        channel: "whatsapp",
-        logs: [
-          "[Calendar_API] insert_event(title: 'Mantenimiento de Maquinaria Taller')"
-        ],
-        incoming: "Agenda la inspección de la cortadora para el próximo viernes a las 10 AM.",
-        outgoing: "📅 **Cita Agendada**: Programé la inspección técnica de la cortadora para el viernes a las 10:00 AM en tu Google Calendar y envié la notificación de confirmación al técnico asignado.",
-        vars: { calendar_synced: true, event_title: "Mantenimiento Cortadora" }
-      },
-      {
-        title: "Reporte de Productividad",
-        channel: "widget",
-        logs: [
-          "[SQL] query_operator_performance_metrics()"
-        ],
-        incoming: "Dame el reporte de eficiencia operativa de esta semana.",
-        outgoing: "Aquí tienes el reporte para **" + bizName + "**:\n📈 **Eficiencia General**: 94% (+4% vs promedio)\n⏱️ **Tiempo de Fabricación**: 4.2 días promedio por mueble\n🟢 **Retrasos**: 0 incidencias\n*Tablero Kanban contable actualizado.*",
-        vars: { general_efficiency: "94%", manufacturing_time_avg: "4.2 días" }
-      },
-      {
-        title: "Transcribiendo Minuta de Junta",
-        channel: "messenger",
-        logs: [
-          "[SpeechToText] Transcribiendo audio 'minuta_operaciones.wav' con Whisper...",
-          "[NLP] Extrayendo puntos de acuerdo y responsabilidades..."
-        ],
-        incoming: "Transcribe y resume el audio de la junta de operaciones de hoy.",
-        outgoing: "📝 **Resumen de Minuta**:\n• **Acuerdo 1**: Cambiar inventario de POS físico (Responsable: Sistemas).\n• **Acuerdo 2**: Reorganizar rutas de entrega (Responsable: Logística).\n*Minuta guardada en la base de conocimiento de " + bizName + ".*",
-        vars: { transcript_length: "8 min", knowledge_base_updated: true }
-      },
-      {
-        title: "Alerta de Incidencia de Entrega",
-        channel: "whatsapp",
-        logs: [
-          "[Logistics] check_delivery_tracking()...",
-          "[NLP] Generando alerta de retraso de operador por tráfico..."
-        ],
-        incoming: "🚨 [SISTEMA] Alerta: Operador de flete F-302 reporta demora de 30 minutos por tráfico en Periférico.",
-        outgoing: "🚨 **Alerta de Ruta**: Flete demorado por tráfico. El Asistente IA envió un WhatsApp automático al cliente reprogramando la entrega y notificó al supervisor de almacén.",
-        vars: { delayed_deliveries: 1, action_taken: "Cliente notificado" }
-      },
-      {
-        title: "Conciliación Bancaria Exitosa",
-        channel: "widget",
-        logs: [
-          "[Excel] parse_csv_rows('estado_cuenta.csv')...",
-          "[ERP] Conciliando movimientos contra facturas emitidas..."
-        ],
-        incoming: "📊 [SISTEMA] Conciliación bancaria exitosa de 85 movimientos correspondientes a esta semana.",
-        outgoing: "📊 **Conciliación de Banco**: Procesé 85 movimientos bancarios. Todos coinciden con las facturas emitidas del mes. El libro contable del ERP se actualizó sin discrepancias.",
-        vars: { reconciled_items: 85, balance_variance: "0.00 MXN" }
-      },
-      {
-        title: "Reporte de Flujo de Efectivo",
-        channel: "messenger",
-        logs: [
-          "[SQL] query_cash_flow_statement(branch: 'all')"
-        ],
-        incoming: "Dame el reporte del flujo de efectivo neto de este mes.",
-        outgoing: "Aquí tienes el flujo de efectivo neto para **" + bizName + "**:\n💰 **Entradas**: $382,000 MXN\n💸 **Salidas**: $195,000 MXN\n🟢 **Flujo Neto**: +$187,000 MXN\n*Reporte financiero de finanzas consolidado.*",
-        vars: { net_cash_flow: 187000, financial_status: "Saludable" }
-      },
-      {
-        title: "Reserva de Comida de Negocios",
-        channel: "whatsapp",
-        logs: [
-          "[OpenTable_API] Buscando mesa hoy a las 3:00 PM para 3 personas..."
-        ],
-        incoming: "Reserva una mesa para comer hoy con 2 proveedores cerca de la sucursal Centro.",
-        outgoing: "🍽️ **Reserva Confirmada**: Mesa reservada para 3 personas hoy a las 3:00 PM en el restaurante *Lalo!* (Zona Centro). He enviado la confirmación y ubicación a tu calendario.",
-        vars: { restaurant_reserved: "Lalo!", party_size: 3 }
-      },
-      {
-        title: "Resumen de Fin de Jornada",
-        channel: "widget",
-        logs: [
-          "[DB] count_total_tasks_completed_today()"
-        ],
-        incoming: "¿Cuántas tareas administrativas se automatizaron hoy?",
-        outgoing: "✅ **Resumen del Día**: Se automatizaron **42 tareas repetitivas** (facturación, avisos de pago, conciliación e inventario), ahorrando un estimado de 3.5 horas de trabajo manual hoy.",
-        vars: { automated_tasks_today: 42, hours_saved_today: 3.5 }
-      }
-    ];
-  }
+  return [
+    {
+      title: "📊 Hojas de Cálculo Inteligentes",
+      channel: "widget",
+      logs: [
+        "[NLP] Interpretando petición de procesamiento de datos...",
+        "[RPA] Abriendo archivo Google Sheets de la semana...",
+        "[Data_Engine] Escaneando filas, limpiando duplicados y aplicando fórmulas..."
+      ],
+      incoming: "Hermes, analiza el Excel de la semana de " + bizName + ". Limpia las filas duplicadas, sácame el total cobrado de " + insumoItem + " y mándame los gráficos clave.",
+      outgoing: "📊 **[Excel y Google Sheets]** ¡Procesado en 0.7s! Analicé 8,450 filas de tu reporte. Eliminé 23 registros duplicados. **Total cobrado de " + insumoItem + ": $42,900 MXN**. Te he enviado por correo el archivo limpio y el enlace dinámico al Dashboard de control.",
+      vars: { excel_filas_procesadas: 8450, duplicados_eliminados: 23, total_calculado: 42900 }
+    },
+    {
+      title: "✉️ Gmail y Outlook Autónomos",
+      channel: "messenger",
+      logs: [
+        "[NLP] Analizando histórico de correos para adaptar tono de redacción...",
+        "[Gmail_API] Redactando borrador formal con adjuntos solicitados..."
+      ],
+      incoming: "Hermes, redacta un correo para el proveedor sobre el pedido de " + insumoName + ". Solicita cotización con descuento corporativo y adjunta la orden anterior.",
+      outgoing: "✉️ **[Gmail y Outlook]** ¡Borrador listo en tu Gmail! Redacté el correo formal con tu tono directo habitual. Adjunté la Orden de Compra anterior. También detecté y sinteticé los 3 correos importantes de este proveedor del último mes para prevenir discrepancias.",
+      vars: { mail_status: "Borrador creado", adjuntos_detectados: 1, tono_redaccion: "Personalizado" }
+    },
+    {
+      title: "🎙️ Resumen de Juntas Pesadas",
+      channel: "whatsapp",
+      logs: [
+        "[Whisper] Transcribiendo audio de la junta de operaciones de hoy...",
+        "[NLP] Extrayendo minutas ejecutivas, acuerdos y pendientes prioritarios..."
+      ],
+      incoming: "Hermes, saca los acuerdos y pendientes clave de la minuta de la junta de operaciones de hoy.",
+      outgoing: "🎙️ **[Resumen de Juntas]** ¡Audio de 45 min analizado! Acuerdos principales: 1) Automatizar la recompra predictiva de " + insumoName + ". 2) Optimizar los costos de " + insumoItem + ". Pendiente asignado a Sofía: Diseños finales para el viernes.",
+      vars: { duracion_junta_min: 45, acuerdos_detectados: 2, pendientes_creados: 1 }
+    },
+    {
+      title: "🌐 Búsqueda Web Sin Alucinaciones",
+      channel: "messenger",
+      logs: [
+        "[Search_Engine] Escaneando 12 fuentes confiables del sector...",
+        "[NLP] Comparando cotizaciones de proveedores y deduciendo mejor opción..."
+      ],
+      incoming: "Hermes, investiga en internet cuáles son los mejores " + searchQuery + " en la región y hazme una comparativa de precios.",
+      outgoing: "🌐 **[Búsqueda en la Web]** Realicé un escaneo inteligente. El proveedor A ofrece " + insumoName + " a un costo 15% menor pero con entrega en 5 días; el proveedor B entrega en 24h a precio regular. Adjunto tabla comparativa detallada y libre de alucinaciones.",
+      vars: { paginas_analizadas: 12, precision_score: "100%", mejor_opcion: "Proveedor A" }
+    },
+    {
+      title: "📅 Organización de Agenda",
+      channel: "whatsapp",
+      logs: [
+        "[Calendar_API] Verificando cruce de disponibilidades de agenda...",
+        "[NLP] Agendando recordatorio preventivo proactivo en base a hábitos..."
+      ],
+      incoming: "Reagenda la junta administrativa de mañana para el viernes a la 1 PM y envíale la invitación al socio.",
+      outgoing: "📅 **[Organización de Agenda]** ¡Hecho! Reagendé la reunión para el viernes a las 1:00 PM y envié la invitación de Google Calendar al socio de forma automatizada. **Recordatorio Proactivo**: Te agendé el pago pendiente de los servicios de la sucursal antes de la junta.",
+      vars: { nueva_fecha: "Viernes 1:00 PM", invitacion_enviada: true, recordatorio_habitual: "Pago de servicios" }
+    },
+    {
+      title: "📱 Control por WhatsApp/Telegram",
+      channel: "whatsapp",
+      logs: [
+        "[Telegram_API] Leyendo comando de control financiero...",
+        "[ERP_API] Extrayendo ingresos de caja y stock en tiempo real..."
+      ],
+      incoming: "Oye Hermes, ¿puedo ver cómo va el corte financiero de hoy de " + bizName + " y si hay alguna alerta en el almacén?",
+      outgoing: "📱 **[Control por Chat]** Corte financiero actual para **" + bizName + "**: **$18,450.00 MXN** en caja. Alerta de stock: Las existencias de *" + insumoName + "* están por debajo de tu mínimo establecido de seguridad. ¿Quieres que redacte la orden de reabastecimiento?",
+      vars: { ingresos_hoy: 18450, alerta_existencias: true, insumo_critico: insumoName }
+    },
+    {
+      title: "🧠 Inteligencia Adaptativa",
+      channel: "widget",
+      logs: [
+        "[Cognitive_Engine] Analizando históricos de operaciones...",
+        "[Security_Private] Encriptando reglas de negocio en tu red privada..."
+      ],
+      incoming: "Hermes, ¿cómo podemos optimizar la retención de clientes del sector de " + bizSector + " con mi base de datos privada?",
+      outgoing: "🧠 **[Inteligencia Adaptativa]** Basado en tu historial, la mayor deserción ocurre a los 30 días de inactividad. He configurado una regla privada en tu red para que el sistema envíe alertas proactivas a los clientes antes de que se cumpla el plazo. ¡No hay límites y todo se puede potenciar!",
+      vars: { red_privada: "Encriptada AES-256", regla_adaptativa: "Configurada", optimizacion_retencion: "+18%" }
+    }
+  ];
 }
 
 function completeProfileData(prof, sectorName, bizName) {
@@ -2198,6 +1587,7 @@ function applySectorTheme(sectorId) {
 
 const sectorEmojis = {
   automotriz: '🚗',
+  billar: '🎱',
   dentista: '🦷',
   salud: '🥼',
   restaurante: '🍔',
@@ -2221,31 +1611,44 @@ function initMockups() {
   document.querySelectorAll('.biz-name').forEach(el => el.textContent = bizName);
   document.querySelectorAll('.biz-sector').forEach(el => el.textContent = bizSector);
   
-  // Inject Logos
+    // Inject Logos
   document.querySelectorAll('.business-logo-container').forEach(el => {
     if (!bizLogo || bizLogo === "null" || bizLogo === "undefined" || bizLogo === "" || bizLogo.includes("placeholder") || bizLogo.includes("logo_placeholder")) {
-      const emoji = sectorEmojis[detectedSectorId] || '🧠';
-      const hue1 = (bizName.length * 12) % 360;
-      const hue2 = (hue1 + 140) % 360;
-      el.style.background = `linear-gradient(135deg, hsl(${hue1}, 80%, 40%), hsl(${hue2}, 85%, 50%))`;
-      el.style.color = '#fff';
-      el.style.fontWeight = '900';
-      el.style.fontFamily = 'var(--font-title)';
+      const currentWidth = el.style.width || el.offsetWidth;
+      const isHeader = (currentWidth === '68px' || currentWidth === 68 || el.classList.contains('header-logo') || el.offsetHeight > 60);
+      
       el.style.display = 'flex';
-      el.style.flexDirection = 'column';
       el.style.alignItems = 'center';
       el.style.justifyContent = 'center';
+      el.style.position = 'relative';
       el.style.border = '2px solid rgba(255,255,255,0.25)';
-      el.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
-      el.style.textShadow = '0 2px 4px rgba(0,0,0,0.3)';
-      
-      const currentWidth = el.style.width || el.offsetWidth;
-      const isHeader = (currentWidth === '68px' || currentWidth === 68 || el.classList.contains('header-logo'));
-      
-      if (isHeader) {
-        el.innerHTML = `<span style="font-size: 26px; line-height: 1;">${emoji}</span>`;
+      el.style.boxShadow = '0 8px 20px rgba(0,0,0,0.4)';
+      el.style.overflow = 'hidden';
+
+      if (detectedSectorId === 'billar') {
+        // Bola de billar 8 en 3D con degradado radial realista
+        el.style.background = 'radial-gradient(circle at 30% 30%, #3e3e42 0%, #09090b 70%)';
+        const numSize = isHeader ? '14px' : '10px';
+        const circleSize = isHeader ? '30px' : '22px';
+        el.innerHTML = `
+          <div style="width: ${circleSize}; height: ${circleSize}; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-title); font-weight: 900; color: #000; font-size: ${numSize}; box-shadow: inset 1px 1px 3px rgba(0,0,0,0.4);">8</div>
+          <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 50%); pointer-events: none;"></div>
+        `;
       } else {
-        el.innerHTML = `<span style="font-size: 18px; line-height: 1;">${emoji}</span>`;
+        const emoji = sectorEmojis[detectedSectorId] || '🧠';
+        const hue1 = (bizName.length * 12) % 360;
+        const hue2 = (hue1 + 140) % 360;
+        el.style.background = `linear-gradient(135deg, hsl(${hue1}, 80%, 40%), hsl(${hue2}, 85%, 50%))`;
+        el.style.color = '#fff';
+        el.style.fontWeight = '900';
+        el.style.fontFamily = 'var(--font-title)';
+        el.style.textShadow = '0 2px 4px rgba(0,0,0,0.3)';
+        
+        if (isHeader) {
+          el.innerHTML = `<span style="font-size: 26px; line-height: 1;">${emoji}</span>`;
+        } else {
+          el.innerHTML = `<span style="font-size: 18px; line-height: 1;">${emoji}</span>`;
+        }
       }
     } else {
       el.style.background = 'transparent';
@@ -2253,7 +1656,7 @@ function initMockups() {
     }
   });
 
-  // Setup dynamic URLs
+// Setup dynamic URLs
   const cleanUrl = bizName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com.mx';
   document.getElementById('mock-browser-url').textContent = `https://www.${cleanUrl}`;
 
@@ -3925,9 +3328,9 @@ function runAsistenteLoop() {
     }
     
     if (activeLoopStep >= assistantScenarios.length) {
-      showDemoNarrative(`✅ <strong>Asistente IA:</strong> Cita agendada de forma autónoma en la agenda de <strong>${bizName}</strong>. Transicionando a Punto de Venta (POS) para cobrar el servicio...`);
+      showDemoNarrative(`✅ <strong>Asistente IA:</strong> Flujo de control administrativo completado para <strong>${bizName}</strong>. Transicionando a tu Página Web corporativa...`);
       activeLoopTimeout = setTimeout(() => {
-        const nextTab = document.querySelector('.tab-link[data-tab="pos"]');
+        const nextTab = document.querySelector('.tab-link[data-tab="web"]');
         if (nextTab) nextTab.click();
       }, 5000);
       return;
@@ -4071,9 +3474,9 @@ function runWebLoop() {
     const sections = ['services', 'about', 'contact', 'home'];
     
     if (activeLoopStep >= sections.length) {
-      showDemoNarrative(`🔄 <strong>Ecosistema Brain Branding:</strong> Prospectos captados fluyen al Asistente IA de WhatsApp. Reiniciando ciclo de demostración...`);
+      showDemoNarrative(`🌐 <strong>Página Web:</strong> Captura de prospectos simulada. Transicionando a tu Software Contable ERP a Medida...`);
       activeLoopTimeout = setTimeout(() => {
-        const nextTab = document.querySelector('.tab-link[data-tab="asistente"]');
+        const nextTab = document.querySelector('.tab-link[data-tab="erp"]');
         if (nextTab) nextTab.click();
       }, 5000);
       return;
@@ -4117,9 +3520,9 @@ function runERPLoop() {
     const subtabs = ['pl', 'crm', 'tasks', 'sat', 'flow'];
     
     if (activeLoopStep >= subtabs.length) {
-      showDemoNarrative(`🧠 <strong>ERP / Software a Medida:</strong> IA optimiza tareas administrativas. ¡No hay límites y todo se puede potenciar! Transicionando a Página Web...`);
+      showDemoNarrative(`🧠 <strong>Software ERP a Medida:</strong> Conciliación y automatización completadas. ¡No hay límites, todo se puede potenciar! Reiniciando ciclo del ecosistema...`);
       activeLoopTimeout = setTimeout(() => {
-        const nextTab = document.querySelector('.tab-link[data-tab="web"]');
+        const nextTab = document.querySelector('.tab-link[data-tab="asistente"]');
         if (nextTab) nextTab.click();
       }, 5000);
       return;
