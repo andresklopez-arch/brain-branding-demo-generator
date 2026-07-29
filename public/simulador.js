@@ -1680,8 +1680,12 @@ function initMockups() {
   const cleanUrl = bizName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com.mx';
   document.getElementById('mock-browser-url').textContent = `https://www.${cleanUrl}`;
 
-  // Pre-cargar facturas SAT temáticas del sector
-  initERPSATInvoices();
+  // Pre-cargar facturas SAT temáticas del sector de forma segura
+  try {
+    initERPSATInvoices();
+  } catch (e) {
+    console.error("Error al inicializar facturas SAT:", e);
+  }
 
   // 1. WhatsApp Chat Init
   const chatMessages = document.getElementById('chat-messages');
@@ -3682,9 +3686,7 @@ function attachPauseListeners() {
   });
   document.querySelectorAll('.chat-theme-toggle-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      if (e.isTrusted) {
-        pauseActiveTabLoop('asistente');
-      }
+      // Ignorar para evitar pausas accidentales en la simulación autónoma
     });
   });
 
@@ -3787,7 +3789,7 @@ function initERPSATInvoices() {
   const satTbody = document.getElementById('erp-sat-table-body');
   if (!satTbody) return;
   
-  if (satTbody.children.length > 0) return;
+  if (satTbody.innerHTML.trim() !== "") return;
   
   let concepts = [];
   if (detectedSectorId === 'automotriz') {
