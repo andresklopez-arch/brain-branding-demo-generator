@@ -1625,109 +1625,136 @@ const sectorEmojis = {
 
 // ── INITIALIZE DATA IN MOCKUPS ──
 function initMockups() {
-  applySectorTheme(detectedSectorId);
+  logSysInfo("Iniciando hidratación segura de módulos...");
 
-  // Update names
-  document.querySelectorAll('.biz-name').forEach(el => el.textContent = bizName);
-  document.querySelectorAll('.biz-sector').forEach(el => el.textContent = bizSector);
-  
-    // Inject Logos
-  document.querySelectorAll('.business-logo-container').forEach(el => {
-    if (!bizLogo || bizLogo === "null" || bizLogo === "undefined" || bizLogo === "" || bizLogo.includes("placeholder") || bizLogo.includes("logo_placeholder")) {
-      const currentWidth = el.style.width || el.offsetWidth;
-      const isHeader = (currentWidth === '68px' || currentWidth === 68 || el.classList.contains('header-logo') || el.offsetHeight > 60);
-      
-      el.style.display = 'flex';
-      el.style.alignItems = 'center';
-      el.style.justifyContent = 'center';
-      el.style.position = 'relative';
-      el.style.border = '2px solid rgba(255,255,255,0.25)';
-      el.style.boxShadow = '0 8px 20px rgba(0,0,0,0.4)';
-      el.style.overflow = 'hidden';
+  try {
+    applySectorTheme(detectedSectorId);
+    logSysInfo("Tema de sector comercial aplicado.");
+  } catch (e) { logSysError("applySectorTheme", e); }
 
-      if (detectedSectorId === 'billar') {
-        // Bola de billar 8 en 3D con degradado radial realista
-        el.style.background = 'radial-gradient(circle at 30% 30%, #3e3e42 0%, #09090b 70%)';
-        const numSize = isHeader ? '14px' : '10px';
-        const circleSize = isHeader ? '30px' : '22px';
-        el.innerHTML = `
-          <div style="width: ${circleSize}; height: ${circleSize}; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-title); font-weight: 900; color: #000; font-size: ${numSize}; box-shadow: inset 1px 1px 3px rgba(0,0,0,0.4);">8</div>
-          <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 50%); pointer-events: none;"></div>
-        `;
-      } else {
-        const emoji = sectorEmojis[detectedSectorId] || '🧠';
-        const hue1 = (bizName.length * 12) % 360;
-        const hue2 = (hue1 + 140) % 360;
-        el.style.background = `linear-gradient(135deg, hsl(${hue1}, 80%, 40%), hsl(${hue2}, 85%, 50%))`;
-        el.style.color = '#fff';
-        el.style.fontWeight = '900';
-        el.style.fontFamily = 'var(--font-title)';
-        el.style.textShadow = '0 2px 4px rgba(0,0,0,0.3)';
+  try {
+    document.querySelectorAll('.biz-name').forEach(el => el.textContent = bizName);
+    document.querySelectorAll('.biz-sector').forEach(el => el.textContent = bizSector);
+    logSysInfo("Textos dinámicos del negocio inyectados.");
+  } catch (e) { logSysError("UpdateNames", e); }
+
+  try {
+    document.querySelectorAll('.business-logo-container').forEach(el => {
+      if (!bizLogo || bizLogo === "null" || bizLogo === "undefined" || bizLogo === "" || bizLogo.includes("placeholder") || bizLogo.includes("logo_placeholder")) {
+        const currentWidth = el.style.width || el.offsetWidth;
+        const isHeader = (currentWidth === '68px' || currentWidth === 68 || el.classList.contains('header-logo-container') || el.classList.contains('header-logo') || el.offsetHeight > 60);
         
-        if (isHeader) {
-          el.innerHTML = `<span style="font-size: 26px; line-height: 1;">${emoji}</span>`;
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+        el.style.position = 'relative';
+        el.style.border = '2px solid rgba(255,255,255,0.25)';
+        el.style.boxShadow = '0 8px 20px rgba(0,0,0,0.4)';
+        el.style.overflow = 'hidden';
+
+        if (detectedSectorId === 'billar') {
+          el.style.background = 'radial-gradient(circle at 30% 30%, #3e3e42 0%, #09090b 70%)';
+          const numSize = isHeader ? '14px' : '10px';
+          const circleSize = isHeader ? '30px' : '22px';
+          el.innerHTML = `
+            <div style="width: ${circleSize}; height: ${circleSize}; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-title); font-weight: 900; color: #000; font-size: ${numSize}; box-shadow: inset 1px 1px 3px rgba(0,0,0,0.4);">8</div>
+            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 50%); pointer-events: none;"></div>
+          `;
         } else {
-          el.innerHTML = `<span style="font-size: 18px; line-height: 1;">${emoji}</span>`;
+          const emoji = sectorEmojis[detectedSectorId] || '🧠';
+          const hue1 = (bizName.length * 12) % 360;
+          const hue2 = (hue1 + 140) % 360;
+          el.style.background = `linear-gradient(135deg, hsl(${hue1}, 80%, 40%), hsl(${hue2}, 85%, 50%))`;
+          el.style.color = '#fff';
+          el.style.fontWeight = '900';
+          el.style.fontFamily = 'var(--font-title)';
+          el.style.textShadow = '0 2px 4px rgba(0,0,0,0.3)';
+          
+          if (isHeader) {
+            el.innerHTML = `<span style="font-size: 26px; line-height: 1;">${emoji}</span>`;
+          } else {
+            el.innerHTML = `<span style="font-size: 18px; line-height: 1;">${emoji}</span>`;
+          }
         }
+      } else {
+        el.style.background = 'transparent';
+        el.innerHTML = `<img src="${bizLogo}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">`;
       }
-    } else {
-      el.style.background = 'transparent';
-      el.innerHTML = `<img src="${bizLogo}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">`;
-    }
-  });
+    });
+    logSysInfo("Logotipos dinámicos del sector generados.");
+  } catch (e) { logSysError("LogoGeneration", e); }
 
-// Setup dynamic URLs
-  const cleanUrl = bizName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com.mx';
-  document.getElementById('mock-browser-url').textContent = `https://www.${cleanUrl}`;
+  try {
+    const cleanUrl = bizName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com.mx';
+    const urlEl = document.getElementById('mock-browser-url');
+    if (urlEl) urlEl.textContent = `https://www.${cleanUrl}`;
+  } catch (e) { logSysError("BrowserURLSetup", e); }
 
-  // Pre-cargar facturas SAT temáticas del sector de forma segura
   try {
     initERPSATInvoices();
-  } catch (e) {
-    console.error("Error al inicializar facturas SAT:", e);
-  }
+    logSysInfo("Facturas SAT del sector cargadas en el ERP.");
+  } catch (e) { logSysError("SATInvoicesHydration", e); }
 
-  // 1. WhatsApp Chat Init
-  const chatMessages = document.getElementById('chat-messages');
-  chatMessages.innerHTML = '';
-  
-  const initMsg = profile.chatInit
-    .replace(/{bizName}/g, bizName)
-    .replace(/{bizProblem}/g, bizProblem);
-  const replyMsg = profile.chatReply
-    .replace(/{bizName}/g, bizName)
-    .replace(/{bizProblem}/g, bizProblem);
+  try {
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatMessages) {
+      chatMessages.innerHTML = '';
+      const initMsg = profile.chatInit.replace(/{bizName}/g, bizName).replace(/{bizProblem}/g, bizProblem);
+      const replyMsg = profile.chatReply.replace(/{bizName}/g, bizName).replace(/{bizProblem}/g, bizProblem);
+      addChatMessage('incoming', initMsg);
+      setTimeout(() => {
+        addChatMessage('outgoing', replyMsg);
+      }, 1000);
+      logSysInfo("Mensajes iniciales del Asistente inyectados.");
+    }
+  } catch (e) { logSysError("ChatInit", e); }
 
-  addChatMessage('incoming', initMsg);
-  setTimeout(() => {
-    addChatMessage('outgoing', replyMsg);
-  }, 1000);
+  try {
+    initPOSProducts();
+    logSysInfo("Catálogo de productos del POS inicializado.");
+  } catch (e) { logSysError("POSGridInit", e); }
 
-  // 2. POS Grid Init
-  initPOSProducts();
+  try {
+    const titleEl = document.getElementById('mock-web-title');
+    const sloganEl = document.getElementById('mock-web-slogan');
+    if (titleEl) titleEl.textContent = profile.webTitle;
+    if (sloganEl) sloganEl.textContent = profile.webSlogan;
+    applyWebTheme(bizStyle);
+    logSysInfo("Título, lema y estilo de la Página Web aplicados.");
+  } catch (e) { logSysError("WebThemeInit", e); }
 
-  // 3. Mini Web Title & Slogan
-  document.getElementById('mock-web-title').textContent = profile.webTitle;
-  document.getElementById('mock-web-slogan').textContent = profile.webSlogan;
+  try {
+    const advEl = document.getElementById('ai-advisor-advice');
+    if (advEl) advEl.textContent = profile.aiAdvice;
+  } catch (e) { logSysError("AIAdviceCard", e); }
 
-  // Initialize Website Theme based on user choice
-  applyWebTheme(bizStyle);
+  try {
+    const btlEl = document.getElementById('erp-bottleneck-desc');
+    if (btlEl) btlEl.textContent = `Cuello de botella: ${profile.erpBottleneck}`;
+  } catch (e) { logSysError("ERPBottleneckLabel", e); }
 
-  // 3.5 AI Advisor Card
-  const advEl = document.getElementById('ai-advisor-advice');
-  if (advEl) advEl.textContent = profile.aiAdvice;
+  try {
+    initPOSInventory();
+  } catch (e) { logSysError("initPOSInventory", e); }
 
-  // 4. ERP Workflow Problem Description
-  document.getElementById('erp-bottleneck-desc').textContent = `Cuello de botella: ${profile.erpBottleneck}`;
+  try {
+    initWebData();
+  } catch (e) { logSysError("initWebData", e); }
 
-  // Hydrate high fidelity sub-simulators
-  initPOSInventory();
-  initWebData();
-  startWebCountdown();
-  updateERPPL();
+  try {
+    startWebCountdown();
+  } catch (e) { logSysError("startWebCountdown", e); }
 
-  // Update final WhatsApp link
-  updateWhatsAppLink();
+  try {
+    updateERPPL();
+  } catch (e) { logSysError("updateERPPL", e); }
+
+  try {
+    updateWhatsAppLink();
+    logSysInfo("Enlace WhatsApp de salida configurado.");
+  } catch (e) { logSysError("updateWhatsAppLink", e); }
+
+  logSysInfo("Hidratación de mockups finalizada.");
 }
 
 // ── MOCKUP A: CHAT CONTROLLER ──
@@ -3607,7 +3634,7 @@ function runERPLoop() {
   const step = () => {
     if (currentLoopTab !== 'erp') return;
 
-    const subtabs = ['pl', 'crm', 'tasks', 'sat', 'flow'];
+    const subtabs = ['pl', 'crm', 'tasks', 'sat', 'flow', 'syslog'];
     
     if (activeLoopStep >= subtabs.length) {
       showDemoNarrative(`🧠 <strong>Software ERP a Medida:</strong> Conciliación y automatización completadas. ¡No hay límites, todo se puede potenciar! Reiniciando ciclo del ecosistema...`, 'erp');
@@ -3857,3 +3884,29 @@ function initERPSATInvoices() {
   });
 }
 
+
+// ── SUBSISTEMA DE LOGS Y DIAGNÓSTICO DE SISTEMA ──
+function logSysError(context, error) {
+  console.error(`[ERROR ${context}]`, error);
+  const syslogEl = document.getElementById('erp-syslog-logs');
+  if (syslogEl) {
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const div = document.createElement('div');
+    div.style.color = '#f87171'; // Rojo pastel premium
+    div.innerHTML = `[${time}] ❌ ERROR [${context}]: 	ext{error.message || error}`;
+    syslogEl.appendChild(div);
+    syslogEl.scrollTop = syslogEl.scrollHeight;
+  }
+}
+
+function logSysInfo(message) {
+  console.log(`[INFO]`, message);
+  const syslogEl = document.getElementById('erp-syslog-logs');
+  if (syslogEl) {
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const div = document.createElement('div');
+    div.innerHTML = `[${time}] ℹ️ 	ext{message}`;
+    syslogEl.appendChild(div);
+    syslogEl.scrollTop = syslogEl.scrollHeight;
+  }
+}
