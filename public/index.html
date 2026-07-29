@@ -1153,8 +1153,8 @@
         <div style="display: flex; flex-direction: column; gap: 6px; position: relative;">
           <label style="font-size: 12px; font-weight: 700; color: #fff;">Giro o Sector Comercial</label>
           <div style="position: relative; width: 100%;">
-            <input type="text" id="sim-business-sector" placeholder="Escribe tu sector (ej: Restaurante, Tienda, Consultoría...)" style="width: 100%; padding: 12px 40px 12px 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 14px; box-sizing: border-box;" autocomplete="off">
-            <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; font-size: 14px;">🔍</span>
+            <textarea id="sim-business-sector" placeholder="Escribe tu sector (ej: Restaurante, Tienda, Consultoría...)" rows="1" style="width: 100%; padding: 12px 40px 12px 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 14px; box-sizing: border-box; font-family: inherit; resize: none; overflow-y: hidden; line-height: 1.4; display: block; min-height: 44px; max-height: 110px;" autocomplete="off" oninput="this.style.height='auto'; this.style.height=(this.scrollHeight)+'px';"></textarea>
+            <span style="position: absolute; right: 12px; top: 14px; color: var(--text-muted); pointer-events: none; font-size: 14px;">🔍</span>
           </div>
         </div>
 
@@ -1179,6 +1179,20 @@
       catch(e) { var m={}; return { getItem:function(k){return m[k]||null;}, setItem:function(k,v){m[k]=String(v);}, removeItem:function(k){delete m[k];} }; }
     })();
 
+    function sanitizeHTML(str) {
+      if (!str) return "";
+      return str.replace(/[&<>"']/g, function(m) {
+        switch (m) {
+          case '&': return '&amp;';
+          case '<': return '&lt;';
+          case '>': return '&gt;';
+          case '"': return '&quot;';
+          case "'": return '&#039;';
+          default: return m;
+        }
+      }).trim();
+    }
+
     window.BB_startSim = function() {
       var btn = document.getElementById('start-sim-btn');
       if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando...'; btn.style.opacity = '0.7'; }
@@ -1186,8 +1200,8 @@
       var bizName    = (document.getElementById('sim-business-name')    || {}).value || '';
       var bizSector  = (document.getElementById('sim-business-sector')  || {}).value || '';
 
-      bizName    = bizName.trim()    || 'Mi Empresa';
-      bizSector  = bizSector.trim()  || 'General';
+      bizName    = sanitizeHTML(bizName)    || 'Mi Empresa';
+      bizSector  = sanitizeHTML(bizSector)  || 'General';
 
       var now = Date.now().toString();
       

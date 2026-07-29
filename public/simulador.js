@@ -1,3 +1,4 @@
+let detectedSectorId = 'otro';
 // ── READ SESSION DATA & AUTOCORRECT SPELLING ──
 function cleanSpelling(text) {
   if (!text) return "";
@@ -232,13 +233,18 @@ const terminal = document.getElementById('terminal-logs');
 const progressBar = document.getElementById('loader-progress-bar');
 const logs = [
   `[BOOT] Conectando con el motor cognitivo de Brain Branding v4.2...`,
-  `[BÚSQUEDA_IA] Escaneando internet en vivo en busca de soluciones de software para: "${bizSector}"...`,
-  `[BÚSQUEDA_IA] Buscando mejores prácticas sectoriales aplicables a "${bizName}"...`,
-  `[DIAGNÓSTICO] Analizando cuello de botella crítico: "${bizProblem}"...`,
-  `[INTEGRACIÓN] Extrayendo patrones y automatizaciones cognitivas para erradicar: "${bizProblem}"...`,
+  `[BÚSQUEDA_IA] Escaneando internet en vivo en busca de soluciones para el sector: "${bizSector}"...`,
+  `[DIAGNÓSTICO] Identificando cuellos de botella contables y operativos de "${bizName}"...`,
+  (detectedSectorId === 'automotriz') ? `[AUTOMOTRIZ_IA] Cargando módulos de órdenes de taller, inventario de refacciones y alertas de servicio...` :
+  (detectedSectorId === 'dentista') ? `[DENTISTA_IA] Cargando base de tratamientos odontológicos, radiografías y alertas de stock de resinas...` :
+  (detectedSectorId === 'salud') ? `[CLÍNICA_IA] Cargando expediente clínico digital, recetas médicas electrónicas SAT y agenda de especialistas...` :
+  (detectedSectorId === 'restaurante') ? `[BISTRÓ_IA] Cargando sistema de comandas móviles, inventario de perecederos y reportes de caja...` :
+  (detectedSectorId === 'gimnasio') ? `[FITNESS_IA] Sincronizando control de accesos de miembros, planes de suscripción y agendas de entrenadores...` :
+  `[IA_ENGINE] Configurando base de conocimiento, slogans y catálogo adaptado para "${bizSector}"...`,
+  `[DIAGNÓSTICO] Extrayendo patrones y automatizaciones cognitivas para erradicar cuellos de botella...`,
   `[COMPILANDO] Estructurando simuladores: Chatbot 24/7, POS Inteligente, Web Adaptativa y ERP Contable...`,
-  `[SINCRO] Enlazando base de datos simulada y pasarelas de pago con el ERP de ${bizName}...`,
-  `[SUCCESS] Algoritmos aplicados con éxito. Iniciando sandbox interactivo.`
+  `[SINCRO] Sincronizando arqueos financieros simulados con el ERP inteligente de ${bizName}...`,
+  `[SUCCESS] Algoritmos aplicados con éxito. Iniciando sandbox interactivo y animación por profesión.`
 ];
 
 let logIndex = 0;
@@ -628,8 +634,6 @@ const sectorProfiles = {
     aiAdvice: "Implementar integraciones personalizadas vía API y flujos automatizados de datos elimina errores de captura humana en un 95% y eleva la productividad global de tu administración."
   }
 };
-
-let detectedSectorId = 'otro';
 
 function getSectorProfile(sector) {
   if (!sector) {
@@ -2142,6 +2146,9 @@ const rawProfile = getSectorProfile(bizSector);
 const profile = buildProblemProfile(rawProfile);
 completeProfileData(profile, bizSector, bizName);
 
+// Aplicar el tema dinámico al instante en la carga global para pintar el cargador inicial
+applySectorTheme(detectedSectorId);
+
 function applySectorTheme(sectorId) {
   const root = document.documentElement;
   let primary = '#a855f7'; // morado original
@@ -2176,10 +2183,12 @@ function applySectorTheme(sectorId) {
     accent = '#84cc16';
   }
 
-  root.style.setProperty('--primary', primary);
-  root.style.setProperty('--secondary', secondary);
-  root.style.setProperty('--accent', accent);
-  root.style.setProperty('--bg-glow', glow);
+  if (root && root.style) {
+    root.style.setProperty('--primary', primary);
+    root.style.setProperty('--secondary', secondary);
+    root.style.setProperty('--accent', accent);
+    root.style.setProperty('--bg-glow', glow);
+  }
   
   const preview = document.getElementById('mock-web-preview');
   if (preview) {
