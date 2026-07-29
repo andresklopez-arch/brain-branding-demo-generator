@@ -3383,7 +3383,7 @@ function runAsistenteLoop() {
             const latency = Math.round(Math.random() * 220 + 80);
             updateTelemetry(scenario.incoming, outgoingMsg, latency);
             
-            activeLoopTimeout = setTimeout(step, 6500);
+            activeLoopTimeout = setTimeout(step, 4000);
           }, 1500);
         }, 1000);
       }, 1200);
@@ -3583,24 +3583,28 @@ function attachPauseListeners() {
   ];
   assistantInputs.forEach(el => {
     if (el) {
-      el.addEventListener('focus', () => pauseActiveTabLoop('asistente'));
-      el.addEventListener('click', () => pauseActiveTabLoop('asistente'));
-      el.addEventListener('keypress', () => pauseActiveTabLoop('asistente'));
+      el.addEventListener('focus', (e) => { if (e.isTrusted) pauseActiveTabLoop('asistente'); });
+      el.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('asistente'); });
+      el.addEventListener('keypress', (e) => { if (e.isTrusted) pauseActiveTabLoop('asistente'); });
     }
   });
   document.querySelectorAll('.chat-theme-toggle-btn').forEach(btn => {
-    btn.addEventListener('click', () => pauseActiveTabLoop('asistente'));
+    btn.addEventListener('click', (e) => {
+      if (e.isTrusted) {
+        pauseActiveTabLoop('asistente');
+      }
+    });
   });
 
   // POS
   document.querySelectorAll('.pos-prod-card').forEach(btn => {
-    btn.addEventListener('click', () => pauseActiveTabLoop('pos'));
+    btn.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('pos'); });
   });
   document.querySelectorAll('.tip-btn').forEach(btn => {
-    btn.addEventListener('click', () => pauseActiveTabLoop('pos'));
+    btn.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('pos'); });
   });
   document.querySelectorAll('.coupon-btn').forEach(btn => {
-    btn.addEventListener('click', () => pauseActiveTabLoop('pos'));
+    btn.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('pos'); });
   });
   const posSelects = [
     document.getElementById('pos-loyalty-select'),
@@ -3610,7 +3614,7 @@ function attachPauseListeners() {
     document.getElementById('clear-cart-btn')
   ];
   posSelects.forEach(el => {
-    if (el) el.addEventListener('click', () => pauseActiveTabLoop('pos'));
+    if (el) el.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('pos'); });
   });
 
   // Web
@@ -3622,7 +3626,7 @@ function attachPauseListeners() {
     document.getElementById('web-nav-contact')
   ];
   webBtns.forEach(el => {
-    if (el) el.addEventListener('click', () => pauseActiveTabLoop('web'));
+    if (el) el.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('web'); });
   });
   
   // ERP
@@ -3631,10 +3635,10 @@ function attachPauseListeners() {
     document.getElementById('erp-optimize-toggle')
   ];
   erpBtns.forEach(el => {
-    if (el) el.addEventListener('click', () => pauseActiveTabLoop('erp'));
+    if (el) el.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('erp'); });
   });
   document.querySelectorAll('.erp-subtab-btn').forEach(btn => {
-    btn.addEventListener('click', () => pauseActiveTabLoop('erp'));
+    btn.addEventListener('click', (e) => { if (e.isTrusted) pauseActiveTabLoop('erp'); });
   });
 }
 
