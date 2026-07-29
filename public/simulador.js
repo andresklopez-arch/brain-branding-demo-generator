@@ -375,28 +375,53 @@ const sectorProfiles = {
     }
   },
   "salud": {
-    logoName: "Salud / Clínica",
-    chatInit: "Hola! Buenas tardes, ¿tienen cita disponible para una limpieza dental mañana por la tarde?",
-    chatReply: "¡Buenas tardes! Sí, tenemos espacios libres para *Limpieza Dental* mañana a las 3:00 PM y 5:00 PM en **{bizName}**. He apartado tentativamente el horario de las 3:00 PM. ¿Te queda bien para agendarlo oficialmente?",
+    logoName: "Consultorio Médico / Clínica",
+    chatInit: "Hola! Buenas tardes, ¿tienen cita disponible para una consulta general mañana con el especialista?",
+    chatReply: "¡Buenas tardes! Sí, tenemos espacios libres para *Consulta Médica* mañana a las 10:00 AM y 4:00 PM con nuestro especialista de **{bizName}**. He apartado tentativamente el horario de las 10:00 AM. ¿Te gustaría agendarlo oficialmente?",
     posProducts: [
-      { id: 1, icon: '🩺', name: 'Consulta Médica', price: 600 },
-      { id: 2, icon: '🦷', name: 'Limpieza Dental', price: 800 },
-      { id: 3, icon: '🔬', name: 'Estudios de Laboratorio', price: 1200 },
-      { id: 4, icon: '💊', name: 'Receta y Tratamiento', price: 450 },
-      { id: 5, icon: '🧪', name: 'Prueba Diagnóstica', price: 1500 },
-      { id: 6, icon: '🩹', name: 'Curación Clínica', price: 500 }
+      { id: 1, icon: '🩺', name: 'Consulta General', price: 700 },
+      { id: 2, icon: '🥼', name: 'Consulta Especializada', price: 1200 },
+      { id: 3, icon: '🔬', name: 'Estudios Clínicos', price: 1500 },
+      { id: 4, icon: '💊', name: 'Recetario Digital SAT', price: 200 },
+      { id: 5, icon: '🧪', name: 'Análisis de Sangre', price: 900 },
+      { id: 6, icon: '🩹', name: 'Procedimiento Menor', price: 2500 }
     ],
-    webTitle: "Cuidado Profesional de tu Salud",
-    webSlogan: "Reserva tus citas médicas en línea 24/7 de forma inmediata, consulta nuestro directorio de especialistas y accede a tu historial médico.",
-    erpBottleneck: "Alta tasa de inasistencia a consultas y citas duplicadas.",
-    erpOptimizeNode: "✅ Agenda y Recordatorios Automatizados",
-    erpOptimizeDesc: "Confirmaciones automáticas vía WhatsApp integradas a la agenda. Reduce ausentismo en un 45%.",
-    aiAdvice: "El uso de asistentes conversacionales para confirmación y recordatorio automático de consultas médicas disminuye el ausentismo (no-show) del 24% a menos del 5%, maximizando la ocupación del staff.",
+    webTitle: "Clínica Médica y Especialidades",
+    webSlogan: "Cuidado profesional de tu salud con tecnología avanzada. Reserva tu cita en línea, accede a recetas digitales y controla tu historial clínico de forma segura.",
+    erpBottleneck: "Alta tasa de inasistencia a consultas y falta de historial clínico digital unificado.",
+    erpOptimizeNode: "✅ Confirmación de Citas y Expediente IA",
+    erpOptimizeDesc: "Envío automatizado de recordatorios interactivos por WhatsApp y expediente clínico en la nube. Reduce el no-show un 45%.",
+    aiAdvice: "Automatizar la confirmación de citas médicas mediante recordatorios proactivos e integrados en WhatsApp reduce el ausentismo de pacientes de un 24% a menos del 5%, mejorando la productividad del staff.",
     aiAdvices: {
-      asistente: "Consejo IA: Un asistente médico virtual que responda preguntas comunes y valide seguros médicos por chat agiliza la recepción de la clínica y ahorra 15 horas semanales de llamadas.",
-      pos: "Consejo IA: Integrar el cobro de consultas directamente con el expediente médico asegura el control de ingresos y automatiza el reporte de insumos médicos utilizados.",
-      web: "Consejo IA: Un portal de pacientes para reservar citas médicas en línea 24/7 y descargar recetas o estudios clínicos eleva la retención de pacientes un 35%.",
-      erp: "Consejo IA: Agendar citas médicas digitales integradas con recordatorios automáticos por WhatsApp disminuye el ausentismo (no-show) de pacientes del 24% a menos del 5%."
+      asistente: "Consejo IA: Un Asistente Virtual que responda dudas frecuentes y valide seguros médicos ahorra 18 horas de trabajo administrativo semanal.",
+      pos: "Consejo IA: Vincular el cobro de la consulta con la emisión de recetas digitales SAT automatiza el flujo de facturación y auditoría interna.",
+      web: "Consejo IA: Permitir a los pacientes agendar y descargar su historial de recetas web incrementa la tasa de retorno de pacientes en un 40%.",
+      erp: "Consejo IA: Sincronizar recordatorios por WhatsApp integrados en la agenda reduce la inasistencia (no-show) médica a menos del 5%."
+    }
+  },
+  "dentista": {
+    logoName: "Clínica Dental / Dentista",
+    chatInit: "Hola! Buenas tardes, ¿tienen espacio para una limpieza o consulta de ortodoncia mañana por la tarde?",
+    chatReply: "¡Buenas tardes! Sí, tenemos espacios disponibles para *Limpieza Dental* y ortodoncia mañana a las 3:00 PM y 5:00 PM en **{bizName}**. He reservado provisionalmente el espacio de las 3:00 PM. ¿Te queda bien para agendarlo oficialmente?",
+    posProducts: [
+      { id: 1, icon: '🦷', name: 'Limpieza Dental Ultrasonido', price: 800 },
+      { id: 2, icon: '🪥', name: 'Diagnóstico y Radiografía', price: 500 },
+      { id: 3, icon: '🦷', name: 'Resina Estética', price: 1200 },
+      { id: 4, icon: '💎', name: 'Blanqueamiento Láser', price: 3500 },
+      { id: 5, icon: '🦷', name: 'Consulta Ortodoncia', price: 700 },
+      { id: 6, icon: '🩹', name: 'Tratamiento de Caries', price: 1500 }
+    ],
+    webTitle: "Tu Sonrisa en Manos de Expertos",
+    webSlogan: "Tratamientos dentales de última generación. Agenda tu limpieza, visualiza tu plan de ortodoncia y consulta a tu dentista 24/7 en línea.",
+    erpBottleneck: "Pérdida de citas agendadas por falta de confirmación y descontrol en insumos dentales.",
+    erpOptimizeNode: "✅ Sincronización Dental Inteligente",
+    erpOptimizeDesc: "Confirmaciones automáticas WhatsApp y control predictivo de stock de resinas y brackets. Evita quiebres de material.",
+    aiAdvice: "El uso de recordatorios automatizados de citas de ortodoncia y limpieza por WhatsApp reduce la pérdida de espacios clínicos un 50% y optimiza el flujo de caja del consultorio.",
+    aiAdvices: {
+      asistente: "Consejo IA: Un chatbot dental que agende citas de urgencia y resuelva dudas de tratamientos previene la pérdida de llamadas de pacientes fuera de horario.",
+      pos: "Consejo IA: Registrar cobros integrados con las recetas del tratamiento dental asegura el control de los ingresos de cada odontólogo.",
+      web: "Consejo IA: Un cotizador interactivo de tratamientos estéticos dentales en la web incrementa el interés en servicios de alta gama (ortodoncia/diseño de sonrisa) en un 30%.",
+      erp: "Consejo IA: El sistema predice la necesidad de resinas y material de curación basado en las citas agendadas de la semana, evitando desabasto."
     }
   },
   "educacion": {
@@ -591,38 +616,90 @@ const sectorProfiles = {
   }
 };
 
+let detectedSectorId = 'otro';
+
 function getSectorProfile(sector) {
-  if (!sector) return sectorProfiles.otro;
+  if (!sector) {
+    detectedSectorId = 'otro';
+    return sectorProfiles.otro || {
+      logoName: "General",
+      chatInit: "Hola! Me gustaría cotizar un servicio.",
+      chatReply: "¡Hola! Con gusto te atendemos en **{bizName}**. ¿Cómo podemos ayudarte hoy?",
+      posProducts: [
+        { id: 1, icon: '⚙️', name: `Servicio General`, price: 1200 },
+        { id: 2, icon: '💻', name: `Software a Medida`, price: 8500 }
+      ],
+      webTitle: "Sistemas Inteligentes para tu Empresa",
+      webSlogan: "Digitalizamos e impulsamos tu negocio con soluciones avanzadas de Inteligencia Artificial.",
+      erpBottleneck: "Tareas manuales ineficientes.",
+      erpOptimizeNode: "✅ Flujo Automatizado",
+      erpOptimizeDesc: "Procesos optimizados con IA.",
+      aiAdvice: "Implementar IA reduce costos operativos un 30%."
+    };
+  }
+
   const norm = sector.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  
-  if (norm.includes("restaurante") || norm.includes("cafe") || norm.includes("comida") || norm.includes("bistro") || norm.includes("alimento") || norm.includes("panaderia") || norm.includes("taqueria") || norm.includes("pizzeria") || norm.includes("pasteleria") || norm.includes("cena")) {
+
+  // Búsqueda inteligente de giros con tolerancia a errores de dedo
+  if (norm.match(/(restaurante|restorant|restarante|cafe|comida|bistro|alimento|panaderia|taqueria|pizzeria|pasteleria|food)/)) {
+    detectedSectorId = 'restaurante';
     return sectorProfiles.restaurante;
-  } else if (norm.includes("gimnasio") || norm.includes("gym") || norm.includes("fitness") || norm.includes("deporte") || norm.includes("entrenam") || norm.includes("cruzfit") || norm.includes("crossfit") || norm.includes("yoga") || norm.includes("box") || norm.includes("spa") || norm.includes("ejercicio")) {
+  } 
+  else if (norm.match(/(gimnasio|gimnacio|gimasio|gym|fitness|fitnes|deporte|entrenam|crossfit|yoga|exercise)/)) {
+    detectedSectorId = 'gimnasio';
     return sectorProfiles.gimnasio;
-  } else if (norm.includes("mecanico") || norm.includes("automotriz") || norm.includes("taller") || norm.includes("auto") || norm.includes("coche") || norm.includes("carro") || norm.includes("llanta") || norm.includes("motor") || norm.includes("refaccion")) {
+  } 
+  else if (norm.match(/(mecanico|mecanic|mecanco|taller|taler|tayer|automotriz|autmotriz|auto|coche|carro|motor|refaccion)/)) {
+    detectedSectorId = 'automotriz';
     return sectorProfiles.automotriz;
-  } else if (norm.includes("estetica") || norm.includes("barber") || norm.includes("unas") || norm.includes("cabello") || norm.includes("corte") || norm.includes("salon") || norm.includes("peluquer") || norm.includes("maquillaje") || norm.includes("belleza")) {
-    return sectorProfiles.estetica;
-  } else if (norm.includes("veterinaria") || norm.includes("mascota") || norm.includes("perro") || norm.includes("gato") || norm.includes("canina") || norm.includes("animal")) {
-    return sectorProfiles.veterinaria;
-  } else if (norm.includes("reparacion") || norm.includes("computador") || norm.includes("celular") || norm.includes("laptop") || norm.includes("iphone") || norm.includes("tecnico") || norm.includes("soporte")) {
-    return sectorProfiles.tecnologia;
-  } else if (norm.includes("logistica") || norm.includes("transporte") || norm.includes("flete") || norm.includes("envio") || norm.includes("mudanza") || norm.includes("paqueteria") || norm.includes("distribucion") || norm.includes("almacen") || norm.includes("bodega")) {
-    return sectorProfiles.logistica;
-  } else if (norm.includes("tienda") || norm.includes("comercio") || norm.includes("retail") || norm.includes("ropa") || norm.includes("ventas") || norm.includes("boutique") || norm.includes("supermercado") || norm.includes("abarrotes") || norm.includes("compras")) {
-    return sectorProfiles.comercio;
-  } else if (norm.includes("servicio") || norm.includes("consultor") || norm.includes("abogado") || norm.includes("despacho") || norm.includes("oficina") || norm.includes("agencia") || norm.includes("asesor") || norm.includes("contador")) {
-    return sectorProfiles.servicios;
-  } else if (norm.includes("salud") || norm.includes("clinica") || norm.includes("doctor") || norm.includes("dentista") || norm.includes("medico") || norm.includes("hospital") || norm.includes("odontol") || norm.includes("pediatra")) {
+  } 
+  else if (norm.match(/(dentista|dentsta|dentis|odontol|odontologo|diente|dientes|cepillo|cepilo|ortodoncia|ortodocia)/)) {
+    detectedSectorId = 'dentista';
+    return sectorProfiles.dentista;
+  } 
+  else if (norm.match(/(medico|medco|doctor|doctora|clinica|hospital|pediatra|salud|bata|estetoscopio|estetocpio)/)) {
+    detectedSectorId = 'salud';
     return sectorProfiles.salud;
-  } else if (norm.includes("educacion") || norm.includes("curso") || norm.includes("escuela") || norm.includes("academia") || norm.includes("colegio") || norm.includes("clase") || norm.includes("taller") || norm.includes("universidad")) {
+  } 
+  else if (norm.match(/(estetica|barber|barberia|unas|cabello|corte|salon|peluquer|maquillaje|belleza)/)) {
+    detectedSectorId = 'estetica';
+    return sectorProfiles.estetica;
+  } 
+  else if (norm.match(/(veterinaria|vet|mascota|perro|gato|canina|animal)/)) {
+    detectedSectorId = 'veterinaria';
+    return sectorProfiles.veterinaria;
+  } 
+  else if (norm.match(/(reparacion|computador|celular|laptop|iphone|tecnico|soporte|tecnologia)/)) {
+    detectedSectorId = 'tecnologia';
+    return sectorProfiles.tecnologia;
+  } 
+  else if (norm.match(/(logistica|transporte|flete|envio|mudanza|paqueteria|distribucion|almacen|bodega)/)) {
+    detectedSectorId = 'logistica';
+    return sectorProfiles.logistica;
+  } 
+  else if (norm.match(/(tienda|comercio|retail|ropa|ventas|boutique|supermercado|abarrotes|compras)/)) {
+    detectedSectorId = 'comercio';
+    return sectorProfiles.comercio;
+  } 
+  else if (norm.match(/(servicio|consultor|abogado|despacho|oficina|agencia|asesor|contador)/)) {
+    detectedSectorId = 'servicios';
+    return sectorProfiles.servicios;
+  } 
+  else if (norm.match(/(educacion|curso|escuela|academia|colegio|clase|universidad)/)) {
+    detectedSectorId = 'educacion';
     return sectorProfiles.educacion;
-  } else if (norm.includes("inmobiliaria") || norm.includes("raices") || norm.includes("casa") || norm.includes("departamento") || norm.includes("inmueble") || norm.includes("terreno")) {
+  } 
+  else if (norm.match(/(inmobiliaria|raices|casa|departamento|inmueble|terreno)/)) {
+    detectedSectorId = 'inmobiliaria';
     return sectorProfiles.inmobiliaria;
-  } else if (norm.includes("manufactura") || norm.includes("fabrica") || norm.includes("produccion") || norm.includes("industrial")) {
+  } 
+  else if (norm.match(/(manufactura|fabrica|produccion|industrial)/)) {
+    detectedSectorId = 'manufactura';
     return sectorProfiles.manufactura;
-  } else {
-    // If it's a completely custom activity entered by the client, build a dynamic profile based on what they typed!
+  } 
+  else {
+    // Custom activity
+    detectedSectorId = 'otro';
     return {
       logoName: sector,
       chatInit: `Hola! Me gustaría cotizar un servicio y horarios para mi actividad: ${sector}.`,
@@ -2052,8 +2129,72 @@ const rawProfile = getSectorProfile(bizSector);
 const profile = buildProblemProfile(rawProfile);
 completeProfileData(profile, bizSector, bizName);
 
+function applySectorTheme(sectorId) {
+  const root = document.documentElement;
+  let primary = '#a855f7'; // morado original
+  let secondary = '#ec4899'; // rosa original
+  let glow = 'rgba(168, 85, 247, 0.15)';
+  let accent = '#a855f7';
+
+  if (sectorId === 'automotriz') {
+    primary = '#f97316'; // Naranja taller
+    secondary = '#eab308'; // Amarillo metalizado
+    glow = 'rgba(249, 115, 22, 0.15)';
+    accent = '#f97316';
+  } else if (sectorId === 'dentista') {
+    primary = '#0ea5e9'; // Azul celeste higiénico
+    secondary = '#06b6d4'; // Turquesa
+    glow = 'rgba(14, 165, 233, 0.12)';
+    accent = '#0ea5e9';
+  } else if (sectorId === 'salud') {
+    primary = '#2563eb'; // Azul médico / clínico
+    secondary = '#10b981'; // Verde sanitario
+    glow = 'rgba(37, 99, 235, 0.15)';
+    accent = '#2563eb';
+  } else if (sectorId === 'restaurante') {
+    primary = '#c2410c'; // Terracota cálido
+    secondary = '#f97316'; // Naranja fuego
+    glow = 'rgba(194, 65, 12, 0.15)';
+    accent = '#c2410c';
+  } else if (sectorId === 'gimnasio') {
+    primary = '#84cc16'; // Verde ácido enérgico
+    secondary = '#1e293b'; // Slate oscuro
+    glow = 'rgba(132, 204, 22, 0.15)';
+    accent = '#84cc16';
+  }
+
+  root.style.setProperty('--primary', primary);
+  root.style.setProperty('--secondary', secondary);
+  root.style.setProperty('--accent', accent);
+  root.style.setProperty('--bg-glow', glow);
+  
+  const preview = document.getElementById('mock-web-preview');
+  if (preview) {
+    preview.style.borderColor = primary;
+  }
+}
+
+const sectorEmojis = {
+  automotriz: '🚗',
+  dentista: '🦷',
+  salud: '🥼',
+  restaurante: '🍔',
+  gimnasio: '🏋️',
+  comercio: '🛍️',
+  servicios: '📊',
+  tecnologia: '💻',
+  logistica: '🚛',
+  educacion: '🎓',
+  inmobiliaria: '🔑',
+  manufactura: '📦',
+  veterinaria: '🐶',
+  otro: '🧠'
+};
+
 // ── INITIALIZE DATA IN MOCKUPS ──
 function initMockups() {
+  applySectorTheme(detectedSectorId);
+
   // Update names
   document.querySelectorAll('.biz-name').forEach(el => el.textContent = bizName);
   document.querySelectorAll('.biz-sector').forEach(el => el.textContent = bizSector);
@@ -2061,7 +2202,7 @@ function initMockups() {
   // Inject Logos
   document.querySelectorAll('.business-logo-container').forEach(el => {
     if (!bizLogo || bizLogo === "null" || bizLogo === "undefined" || bizLogo === "" || bizLogo.includes("placeholder") || bizLogo.includes("logo_placeholder")) {
-      const initials = bizName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      const emoji = sectorEmojis[detectedSectorId] || '🧠';
       const hue1 = (bizName.length * 12) % 360;
       const hue2 = (hue1 + 140) % 360;
       el.style.background = `linear-gradient(135deg, hsl(${hue1}, 80%, 40%), hsl(${hue2}, 85%, 50%))`;
@@ -2069,15 +2210,21 @@ function initMockups() {
       el.style.fontWeight = '900';
       el.style.fontFamily = 'var(--font-title)';
       el.style.display = 'flex';
+      el.style.flexDirection = 'column';
       el.style.alignItems = 'center';
       el.style.justifyContent = 'center';
       el.style.border = '2px solid rgba(255,255,255,0.25)';
       el.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
       el.style.textShadow = '0 2px 4px rgba(0,0,0,0.3)';
-      // Size responsive initials font size
+      
       const currentWidth = el.style.width || el.offsetWidth;
-      el.style.fontSize = (currentWidth === '68px' || currentWidth === 68) ? '24px' : '18px';
-      el.textContent = initials;
+      const isHeader = (currentWidth === '68px' || currentWidth === 68 || el.classList.contains('header-logo'));
+      
+      if (isHeader) {
+        el.innerHTML = `<span style="font-size: 26px; line-height: 1;">${emoji}</span>`;
+      } else {
+        el.innerHTML = `<span style="font-size: 18px; line-height: 1;">${emoji}</span>`;
+      }
     } else {
       el.style.background = 'transparent';
       el.innerHTML = `<img src="${bizLogo}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">`;
@@ -3735,6 +3882,16 @@ function pauseActiveTabLoop(tabId) {
   }, 22000);
 }
 
+function showDemoNarrative(text) {
+  const overlay = document.getElementById('demo-narrative-overlay');
+  const txtEl = document.getElementById('demo-narrative-text');
+  if (overlay && txtEl) {
+    txtEl.innerHTML = text;
+    overlay.style.opacity = '1';
+    overlay.style.transform = 'translateX(-50%) translateY(0)';
+  }
+}
+
 // ── 1. ASISTENTE LOOP ──
 function runAsistenteLoop() {
   const step = () => {
@@ -3742,10 +3899,20 @@ function runAsistenteLoop() {
     
     if (activeLoopStep === 0) {
       document.getElementById('chat-messages').innerHTML = '';
+      showDemoNarrative(`🤖 <strong>Asistente IA:</strong> Cliente real consulta en tu WhatsApp. IA procesa la consulta para el negocio <strong>${bizName}</strong>.`);
     }
     
+    if (activeLoopStep >= assistantScenarios.length) {
+      showDemoNarrative(`✅ <strong>Asistente IA:</strong> Cita agendada de forma autónoma en la agenda de <strong>${bizName}</strong>. Transicionando a Punto de Venta (POS) para cobrar el servicio...`);
+      activeLoopTimeout = setTimeout(() => {
+        const nextTab = document.querySelector('.tab-link[data-tab="pos"]');
+        if (nextTab) nextTab.click();
+      }, 5000);
+      return;
+    }
+
     const scenario = assistantScenarios[activeLoopStep];
-    activeLoopStep = (activeLoopStep + 1) % assistantScenarios.length;
+    activeLoopStep++;
     
     const themeBtn = document.querySelector(`.chat-theme-toggle-btn[data-theme="${scenario.channel}"]`);
     if (themeBtn) themeBtn.click();
@@ -3814,13 +3981,14 @@ function runPOSLoop() {
         loyaltySelect.dispatchEvent(new Event('change'));
       }
       
+      showDemoNarrative(`💳 <strong>Punto de Venta:</strong> Registrando consumos de cliente en la caja. IA sugiere servicios complementarios del giro <strong>${bizSector}</strong>.`);
       const prods = document.querySelectorAll('.pos-prod-card');
       if (prods.length > 0) {
         prods[0].click();
         printToolLog(`[POS AUTÓNOMO] Añadiendo: ${profile.posProducts[0].name} al carrito.`);
       }
       activeLoopStep = 1;
-      activeLoopTimeout = setTimeout(step, 2000);
+      activeLoopTimeout = setTimeout(step, 2500);
     } 
     else if (activeLoopStep === 1) {
       const prods = document.querySelectorAll('.pos-prod-card');
@@ -3829,7 +3997,7 @@ function runPOSLoop() {
         printToolLog(`[POS AUTÓNOMO] Añadiendo: ${profile.posProducts[2].name} al carrito.`);
       }
       activeLoopStep = 2;
-      activeLoopTimeout = setTimeout(step, 2000);
+      activeLoopTimeout = setTimeout(step, 2500);
     } 
     else if (activeLoopStep === 2) {
       const coupons = document.querySelectorAll('.coupon-btn');
@@ -3845,7 +4013,7 @@ function runPOSLoop() {
         printToolLog(`[POS AUTÓNOMO] Cliente VIP seleccionado.`);
       }
       activeLoopStep = 3;
-      activeLoopTimeout = setTimeout(step, 2000);
+      activeLoopTimeout = setTimeout(step, 2500);
     } 
     else if (activeLoopStep === 3) {
       const checkoutBtn = document.getElementById('checkout-pos-btn');
@@ -3854,7 +4022,7 @@ function runPOSLoop() {
         printToolLog(`[POS AUTÓNOMO] Iniciando Checkout. Esperando cobro Contactless.`);
       }
       activeLoopStep = 4;
-      activeLoopTimeout = setTimeout(step, 2000);
+      activeLoopTimeout = setTimeout(step, 2500);
     } 
     else if (activeLoopStep === 4) {
       const tapBtn = document.getElementById('simulate-tap-btn');
@@ -3862,8 +4030,12 @@ function runPOSLoop() {
         tapBtn.click();
         printToolLog(`[POS AUTÓNOMO] Leyendo tarjeta contactless en terminal Stripe.`);
       }
+      showDemoNarrative(`⚡ <strong>Punto de Venta:</strong> Pago procesado con éxito. Ingresos agregados al P&L consolidado. Transicionando a Software a Medida (ERP)...`);
+      activeLoopTimeout = setTimeout(() => {
+        const nextTab = document.querySelector('.tab-link[data-tab="erp"]');
+        if (nextTab) nextTab.click();
+      }, 5000);
       activeLoopStep = 0;
-      activeLoopTimeout = setTimeout(step, 6500);
     }
   };
   step();
@@ -3875,7 +4047,18 @@ function runWebLoop() {
     if (currentLoopTab !== 'web') return;
 
     const sections = ['services', 'about', 'contact', 'home'];
+    
+    if (activeLoopStep >= sections.length) {
+      showDemoNarrative(`🔄 <strong>Ecosistema Brain Branding:</strong> Prospectos captados fluyen al Asistente IA de WhatsApp. Reiniciando ciclo de demostración...`);
+      activeLoopTimeout = setTimeout(() => {
+        const nextTab = document.querySelector('.tab-link[data-tab="asistente"]');
+        if (nextTab) nextTab.click();
+      }, 5000);
+      return;
+    }
+
     const currentSection = sections[activeLoopStep];
+    showDemoNarrative(`🌐 <strong>Página Web:</strong> Landing page de alta conversión para <strong>${bizName}</strong>. Prospectos contactan al instante 24/7.`);
     
     const navLink = document.getElementById(`web-nav-${currentSection}`);
     if (navLink) {
@@ -3898,8 +4081,8 @@ function runWebLoop() {
       printToolLog(`[WEB AUTÓNOMO] Inicializando Canvas interactivo de Google Maps.`);
     }
 
-    activeLoopStep = (activeLoopStep + 1) % sections.length;
-    activeLoopTimeout = setTimeout(step, 3500);
+    activeLoopStep++;
+    activeLoopTimeout = setTimeout(step, 4500);
   };
   step();
 }
@@ -3910,7 +4093,18 @@ function runERPLoop() {
     if (currentLoopTab !== 'erp') return;
 
     const subtabs = ['pl', 'crm', 'tasks', 'sat', 'flow'];
+    
+    if (activeLoopStep >= subtabs.length) {
+      showDemoNarrative(`🧠 <strong>ERP / Software a Medida:</strong> IA optimiza tareas administrativas. ¡No hay límites y todo se puede potenciar! Transicionando a Página Web...`);
+      activeLoopTimeout = setTimeout(() => {
+        const nextTab = document.querySelector('.tab-link[data-tab="web"]');
+        if (nextTab) nextTab.click();
+      }, 5000);
+      return;
+    }
+
     const currentSubtab = subtabs[activeLoopStep];
+    showDemoNarrative(`📊 <strong>ERP Administración:</strong> IA procesa reportes y automatiza facturas SAT de tu sector <strong>${bizSector}</strong>.`);
 
     const btn = document.querySelector(`.erp-subtab-btn[data-subtab="${currentSubtab}"]`);
     if (btn) {
@@ -3949,8 +4143,8 @@ function runERPLoop() {
       }
     }
 
-    activeLoopStep = (activeLoopStep + 1) % subtabs.length;
-    activeLoopTimeout = setTimeout(step, 4000);
+    activeLoopStep++;
+    activeLoopTimeout = setTimeout(step, 4500);
   };
   step();
 }

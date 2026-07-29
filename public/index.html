@@ -496,7 +496,7 @@
         </div>
         <div style="display: flex; justify-content: center; width: 100%;">
           <button class="sim-btn btn-primary" data-service="all" style="background: linear-gradient(135deg, #a855f7, #ec4899); border: none; padding: 14px 35px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; box-shadow: 0 0 25px rgba(168, 85, 247, 0.45); text-transform: uppercase; letter-spacing: 0.5px; min-width: 280px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-            ✨ Iniciar Simulación Completa
+            ¿Cómo se verá mi negocio con IA? ✨
           </button>
         </div>
       </div>
@@ -1162,35 +1162,6 @@
           </div>
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-          <label style="font-size: 12px; font-weight: 700; color: #fff;">¿Qué problemas o cuellos de botella deseas solucionar?</label>
-          <textarea id="sim-business-problem" rows="3" placeholder="Ej: Mis asistentes tardan mucho respondiendo dudas repetitivas, o tengo descontrol en inventario de mis sucursales..." style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; font-size: 14px; line-height: 1.5; resize: none; box-sizing: border-box; font-family: inherit;"></textarea>
-          <button type="button" id="use-suggestion-chip" style="display: none; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc; padding: 6px 12px; border-radius: 8px; font-size: 11.5px; cursor: pointer; text-align: left; transition: all 0.2s; font-family: inherit;">
-            💡 Usar sugerencia de la plantilla
-          </button>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-          <label style="font-size: 12px; font-weight: 700; color: #fff;">Estilo de Diseño Requerido para tu Negocio (Sistemas y Web)</label>
-          <select id="sim-business-style" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.98); border: 1px solid var(--border-color); color: #fff; font-size: 14px; box-sizing: border-box; cursor: pointer; font-family: inherit;">
-            <option value="ultra-moderno" selected>✨ Diseño Ultra Moderno (Dark / Glassmorphism)</option>
-            <option value="clasico-claro">☀️ Diseño Clásico en Color Claro (Light / Clean)</option>
-            <option value="windows">🪟 Diseño Estilo Windows (Retro / Fluent UI)</option>
-            <option value="mac">🍎 Diseño Estilo Mac (Sleek OS GUI)</option>
-            <option value="ciberpunk">🌆 Diseño Ciberpunk Neón (Vibrant Futuristic)</option>
-            <option value="nordico">🌱 Diseño Minimalista Nórdico (Muted / Whitespace)</option>
-          </select>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-          <label style="font-size: 12px; font-weight: 700; color: #fff;">Cargar Logotipo de la Empresa (Opcional)</label>
-          <div id="sim-logo-drag-zone" style="width: 100%; border: 2px dashed rgba(168, 85, 247, 0.4); border-radius: 12px; padding: 20px; text-align: center; background: rgba(255,255,255,0.01); transition: all 0.3s ease; cursor: pointer; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-            <span style="font-size: 24px;">📁</span>
-            <span id="sim-logo-status" style="font-size: 12px; color: var(--text-muted);">Arrastra tu logo aquí o haz clic para subir</span>
-            <input type="file" id="sim-logo-file" accept="image/*" style="display: none;">
-          </div>
-        </div>
-
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
           <div style="display: flex; gap: 12px;">
             <button type="button" id="cancel-sim-btn" class="btn" onclick="document.getElementById('setup-simulator-modal').style.display='none'; document.body.style.overflow='';" style="flex: 1; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); cursor: pointer; font-weight: 700;">Cancelar</button>
@@ -1218,20 +1189,17 @@
 
       var bizName    = (document.getElementById('sim-business-name')    || {}).value || '';
       var bizSector  = (document.getElementById('sim-business-sector')  || {}).value || '';
-      var bizProblem = (document.getElementById('sim-business-problem') || {}).value || '';
-      var bizStyle   = (document.getElementById('sim-business-style')   || {}).value || 'ultra-moderno';
 
       bizName    = bizName.trim()    || 'Mi Empresa';
-      bizSector  = bizSector.trim()  || 'Comercio / General';
-      bizProblem = bizProblem.trim() || 'Optimización de tiempo y control de operaciones';
+      bizSector  = bizSector.trim()  || 'General';
 
       var now = Date.now().toString();
       _simStorage.setItem('sim_session_active', 'true');
       _simStorage.setItem('sim_session_start',  now);
       _simStorage.setItem('sim_biz_name',    bizName);
       _simStorage.setItem('sim_biz_sector',  bizSector);
-      _simStorage.setItem('sim_biz_problem', bizProblem);
-      _simStorage.setItem('sim_biz_style',   bizStyle);
+      _simStorage.setItem('sim_biz_problem', 'Optimización de tiempo y control de operaciones');
+      _simStorage.setItem('sim_biz_style',   'ultra-moderno');
       _simStorage.setItem('sim_biz_logo',    '');
       _simStorage.setItem('sim_active_service', 'asistente');
 
@@ -1243,10 +1211,8 @@
     window.BB_expressSim = function() {
       var n = document.getElementById('sim-business-name');
       var s = document.getElementById('sim-business-sector');
-      var p = document.getElementById('sim-business-problem');
       if (n) n.value = 'Boutique Nova';
       if (s) s.value = 'Venta de Muebles y Decoración';
-      if (p) p.value = 'Optimización de respuestas a clientes y control de crédito';
       window.BB_startSim();
     };
   })();
