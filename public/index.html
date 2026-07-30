@@ -2235,6 +2235,39 @@
       .erp-data-table {
         min-width: 320px;
       }
+
+      /* Custom thin scrollbars for better mobile scroll hints */
+      .erp-tab-bar::-webkit-scrollbar, 
+      .software-viewport::-webkit-scrollbar {
+        height: 3px !important;
+        width: 3px !important;
+      }
+      .erp-tab-bar::-webkit-scrollbar-thumb, 
+      .software-viewport::-webkit-scrollbar-thumb {
+        background: rgba(0, 229, 255, 0.4) !important;
+        border-radius: 2px !important;
+      }
+      
+      /* Sidebar optimization to gain horizontal space */
+      .software-sidebar {
+        width: 40px !important;
+        gap: 8px !important;
+        padding: 10px 0 !important;
+      }
+      .sidebar-icon {
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 11px !important;
+      }
+      
+      /* WhatsApp FAB optimization on mobile screens */
+      #whatsapp-fab {
+        bottom: 15px !important;
+        right: 15px !important;
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 26px !important;
+      }
     }
     
     /* Interactive Chart Tooltips */
