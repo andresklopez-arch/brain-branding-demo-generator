@@ -3441,6 +3441,104 @@ END:VCARD`;
     `;
   };
 
+  const triggerCameraScanner = (onScanSuccess) => {
+    const erpMockup = document.querySelector('.software-container') || screen;
+    if (!erpMockup) return;
+    
+    if (typeof playDeviceSwitchSound === 'function') {
+      playDeviceSwitchSound();
+    }
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'erp-scanner-overlay';
+    overlay.innerHTML = `
+      <button class="erp-scanner-close">✕</button>
+      <div style="font-size:9px; font-weight:700; margin-bottom:5px; color:#00e5ff; display:flex; align-items:center; gap:4px;">
+        <span class="animate-pulse">🔴</span> ESCANEANDO CÓDIGO BARRAS LIS
+      </div>
+      <div class="erp-scanner-frame">
+        <div class="erp-scanner-laser"></div>
+        <video id="erp-scanner-video" autoplay playsinline style="width:100%; height:100%; object-fit:cover; display:none;"></video>
+        <div class="erp-scanner-fallback" id="erp-scanner-fallback-grid">
+          Iniciando Cámara...
+        </div>
+      </div>
+      <div style="font-size:8px; color:rgba(255,255,255,0.4); margin-top:5px; text-align:center;">
+        Coloca el código de barras/QR frente a la cámara
+      </div>
+    `;
+    
+    erpMockup.appendChild(overlay);
+    
+    let localStream = null;
+    const videoEl = overlay.querySelector('#erp-scanner-video');
+    const fallbackGrid = overlay.querySelector('#erp-scanner-fallback-grid');
+    const closeBtn = overlay.querySelector('.erp-scanner-close');
+    
+    if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(stream => {
+          localStream = stream;
+          if (videoEl) {
+            videoEl.srcObject = stream;
+            videoEl.style.display = 'block';
+            if (fallbackGrid) fallbackGrid.style.display = 'none';
+          }
+        })
+        .catch(err => {
+          console.warn("Camera access denied/unavailable", err);
+          if (fallbackGrid) fallbackGrid.textContent = "Modo Simulado: Escaneando...";
+        });
+    } else {
+      if (fallbackGrid) fallbackGrid.textContent = "Modo Simulado: Escaneando...";
+    }
+    
+    const playScannerBeep = () => {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.15);
+      } catch (e) {
+        console.warn("AudioContext beep blocked", e);
+      }
+    };
+    
+    const cleanup = () => {
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+      }
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 250);
+    };
+    
+    let scanTimeout = setTimeout(() => {
+      playScannerBeep();
+      const frame = overlay.querySelector('.erp-scanner-frame');
+      if (frame) {
+        frame.style.borderColor = '#10b981';
+        frame.style.boxShadow = '0 0 25px rgba(16, 185, 129, 0.6)';
+      }
+      setTimeout(() => {
+        cleanup();
+        onScanSuccess();
+      }, 500);
+    }, 3200);
+    
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      clearTimeout(scanTimeout);
+      cleanup();
+    });
+  };
+
   let currentIdx = 0;
   let timer = null;
   let isSoftVisible = true;
@@ -3542,8 +3640,7 @@ END:VCARD`;
         screen.dataset.t1 = t1;
         attachViewportTabListeners();
       }
-    },
-    {
+    },    {
       title: "Caja y Arqueo Diario",
       desc: "Recepción física de pagos, facturación y cuadre de caja del turno con metas diarias de ventas.",
       run: (screen) => {
@@ -3556,7 +3653,7 @@ END:VCARD`;
             </div>
             <div class="erp-widget-grid">
               <div class="erp-widget-card">
-                <span class="erp-widget-val">$124,500</span>
+                <span class="erp-widget-val" id="caja-val-phys">$124,500</span>
                 <span class="erp-widget-label">Efectivo Físico</span>
               </div>
               <div class="erp-widget-card">
@@ -3564,7 +3661,7 @@ END:VCARD`;
                 <span class="erp-widget-label">Terminales POS</span>
               </div>
               <div class="erp-widget-card">
-                <span class="erp-widget-val" style="color:#10b981;">$209,920</span>
+                <span class="erp-widget-val" style="color:#10b981;" id="caja-val-total">$209,920</span>
                 <span class="erp-widget-label">Total en Caja</span>
               </div>
             </div>
@@ -3575,6 +3672,13 @@ END:VCARD`;
               </div>
               <div style="height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden;">
                 <div id="caja-goal-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #a855f7, #00e5ff); border-radius:3px; transition:width 1.5s cubic-bezier(0.25, 0.8, 0.25, 1);"></div>
+              </div>
+              
+              <button id="caja-scanner-btn" style="background:rgba(0, 229, 255, 0.12); border:1px solid rgba(0, 229, 255, 0.35); border-radius:6px; color:#00e5ff; font-size:9px; padding:5px 8px; cursor:pointer; font-weight:700; margin-top:4px; text-align:center; transition: all 0.2s;">
+                📸 Escanear Artículo (Cámara / QR)
+              </button>
+              <div id="caja-scan-success-log" style="font-size:8px; color:#10b981; text-align:center; display:none; margin-top:2px; font-weight:700;">
+                ✓ Artículo Escaneado: REAC-HEM-991 (+$1,500.00)
               </div>
             </div>
           </div>
@@ -3587,9 +3691,38 @@ END:VCARD`;
             bar.style.width = '84%';
           }
         }, 300);
+        
+        const scanBtn = document.getElementById('caja-scanner-btn');
+        if (scanBtn) {
+          scanBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            triggerCameraScanner(() => {
+              const successLog = document.getElementById('caja-scan-success-log');
+              if (successLog) {
+                successLog.style.display = 'block';
+                successLog.style.animation = 'erpPopupEntrance 0.3s ease-out';
+              }
+              const physVal = document.getElementById('caja-val-phys');
+              const totalVal = document.getElementById('caja-val-total');
+              if (physVal && totalVal) {
+                physVal.textContent = '$126,000';
+                physVal.style.color = '#00e5ff';
+                totalVal.textContent = '$211,420';
+                totalVal.style.color = '#10b981';
+              }
+              const txt = document.getElementById('caja-goal-txt');
+              const bar = document.getElementById('caja-goal-bar');
+              if (txt && bar) {
+                txt.textContent = '85%';
+                bar.style.width = '85%';
+              }
+            });
+          });
+        }
         attachViewportTabListeners();
       }
     },
+
     {
       title: "Automatización LIS",
       desc: "Gestión digital y automatización de la recepción de muestras clínicas, toma de muestras y flujo analítico.",
@@ -3762,8 +3895,7 @@ END:VCARD`;
         screen.dataset.t1 = t1;
         attachViewportTabListeners();
       }
-    },
-    {
+    },    {
       title: "Control de Inventario",
       desc: "Gestión inteligente de stocks mínimos, almacenes y disparadores automáticos para órdenes de compra en tiempo real.",
       run: (screen) => {
@@ -3772,7 +3904,9 @@ END:VCARD`;
           <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
               <span style="font-weight:700;">Reactivos & Insumos Clínicos (Sero-AI)</span>
-              <span style="font-size:8.5px; background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2); padding:2px 6px; border-radius:10px; font-weight:700;">⚠️ Re-evaluar Stock</span>
+              <button id="almacen-scanner-btn" style="background:rgba(0, 229, 255, 0.15); border:1px solid rgba(0, 229, 255, 0.4); border-radius:6px; color:#00e5ff; font-size:8.5px; padding:3px 6px; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:3px;">
+                📸 Escanear Entrada
+              </button>
             </div>
             <table class="erp-data-table">
               <thead>
@@ -3804,6 +3938,9 @@ END:VCARD`;
                 </tr>
               </tbody>
             </table>
+            <div id="almacen-scan-log" style="font-size:8px; color:#10b981; text-align:center; display:none; margin-top:5px; font-weight:700;">
+              ✓ Tubos Gel Separador reabastecidos (+500 pzs) mediante escaneo de cámara
+            </div>
           </div>
         `;
         const row = document.getElementById('inv-row-1');
@@ -3817,11 +3954,37 @@ END:VCARD`;
             status.innerHTML = 'Orden de Compra IA Enviada 📦';
             action.innerHTML = 'En Tránsito';
           }
-        }, 2000);
+        }, 2500);
         screen.dataset.t1 = t1;
+        
+        const scanBtn = document.getElementById('almacen-scanner-btn');
+        if (scanBtn) {
+          scanBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            triggerCameraScanner(() => {
+              clearTimeout(t1);
+              const successLog = document.getElementById('almacen-scan-log');
+              if (successLog) {
+                successLog.style.display = 'block';
+                successLog.style.animation = 'erpPopupEntrance 0.3s ease-out';
+              }
+              const rowEl = document.getElementById('inv-row-1');
+              const statusEl = document.getElementById('inv-status-1');
+              const actionEl = document.getElementById('inv-action-1');
+              if (rowEl && statusEl && actionEl) {
+                rowEl.style.background = 'rgba(16, 185, 129, 0.08)';
+                statusEl.style.color = '#10b981';
+                statusEl.textContent = '100% (Óptimo)';
+                actionEl.textContent = 'Verificado por Escáner ✓';
+                actionEl.style.color = '#10b981';
+              }
+            });
+          });
+        }
         attachViewportTabListeners();
       }
     },
+
     {
       title: "Alertas en Tiempo Real",
       desc: "Sistema nativo de notificaciones push de sistema para avisar de movimientos de caja o inventario crítico al instante.",
