@@ -1902,7 +1902,7 @@ END:VCARD`;
           currentMessageIdx = 0;
           updateActiveIcon(currentScenarioIdx);
           playNextMessage();
-        }, 5000);
+        }, 2000); // 2s pause at end of scenario (total scenario duration ~5s)
         return;
       }
 
@@ -1913,7 +1913,7 @@ END:VCARD`;
         simulatorTimeout = setTimeout(() => {
           renderMessage('user', msg);
           playNextMessage();
-        }, 5000); // 5s transition per user message
+        }, 400); // Quick user post
       } else {
         simulatorTimeout = setTimeout(() => {
           showTypingIndicator();
@@ -1921,8 +1921,8 @@ END:VCARD`;
             removeTypingIndicator();
             renderMessage('bot', msg);
             playNextMessage();
-          }, 4000); // 4s typing + 1s delay = 5s transition per bot message
-        }, 1000);
+          }, 1200); // 1.2s typing indicator duration
+        }, 400); // 400ms delay before typing
       }
     }
 
