@@ -3539,6 +3539,39 @@ END:VCARD`;
     });
   };
 
+  const triggerConfetti = () => {
+    const container = document.querySelector('.software-container') || screen;
+    if (!container) return;
+    for (let i = 0; i < 40; i++) {
+      const conf = document.createElement('div');
+      conf.style.position = 'absolute';
+      conf.style.width = `${Math.random() * 5 + 3}px`;
+      conf.style.height = `${Math.random() * 8 + 5}px`;
+      conf.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+      conf.style.left = `${Math.random() * 80 + 10}%`;
+      conf.style.top = `-10px`;
+      conf.style.zIndex = '300';
+      conf.style.borderRadius = '2px';
+      conf.style.transform = `rotate(${Math.random() * 360}deg)`;
+      container.appendChild(conf);
+      
+      const speed = Math.random() * 3 + 2.5;
+      const drift = Math.random() * 1.5 - 0.75;
+      let topVal = -10;
+      let leftVal = parseFloat(conf.style.left);
+      const anim = setInterval(() => {
+        topVal += speed;
+        leftVal += drift;
+        conf.style.top = `${topVal}px`;
+        conf.style.left = `${leftVal}%`;
+        if (topVal > container.offsetHeight) {
+          clearInterval(anim);
+          conf.remove();
+        }
+      }, 25);
+    }
+  };
+
   let currentIdx = 0;
   let timer = null;
   let isSoftVisible = true;
@@ -3588,18 +3621,22 @@ END:VCARD`;
               </div>
             </div>
             
-            <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); border-radius:8px; padding:10px; height:60px; display:flex; align-items:flex-end;">
-              <svg style="width:100%; height:45px;" viewBox="0 0 300 50">
+            <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); border-radius:8px; padding:10px; height:60px; display:flex; align-items:flex-end; position:relative;" id="soft-chart-container">
+              <svg style="width:100%; height:45px; overflow:visible;" viewBox="0 0 300 50">
                 <defs>
                   <linearGradient id="purpleGlow" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stop-color="#a855f7" stop-opacity="0.3"></stop>
                     <stop offset="100%" stop-color="#a855f7" stop-opacity="0.0"></stop>
                   </linearGradient>
                 </defs>
-                <path d="M0,50 L0,45 Q40,35 80,42 T160,20 T240,15 T300,5" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round"></path>
-                <path d="M0,50 L0,45 Q40,35 80,42 T160,20 T240,15 T300,5 L300,50 Z" fill="url(#purpleGlow)"></path>
-                <circle cx="300" cy="5" r="3" fill="#00e5ff" class="animate-pulse"></circle>
+                <path d="M0,45 C40,48 85,38 120,32 C160,25 200,18 240,12 C260,10 280,6 300,3" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round"></path>
+                <path d="M0,45 C40,48 85,38 120,32 C160,25 200,18 240,12 C260,10 280,6 300,3 L300,50 L0,50 Z" fill="url(#purpleGlow)"></path>
+                <circle cx="0" cy="45" r="4" class="chart-dot" data-val="Semana 1: $124,500.00" fill="#a855f7" stroke="#fff" stroke-width="1" style="cursor:pointer; transition:r 0.2s;"></circle>
+                <circle cx="120" cy="32" r="4" class="chart-dot" data-val="Semana 2: $210,400.00" fill="#a855f7" stroke="#fff" stroke-width="1" style="cursor:pointer; transition:r 0.2s;"></circle>
+                <circle cx="240" cy="12" r="4" class="chart-dot" data-val="Semana 3: $385,600.00" fill="#a855f7" stroke="#fff" stroke-width="1" style="cursor:pointer; transition:r 0.2s;"></circle>
+                <circle cx="300" cy="3" r="4" class="chart-dot" data-val="Semana 4: $485,250.00" fill="#00e5ff" stroke="#fff" stroke-width="1" style="cursor:pointer; transition:r 0.2s;"></circle>
               </svg>
+              <div class="erp-tooltip" id="chart-tooltip"></div>
             </div>
             
             <div id="soft-kpi-status" style="font-size:9px; text-align:center; color:#10b981; opacity:0; transition:opacity 0.3s; margin-top:2px;">
@@ -3638,6 +3675,41 @@ END:VCARD`;
           if (status) status.style.opacity = '1';
         }, 1200);
         screen.dataset.t1 = t1;
+        const dots = screen.querySelectorAll('.chart-dot');
+        const tooltip = document.getElementById('chart-tooltip');
+        const chartContainer = document.getElementById('soft-chart-container');
+        
+        dots.forEach(dot => {
+          const handleShow = (e) => {
+            if (!tooltip || !chartContainer) return;
+            dot.setAttribute('r', '6');
+            tooltip.textContent = dot.getAttribute('data-val');
+            tooltip.style.opacity = '1';
+            
+            const dotRect = dot.getBoundingClientRect();
+            const containerRect = chartContainer.getBoundingClientRect();
+            const leftOffset = dotRect.left - containerRect.left + (dotRect.width / 2);
+            const topOffset = dotRect.top - containerRect.top;
+            
+            tooltip.style.left = `${leftOffset}px`;
+            tooltip.style.top = `${topOffset}px`;
+          };
+          
+          const handleHide = () => {
+            if (!tooltip) return;
+            dot.setAttribute('r', '4');
+            tooltip.style.opacity = '0';
+          };
+          
+          dot.addEventListener('mouseenter', handleShow);
+          dot.addEventListener('mouseleave', handleHide);
+          dot.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleShow();
+          }, { passive: false });
+          dot.addEventListener('touchend', handleHide);
+        });
+
         attachViewportTabListeners();
       }
     },    {
@@ -3783,11 +3855,18 @@ END:VCARD`;
       run: (screen) => {
         screen.innerHTML = `
           ${renderErpTabs(3)}
-          <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px; position:relative; height:100%;">
+          <div style="display:flex; flex-direction:column; gap:8px; color:#fff; font-family:var(--font-sans); font-size:10px; position:relative; height:100%;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
               <span style="font-weight:700;">Facturas CFDI & Timbrado SAT v4.0</span>
               <span style="font-size:8.5px; background:rgba(0,229,255,0.1); color:#00e5ff; border:1px solid rgba(0,229,255,0.2); padding:2px 6px; border-radius:10px; font-weight:700;">✓ SAT Online</span>
             </div>
+            
+            <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.03); border-radius:6px; padding:6px; display:flex; gap:6px; align-items:center;">
+              <input type="text" id="fac-input-rfc" placeholder="RFC Receptor" value="SLO190822CN5" style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); border-radius:4px; color:#fff; font-size:8.5px; padding:3px 6px; flex:1; outline:none; font-family:monospace;">
+              <input type="number" id="fac-input-amount" placeholder="Monto" value="2500.00" style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); border-radius:4px; color:#fff; font-size:8.5px; padding:3px 6px; width:65px; outline:none;">
+              <button id="fac-btn-timbrar" style="background:linear-gradient(90deg, #00e5ff, #a855f7); border:none; border-radius:4px; color:#0a0f1d; font-size:8.5px; padding:4px 8px; cursor:pointer; font-weight:700;">Timbrar</button>
+            </div>
+
             <table class="erp-data-table">
               <thead>
                 <tr>
@@ -3797,7 +3876,7 @@ END:VCARD`;
                   <th>Timbrado</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="fac-table-body">
                 <tr>
                   <td>FAC-4015</td>
                   <td>Serolab Connect</td>
@@ -3814,36 +3893,89 @@ END:VCARD`;
             </table>
             
             <!-- Simulated XML Pop-up -->
-            <div class="erp-xml-popup" id="sat-xml-popup">
+            <div class="erp-xml-popup" id="sat-xml-popup" style="display:none; opacity:0; transition:opacity 0.3s ease;">
               <div style="background:#090a0d; padding:6px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05);">
                 <span style="font-size:8.5px; color:#00e5ff; font-weight:700;">Firma Digital CFDI y Timbrado XML</span>
-                <span style="font-size:8px; color:rgba(255,255,255,0.4);">xml_generator_v4_0.bin</span>
+                <span style="font-size:8px; color:rgba(255,255,255,0.4);" id="xml-filename-val">xml_generator_v4_0.bin</span>
               </div>
               <div style="padding:10px; font-family:monospace; font-size:8px; color:#c084fc; overflow-y:auto; flex:1; line-height:1.3; background:#05070a;">
                 <div>&lt;?xml version="1.0" encoding="UTF-8"?&gt;</div>
-                <div>&lt;cfdi:Comprobante Version="4.0" Serie="FAC" Folio="4016"&gt;</div>
+                <div>&lt;cfdi:Comprobante Version="4.0" Serie="FAC" Folio="4017" Total="<span id="xml-amount-val">0.00</span>"&gt;</div>
                 <div style="padding-left:10px; color:#60a5fa;">&lt;cfdi:Emisor Rfc="BBR180512KK8" Nombre="Brain Branding" /&gt;</div>
-                <div style="padding-left:10px; color:#34d399;" id="xml-seal-text">&lt;cfdi:Sello&gt;SHA256_HASHING_SIGNATURE_PENDING...&lt;/cfdi:Sello&gt;</div>
+                <div style="padding-left:10px; color:#93c5fd;">&lt;cfdi:Receptor Rfc="<span id="xml-rfc-val">XAXX010101000</span>" /&gt;</div>
+                <div style="padding-left:10px; color:#34d399;" id="xml-seal-text">&lt;cfdi:Sello&gt;SHA256_SIGNATURE_STAMP...&lt;/cfdi:Sello&gt;</div>
                 <div>&lt;/cfdi:Comprobante&gt;</div>
               </div>
             </div>
           </div>
         `;
-        const popup = document.getElementById('sat-xml-popup');
-        const sealText = document.getElementById('xml-seal-text');
+
+        let activeFolio = 4017;
+        const btnTimbrar = document.getElementById('fac-btn-timbrar');
+        const inputRfc = document.getElementById('fac-input-rfc');
+        const inputAmount = document.getElementById('fac-input-amount');
+        const tableBody = document.getElementById('fac-table-body');
+        const xmlPopup = document.getElementById('sat-xml-popup');
+        const xmlRfc = document.getElementById('xml-rfc-val');
+        const xmlAmount = document.getElementById('xml-amount-val');
+        const xmlSeal = document.getElementById('xml-seal-text');
+        const xmlFilename = document.getElementById('xml-filename-val');
         
-        const t1 = setTimeout(() => {
-          if (sealText) {
-            sealText.style.color = '#10b981';
-            sealText.innerHTML = '&lt;cfdi:Sello&gt;✓ FIRMA SAT: 7a83bc12de0f...&lt;/cfdi:Sello&gt;';
-          }
-        }, 1200);
-        screen.dataset.t1 = t1;
+        if (btnTimbrar) {
+          btnTimbrar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rfc = (inputRfc.value || 'XAXX010101000').toUpperCase();
+            const amount = parseFloat(inputAmount.value || 0).toFixed(2);
+            const currentFolio = `FAC-${activeFolio++}`;
+            
+            if (xmlRfc) xmlRfc.textContent = rfc;
+            if (xmlAmount) xmlAmount.textContent = `$${amount}`;
+            if (xmlFilename) xmlFilename.textContent = `${currentFolio.toLowerCase()}_timbrado.xml`;
+            if (xmlSeal) {
+              xmlSeal.style.color = '#c084fc';
+              xmlSeal.textContent = '<cfdi:Sello>Generando firma y validando con SAT...</cfdi:Sello>';
+            }
+            
+            if (xmlPopup) {
+              xmlPopup.style.display = 'flex';
+              xmlPopup.style.opacity = '1';
+            }
+            
+            if (typeof playDeviceSwitchSound === 'function') {
+              playDeviceSwitchSound();
+            }
+            
+            const t1 = setTimeout(() => {
+              if (xmlSeal) {
+                const randomHash = Array.from({length:24}, () => Math.floor(Math.random()*16).toString(16)).join('');
+                xmlSeal.style.color = '#10b981';
+                xmlSeal.innerHTML = `&lt;cfdi:Sello&gt;✓ FIRMA SAT: ${randomHash}...&lt;/cfdi:Sello&gt;`;
+              }
+              
+              const newRow = document.createElement('tr');
+              newRow.style.animation = 'erpPopupEntrance 0.3s ease-out';
+              newRow.innerHTML = `
+                <td>${currentFolio}</td>
+                <td>${rfc}</td>
+                <td>$${parseFloat(amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                <td style="color:#10b981;">✓ Timbrado XML</td>
+              `;
+              if (tableBody) {
+                tableBody.insertBefore(newRow, tableBody.firstChild);
+              }
+            }, 1000);
+            screen.dataset.t1 = t1;
+            
+            const t2 = setTimeout(() => {
+              if (xmlPopup) xmlPopup.style.opacity = '0';
+              setTimeout(() => {
+                if (xmlPopup) xmlPopup.style.display = 'none';
+              }, 300);
+            }, 4200);
+            screen.dataset.t2 = t2;
+          });
+        }
         
-        const t2 = setTimeout(() => {
-          if (popup) popup.style.opacity = '0';
-        }, 3800);
-        screen.dataset.t2 = t2;
         attachViewportTabListeners();
       }
     },
@@ -3856,43 +3988,123 @@ END:VCARD`;
           <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px; height:100%;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
               <span style="font-weight:700;">Pipeline y Embudo de Ventas</span>
-              <span style="font-size:8.5px; background:rgba(168,85,247,0.1); color:#c084fc; border:1px solid rgba(168,85,247,0.2); padding:2px 6px; border-radius:10px; font-weight:700;">📈 6 tratos activos</span>
+              <span style="font-size:8.5px; background:rgba(168,85,247,0.1); color:#c084fc; border:1px solid rgba(168,85,247,0.2); padding:2px 6px; border-radius:10px; font-weight:700;">📈 Drag & Drop / Tap</span>
             </div>
             <div class="erp-kanban">
-              <div class="erp-kanban-col">
-                <div class="erp-kanban-title"><span>Leads</span> <span>2</span></div>
-                <div class="erp-kanban-card">Hospital Ángeles</div>
-                <div class="erp-kanban-card">Lab Ruiz</div>
+              <div class="erp-kanban-col" id="crm-col-leads">
+                <div class="erp-kanban-title"><span>Leads</span> <span class="erp-kanban-count">2</span></div>
+                <div class="erp-kanban-card" id="card-angeles">Hospital Ángeles</div>
+                <div class="erp-kanban-card" id="card-ruiz">Lab Ruiz</div>
               </div>
               <div class="erp-kanban-col" id="crm-col-prop">
-                <div class="erp-kanban-title"><span>Propuesta</span> <span id="crm-prop-count">1</span></div>
+                <div class="erp-kanban-title"><span>Propuesta</span> <span class="erp-kanban-count">1</span></div>
                 <div class="erp-kanban-card" id="crm-movable-card">Serolab Connect</div>
               </div>
               <div class="erp-kanban-col" id="crm-col-won">
-                <div class="erp-kanban-title"><span>Ganados</span> <span id="crm-won-count">3</span></div>
-                <div class="erp-kanban-card" style="border-color:rgba(16,185,129,0.2); background:rgba(16,185,129,0.02);">Clínica Lomas</div>
+                <div class="erp-kanban-title"><span>Ganados</span> <span class="erp-kanban-count">1</span></div>
+                <div class="erp-kanban-card" id="card-lomas" style="border-color:rgba(16,185,129,0.2); background:rgba(16,185,129,0.02);">Clínica Lomas</div>
               </div>
+            </div>
+            <div style="font-size:8px; color:rgba(255,255,255,0.4); text-align:center; margin-top:2px;">
+              * Arrastra las tarjetas o haz clic en ellas para avanzar de etapa
             </div>
           </div>
         `;
-        const card = document.getElementById('crm-movable-card');
-        const colProp = document.getElementById('crm-col-prop');
-        const colWon = document.getElementById('crm-col-won');
-        const propCount = document.getElementById('crm-prop-count');
-        const wonCount = document.getElementById('crm-won-count');
         
+        const cards = screen.querySelectorAll('.erp-kanban-card');
+        const cols = screen.querySelectorAll('.erp-kanban-col');
+        
+        cards.forEach(card => {
+          card.setAttribute('draggable', 'true');
+          card.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', card.id);
+            card.style.opacity = '0.5';
+          });
+          card.addEventListener('dragend', () => {
+            card.style.opacity = '1';
+          });
+          
+          card.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const parent = card.parentElement;
+            if (!parent) return;
+            const nextCol = parent.nextElementSibling || cols[0];
+            if (nextCol && nextCol.classList.contains('erp-kanban-col')) {
+              nextCol.appendChild(card);
+              if (nextCol.id === 'crm-col-won') {
+                card.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                card.style.background = 'rgba(16, 185, 129, 0.05)';
+                triggerConfetti();
+              } else if (nextCol.id === 'crm-col-prop') {
+                card.style.borderColor = 'rgba(168, 85, 247, 0.3)';
+                card.style.background = 'rgba(168, 85, 247, 0.03)';
+              } else {
+                card.style.borderColor = '';
+                card.style.background = '';
+              }
+              updateColumnCounts();
+            }
+          });
+        });
+        
+        cols.forEach(col => {
+          col.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            col.style.background = 'rgba(255, 255, 255, 0.03)';
+          });
+          col.addEventListener('dragleave', () => {
+            col.style.background = '';
+          });
+          col.addEventListener('drop', (e) => {
+            e.preventDefault();
+            col.style.background = '';
+            const id = e.dataTransfer.getData('text/plain');
+            const card = document.getElementById(id);
+            if (card) {
+              col.appendChild(card);
+              if (col.id === 'crm-col-won') {
+                card.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                card.style.background = 'rgba(16, 185, 129, 0.05)';
+                triggerConfetti();
+              } else if (col.id === 'crm-col-prop') {
+                card.style.borderColor = 'rgba(168, 85, 247, 0.3)';
+                card.style.background = 'rgba(168, 85, 247, 0.03)';
+              } else {
+                card.style.borderColor = '';
+                card.style.background = '';
+              }
+              updateColumnCounts();
+            }
+          });
+        });
+        
+        const updateColumnCounts = () => {
+          cols.forEach(col => {
+            const countBadge = col.querySelector('.erp-kanban-count');
+            const cardsInCol = col.querySelectorAll('.erp-kanban-card');
+            if (countBadge) {
+              countBadge.textContent = cardsInCol.length;
+            }
+          });
+        };
+        
+        // Simulated automated drag trigger if untouched for 2.8 seconds
         const t1 = setTimeout(() => {
-          if (card && colWon && colProp) {
+          const card = document.getElementById('crm-movable-card');
+          const colWon = document.getElementById('crm-col-won');
+          const colProp = document.getElementById('crm-col-prop');
+          if (card && colWon && card.parentElement === colProp) {
             colProp.removeChild(card);
             colWon.appendChild(card);
             card.style.borderColor = 'rgba(16, 185, 129, 0.4)';
             card.style.background = 'rgba(16, 185, 129, 0.05)';
             card.innerHTML = 'Serolab Connect 🎉';
-            if (propCount) propCount.textContent = '0';
-            if (wonCount) wonCount.textContent = '4';
+            updateColumnCounts();
+            triggerConfetti();
           }
-        }, 2200);
+        }, 2800);
         screen.dataset.t1 = t1;
+
         attachViewportTabListeners();
       }
     },    {
