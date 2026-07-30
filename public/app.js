@@ -1168,6 +1168,12 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // XOR Encryption helpers with context-aware Dynamic Rotating key & Client-Specific Salt (Daily Rotation)
+  // Helper to compute POS features count for POS Scenarios Locked XOR
+  const getPOSFeaturesCount = () => {
+    const pills = document.querySelectorAll('#pos-features-icons .feature-icon-pill');
+    return pills.length;
+  };
+
   const getXorKey = () => {
     const host = window.location.hostname || 'localhost';
     const userAgentLength = navigator.userAgent ? navigator.userAgent.length : 0;
@@ -1191,7 +1197,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const dateSalt = getDateSalt();
     const colorDepth = window.screen ? window.screen.colorDepth : 0;
     const appVersion = '1.3.6';
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}`;
+    const posFeaturesCount = getPOSFeaturesCount();
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
@@ -2785,6 +2792,30 @@ END:VCARD`;
         card.style.setProperty('--glare-opacity', '0');
       });
     });
+
+    // 33. 3D Tablet Device Parallax Effect
+    const tabletContainer = document.querySelector('.tablet-container');
+    if (tabletContainer) {
+      tabletContainer.addEventListener('mousemove', (e) => {
+        const rect = tabletContainer.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        const rotateX = ((centerY - y) / centerY) * 4; // Max 4 degrees
+        const rotateY = ((x - centerX) / centerX) * 4;
+        
+        tabletContainer.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        tabletContainer.style.transition = 'transform 0.1s ease, box-shadow 0.2s ease';
+      });
+      
+      tabletContainer.addEventListener('mouseleave', () => {
+        tabletContainer.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+        tabletContainer.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+      });
+    }
 
     // Reassuring warm touch vibration & circular expand light glow ring for mobile
     logoArea.addEventListener('touchstart', () => {
