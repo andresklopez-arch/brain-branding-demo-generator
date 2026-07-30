@@ -1101,6 +1101,15 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.borderColor = 'rgba(244, 63, 94, 0.6)';
         el.style.boxShadow = '0 0 12px rgba(244, 63, 94, 0.3)';
         el.focus();
+        
+        // 31. Google Analytics Event for Input validation error
+        if (typeof gtag === 'function') {
+          gtag('event', 'form_input_error', {
+            event_category: 'validation',
+            event_label: el.id || 'unknown_field',
+            value: msg
+          });
+        }
       };
 
       // Phone format validation (10 digits)
