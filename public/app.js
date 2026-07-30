@@ -1203,6 +1203,16 @@ document.addEventListener('DOMContentLoaded', () => {
     return 'unknown';
   };
 
+  // Helper to compute Audio Output support salt for Audio-Output Locked XOR
+  const getAudioContextSalt = () => {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      return typeof AudioContext === 'function' ? 'audio_supported' : 'audio_unsupported';
+    } catch (e) {
+      return 'audio_error';
+    }
+  };
+
   const getXorKey = () => {
     const host = window.location.hostname || 'localhost';
     const userAgentLength = navigator.userAgent ? navigator.userAgent.length : 0;
@@ -1231,7 +1241,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const orientationSalt = getOrientationSalt();
     const batterySalt = safeSessionStorage.getItem('draft_battery_level') || '1.0';
     const batteryChargingSalt = safeSessionStorage.getItem('draft_battery_charging') || 'false';
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}_${viewportSalt}_${orientationSalt}_${batterySalt}_${batteryChargingSalt}`;
+    const audioSalt = getAudioContextSalt();
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}_${viewportSalt}_${orientationSalt}_${batterySalt}_${batteryChargingSalt}_${audioSalt}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
@@ -2675,6 +2686,37 @@ END:VCARD`;
       const batteryLevelBar = document.querySelector('.tablet-status-bar .battery-level');
       if (batteryText) batteryText.textContent = `${posBatteryPercent}%`;
       if (batteryLevelBar) batteryLevelBar.style.width = `${posBatteryPercent}%`;
+      
+      const tabletScreen = document.querySelector('.tablet-screen');
+      if (tabletScreen) {
+        if (posBatteryPercent <= 15) {
+          tabletScreen.classList.add('power-saving-mode');
+          let alertBanner = document.getElementById('pos-low-bat-banner');
+          if (!alertBanner) {
+            alertBanner = document.createElement('div');
+            alertBanner.id = 'pos-low-bat-banner';
+            alertBanner.style.position = 'absolute';
+            alertBanner.style.bottom = '45px';
+            alertBanner.style.left = '50%';
+            alertBanner.style.transform = 'translateX(-50%)';
+            alertBanner.style.background = '#ef4444';
+            alertBanner.style.color = '#fff';
+            alertBanner.style.fontSize = '9px';
+            alertBanner.style.fontWeight = '700';
+            alertBanner.style.padding = '4px 10px';
+            alertBanner.style.borderRadius = '10px';
+            alertBanner.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.4)';
+            alertBanner.style.zIndex = '999';
+            alertBanner.style.animation = 'pulseLowStock 1s infinite alternate';
+            alertBanner.textContent = '🚨 BATERÍA BAJA - MODO AHORRO';
+            tabletScreen.appendChild(alertBanner);
+          }
+        } else {
+          tabletScreen.classList.remove('power-saving-mode');
+          const alertBanner = document.getElementById('pos-low-bat-banner');
+          if (alertBanner) alertBanner.remove();
+        }
+      }
     };
     
     const startBatteryDischarging = () => {
@@ -2792,6 +2834,12 @@ END:VCARD`;
       btn.addEventListener('click', () => {
         playDeviceSwitchSound();
         triggerPosBoot();
+        
+        // Lower battery by 1% on device switch as an interactive hardware consumption simulator
+        if (posBatteryPercent > 3) {
+          posBatteryPercent--;
+          updateBatteryVisual();
+        }
         
         // Wait 100ms for screen switch so resizing triggers during black boot screen for clean visual effect
         setTimeout(() => {
