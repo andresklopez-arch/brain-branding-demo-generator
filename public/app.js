@@ -1389,6 +1389,16 @@ document.addEventListener('DOMContentLoaded', () => {
           if (container) {
             container.classList.add('unlocked-mockup');
           }
+          
+          // Trigger avatar boot animation
+          const avatarCont = document.getElementById('telegram-avatar-container');
+          if (avatarCont) {
+            avatarCont.classList.remove('activated');
+            void avatarCont.offsetWidth;
+            avatarCont.classList.add('activated');
+          }
+          playSynthSound('unlock');
+          triggerHaptic('haptic-pulse');
         }
         
         const featureKey = pill.getAttribute('data-feature');
@@ -1473,6 +1483,14 @@ document.addEventListener('DOMContentLoaded', () => {
           container.classList.add('unlocked-mockup');
         }
         
+        // Trigger avatar boot animation
+        const avatarCont = document.getElementById('telegram-avatar-container');
+        if (avatarCont) {
+          avatarCont.classList.remove('activated');
+          void avatarCont.offsetWidth;
+          avatarCont.classList.add('activated');
+        }
+        
         // Play unlock chime
         playSynthSound('unlock');
         triggerHaptic('haptic-pulse');
@@ -1516,6 +1534,15 @@ document.addEventListener('DOMContentLoaded', () => {
               if (container) {
                 container.classList.add('unlocked-mockup');
               }
+              
+              // Trigger avatar boot animation
+              const avatarCont = document.getElementById('telegram-avatar-container');
+              if (avatarCont) {
+                avatarCont.classList.remove('activated');
+                void avatarCont.offsetWidth;
+                avatarCont.classList.add('activated');
+              }
+              
               playSynthSound('unlock');
               triggerHaptic('haptic-pulse');
               
