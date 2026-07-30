@@ -1064,6 +1064,12 @@ document.addEventListener('DOMContentLoaded', () => {
         lastCheck.classList.add('read');
       }
 
+      // Show phone status bar notification bubble
+      const notif = document.getElementById('status-notif');
+      if (notif) {
+        notif.style.opacity = '1';
+      }
+
       const indicator = document.createElement('div');
       indicator.className = 'telegram-bubble typing';
       indicator.id = 'telegram-typing';
@@ -1080,6 +1086,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const indicator = document.getElementById('telegram-typing');
       if (indicator) {
         indicator.remove();
+      }
+      
+      // Hide phone status bar notification bubble
+      const notif = document.getElementById('status-notif');
+      if (notif) {
+        notif.style.opacity = '0';
       }
     }
 

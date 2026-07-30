@@ -636,6 +636,61 @@
       position: relative;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
+
+    /* CHIP LOGO & NOTIF ANIMATIONS */
+    .chip-core {
+      animation: chipPulse 1.8s infinite alternate ease-in-out;
+      transform-origin: center;
+    }
+    @keyframes chipPulse {
+      0% { opacity: 0.4; filter: drop-shadow(0 0 2px #00e5ff); }
+      100% { opacity: 1; filter: drop-shadow(0 0 10px #00e5ff) saturate(1.5); }
+    }
+    .status-notif {
+      animation: notifPulse 1s infinite alternate;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @keyframes notifPulse {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      100% { transform: scale(1.15); opacity: 1; }
+    }
+
+    /* SMARTPHONE RESPONSIVE ADAPTATIONS */
+    @media (max-width: 480px) {
+      .smartphone-container {
+        padding: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        background: transparent;
+        max-width: 100%;
+      }
+      .smartphone-notch, .smartphone-container::before, .smartphone-container::after {
+        display: none;
+      }
+      .smartphone-status-bar {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        padding: 4px 15px 0 15px;
+      }
+      .smartphone-home-bar {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 12px;
+      }
+      .home-indicator {
+        width: 80px;
+        margin-bottom: 2px;
+      }
+      .telegram-mockup {
+        height: 520px;
+      }
+    }
     .telegram-header {
       background: #17212b;
       padding: 14px 20px;
@@ -1145,6 +1200,12 @@
           <div class="smartphone-status-bar">
             <span class="status-time" id="status-time">09:41</span>
             <div class="status-bar-icons">
+              <!-- Chat Notification Icon -->
+              <div id="status-notif" class="status-notif" style="opacity: 0; transition: opacity 0.3s; color: #00e5ff; margin-right: 4px;">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                  <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                </svg>
+              </div>
               <div class="status-wifi">
                 <span class="wifi-bar"></span>
                 <span class="wifi-bar"></span>
@@ -1165,28 +1226,32 @@
           <div class="telegram-mockup">
             <div class="telegram-header">
               <div class="telegram-avatar" id="telegram-avatar-container">
-                <svg viewBox="0 0 100 100" width="40" height="40" style="filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.6));">
+                <svg viewBox="0 0 100 100" width="40" height="40" style="filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.7));">
                   <defs>
-                    <linearGradient id="robo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <linearGradient id="chip-grad" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stop-color="#00e5ff" />
                       <stop offset="100%" stop-color="#a855f7" />
                     </linearGradient>
                   </defs>
                   <!-- Outer circle -->
-                  <circle cx="50" cy="50" r="47" fill="rgba(23, 33, 43, 0.9)" stroke="url(#robo-grad)" stroke-width="2.5" />
-                  <!-- Robot Head Outline -->
-                  <path d="M30 44c0-10 8-18 20-18s20 8 20 18v16c0 6-4 12-10 14l-10 3-10-3c-6-2-10-8-10-14V44z" fill="none" stroke="url(#robo-grad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-                  <!-- Ears / Antennas -->
-                  <path d="M25 48h5 M70 48h5 M50 26V20" stroke="url(#robo-grad)" stroke-width="2.5" stroke-linecap="round" />
-                  <circle cx="50" cy="18" r="3" fill="url(#robo-grad)" />
-                  <!-- Visor -->
-                  <rect x="36" y="40" width="28" height="10" rx="4" fill="rgba(0, 229, 255, 0.15)" stroke="url(#robo-grad)" stroke-width="1.5" />
-                  <!-- Eyes -->
-                  <circle cx="44" cy="45" r="2.5" fill="#00e5ff" />
-                  <circle cx="56" cy="45" r="2.5" fill="#00e5ff" />
-                  <!-- Mouth / tech detail -->
-                  <path d="M42 58h16" stroke="url(#robo-grad)" stroke-width="2" stroke-linecap="round" />
-                  <path d="M38 66l12 4 12-4" stroke="url(#robo-grad)" stroke-width="1.5" stroke-linecap="round" />
+                  <circle cx="50" cy="50" r="47" fill="rgba(23, 33, 43, 0.95)" stroke="url(#chip-grad)" stroke-width="2.5" />
+                  <!-- Silicon Chip body -->
+                  <rect x="30" y="30" width="40" height="40" rx="6" fill="none" stroke="url(#chip-grad)" stroke-width="3" />
+                  <!-- Chip Core -->
+                  <rect class="chip-core" x="40" y="40" width="20" height="20" rx="3" fill="url(#chip-grad)" />
+                  <!-- Pins -->
+                  <line x1="38" y1="30" x2="38" y2="20" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line x1="50" y1="30" x2="50" y2="20" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line x1="62" y1="30" x2="62" y2="20" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line x1="38" y1="70" x2="38" y2="80" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line x1="50" y1="70" x2="50" y2="80" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line x1="62" y1="70" x2="62" y2="80" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line x1="30" y1="38" x2="20" y2="38" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line x1="30" y1="50" x2="20" y2="50" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line x1="30" y1="62" x2="20" y2="62" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line x1="70" y1="38" x2="80" y2="38" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line x1="70" y1="50" x2="80" y2="50" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line x1="70" y1="62" x2="80" y2="62" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
                 </svg>
               </div>
               <div class="telegram-user-info">
