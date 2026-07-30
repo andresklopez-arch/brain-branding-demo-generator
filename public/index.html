@@ -309,6 +309,11 @@
       transform: translateX(-10px);
       filter: blur(1.5px);
     }
+    #typing-text {
+      border-bottom: 2.5px solid rgba(0, 229, 255, 0.45);
+      padding-bottom: 2px;
+      box-shadow: 0 4px 12px -4px rgba(0, 229, 255, 0.3);
+    }
     #typing-text::after {
       content: '|';
       animation: blink-cursor 0.75s step-end infinite;
@@ -1501,7 +1506,10 @@
     <!-- 1. HERO SECTION -->
     <section id="inicio" class="hero">
       <div class="hero-content">
-        <h1 class="hero-title">Creamos para ti <span class="accent" id="typing-text">Asistente Personal IA</span></h1>
+        <h1 class="hero-title">
+          Creamos<br>
+          para ti <span class="accent" id="typing-text">Asistente Personal IA</span>
+        </h1>
         <p class="hero-desc">
           Implementamos tu Asistente Personal de Inteligencia Artificial que puedes controlar desde Whatsapp o Telegram para que puedas disfrutar más de las cosas que valen la pena.
         </p>

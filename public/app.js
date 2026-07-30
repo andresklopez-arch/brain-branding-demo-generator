@@ -214,13 +214,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. Dynamic typing text for the Hero
   const typingElement = document.getElementById('typing-text');
   if (typingElement) {
-    const words = ["Asistente Personal IA", "Punto de Venta", "Página Web", "Software a Medida"];
-    const descriptions = [
+    const words = Object.freeze(["Asistente Personal IA", "Punto de Venta", "Página Web", "Software a Medida"]);
+    const descriptions = Object.freeze([
       "Implementamos tu Asistente Personal de Inteligencia Artificial que puedes controlar desde Whatsapp o Telegram para que puedas disfrutar más de las cosas que valen la pena.",
       "Controla tu negocio 24/7 desde cualquier lugar y/o dispositivo, administra tus inventarios, sucursales, facturación y cobros, todo a medida.",
       "Establece una presencia digital corporativa premium con tu Página Web, con el nombre de tu empresa en la WEB.",
       "Tu negocio no es igual a ningún otro, tu empresa no se tiene que amoldar al sistema, naturalmente debe ser al revés."
-    ];
+    ]);
     let wordIndex = 0;
     let charIndex = 0;
     let isDeleting = false;
