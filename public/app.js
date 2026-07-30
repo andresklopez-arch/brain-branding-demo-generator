@@ -990,8 +990,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 19. FAB Tooltip disabled to prevent visual clutter
-
   // 20. Scroll Spy for Icon Nav links
   const sections = document.querySelectorAll('section');
   const navLinks = document.querySelectorAll('header nav .nav-link');
@@ -1085,8 +1083,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 25. Tooltip hide listeners removed
-
   // 26. Dynamic Smart Header (Slide up/down on scroll)
   let lastScrollY = window.scrollY;
   const mainHeader = document.querySelector('header');
@@ -1157,6 +1153,14 @@ document.addEventListener('DOMContentLoaded', () => {
     return len;
   };
 
+  // Helper to compute contact form inputs total count for Form-Inputs Locked XOR
+  const getFormInputsCount = () => {
+    const form = document.getElementById('agency-contact-form');
+    if (!form) return 0;
+    const inputs = form.querySelectorAll('input, textarea, select');
+    return inputs.length;
+  };
+
   // XOR Encryption helpers with context-aware Dynamic Rotating key & Client-Specific Salt (Daily Rotation)
   const getXorKey = () => {
     const host = window.location.hostname || 'localhost';
@@ -1177,7 +1181,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const humanActivity = sessionStorage.getItem('draft_human_activity') || '0';
     const servicesLen = getServicesTitleLength();
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}`;
+    const inputsCount = getFormInputsCount();
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);

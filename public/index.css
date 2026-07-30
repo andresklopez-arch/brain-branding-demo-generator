@@ -501,6 +501,11 @@ nav {
   text-align: center !important;
 }
 
+.service-bullet {
+  display: block;
+  margin-bottom: 12px;
+}
+
 .service-card:hover {
   transform: translateY(-8px);
   border-color: var(--border-hover);
