@@ -2325,7 +2325,10 @@
         </div>
         
         <div class="glass-card contact-card">
-          <form id="agency-contact-form">
+          <form id="agency-contact-form" style="display: flex; flex-direction: column;">
+            <button id="form-restore-link" type="button" style="display: none; background: none; border: none; color: var(--primary); font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline; margin-bottom: 15px; padding: 0; text-align: left; align-self: flex-start; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--primary)'">
+              📝 Restaurar datos del borrador anterior
+            </button>
             <!-- Honeypot anti-spam field -->
             <div style="position: absolute; left: -9999px; overflow: hidden; height: 0; width: 0;">
               <label for="contact-honeypot">No rellenar este campo si eres humano</label>

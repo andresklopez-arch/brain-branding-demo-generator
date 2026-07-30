@@ -890,10 +890,21 @@ document.addEventListener('DOMContentLoaded', () => {
   validateInputs.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-      // Track focus time per field
+      // Track focus time per field and check if it has an error message
       el.addEventListener('focus', () => {
         activeFieldId = id;
         fieldStartTime = Date.now();
+        
+        const errSpan = el.parentNode.querySelector('.error-msg');
+        if (errSpan && errSpan.textContent.length > 0) {
+          if (typeof gtag === 'function') {
+            gtag('event', 'focused_error_field', {
+              event_category: 'validation',
+              event_label: id,
+              value: errSpan.textContent
+            });
+          }
+        }
       });
 
       el.addEventListener('blur', () => {
@@ -1114,12 +1125,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const screenHeight = window.screen ? window.screen.height : 0;
     const lang = navigator.language || 'es';
     
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}`;
+    // Retrieve or generate unique session salt token
+    let sessionToken = sessionStorage.getItem('draft_session_token');
+    if (!sessionToken) {
+      sessionToken = Math.random().toString(36).substring(2, 10);
+      sessionStorage.setItem('draft_session_token', sessionToken);
+    }
+    
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
     }
-    return (sum % 250) + 1; // dynamic XOR key between 1 and 250 salted by client details
+    return (sum % 250) + 1; // dynamic XOR key between 1 and 250 salted by client details and session token
   };
 
   function xorEncrypt(str) {
@@ -1191,7 +1209,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  const restoreLink = document.getElementById('form-restore-link');
+
   if (hasSavedDrafts) {
+    // Show the inline link
+    if (restoreLink) {
+      restoreLink.style.display = 'block';
+    }
+
     // Create and show Toast
     const toast = document.createElement('div');
     toast.id = 'draft-toast';
@@ -1220,14 +1245,13 @@ document.addEventListener('DOMContentLoaded', () => {
       dismissToast();
     }, 10000);
 
-    document.getElementById('btn-restore-draft').addEventListener('click', () => {
+    // Global helper for toast removal
+    window.dismissDraftToast = function() {
       clearTimeout(autoDismissTimeout);
-      if (typeof gtag === 'function') {
-        gtag('event', 'draft_toast_action', {
-          event_category: 'engagement',
-          event_label: 'Restore'
-        });
-      }
+      dismissToast();
+    };
+
+    const triggerDraftRestoration = () => {
       Object.keys(tempDrafts).forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -1235,11 +1259,21 @@ document.addEventListener('DOMContentLoaded', () => {
           el.dispatchEvent(new Event('input'));
         }
       });
-      dismissToast();
+      if (restoreLink) restoreLink.style.display = 'none';
+    };
+
+    document.getElementById('btn-restore-draft').addEventListener('click', () => {
+      if (typeof gtag === 'function') {
+        gtag('event', 'draft_toast_action', {
+          event_category: 'engagement',
+          event_label: 'Restore'
+        });
+      }
+      triggerDraftRestoration();
+      window.dismissDraftToast();
     });
 
     document.getElementById('btn-discard-draft').addEventListener('click', () => {
-      clearTimeout(autoDismissTimeout);
       if (typeof gtag === 'function') {
         gtag('event', 'draft_toast_action', {
           event_category: 'engagement',
@@ -1255,14 +1289,31 @@ document.addEventListener('DOMContentLoaded', () => {
       // Clear current form values if user already typed anything
       const form = document.getElementById('agency-contact-form');
       if (form) form.reset();
+      if (restoreLink) restoreLink.style.display = 'none';
       
-      dismissToast();
+      window.dismissDraftToast();
     });
+
+    if (restoreLink) {
+      restoreLink.addEventListener('click', () => {
+        if (typeof gtag === 'function') {
+          gtag('event', 'draft_toast_action', {
+            event_category: 'engagement',
+            event_label: 'Restore-Inline'
+          });
+        }
+        triggerDraftRestoration();
+        window.dismissDraftToast();
+      });
+    }
 
     function dismissToast() {
       toast.style.transform = 'translateY(20px)';
       toast.style.opacity = '0';
-      setTimeout(() => toast.remove(), 300);
+      setTimeout(() => {
+        toast.remove();
+        window.dismissDraftToast = null;
+      }, 300);
     }
   }
 
