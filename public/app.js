@@ -244,10 +244,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!isDeleting && charIndex === currentWord.length) {
         typeSpeed = 2000; // Pause at end of word
         isDeleting = true;
+        typingElement.classList.add('finished');
       } else if (isDeleting && charIndex === 0) {
         isDeleting = false;
         wordIndex = (wordIndex + 1) % words.length;
         typeSpeed = 500; // Pause before typing next word
+        typingElement.classList.remove('finished');
         
         // Update description dynamically with opacity transition & slide
         const descElement = document.querySelector('.hero-desc');
