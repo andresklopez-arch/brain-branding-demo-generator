@@ -2317,7 +2317,19 @@
             </div>
             <div class="form-group">
               <label for="contact-phone">Tu Teléfono (WhatsApp de 10 dígitos)</label>
-              <input type="tel" id="contact-phone" placeholder="Ej. 7712339238" required pattern="[0-9]{10}">
+              <div style="display: flex; gap: 10px; margin-top: 4px;">
+                <select id="contact-country-code" style="width: 100px; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border-color)'">
+                  <option value="52" selected>🇲🇽 +52</option>
+                  <option value="1">🇺🇸 +1</option>
+                  <option value="34">🇪🇸 +34</option>
+                  <option value="54">🇦🇷 +54</option>
+                  <option value="57">🇨🇴 +57</option>
+                  <option value="56">🇨🇱 +56</option>
+                  <option value="51">🇵🇪 +51</option>
+                  <option value="58">🇻🇪 +58</option>
+                </select>
+                <input type="tel" id="contact-phone" placeholder="Ej. 7712339238" required pattern="[0-9]{10}" style="flex: 1;">
+              </div>
             </div>
             <div class="form-group">
               <label>Giro del Negocio</label>

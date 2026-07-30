@@ -1078,17 +1078,24 @@ document.addEventListener('DOMContentLoaded', () => {
       // Clear drafts
       Object.values(draftFields).forEach(key => safeLocalStorage.removeItem(key));
       
-      // Extract form details
-      const name = document.getElementById('contact-name')?.value || '';
-      const business = document.getElementById('contact-business')?.value || '';
-      const vertical = document.getElementById('contact-vertical')?.value || '';
-      const desc = descField?.value || '';
-      const operation = operationField?.value || '';
+      // Extract form details & sanitize inputs
+      const rawName = document.getElementById('contact-name')?.value || '';
+      const rawBusiness = document.getElementById('contact-business')?.value || '';
+      const rawVertical = document.getElementById('contact-vertical')?.value || '';
+      const rawDesc = descField?.value || '';
+      const rawOperation = operationField?.value || '';
+      const countryCode = document.getElementById('contact-country-code')?.value || '52';
+      
+      const name = sanitizeInput(rawName);
+      const business = sanitizeInput(rawBusiness);
+      const vertical = sanitizeInput(rawVertical);
+      const desc = sanitizeInput(rawDesc);
+      const operation = sanitizeInput(rawOperation);
       
       // Construct formatted WhatsApp message
       const text = `Hola Brain Branding, quiero solicitar asesoría para un proyecto a la medida.\n\n` +
                    `📝 *Nombre:* ${name}\n` +
-                   `📞 *Teléfono:* ${phoneVal}\n` +
+                   `📞 *Teléfono:* +${countryCode} ${phoneVal}\n` +
                    `💼 *Empresa:* ${business}\n` +
                    `🏷️ *Giro:* ${vertical}\n` +
                    `🛠️ *Funciones deseadas:* ${desc}\n` +
@@ -1102,6 +1109,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Expose downloadVCard globally
   window.downloadVCard = function() {
+    // 30. Google Analytics Event for VCard Download
+    if (typeof gtag === 'function') {
+      gtag('event', 'save_agency_contact', {
+        event_category: 'engagement',
+        event_label: 'VCard Download'
+      });
+    }
+
     const vcardData = `BEGIN:VCARD
 VERSION:3.0
 FN:Andre Krebollo - Brain Branding
