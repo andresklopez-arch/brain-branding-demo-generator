@@ -1139,10 +1139,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Interactive command pills listener
     const cmdPills = document.querySelectorAll('.telegram-cmd-pill');
+    let isPillTransitioning = false;
     cmdPills.forEach(pill => {
       pill.addEventListener('click', () => {
+        if (isPillTransitioning) return;
+        
         const scenarioIdx = parseInt(pill.getAttribute('data-scenario'), 10);
         if (isNaN(scenarioIdx)) return;
+
+        isPillTransitioning = true;
+        setTimeout(() => {
+          isPillTransitioning = false;
+        }, 1200);
 
         // Reset Active pill
         cmdPills.forEach(p => p.classList.remove('active'));
