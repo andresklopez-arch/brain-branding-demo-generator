@@ -1350,6 +1350,9 @@
             <div class="notch-camera"></div>
           </div>
           
+          <!-- Sound Toggle Button -->
+          <div id="smartphone-sound-toggle" class="smartphone-sound-toggle" title="Activar/desactivar sonidos de simulación">🔇</div>
+          
           <!-- Status Bar -->
           <div class="smartphone-status-bar">
             <span class="status-time" id="status-time">09:41</span>
@@ -1394,6 +1397,20 @@
             
             <div class="lockscreen-hint">
               <span class="hint-arrow">▲</span> Presiona para desbloquear y simular
+            </div>
+            
+            <!-- Biometric Scanning Overlay -->
+            <div id="lockscreen-biometric" class="lockscreen-biometric">
+              <div class="bio-icon">
+                <div class="bio-ring"></div>
+                <!-- Face ID graphic style SVG -->
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3 M21 8V5a2 2 0 0 0-2-2h-3 M3 16v3a2 2 0 0 0 2 2h3 M16 21h3a2 2 0 0 0 2-2v-3"/>
+                  <path d="M8 12a4 4 0 0 1 8 0v1a3 3 0 0 1-6 0v-1"/>
+                  <circle cx="12" cy="10" r="1"/>
+                </svg>
+              </div>
+              <span class="bio-text" id="bio-text">Escaneando Face ID...</span>
             </div>
           </div>
 

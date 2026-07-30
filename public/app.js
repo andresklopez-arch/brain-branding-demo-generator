@@ -23,6 +23,91 @@ const safeSessionStorage = safeStorage('sessionStorage');
 
 document.addEventListener('DOMContentLoaded', () => {
 
+  // Web Audio Synthesizer for Smartphone sound effects
+  let isSoundEnabled = false; // Start muted
+  
+  function playSynthSound(type) {
+    if (!isSoundEnabled) return;
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      if (type === 'unlock') {
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc1.type = 'sine';
+        osc2.type = 'sine';
+        osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+        osc1.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+        osc2.frequency.setValueAtTime(1046.50, audioCtx.currentTime); // C6
+        
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+        
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc1.start();
+        osc2.start();
+        osc1.stop(audioCtx.currentTime + 0.35);
+        osc2.stop(audioCtx.currentTime + 0.35);
+      } else if (type === 'msg_recv') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+        osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.08);
+        
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+      } else if (type === 'msg_send') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.08);
+        
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+      }
+    } catch (e) {
+      console.warn('Audio Context not supported.', e);
+    }
+  }
+
+  // Sound Toggle Button Handler
+  const soundToggle = document.getElementById('smartphone-sound-toggle');
+  if (soundToggle) {
+    soundToggle.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent unlocking lockscreen
+      isSoundEnabled = !isSoundEnabled;
+      if (isSoundEnabled) {
+        soundToggle.textContent = '🔊';
+        soundToggle.classList.add('active');
+        playSynthSound('unlock');
+      } else {
+        soundToggle.textContent = '🔇';
+        soundToggle.classList.remove('active');
+      }
+    });
+  }
+
   // Smartphone Status Bar Time Update
   const statusTime = document.getElementById('status-time');
   if (statusTime) {
@@ -1159,6 +1244,13 @@ document.addEventListener('DOMContentLoaded', () => {
       
       telegramContainer.appendChild(bubble);
       telegramContainer.scrollTop = telegramContainer.scrollHeight;
+      
+      // Play sound
+      if (sender === 'user') {
+        playSynthSound('msg_send');
+      } else {
+        playSynthSound('msg_recv');
+      }
     }
 
     function updateActiveIcon(scenarioIdx) {
@@ -1246,6 +1338,10 @@ document.addEventListener('DOMContentLoaded', () => {
           if (ls) {
             ls.classList.add('unlocked');
           }
+          const container = document.querySelector('.smartphone-container');
+          if (container) {
+            container.classList.add('unlocked-mockup');
+          }
         }
         
         const featureKey = pill.getAttribute('data-feature');
@@ -1319,26 +1415,51 @@ document.addEventListener('DOMContentLoaded', () => {
     if (lockscreen) {
       lockscreen.addEventListener('click', () => {
         if (!isLocked) return;
-        isLocked = false;
-        lockscreen.classList.add('unlocked');
         
-        // Reset and start simulation
-        if (simulatorTimeout) {
-          clearTimeout(simulatorTimeout);
-        }
-        removeTypingIndicator();
-        telegramContainer.innerHTML = '';
-        currentScenarioIdx = 0;
-        currentMessageIdx = 0;
-        updateActiveIcon(0);
+        // Start biometric scanning transition
+        lockscreen.classList.add('scanning');
         
-        const scenario = chatScenarios[0];
-        if (scenario && scenario.length > 0) {
-          const firstMsg = scenario[0];
-          currentMessageIdx = 1;
-          renderMessage(firstMsg.sender, firstMsg);
-          playNextMessage();
-        }
+        setTimeout(() => {
+          // Authorized biometric state
+          lockscreen.classList.add('authorized');
+          const bioText = document.getElementById('bio-text');
+          if (bioText) {
+            bioText.textContent = 'Acceso Autorizado ✓';
+          }
+          
+          setTimeout(() => {
+            // Unlock smartphone
+            isLocked = false;
+            lockscreen.classList.add('unlocked');
+            
+            // Trigger depth blur removal
+            const container = document.querySelector('.smartphone-container');
+            if (container) {
+              container.classList.add('unlocked-mockup');
+            }
+            
+            // Play unlock chime
+            playSynthSound('unlock');
+            
+            // Reset and start simulation
+            if (simulatorTimeout) {
+              clearTimeout(simulatorTimeout);
+            }
+            removeTypingIndicator();
+            telegramContainer.innerHTML = '';
+            currentScenarioIdx = 0;
+            currentMessageIdx = 0;
+            updateActiveIcon(0);
+            
+            const scenario = chatScenarios[0];
+            if (scenario && scenario.length > 0) {
+              const firstMsg = scenario[0];
+              currentMessageIdx = 1;
+              renderMessage(firstMsg.sender, firstMsg);
+              playNextMessage();
+            }
+          }, 400);
+        }, 800);
       });
     }
 
