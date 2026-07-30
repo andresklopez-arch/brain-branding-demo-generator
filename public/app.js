@@ -959,13 +959,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ── TELEGRAM CHAT SIMULATOR FOR HERMES AGENT ──
+  // ── TELEGRAM CHAT SIMULATOR FOR BRAIN AGENT ──
   const telegramContainer = document.getElementById('telegram-messages');
   if (telegramContainer) {
     const chatScenarios = [
       // Scenario 1: Excel
       [
-        { sender: 'user', text: 'Hermes, necesito que proceses este Excel de ventas. Elimina los correos duplicados y saca el total vendido este mes.' },
+        { sender: 'user', text: 'Hola, necesito que proceses este Excel de ventas. Elimina los correos duplicados y saca el total vendido este mes.' },
         { sender: 'bot', text: 'Procesando archivo `ventas_julio.xlsx`... 🔍' },
         { sender: 'bot', text: '📊 **Consolidación completada:**\n- Se eliminaron **142 registros duplicados** en la columna de correo.\n- 💰 **Total de ventas del mes:** `$428,500.00 MXN`.\n- 📈 He generado un gráfico de barras con el rendimiento semanal.\n\n[Descargar archivo_procesado.xlsx] 📁' }
       ],
@@ -995,6 +995,52 @@ document.addEventListener('DOMContentLoaded', () => {
         { sender: 'bot', text: '📅 **Agenda Actualizada:**\n- La junta fue movida al **Jueves 30 de Julio a las 15:00 hrs**.\n- Se envió la invitación de Google Calendar a Alejandro y ya la aceptó.\n- 💡 *Recordatorio Proactivo:* Tienes un espacio libre de 1 hora antes de la junta por si deseas repasar la propuesta.' }
       ]
     ];
+
+    const featureDetails = {
+      excel: {
+        title: 'Microsoft Excel y Google Sheets',
+        desc: 'Procesa miles de filas, limpia registros duplicados, genera gráficos estructurados y extrae métricas clave de tus tablas en segundos.',
+        color: '#00e5ff'
+      },
+      correo: {
+        title: 'Gmail y Outlook',
+        desc: 'Redacta correos de gran complejidad seleccionando los archivos correctos con tu propio estilo y reglas de negocio. Búsqueda inteligente para encontrar cualquier correo histórico al instante.',
+        color: '#a855f7'
+      },
+      juntas: {
+        title: 'Resumen de Juntas',
+        desc: 'Analiza audios o transcripciones de reuniones extensas y complejas. Extrae acuerdos principales, minutas ejecutivas y pendientes asignados en segundos.',
+        color: '#ec4899'
+      },
+      web: {
+        title: 'Búsqueda en la Web',
+        desc: 'Investiga, busca datos técnicos y compara servicios o proveedores en internet por ti de forma precisa y 100% libre de alucinaciones.',
+        color: '#3b82f6'
+      },
+      agenda: {
+        title: 'Organización de Agenda',
+        desc: 'Reagenda juntas, cruza disponibilidades de participantes y envía invitaciones automáticas. Cuenta con recordatorios proactivos de tus tareas frecuentes.',
+        color: '#10b981'
+      },
+      control: {
+        title: 'Control en WhatsApp/Telegram',
+        desc: 'Gestiona Excel, correo, agenda y juntas de forma discreta usando notas de voz o texto directamente en la app que ya utilizas a diario.',
+        color: '#06b6d4',
+        botText: '📱 **Control por Mensajería:**\nTodo se gestiona de forma altamente discreta por notas de voz o texto en el chat que ya usas a diario. No necesitas cambiar de aplicación.'
+      },
+      inteligencia: {
+        title: 'Inteligencia Adaptativa',
+        desc: 'Cero explicaciones repetitivas: el sistema aprende de tus formatos, tus métodos y tus hábitos de trabajo desde el primer día. No necesitas repetir instrucciones ni ser repetitivo en ellas.',
+        color: '#f43f5e',
+        botText: '🧠 **Inteligencia Adaptativa:**\nCero explicaciones repetitivas. Aprendo de tus formatos, tus métodos y tus hábitos de trabajo desde el primer día para actuar de forma autónoma.'
+      },
+      seguridad: {
+        title: 'Seguridad Blindada',
+        desc: 'Confidencialidad total: tus datos corporativos no navegan por IAs públicas ni entrenan modelos externos. El sistema opera sobre una red privada dedicada, garantizando la confidencialidad total de tu empresa.',
+        color: '#eab308',
+        botText: '🛡️ **Seguridad Blindada:**\nTus datos no navegan por IAs públicas ni entrenan modelos externos. Opero sobre una red dedicada, garantizando confidencialidad absoluta.'
+      }
+    };
 
     let currentScenarioIdx = 0;
     let currentMessageIdx = 0;
@@ -1098,15 +1144,38 @@ document.addEventListener('DOMContentLoaded', () => {
       telegramContainer.scrollTop = telegramContainer.scrollHeight;
     }
 
-    function updateActivePill(idx) {
-      const pills = document.querySelectorAll('.telegram-cmd-pill');
+    function updateActiveIcon(scenarioIdx) {
+      const pills = document.querySelectorAll('.feature-icon-pill');
       pills.forEach(p => {
-        if (parseInt(p.getAttribute('data-scenario'), 10) === idx) {
+        const pScenario = p.getAttribute('data-scenario');
+        if (pScenario === String(scenarioIdx)) {
           p.classList.add('active');
+          const featureKey = p.getAttribute('data-feature');
+          updateDetailCard(featureKey);
         } else {
           p.classList.remove('active');
         }
       });
+    }
+
+    function updateDetailCard(featureKey) {
+      const details = featureDetails[featureKey];
+      const card = document.getElementById('feature-detail-card');
+      const titleEl = document.getElementById('feature-detail-title');
+      const descEl = document.getElementById('feature-detail-desc');
+      
+      if (card && titleEl && descEl && details) {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(10px)';
+        
+        setTimeout(() => {
+          titleEl.textContent = details.title;
+          descEl.textContent = details.desc;
+          card.style.color = details.color;
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, 200);
+      }
     }
 
     function playNextMessage() {
@@ -1119,7 +1188,7 @@ document.addEventListener('DOMContentLoaded', () => {
           telegramContainer.innerHTML = '';
           currentScenarioIdx = (currentScenarioIdx + 1) % chatScenarios.length;
           currentMessageIdx = 0;
-          updateActivePill(currentScenarioIdx);
+          updateActiveIcon(currentScenarioIdx);
           playNextMessage();
         }, 5000);
         return;
@@ -1145,26 +1214,30 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Interactive command pills listener
-    const cmdPills = document.querySelectorAll('.telegram-cmd-pill');
+    // Interactive command pills click listener
+    const featurePills = document.querySelectorAll('.feature-icon-pill');
     let isPillTransitioning = false;
-    cmdPills.forEach(pill => {
+
+    featurePills.forEach(pill => {
       pill.addEventListener('click', () => {
         if (isPillTransitioning) return;
         
-        const scenarioIdx = parseInt(pill.getAttribute('data-scenario'), 10);
-        if (isNaN(scenarioIdx)) return;
-
+        const featureKey = pill.getAttribute('data-feature');
+        const scenarioVal = pill.getAttribute('data-scenario');
+        
         isPillTransitioning = true;
-        cmdPills.forEach(p => p.classList.add('disabled'));
+        featurePills.forEach(p => p.classList.add('disabled'));
         setTimeout(() => {
           isPillTransitioning = false;
-          cmdPills.forEach(p => p.classList.remove('disabled'));
+          featurePills.forEach(p => p.classList.remove('disabled'));
         }, 1200);
 
-        // Reset Active pill
-        cmdPills.forEach(p => p.classList.remove('active'));
+        // Update active class
+        featurePills.forEach(p => p.classList.remove('active'));
         pill.classList.add('active');
+
+        // Update details card
+        updateDetailCard(featureKey);
 
         // Reset loops
         if (simulatorTimeout) {
@@ -1173,16 +1246,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         removeTypingIndicator();
         telegramContainer.innerHTML = '';
-        currentScenarioIdx = scenarioIdx;
-        currentMessageIdx = 0;
 
-        // Start selected scenario instantly
-        const scenario = chatScenarios[currentScenarioIdx];
-        if (scenario && scenario.length > 0) {
-          const firstMsg = scenario[0];
-          currentMessageIdx = 1;
-          renderMessage(firstMsg.sender, firstMsg);
-          playNextMessage();
+        if (scenarioVal === 'control' || scenarioVal === 'inteligencia' || scenarioVal === 'seguridad') {
+          const details = featureDetails[featureKey];
+          renderMessage('user', { text: `Quiero saber sobre ${details.title}` });
+          
+          simulatorTimeout = setTimeout(() => {
+            showTypingIndicator();
+            simulatorTimeout = setTimeout(() => {
+              removeTypingIndicator();
+              renderMessage('bot', { text: details.botText });
+            }, 2000);
+          }, 800);
+        } else {
+          const scenarioIdx = parseInt(scenarioVal, 10);
+          currentScenarioIdx = scenarioIdx;
+          currentMessageIdx = 0;
+
+          const scenario = chatScenarios[currentScenarioIdx];
+          if (scenario && scenario.length > 0) {
+            const firstMsg = scenario[0];
+            currentMessageIdx = 1;
+            renderMessage(firstMsg.sender, firstMsg);
+            playNextMessage();
+          }
         }
       });
     });
