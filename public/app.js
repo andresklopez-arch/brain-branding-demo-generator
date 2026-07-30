@@ -1189,7 +1189,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const servicesLen = getServicesTitleLength();
     const inputsCount = getFormInputsCount();
     const dateSalt = getDateSalt();
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}`;
+    const colorDepth = window.screen ? window.screen.colorDepth : 0;
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
@@ -2311,11 +2312,19 @@ END:VCARD`;
         
         card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
         card.style.transition = 'transform 0.1s ease, box-shadow 0.2s ease, border-color 0.2s ease';
+        
+        // Calculate glare shine position percentages
+        const percentX = (x / rect.width) * 100;
+        const percentY = (y / rect.height) * 100;
+        card.style.setProperty('--glare-x', `${percentX}%`);
+        card.style.setProperty('--glare-y', `${percentY}%`);
+        card.style.setProperty('--glare-opacity', '0.15');
       });
       
       card.addEventListener('mouseleave', () => {
         card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)';
         card.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s';
+        card.style.setProperty('--glare-opacity', '0');
       });
     });
 
