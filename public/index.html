@@ -646,6 +646,16 @@
       0% { opacity: 0.4; filter: drop-shadow(0 0 2px #00e5ff); }
       100% { opacity: 1; filter: drop-shadow(0 0 10px #00e5ff) saturate(1.5); }
     }
+    .chip-pin {
+      animation: pinGlow 1.5s infinite ease-in-out alternate;
+    }
+    .chip-pin:nth-child(even) {
+      animation-delay: 0.4s;
+    }
+    @keyframes pinGlow {
+      0% { opacity: 0.35; }
+      100% { opacity: 1; filter: drop-shadow(0 0 4px #00e5ff) saturate(1.2); }
+    }
     .status-notif {
       animation: notifPulse 1s infinite alternate;
       display: inline-flex;
@@ -655,6 +665,143 @@
     @keyframes notifPulse {
       0% { transform: scale(0.9); opacity: 0.7; }
       100% { transform: scale(1.15); opacity: 1; }
+    }
+
+    /* SMARTPHONE LOCKSCREEN OVERLAY */
+    .smartphone-lockscreen {
+      position: absolute;
+      top: 26px; /* below status bar */
+      left: 10px;
+      right: 10px;
+      bottom: 20px; /* above home bar */
+      background: linear-gradient(135deg, #0e1621 30%, #1c2b3e 100%);
+      border-bottom-left-radius: 20px;
+      border-bottom-right-radius: 20px;
+      z-index: 8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 18px 20px 18px;
+      box-sizing: border-box;
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+    }
+    .smartphone-lockscreen.unlocked {
+      opacity: 0;
+      transform: scale(1.08);
+      pointer-events: none;
+    }
+    .lockscreen-lock-icon {
+      font-size: 16px;
+      color: rgba(0, 229, 255, 0.6);
+      margin-bottom: 8px;
+      animation: bounceLock 2s infinite alternate;
+      text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+    }
+    @keyframes bounceLock {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-4px); }
+    }
+    .lockscreen-time {
+      font-size: 42px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.1;
+      font-family: var(--font-title);
+      letter-spacing: -0.5px;
+    }
+    .lockscreen-date {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 35px;
+      text-transform: capitalize;
+    }
+    .lockscreen-notification {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-sizing: border-box;
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-align: left;
+      position: relative;
+    }
+    .lockscreen-notification::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: 16px;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+    .lockscreen-notification:hover {
+      transform: translateY(-2px);
+      border-color: rgba(0, 229, 255, 0.3);
+      box-shadow: 0 12px 30px rgba(0, 229, 255, 0.08), 0 0 15px rgba(0, 229, 255, 0.05);
+    }
+    .notif-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .notif-app {
+      font-size: 10px;
+      font-weight: 700;
+      color: #10b981; /* Green color for WhatsApp style */
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .notif-time {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    .notif-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 3px;
+    }
+    .notif-body {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+    .lockscreen-hint {
+      margin-top: auto;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.35);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .hint-arrow {
+      animation: bounceArrow 0.8s infinite alternate;
+      font-size: 12px;
+      color: #00e5ff;
+    }
+    @keyframes bounceArrow {
+      0% { transform: translateY(3px); }
+      100% { transform: translateY(-3px); }
     }
 
     /* SMARTPHONE RESPONSIVE ADAPTATIONS */
@@ -689,6 +836,13 @@
       }
       .telegram-mockup {
         height: 520px;
+      }
+      .smartphone-lockscreen {
+        top: 26px;
+        left: 0;
+        right: 0;
+        bottom: 12px;
+        border-radius: 0;
       }
     }
     .telegram-header {
@@ -1212,13 +1366,34 @@
                 <span class="wifi-bar"></span>
                 <span class="wifi-bar"></span>
               </div>
-              <div class="status-battery">
+              <span style="font-size: 9px; font-weight: 700; color: currentColor; margin-left: 2px; opacity: 0.85;">5G</span>
+              <div class="status-battery" style="margin-left: 6px;">
                 <span style="font-size: 8px; opacity: 0.8;">88%</span>
                 <div class="battery-body">
                   <span class="battery-level"></span>
                 </div>
                 <div class="battery-tip"></div>
               </div>
+            </div>
+          </div>
+
+          <!-- Lockscreen Overlay -->
+          <div id="smartphone-lockscreen" class="smartphone-lockscreen">
+            <div class="lockscreen-lock-icon">🔒</div>
+            <div class="lockscreen-time" id="lockscreen-time">09:41</div>
+            <div class="lockscreen-date" id="lockscreen-date">Jueves, 30 de Julio</div>
+            
+            <div class="lockscreen-notification" id="lockscreen-notification">
+              <div class="notif-header">
+                <span class="notif-app">💬 WhatsApp</span>
+                <span class="notif-time">Ahora</span>
+              </div>
+              <div class="notif-title">Brain Agent</div>
+              <div class="notif-body">He terminado de limpiar tu reporte de Excel. Presiona aquí para ingresar y revisar.</div>
+            </div>
+            
+            <div class="lockscreen-hint">
+              <span class="hint-arrow">▲</span> Presiona para desbloquear y simular
             </div>
           </div>
 
@@ -1240,18 +1415,18 @@
                   <!-- Chip Core -->
                   <rect class="chip-core" x="40" y="40" width="20" height="20" rx="3" fill="url(#chip-grad)" />
                   <!-- Pins -->
-                  <line x1="38" y1="30" x2="38" y2="20" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
-                  <line x1="50" y1="30" x2="50" y2="20" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
-                  <line x1="62" y1="30" x2="62" y2="20" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
-                  <line x1="38" y1="70" x2="38" y2="80" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
-                  <line x1="50" y1="70" x2="50" y2="80" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
-                  <line x1="62" y1="70" x2="62" y2="80" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
-                  <line x1="30" y1="38" x2="20" y2="38" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
-                  <line x1="30" y1="50" x2="20" y2="50" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
-                  <line x1="30" y1="62" x2="20" y2="62" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
-                  <line x1="70" y1="38" x2="80" y2="38" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
-                  <line x1="70" y1="50" x2="80" y2="50" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
-                  <line x1="70" y1="62" x2="80" y2="62" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line class="chip-pin" x1="38" y1="30" x2="38" y2="20" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line class="chip-pin" x1="50" y1="30" x2="50" y2="20" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line class="chip-pin" x1="62" y1="30" x2="62" y2="20" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line class="chip-pin" x1="38" y1="70" x2="38" y2="80" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line class="chip-pin" x1="50" y1="70" x2="50" y2="80" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line class="chip-pin" x1="62" y1="70" x2="62" y2="80" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line class="chip-pin" x1="30" y1="38" x2="20" y2="38" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line class="chip-pin" x1="30" y1="50" x2="20" y2="50" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line class="chip-pin" x1="30" y1="62" x2="20" y2="62" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line class="chip-pin" x1="70" y1="38" x2="80" y2="38" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line class="chip-pin" x1="70" y1="50" x2="80" y2="50" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <line class="chip-pin" x1="70" y1="62" x2="80" y2="62" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
                 </svg>
               </div>
               <div class="telegram-user-info">

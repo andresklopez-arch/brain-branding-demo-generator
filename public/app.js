@@ -1050,6 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMessageIdx = 0;
     let simulatorTimeout = null;
     let isSectionVisible = true;
+    let isLocked = true;
 
     function formatTimestamp() {
       const now = new Date();
@@ -1195,7 +1196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function playNextMessage() {
-      if (!isSectionVisible) return;
+      if (!isSectionVisible || isLocked) return;
 
       const scenario = chatScenarios[currentScenarioIdx];
       
@@ -1237,6 +1238,15 @@ document.addEventListener('DOMContentLoaded', () => {
     featurePills.forEach(pill => {
       pill.addEventListener('click', () => {
         if (isPillTransitioning) return;
+        
+        // Auto-unlock lockscreen if locked
+        if (isLocked) {
+          isLocked = false;
+          const ls = document.getElementById('smartphone-lockscreen');
+          if (ls) {
+            ls.classList.add('unlocked');
+          }
+        }
         
         const featureKey = pill.getAttribute('data-feature');
         const scenarioVal = pill.getAttribute('data-scenario');
@@ -1289,6 +1299,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     });
+
+    // Smartphone Lockscreen Logic
+    const lockscreen = document.getElementById('smartphone-lockscreen');
+    const lockTime = document.getElementById('lockscreen-time');
+    const lockDate = document.getElementById('lockscreen-date');
+
+    if (lockTime && lockDate) {
+      const updateLockClock = () => {
+        const now = new Date();
+        lockTime.textContent = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        const options = { weekday: 'long', day: 'numeric', month: 'long' };
+        lockDate.textContent = now.toLocaleDateString('es-ES', options);
+      };
+      updateLockClock();
+      setInterval(updateLockClock, 60000);
+    }
+
+    if (lockscreen) {
+      lockscreen.addEventListener('click', () => {
+        if (!isLocked) return;
+        isLocked = false;
+        lockscreen.classList.add('unlocked');
+        
+        // Reset and start simulation
+        if (simulatorTimeout) {
+          clearTimeout(simulatorTimeout);
+        }
+        removeTypingIndicator();
+        telegramContainer.innerHTML = '';
+        currentScenarioIdx = 0;
+        currentMessageIdx = 0;
+        updateActiveIcon(0);
+        
+        const scenario = chatScenarios[0];
+        if (scenario && scenario.length > 0) {
+          const firstMsg = scenario[0];
+          currentMessageIdx = 1;
+          renderMessage(firstMsg.sender, firstMsg);
+          playNextMessage();
+        }
+      });
+    }
 
     // IntersectionObserver implementation for visibility check
     if (typeof IntersectionObserver !== 'undefined') {
