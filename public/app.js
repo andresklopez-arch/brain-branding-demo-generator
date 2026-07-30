@@ -253,6 +253,12 @@ document.addEventListener('DOMContentLoaded', () => {
         typeSpeed = 500; // Pause before typing next word
         typingElement.classList.remove('finished');
         
+        // Dynamic word transition fade logic
+        typingElement.classList.add('word-fade');
+        setTimeout(() => {
+          typingElement.classList.remove('word-fade');
+        }, 150);
+        
         // Update description dynamically with opacity transition & slide
         const descElement = document.querySelector('.hero-desc');
         if (descElement) {
@@ -2222,4 +2228,18 @@ END:VCARD`;
       }, { passive: true });
     }
   }
+
+  // Hero section reading retention metric
+  setTimeout(() => {
+    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    // If user scrolled less than 200px after 6 seconds, report hero engagement
+    if (winScroll < 200) {
+      if (typeof gtag === 'function') {
+        gtag('event', 'hero_read_retention', {
+          event_category: 'engagement',
+          event_label: 'Stayed 6s in Hero'
+        });
+      }
+    }
+  }, 6000);
 });
