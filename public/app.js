@@ -828,6 +828,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let formStarted = false;
   let formStartTime = null;
   let lastEditedField = null;
+  let fieldFocusTimes = {};
+  let fieldStartTime = null;
+  let activeFieldId = null;
+
   const trackFormStart = () => {
     if (!formStarted) {
       formStarted = true;
@@ -859,6 +863,21 @@ document.addEventListener('DOMContentLoaded', () => {
   validateInputs.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
+      // Track focus time per field
+      el.addEventListener('focus', () => {
+        activeFieldId = id;
+        fieldStartTime = Date.now();
+      });
+
+      el.addEventListener('blur', () => {
+        if (activeFieldId === id && fieldStartTime) {
+          const duration = Date.now() - fieldStartTime;
+          fieldFocusTimes[id] = (fieldFocusTimes[id] || 0) + duration;
+          activeFieldId = null;
+          fieldStartTime = null;
+        }
+      });
+
       el.addEventListener('input', () => {
         // Track form start engagement
         trackFormStart();
@@ -1104,17 +1123,86 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Restore drafts on load
+  // Check if there is any draft
+  let hasSavedDrafts = false;
+  const tempDrafts = {};
+  Object.keys(draftFields).forEach(id => {
+    const key = draftFields[id];
+    const savedVal = safeLocalStorage.getItem(key);
+    if (savedVal) {
+      const val = xorDecrypt(savedVal);
+      if (val.trim().length > 0) {
+        hasSavedDrafts = true;
+        tempDrafts[id] = val;
+      }
+    }
+  });
+
+  // Handle phone draft separately since it's stored in draft_phone
+  const savedPhone = safeLocalStorage.getItem('draft_phone');
+  if (savedPhone) {
+    const decryptedPhone = xorDecrypt(savedPhone);
+    if (decryptedPhone.trim().length > 0) {
+      hasSavedDrafts = true;
+      tempDrafts['contact-phone'] = decryptedPhone;
+    }
+  }
+
+  if (hasSavedDrafts) {
+    // Create and show Toast
+    const toast = document.createElement('div');
+    toast.id = 'draft-toast';
+    toast.style.cssText = 'position: fixed; bottom: 30px; left: 30px; background: rgba(6, 8, 12, 0.95); border: 2px solid var(--primary); padding: 16px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 1000; font-family: inherit; font-size: 13.5px; display: flex; align-items: center; gap: 12px; backdrop-filter: blur(10px); transition: all 0.3s ease; transform: translateY(20px); opacity: 0;';
+    toast.innerHTML = `
+      <span style="color: #fff; font-weight: 500;">📝 ¿Deseas restaurar tus datos anteriores?</span>
+      <button id="btn-restore-draft" style="background: var(--primary); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12.5px; transition: opacity 0.2s;">Restaurar</button>
+      <button id="btn-discard-draft" style="background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.08); padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12.5px; transition: background 0.2s;">Descartar</button>
+    `;
+    document.body.appendChild(toast);
+    
+    // Animate show
+    setTimeout(() => {
+      toast.style.transform = 'translateY(0)';
+      toast.style.opacity = '1';
+    }, 500);
+
+    document.getElementById('btn-restore-draft').addEventListener('click', () => {
+      Object.keys(tempDrafts).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.value = tempDrafts[id];
+          el.dispatchEvent(new Event('input'));
+        }
+      });
+      dismissToast();
+    });
+
+    document.getElementById('btn-discard-draft').addEventListener('click', () => {
+      Object.keys(draftFields).forEach(id => {
+        safeLocalStorage.removeItem(draftFields[id]);
+      });
+      safeLocalStorage.removeItem('draft_phone');
+      safeLocalStorage.removeItem('draft_timestamp');
+      
+      // Clear current form values if user already typed anything
+      const form = document.getElementById('agency-contact-form');
+      if (form) form.reset();
+      
+      dismissToast();
+    });
+
+    function dismissToast() {
+      toast.style.transform = 'translateY(20px)';
+      toast.style.opacity = '0';
+      setTimeout(() => toast.remove(), 300);
+    }
+  }
+
+  // Setup live draft saving input listeners
   Object.keys(draftFields).forEach(id => {
     const el = document.getElementById(id);
     const key = draftFields[id];
     if (el) {
-      const savedVal = safeLocalStorage.getItem(key);
-      if (savedVal) {
-        const val = xorDecrypt(savedVal);
-        el.value = val;
-        el.dispatchEvent(new Event('input'));
-      }
       el.addEventListener('input', () => {
         const val = xorEncrypt(el.value);
         safeLocalStorage.setItem(key, sanitizeInput(val));
@@ -1260,6 +1348,23 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         }
       }
+
+      // Track individual field focus durations
+      if (activeFieldId && fieldStartTime) {
+        const duration = Date.now() - fieldStartTime;
+        fieldFocusTimes[activeFieldId] = (fieldFocusTimes[activeFieldId] || 0) + duration;
+      }
+      Object.keys(fieldFocusTimes).forEach(fieldId => {
+        const timeSec = Math.round(fieldFocusTimes[fieldId] / 1000);
+        if (timeSec > 0 && typeof gtag === 'function') {
+          gtag('event', 'form_field_time', {
+            event_category: 'performance',
+            event_label: fieldId,
+            value: timeSec
+          });
+        }
+      });
+      fieldFocusTimes = {};
 
       // Open WhatsApp web or api
       const whatsappUrl = `https://api.whatsapp.com/send?phone=527712339238&text=${encodeURIComponent(text)}`;

@@ -363,6 +363,14 @@
         pointer-events: auto !important;
       }
     }
+    #whatsapp-qr-container, #vcard-qr-container {
+      border: 2px solid var(--primary) !important;
+      box-shadow: 0 0 15px rgba(0, 229, 255, 0.35) !important;
+      transition: box-shadow 0.3s ease;
+    }
+    #whatsapp-qr-container:hover, #vcard-qr-container:hover {
+      box-shadow: 0 0 25px rgba(0, 229, 255, 0.6) !important;
+    }
     #typing-text::after {
       content: '|';
       animation: blink-cursor 0.75s step-end infinite;
