@@ -23,12 +23,16 @@ const safeSessionStorage = safeStorage('sessionStorage');
 
 document.addEventListener('DOMContentLoaded', () => {
 
-
-
-
-
-
-
+  // Smartphone Status Bar Time Update
+  const statusTime = document.getElementById('status-time');
+  if (statusTime) {
+    const updateTime = () => {
+      const now = new Date();
+      statusTime.textContent = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    };
+    updateTime();
+    setInterval(updateTime, 60000);
+  }
 
   // 1. Header scroll animation
   const header = document.querySelector('header');

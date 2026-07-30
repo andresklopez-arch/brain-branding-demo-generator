@@ -456,19 +456,180 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 20px;
+      gap: 25px;
       max-width: 1200px;
       margin: 40px auto 0 auto;
     }
     
-    /* TELEGRAM MOCKUP */
+    /* SMARTPHONE CONTAINER FRAME */
+    .smartphone-container {
+      width: 100%;
+      max-width: 380px;
+      position: relative;
+      padding: 30px 10px 30px 10px; /* Top/Bottom bezels */
+      background: #1c1d22; /* metallic dark phone body */
+      border: 3px solid rgba(255, 255, 255, 0.08);
+      border-radius: 46px;
+      box-shadow: 
+        0 25px 60px rgba(0, 0, 0, 0.8), 
+        0 0 40px rgba(0, 229, 255, 0.15),
+        inset 0 0 4px rgba(255, 255, 255, 0.15);
+      box-sizing: border-box;
+      margin: 0 auto;
+    }
+    
+    /* Volume and Power hardware buttons */
+    .smartphone-container::before {
+      content: "";
+      position: absolute;
+      left: -5px;
+      top: 100px;
+      width: 4px;
+      height: 45px;
+      background: #2a2c35;
+      border-radius: 4px 0 0 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.6);
+    }
+    .smartphone-container::after {
+      content: "";
+      position: absolute;
+      right: -5px;
+      top: 130px;
+      width: 4px;
+      height: 70px;
+      background: #2a2c35;
+      border-radius: 0 4px 4px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.6);
+    }
+    
+    /* Top notch / speaker and camera */
+    .smartphone-notch {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 20px;
+      background: #000;
+      border-bottom-left-radius: 12px;
+      border-bottom-right-radius: 12px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .notch-speaker {
+      width: 45px;
+      height: 3px;
+      background: #1c1d22;
+      border-radius: 2px;
+    }
+    .notch-camera {
+      width: 6px;
+      height: 6px;
+      background: #08080c;
+      border-radius: 50%;
+      box-shadow: inset 0 0 2px #00e5ff;
+    }
+    
+    /* Phone top status bar inside screen */
+    .smartphone-status-bar {
+      height: 26px;
+      padding: 4px 20px 0 20px;
+      background: #17212b; /* same as telegram header */
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 11px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 600;
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      box-sizing: border-box;
+      z-index: 3;
+      position: relative;
+    }
+    .status-bar-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-wifi {
+      display: flex;
+      gap: 1.5px;
+      align-items: flex-end;
+      height: 10px;
+    }
+    .wifi-bar {
+      width: 2px;
+      background: currentColor;
+      border-radius: 0.5px;
+    }
+    .wifi-bar:nth-child(1) { height: 3px; }
+    .wifi-bar:nth-child(2) { height: 5px; }
+    .wifi-bar:nth-child(3) { height: 7px; }
+    .wifi-bar:nth-child(4) { height: 9px; }
+
+    .status-battery {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .battery-body {
+      width: 15px;
+      height: 9px;
+      border: 1px solid currentColor;
+      border-radius: 2.5px;
+      padding: 1px;
+      box-sizing: border-box;
+      display: flex;
+    }
+    .battery-level {
+      flex: 1;
+      background: currentColor;
+      border-radius: 0.5px;
+    }
+    .battery-tip {
+      width: 1.5px;
+      height: 3px;
+      background: currentColor;
+      border-radius: 0 0.5px 0.5px 0;
+    }
+
+    /* Bottom Home Indicator Bar */
+    .smartphone-home-bar {
+      position: absolute;
+      bottom: 8px;
+      left: 10px;
+      right: 10px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #17212b; /* same as input area */
+      border-bottom-left-radius: 20px;
+      border-bottom-right-radius: 20px;
+      z-index: 3;
+      box-sizing: border-box;
+    }
+    .home-indicator {
+      width: 110px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.35);
+      border-radius: 2px;
+      margin-bottom: 4px;
+    }
+    
+    /* TELEGRAM MOCKUP INSIDE SCREEN */
     .telegram-mockup {
       width: 100%;
-      height: 580px;
+      height: 520px;
       background: #0e1621;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 28px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(99, 102, 241, 0.1);
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -972,39 +1133,85 @@
       </div>
 
       <div class="asistente-ia-grid">
-        <!-- Col 1: Telegram Chat Simulator -->
-        <div class="telegram-mockup">
-          <div class="telegram-header">
-            <div class="telegram-avatar" id="telegram-avatar-container">
-              <svg viewBox="0 0 100 100" width="40" height="40" style="filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.5));">
-                <defs>
-                  <linearGradient id="avatar-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#00e5ff" />
-                    <stop offset="100%" stop-color="#a855f7" />
-                  </linearGradient>
-                </defs>
-                <circle cx="50" cy="50" r="48" fill="rgba(23, 33, 43, 0.8)" stroke="url(#avatar-grad)" stroke-width="3" />
-                <path d="M35 50h30 M50 35v30 M42 42l16 16 M42 58l16-16" stroke="url(#avatar-grad)" stroke-width="2.5" stroke-linecap="round" />
-                <circle cx="50" cy="50" r="10" fill="url(#avatar-grad)" />
-              </svg>
+        <!-- Col 1: Telegram Chat Simulator inside Smartphone -->
+        <div class="smartphone-container">
+          <!-- Notch -->
+          <div class="smartphone-notch">
+            <div class="notch-speaker"></div>
+            <div class="notch-camera"></div>
+          </div>
+          
+          <!-- Status Bar -->
+          <div class="smartphone-status-bar">
+            <span class="status-time" id="status-time">09:41</span>
+            <div class="status-bar-icons">
+              <div class="status-wifi">
+                <span class="wifi-bar"></span>
+                <span class="wifi-bar"></span>
+                <span class="wifi-bar"></span>
+                <span class="wifi-bar"></span>
+              </div>
+              <div class="status-battery">
+                <span style="font-size: 8px; opacity: 0.8;">88%</span>
+                <div class="battery-body">
+                  <span class="battery-level"></span>
+                </div>
+                <div class="battery-tip"></div>
+              </div>
             </div>
-            <div class="telegram-user-info">
-              <span class="telegram-user-name" id="telegram-bot-name">Brain Agent <span class="tg-verified-badge">VERIFIED</span></span>
-              <span class="telegram-user-status">en línea</span>
+          </div>
+
+          <!-- Telegram Mockup Screen -->
+          <div class="telegram-mockup">
+            <div class="telegram-header">
+              <div class="telegram-avatar" id="telegram-avatar-container">
+                <svg viewBox="0 0 100 100" width="40" height="40" style="filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.6));">
+                  <defs>
+                    <linearGradient id="robo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#00e5ff" />
+                      <stop offset="100%" stop-color="#a855f7" />
+                    </linearGradient>
+                  </defs>
+                  <!-- Outer circle -->
+                  <circle cx="50" cy="50" r="47" fill="rgba(23, 33, 43, 0.9)" stroke="url(#robo-grad)" stroke-width="2.5" />
+                  <!-- Robot Head Outline -->
+                  <path d="M30 44c0-10 8-18 20-18s20 8 20 18v16c0 6-4 12-10 14l-10 3-10-3c-6-2-10-8-10-14V44z" fill="none" stroke="url(#robo-grad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                  <!-- Ears / Antennas -->
+                  <path d="M25 48h5 M70 48h5 M50 26V20" stroke="url(#robo-grad)" stroke-width="2.5" stroke-linecap="round" />
+                  <circle cx="50" cy="18" r="3" fill="url(#robo-grad)" />
+                  <!-- Visor -->
+                  <rect x="36" y="40" width="28" height="10" rx="4" fill="rgba(0, 229, 255, 0.15)" stroke="url(#robo-grad)" stroke-width="1.5" />
+                  <!-- Eyes -->
+                  <circle cx="44" cy="45" r="2.5" fill="#00e5ff" />
+                  <circle cx="56" cy="45" r="2.5" fill="#00e5ff" />
+                  <!-- Mouth / tech detail -->
+                  <path d="M42 58h16" stroke="url(#robo-grad)" stroke-width="2" stroke-linecap="round" />
+                  <path d="M38 66l12 4 12-4" stroke="url(#robo-grad)" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+              </div>
+              <div class="telegram-user-info">
+                <span class="telegram-user-name" id="telegram-bot-name">Brain Agent <span class="tg-verified-badge">VERIFIED</span></span>
+                <span class="telegram-user-status">en línea</span>
+              </div>
+            </div>
+            <div class="telegram-messages-container" id="telegram-messages">
+              <!-- Messages will be dynamically appended here by JS -->
+            </div>
+            <div class="telegram-quick-commands" id="telegram-quick-commands" style="display: none;">
+              <div class="telegram-cmd-pill active" data-scenario="0">📊 Excel</div>
+              <div class="telegram-cmd-pill" data-scenario="1">✉️ Correo</div>
+              <div class="telegram-cmd-pill" data-scenario="2">🎙️ Juntas</div>
+              <div class="telegram-cmd-pill" data-scenario="3">🌐 Web</div>
+              <div class="telegram-cmd-pill" data-scenario="4">📅 Agenda</div>
+            </div>
+            <div class="telegram-input-area">
+              <span>Escribe un mensaje...</span>
             </div>
           </div>
-          <div class="telegram-messages-container" id="telegram-messages">
-            <!-- Messages will be dynamically appended here by JS -->
-          </div>
-          <div class="telegram-quick-commands" id="telegram-quick-commands" style="display: none;">
-            <div class="telegram-cmd-pill active" data-scenario="0">📊 Excel</div>
-            <div class="telegram-cmd-pill" data-scenario="1">✉️ Correo</div>
-            <div class="telegram-cmd-pill" data-scenario="2">🎙️ Juntas</div>
-            <div class="telegram-cmd-pill" data-scenario="3">🌐 Web</div>
-            <div class="telegram-cmd-pill" data-scenario="4">📅 Agenda</div>
-          </div>
-          <div class="telegram-input-area">
-            <span>Escribe un mensaje...</span>
+
+          <!-- Home Indicator Bar -->
+          <div class="smartphone-home-bar">
+            <div class="home-indicator"></div>
           </div>
         </div>
 
