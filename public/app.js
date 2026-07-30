@@ -1255,7 +1255,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const audioSalt = getAudioContextSalt();
     const webgpuSalt = getWebGPUSalt();
     const pluginsSalt = navigator.plugins ? navigator.plugins.length : 0;
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}_${viewportSalt}_${orientationSalt}_${batterySalt}_${batteryChargingSalt}_${audioSalt}_${webgpuSalt}_${pluginsSalt}`;
+    const languagesSalt = navigator.languages ? navigator.languages.join(',') : navigator.language;
+    const memorySalt = navigator.deviceMemory || 4;
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}_${viewportSalt}_${orientationSalt}_${batterySalt}_${batteryChargingSalt}_${audioSalt}_${webgpuSalt}_${pluginsSalt}_${languagesSalt}_${memorySalt}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
@@ -3419,6 +3421,507 @@ END:VCARD`;
   };
 
   initWebSimulator();
+
+  // 36. Custom Software Simulator State Machine and Animations
+  const softScenarios = [
+    {
+      title: "Dashboard Corporativo",
+      desc: "Consola central con indicadores clave de rendimiento (KPIs), ingresos netos y monitoreo de eficiencia operativa en tiempo real.",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px; height:100%;">
+            <div style="font-weight:700; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">Indicadores de Rendimiento (Global)</div>
+            <div class="erp-widget-grid">
+              <div class="erp-widget-card">
+                <span class="erp-widget-val" id="soft-kpi-1">$0.00</span>
+                <span class="erp-widget-label">Ingresos del Mes</span>
+              </div>
+              <div class="erp-widget-card">
+                <span class="erp-widget-val" id="soft-kpi-2">0</span>
+                <span class="erp-widget-label">Proyectos Activos</span>
+              </div>
+              <div class="erp-widget-card">
+                <span class="erp-widget-val" id="soft-kpi-3">0%</span>
+                <span class="erp-widget-label">Eficiencia General</span>
+              </div>
+            </div>
+            <div id="soft-kpi-status" style="font-size:9.5px; text-align:center; color:#10b981; opacity:0; transition:opacity 0.3s;">
+              ✓ Todos los sistemas operativos operando al 100% de capacidad.
+            </div>
+          </div>
+        `;
+        
+        // Counter animations
+        const countUp = (id, target, suffix = '', steps = 20) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          let current = 0;
+          let step = 0;
+          const interval = setInterval(() => {
+            step++;
+            if (step >= steps) {
+              el.textContent = target + suffix;
+              clearInterval(interval);
+            } else {
+              current = Math.round((target / steps) * step);
+              el.textContent = current + suffix;
+            }
+          }, 25);
+        };
+        
+        countUp('soft-kpi-2', 42);
+        countUp('soft-kpi-3', 96, '%');
+        
+        // Currency formatting animation
+        setTimeout(() => {
+          const el = document.getElementById('soft-kpi-1');
+          if (el) el.textContent = '$485,250.00';
+        }, 500);
+        
+        const t1 = setTimeout(() => {
+          const status = document.getElementById('soft-kpi-status');
+          if (status) status.style.opacity = '1';
+        }, 1200);
+        screen.dataset.t1 = t1;
+      }
+    },
+    {
+      title: "Control de Inventario",
+      desc: "Gestión inteligente de stocks mínimos, almacenes y disparadores automáticos para órdenes de compra en tiempo real.",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:8px; color:#fff; font-family:var(--font-sans); font-size:10px;">
+            <div style="font-weight:700; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+              <span>Inventario: Bodega Central</span>
+              <span style="font-size:9px; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px;">92 artículos</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:5px;" id="soft-inv-list">
+              <div style="display:flex; justify-content:space-between; background:rgba(255,255,255,0.01); padding:5px; border-radius:4px; border:1px solid rgba(255,255,255,0.03);">
+                <span>Servidores de Cómputo CPU</span>
+                <span style="color:#10b981; font-weight:700;">14 pzs (Óptimo)</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; background:rgba(255,255,255,0.01); padding:5px; border-radius:4px; border:1px solid rgba(255,255,255,0.03);" id="soft-low-stock-row">
+                <span>Dispositivos Lector NFC</span>
+                <span style="color:#ef4444; font-weight:700;" id="soft-low-stock-val">2 pzs (Mínimo)</span>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        const row = document.getElementById('soft-low-stock-row');
+        const val = document.getElementById('soft-low-stock-val');
+        
+        const t1 = setTimeout(() => {
+          if (row && val) {
+            row.style.background = 'rgba(239, 68, 68, 0.05)';
+            row.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+            val.textContent = '2 pzs (🚨 Alerta de Reabastecimiento)';
+          }
+        }, 1800);
+        screen.dataset.t1 = t1;
+      }
+    },
+    {
+      title: "Gestión de Clientes CRM",
+      desc: "Embudo de ventas visual interactivo para clasificar prospectos, registrar interacciones e incrementar el cierre de tratos.",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:8px; color:#fff; font-family:var(--font-sans); font-size:10px; height:100%;">
+            <div style="font-weight:700; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">Embudo de Ventas (Pipeline)</div>
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; flex:1;" id="crm-kanban-cols">
+              <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:6px; display:flex; flex-direction:column; gap:5px;">
+                <div style="font-weight:700; font-size:8.5px; color:var(--text-muted); border-bottom:1px solid rgba(255,255,255,0.03); padding-bottom:3px;">Prospecto</div>
+                <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:4px; padding:5px; font-size:9px;" id="kanban-card">
+                  <strong>Andrés K.</strong><br>SaaS Corporativo
+                </div>
+              </div>
+              <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:6px; display:flex; flex-direction:column; gap:5px;" id="crm-col-1">
+                <div style="font-weight:700; font-size:8.5px; color:var(--text-muted); border-bottom:1px solid rgba(255,255,255,0.03); padding-bottom:3px;">Propuesta</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:6px; display:flex; flex-direction:column; gap:5px;" id="crm-col-2">
+                <div style="font-weight:700; font-size:8.5px; color:var(--text-muted); border-bottom:1px solid rgba(255,255,255,0.03); padding-bottom:3px;">Ganado</div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        const card = document.getElementById('kanban-card');
+        const col1 = document.getElementById('crm-col-1');
+        const col2 = document.getElementById('crm-col-2');
+        
+        const t1 = setTimeout(() => {
+          if (card && col1) {
+            col1.appendChild(card);
+            card.style.background = 'rgba(168, 85, 247, 0.05)';
+            card.style.borderColor = 'rgba(168, 85, 247, 0.2)';
+          }
+        }, 1500);
+        screen.dataset.t1 = t1;
+        
+        const t2 = setTimeout(() => {
+          if (card && col2) {
+            col2.appendChild(card);
+            card.style.background = 'rgba(16, 185, 129, 0.05)';
+            card.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+          }
+        }, 3200);
+        screen.dataset.t2 = t2;
+      }
+    },
+    {
+      title: "Facturación XML y CFDI",
+      desc: "Generación instantánea de timbrado XML de facturas con firmas SHA-256 integradas directamente en el flujo financiero.",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:8px; color:#fff; font-family:var(--font-sans); font-size:10px;">
+            <div style="font-weight:700; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">Timbrado Fiscal Digital XML</div>
+            <div style="background:#05070a; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:10px; font-family:monospace; font-size:8.5px; color:#a855f7; display:flex; flex-direction:column; gap:4px; max-height:85px; overflow:hidden;" id="cfdi-xml-response">
+              <div>&lt;cfdi:Comprobante Version="4.0"&gt;</div>
+              <div style="padding-left:10px;">&lt;cfdi:Emisor Rfc="BBR180512KK8" Nombre="Brain Branding" /&gt;</div>
+              <div style="padding-left:10px;" id="cfdi-sign-row">&lt;cfdi:Sello&gt;SHA256_HASHING_SIGNATURE...&lt;/cfdi:Sello&gt;</div>
+              <div>&lt;/cfdi:Comprobante&gt;</div>
+            </div>
+          </div>
+        `;
+        
+        const row = document.getElementById('cfdi-sign-row');
+        const t1 = setTimeout(() => {
+          if (row) {
+            row.style.color = '#10b981';
+            row.innerHTML = '&lt;cfdi:Sello&gt;✓ FIRMA DIGITAL SAT VERIFICADA&lt;/cfdi:Sello&gt;';
+          }
+        }, 1800);
+        screen.dataset.t1 = t1;
+      }
+    },
+    {
+      title: "Generación de Reportes PDF",
+      desc: "Compilación dinámica y exportación automatizada de reportes corporativos en PDF con diseño e identidad corporativa.",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:8px; color:#fff; font-family:var(--font-sans); font-size:10px; align-items:center; justify-content:center; height:100%; text-align:center;">
+            <div id="pdf-icon" style="font-size:24px; margin-bottom:5px;">📄</div>
+            <div style="font-weight:700; font-size:10.5px;" id="pdf-status-title">Exportador de Reportes Corporativos</div>
+            <div style="font-size:9px; color:var(--text-muted);" id="pdf-status-desc">Generando reporte de balance anual (PDF)</div>
+            <button id="pdf-trigger-btn" style="background:#a855f7; border:none; border-radius:6px; color:#fff; font-size:9.5px; padding:4px 10px; cursor:pointer; font-weight:700; margin-top:8px;">
+              Generando...
+            </button>
+          </div>
+        `;
+        
+        const btn = document.getElementById('pdf-trigger-btn');
+        const icon = document.getElementById('pdf-icon');
+        const title = document.getElementById('pdf-status-title');
+        const desc = document.getElementById('pdf-status-desc');
+        
+        const t1 = setTimeout(() => {
+          if (btn) {
+            btn.style.background = '#10b981';
+            btn.textContent = 'Descargar PDF';
+          }
+          if (icon) icon.textContent = '💾';
+          if (title) title.textContent = 'Reporte Generado';
+          if (desc) desc.textContent = 'Listo para descarga en local';
+        }, 2000);
+        screen.dataset.t1 = t1;
+      }
+    },
+    {
+      title: "Infraestructura & Servidores",
+      desc: "Monitoreo integrado del estado y tiempos de respuesta de servidores dedicados de bases de datos remotas en milisegundos.",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:8px; color:#fff; font-family:var(--font-sans); font-size:10px;">
+            <div style="font-weight:700; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">Estado de Clúster Multi-Servidor</div>
+            <div style="display:flex; flex-direction:column; gap:5px;">
+              <div style="display:flex; justify-content:space-between; font-size:9.5px; background:rgba(255,255,255,0.02); padding:4px; border-radius:4px;">
+                <span>Servidor 1: Dallas Database Dedicated</span>
+                <span style="color:#10b981; font-weight:700;" id="ping-srv-1">12ms (Activo)</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:9.5px; background:rgba(255,255,255,0.02); padding:4px; border-radius:4px;">
+                <span>Servidor 2: Monterrey Backup Mirror</span>
+                <span style="color:#10b981; font-weight:700;" id="ping-srv-2">16ms (Activo)</span>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        const p1 = document.getElementById('ping-srv-1');
+        const p2 = document.getElementById('ping-srv-2');
+        
+        const t1 = setTimeout(() => {
+          if (p1) p1.textContent = '8ms ⚡';
+          if (p2) p2.textContent = '11ms ⚡';
+        }, 1500);
+        screen.dataset.t1 = t1;
+      }
+    },
+    {
+      title: "Alertas en Tiempo Real",
+      desc: "Sistema nativo de notificaciones push de sistema para avisar de movimientos de caja o inventario crítico al instante.",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:8px; color:#fff; font-family:var(--font-sans); font-size:10px; height:100%; position:relative; overflow:hidden;">
+            <div style="font-weight:700; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">Log de Alertas de Seguridad</div>
+            <div id="soft-push-banner" style="position:absolute; top:-60px; left:50%; transform:translateX(-50%); width:90%; background:rgba(168,85,247,0.9); border:1px solid rgba(168,85,247,0.4); border-radius:6px; padding:6px; color:#fff; font-size:9px; z-index:99; transition:top 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow:0 5px 15px rgba(0,0,0,0.5);">
+              <strong>🔔 Alerta de Sistema</strong><br>Nueva venta registrada: $12,000 MXN.
+            </div>
+            <div style="font-size:9.5px; color:var(--text-muted); text-align:center; padding-top:20px;">
+              Esperando disparadores de sistema...
+            </div>
+          </div>
+        `;
+        
+        const banner = document.getElementById('soft-push-banner');
+        const t1 = setTimeout(() => {
+          if (banner) banner.style.top = '15px';
+        }, 1200);
+        screen.dataset.t1 = t1;
+        
+        const t2 = setTimeout(() => {
+          if (banner) banner.style.top = '-60px';
+        }, 4000);
+        screen.dataset.t2 = t2;
+      }
+    },
+    {
+      title: "Defensa & Ciberseguridad",
+      desc: "Rotación activa de llaves de encriptación AES y rastreo de conexiones maliciosas mediante geolocalización de IPs.",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:8px; color:#fff; font-family:var(--font-sans); font-size:10px;">
+            <div style="font-weight:700; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">Rotación de Llaves Criptográficas</div>
+            <div style="font-size:9px; color:var(--text-muted);">Llave activa AES-256:</div>
+            <div style="background:#05070a; border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px; font-family:monospace; font-size:8.5px; color:#00e5ff;" id="aes-key-visual">
+              e8b9_34fd_a771_0b45_993c
+            </div>
+            <div style="font-size:9px; color:#10b981; text-align:center;" id="aes-key-status">
+              Estado: Protegido y verificado
+            </div>
+          </div>
+        `;
+        
+        const keyVisual = document.getElementById('aes-key-visual');
+        const status = document.getElementById('aes-key-status');
+        
+        const t1 = setTimeout(() => {
+          if (keyVisual && status) {
+            keyVisual.textContent = 'a1f8_90bc_3478_910d_e24f';
+            keyVisual.style.color = '#a855f7';
+            status.textContent = 'Rotación de llave exitosa (Ciclo de 60s)';
+          }
+        }, 2000);
+        screen.dataset.t1 = t1;
+      }
+    }
+  ];
+
+  const initSoftwareSimulator = () => {
+    const screen = document.getElementById('software-screen-content');
+    const pills = document.querySelectorAll('#software-features-icons .feature-icon-pill');
+    const detailTitle = document.getElementById('software-detail-title');
+    const detailDesc = document.getElementById('software-detail-desc');
+    
+    if (!screen) return;
+    
+    let currentIdx = 0;
+    let timer = null;
+    let isSoftVisible = true;
+    let consoleLogsBuffer = ['[INFO] Iniciando sistema ERP empresarial corporativo...'];
+    
+    const softPaths = [
+      'System://brain-erp/dashboard/overview',
+      'System://brain-erp/warehouse/inventory',
+      'System://brain-erp/crm/leads-pipeline',
+      'System://brain-erp/billing/cfdi-xml',
+      'System://brain-erp/reporting/pdf-exporter',
+      'System://brain-erp/infrastructure/db-servers',
+      'System://brain-erp/notifications/push-service',
+      'System://brain-erp/security/aes-keys'
+    ];
+
+    const softLogs = [
+      '[DASHBOARD] Enterprise console initialized. 3 dynamic widgets active.',
+      '[WAREHOUSE] Restocking threshold verified. Alarm triggered on low items.',
+      '[CRM] Pipeline synced. Card Андрей K. transitioned from leads to wins.',
+      '[BILLING] CFDI generator parsed client certificate. Hashing key signed.',
+      '[REPORTER] Document exporter completed compilation. Binary PDF buffer outputted.',
+      '[DATABASE] Ping test finished. Cluster latencies stabilized below 15ms.',
+      '[ALERTING] Push engine initialized. Dispatched alert of system purchase to admin.',
+      '[SECURITY] Decryption visualizer triggered key rot. Generated AES-256 sal.'
+    ];
+
+    const clearSoftTimeouts = () => {
+      if (screen.dataset.t1) { clearTimeout(parseInt(screen.dataset.t1, 10)); delete screen.dataset.t1; }
+      if (screen.dataset.t2) { clearTimeout(parseInt(screen.dataset.t2, 10)); delete screen.dataset.t2; }
+      if (screen.dataset.typewriter) { clearInterval(parseInt(screen.dataset.typewriter, 10)); delete screen.dataset.typewriter; }
+    };
+    
+    const updateSoftActiveIcon = (idx) => {
+      pills.forEach(p => {
+        const pScenario = p.getAttribute('data-soft-scenario');
+        if (pScenario === String(idx)) {
+          p.classList.add('active');
+        } else {
+          p.classList.remove('active');
+        }
+      });
+      
+      const scenario = softScenarios[idx];
+      detailTitle.textContent = scenario.title;
+      detailDesc.textContent = scenario.desc;
+      
+      // Update sidebar active icon
+      const icons = document.querySelectorAll('.software-sidebar .sidebar-icon');
+      icons.forEach((ic, i) => {
+        if (i === (idx % 5)) {
+          ic.classList.add('active');
+        } else {
+          ic.classList.remove('active');
+        }
+      });
+    };
+    
+    const runSoftCycle = () => {
+      if (!isSoftVisible) return;
+      
+      clearSoftTimeouts();
+      updateSoftActiveIcon(currentIdx);
+      
+      // Update Dev Console mock log
+      const consoleLogEl = document.getElementById('software-console-log');
+      if (consoleLogEl) {
+        consoleLogsBuffer.push(softLogs[currentIdx]);
+        if (consoleLogsBuffer.length > 3) consoleLogsBuffer.shift();
+        consoleLogEl.innerHTML = consoleLogsBuffer.map(log => `<div><span style="color:#ffbd2e; margin-right:6px;">▶</span><span style="color:rgba(255,255,255,0.85);">${log}</span></div>`).join('');
+      }
+      
+      // Typewriter URL animation
+      const breadcrumbEl = document.getElementById('software-breadcrumb');
+      if (breadcrumbEl) {
+        const base = 'System://brain-erp';
+        const path = softPaths[currentIdx].substring(base.length);
+        breadcrumbEl.textContent = base;
+        
+        const chars = path.split('');
+        let curChar = 0;
+        const typeInterval = setInterval(() => {
+          if (curChar >= chars.length) {
+            clearInterval(typeInterval);
+          } else {
+            breadcrumbEl.textContent += chars[curChar];
+            curChar++;
+          }
+        }, 50);
+        screen.dataset.typewriter = typeInterval;
+      }
+      
+      const scenario = softScenarios[currentIdx];
+      scenario.run(screen);
+      
+      timer = setTimeout(() => {
+        currentIdx = (currentIdx + 1) % softScenarios.length;
+        runSoftCycle();
+      }, 5000);
+    };
+    
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        if (timer) clearTimeout(timer);
+        const scenarioIdx = parseInt(pill.getAttribute('data-soft-scenario'), 10);
+        currentIdx = scenarioIdx;
+        runSoftCycle();
+      });
+    });
+    
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            isSoftVisible = true;
+            if (!timer) runSoftCycle();
+          } else {
+            isSoftVisible = false;
+            if (timer) {
+              clearTimeout(timer);
+              timer = null;
+            }
+            clearSoftTimeouts();
+          }
+        });
+      }, { threshold: 0.15 });
+      
+      const targetSection = document.getElementById('simulador-software');
+      if (targetSection) observer.observe(targetSection);
+    } else {
+      runSoftCycle();
+    }
+    
+    // Device switcher button interactions for web browser container
+    const switcherBtns = document.querySelectorAll('#software-device-switcher .switcher-btn');
+    const containerMock = document.querySelector('.software-container');
+    const triggerSoftBoot = () => {
+      const bootScreen = document.getElementById('software-boot-screen');
+      const bootBar = document.getElementById('software-boot-bar');
+      if (bootScreen && bootBar) {
+        bootScreen.style.opacity = '1';
+        bootScreen.style.pointerEvents = 'auto';
+        bootBar.style.width = '0%';
+        setTimeout(() => { bootBar.style.width = '100%'; }, 50);
+        setTimeout(() => {
+          bootScreen.style.opacity = '0';
+          bootScreen.style.pointerEvents = 'none';
+          setTimeout(() => { bootBar.style.width = '0%'; }, 200);
+        }, 500);
+      }
+    };
+    
+    switcherBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (typeof playDeviceSwitchSound === 'function') {
+          playDeviceSwitchSound();
+        }
+        triggerSoftBoot();
+        
+        setTimeout(() => {
+          switcherBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const device = btn.getAttribute('data-soft-device');
+          if (containerMock) {
+            containerMock.classList.remove('mock-mobile', 'mock-tablet', 'mock-desktop');
+            if (device === 'mobile') {
+              containerMock.classList.add('mock-mobile');
+            } else if (device === 'tablet') {
+              containerMock.classList.add('mock-tablet');
+            } else if (device === 'desktop') {
+              containerMock.classList.add('mock-desktop');
+            }
+          }
+        }, 100);
+      });
+    });
+    
+    // 3D Parallax on browserContainer
+    if (containerMock) {
+      containerMock.addEventListener('mousemove', (e) => {
+        const rect = containerMock.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const rotateX = ((centerY - y) / centerY) * 3; // 3 deg max
+        const rotateY = ((x - centerX) / centerX) * 3;
+        containerMock.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        containerMock.style.transition = 'transform 0.1s ease';
+      });
+      containerMock.addEventListener('mouseleave', () => {
+        containerMock.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+        containerMock.style.transition = 'transform 0.5s ease';
+      });
+    }
+  };
+
+  initSoftwareSimulator();
 
   // 32. Local client-side QR Codes generator using qrcodejs
   if (typeof QRCode === 'function') {
