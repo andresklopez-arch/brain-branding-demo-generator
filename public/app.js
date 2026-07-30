@@ -827,6 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 17. Real-Time Visual Field Validation
   let formStarted = false;
   let formStartTime = null;
+  let lastEditedField = null;
   const trackFormStart = () => {
     if (!formStarted) {
       formStarted = true;
@@ -840,6 +841,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  // Track field level drop-off on unload
+  window.addEventListener('beforeunload', () => {
+    if (formStarted && lastEditedField) {
+      if (typeof gtag === 'function') {
+        gtag('event', 'form_abandoned_field', {
+          event_category: 'engagement',
+          event_label: 'Contact Form',
+          value: lastEditedField,
+          transport_type: 'beacon'
+        });
+      }
+    }
+  });
+
   const validateInputs = ['contact-name', 'contact-business', 'contact-phone', 'contact-desc', 'contact-operation'];
   validateInputs.forEach(id => {
     const el = document.getElementById(id);
@@ -847,6 +862,7 @@ document.addEventListener('DOMContentLoaded', () => {
       el.addEventListener('input', () => {
         // Track form start engagement
         trackFormStart();
+        lastEditedField = id;
 
         let isValid = false;
         if (id === 'contact-phone') {
@@ -1248,6 +1264,24 @@ document.addEventListener('DOMContentLoaded', () => {
       // Open WhatsApp web or api
       const whatsappUrl = `https://api.whatsapp.com/send?phone=527712339238&text=${encodeURIComponent(text)}`;
       window.open(whatsappUrl, '_blank');
+
+      // Reset form fields
+      agencyContactForm.reset();
+      
+      // Remove visual glows and errors
+      validateInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.style.borderColor = 'var(--border-color)';
+          el.style.boxShadow = 'none';
+          const errSpan = el.parentNode.querySelector('.error-msg');
+          if (errSpan) errSpan.remove();
+        }
+      });
+
+      // Reset form variables
+      formStarted = false;
+      formStartTime = null;
     });
   }
 
@@ -1840,6 +1874,33 @@ END:VCARD`;
     } else {
       // Fallback: start loop directly
       playNextMessage();
+    }
+  }
+
+  // 32. Local client-side QR Codes generator using qrcodejs
+  if (typeof QRCode === 'function') {
+    const waContainer = document.getElementById("whatsapp-qr-container");
+    if (waContainer) {
+      new QRCode(waContainer, {
+        text: "https://wa.me/527712339238",
+        width: 120,
+        height: 120,
+        colorDark : "#0a0f1d",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.M
+      });
+    }
+
+    const vcardContainer = document.getElementById("vcard-qr-container");
+    if (vcardContainer) {
+      new QRCode(vcardContainer, {
+        text: `BEGIN:VCARD\nVERSION:3.0\nFN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Andre Krebollo - Brain Branding\nTEL;TYPE=CELL,VOICE;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:=2B527712339238\nEMAIL;TYPE=PREF,INTERNET;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:andreskrebollo=40gmail=2Ecom\nURL;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:https=3A=2F=2Fbrainbranding=2Ecom=2Emx\nORG;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Brain Branding\nTITLE;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Fundador =2F Director de Software\nEND:VCARD`,
+        width: 130,
+        height: 130,
+        colorDark : "#0a0f1d",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.M
+      });
     }
   }
 });
