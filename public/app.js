@@ -1020,11 +1020,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) {
       const savedVal = safeLocalStorage.getItem(key);
       if (savedVal) {
-        el.value = savedVal;
+        let val = savedVal;
+        if (id === 'contact-phone') {
+          try { val = atob(savedVal); } catch(e) {}
+        }
+        el.value = val;
         el.dispatchEvent(new Event('input'));
       }
       el.addEventListener('input', () => {
-        safeLocalStorage.setItem(key, sanitizeInput(el.value));
+        let val = el.value;
+        if (id === 'contact-phone') {
+          val = btoa(val);
+        }
+        safeLocalStorage.setItem(key, sanitizeInput(val));
       });
     }
   });
@@ -1038,6 +1046,25 @@ document.addEventListener('DOMContentLoaded', () => {
       const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
       progressBar.style.width = scrolled + '%';
     }, { passive: true });
+  }
+
+  // Auto-detect Country Code via IP
+  if (document.getElementById('contact-country-code')) {
+    fetch('https://ipapi.co/json/')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.country_calling_code) {
+          const code = data.country_calling_code.replace('+', '');
+          const select = document.getElementById('contact-country-code');
+          if (select) {
+            const option = select.querySelector(`option[value="${code}"]`);
+            if (option) {
+              select.value = code;
+            }
+          }
+        }
+      })
+      .catch(err => console.warn('GeoIP detection failed, using default prefix:', err));
   }
 
   // Clear drafts on successful submit

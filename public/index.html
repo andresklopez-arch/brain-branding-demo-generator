@@ -357,6 +357,11 @@
       #fab-tooltip .qr-container {
         display: block !important;
       }
+      div:hover > .vcard-qr-tooltip {
+        opacity: 1 !important;
+        transform: translateX(-50%) translateY(0) !important;
+        pointer-events: auto !important;
+      }
     }
     #typing-text::after {
       content: '|';
@@ -2295,9 +2300,15 @@
           <p style="color:var(--text-muted); font-size:14px; line-height:1.7;">
             Una vez enviado, nuestro sistema procesará los datos para estructurar tu propuesta comercial interactiva y enviarte el enlace directamente.
           </p>
-          <button onclick="downloadVCard()" class="glass-pill-btn" style="border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 20px; font-size: 13.5px; font-weight: 600; margin-top: 20px; text-decoration: none; transition: all 0.3s ease;">
-            💾 Guardar Contacto de la Agencia
-          </button>
+          <div style="position: relative; display: inline-block;">
+            <button id="vcard-download-btn" onclick="downloadVCard()" class="glass-pill-btn" style="border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 20px; font-size: 13.5px; font-weight: 600; margin-top: 20px; text-decoration: none; transition: all 0.3s ease;">
+              💾 Guardar Contacto de la Agencia
+            </button>
+            <div class="vcard-qr-tooltip" style="position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%) translateY(10px); background: rgba(6, 8, 12, 0.95); border: 1px solid rgba(255,255,255,0.08); padding: 12px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); pointer-events: none; opacity: 0; transition: all 0.3s ease; text-align: center; width: 160px; z-index: 10; backdrop-filter: blur(10px);">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=BEGIN%3AVCARD%0AVERSION%3A3.0%0AFN%3AAndre+Krebollo+-+Brain+Branding%0ATEL%3BTYPE%3DCELL%2CVOICE%3A%2B527712339238%0AEMAIL%3BTYPE%3DPREF%2CINTERNET%3Aandreskrebollo%40gmail.com%0AURL%3Ahttps%3A%2F%2Fbrainbranding.com.mx%0AORG%3ABrain+Branding%0ATITLE%3AFundador+%2F+Director+de+Software%0AEND%3AVCARD" alt="vCard QR" style="width: 130px; height: 130px; border-radius: 8px; background: #fff; padding: 4px; box-sizing: border-box;">
+              <div style="font-size: 10px; color: var(--text-muted); margin-top: 6px;">Escanea para guardar contacto 📲</div>
+            </div>
+          </div>
         </div>
         
         <div class="glass-card contact-card">
