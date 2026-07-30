@@ -306,8 +306,8 @@ nav {
 
 /* ════════════════ HERO SECTION ════════════════ */
 .hero {
-  min-height: 100vh;
-  padding: 140px 5% 80px 5%;
+  min-height: 75vh;
+  padding: 140px 5% 50px 5%;
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
   align-items: center;
