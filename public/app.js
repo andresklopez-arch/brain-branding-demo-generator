@@ -103,6 +103,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 150);
   }
 
+  // Double Haptic Pulse for startup sequence
+  function triggerDoubleHaptic() {
+    triggerHaptic('haptic-pulse');
+    setTimeout(() => {
+      triggerHaptic('haptic-pulse');
+    }, 150);
+  }
+
   // Sound Toggle Button Handler
   const soundToggle = document.getElementById('smartphone-sound-toggle');
   if (soundToggle) {
@@ -1398,7 +1406,7 @@ document.addEventListener('DOMContentLoaded', () => {
             avatarCont.classList.add('activated');
           }
           playSynthSound('unlock');
-          triggerHaptic('haptic-pulse');
+          triggerDoubleHaptic();
         }
         
         const featureKey = pill.getAttribute('data-feature');
@@ -1493,7 +1501,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Play unlock chime
         playSynthSound('unlock');
-        triggerHaptic('haptic-pulse');
+        triggerDoubleHaptic();
         
         // Reset and start simulation
         if (simulatorTimeout) {
@@ -1552,7 +1560,7 @@ document.addEventListener('DOMContentLoaded', () => {
               }
               
               playSynthSound('unlock');
-              triggerHaptic('haptic-pulse');
+              triggerDoubleHaptic();
               
               if (simulatorTimeout) {
                 clearTimeout(simulatorTimeout);

@@ -696,7 +696,7 @@
       transform-origin: center;
     }
     .telegram-avatar.activated .chip-sparkle {
-      animation: sparkleBoot 1.2s ease-out forwards;
+      animation: sparkleBoot 1.2s ease-out forwards, sparkleIdle 4s infinite alternate ease-in-out 1.4s;
     }
     .telegram-avatar.activated .chip-sparkle:nth-of-type(1) { --tx: -20px; --ty: -20px; }
     .telegram-avatar.activated .chip-sparkle:nth-of-type(2) { --tx: 20px; --ty: 20px; }
@@ -707,6 +707,35 @@
       0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
       30% { opacity: 1; }
       100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(1.5); }
+    }
+    @keyframes sparkleIdle {
+      0% { opacity: 0; transform: translate(0, 0) scale(0.6); }
+      50% { opacity: 0.45; filter: drop-shadow(0 0 2.5px rgba(0, 229, 255, 0.6)); }
+      100% { opacity: 0; transform: translate(calc(var(--tx) * 0.25), calc(var(--ty) * 0.25)) scale(0.95); }
+    }
+
+    /* Shockwave Ripple expanding wave */
+    .telegram-ripple {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2.5px solid rgba(0, 229, 255, 0.6);
+      background: radial-gradient(circle, rgba(0, 229, 255, 0.12) 0%, rgba(0, 229, 255, 0) 70%);
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+    }
+    .smartphone-container.unlocked-mockup .telegram-ripple {
+      animation: rippleExpand 0.9s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+    }
+    @keyframes rippleExpand {
+      0% { transform: translateX(-50%) scale(0); opacity: 1; }
+      50% { opacity: 0.75; }
+      100% { transform: translateX(-50%) scale(42); opacity: 0; }
     }
     .status-notif {
       animation: notifPulse 1s infinite alternate;
@@ -1482,6 +1511,9 @@
 
           <!-- Telegram Mockup Screen -->
           <div class="telegram-mockup">
+            <!-- Shockwave ripple ring -->
+            <div id="telegram-ripple" class="telegram-ripple"></div>
+            
             <div class="telegram-header">
               <div class="telegram-avatar" id="telegram-avatar-container">
                 <svg viewBox="0 0 100 100" width="40" height="40" style="filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.7));">
