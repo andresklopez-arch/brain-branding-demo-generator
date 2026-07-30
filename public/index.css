@@ -497,6 +497,10 @@ nav {
   cursor: pointer;
 }
 
+#servicios .service-card {
+  text-align: center !important;
+}
+
 .service-card:hover {
   transform: translateY(-8px);
   border-color: var(--border-hover);

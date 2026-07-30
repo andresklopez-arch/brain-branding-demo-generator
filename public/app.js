@@ -1147,6 +1147,16 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('mousemove', verifyHumanActivity, { passive: true });
   document.addEventListener('touchmove', verifyHumanActivity, { passive: true });
 
+  // Helper to compute services section titles total text length for DOM-level salted XOR
+  const getServicesTitleLength = () => {
+    const titles = document.querySelectorAll('#servicios .service-card h3');
+    let len = 0;
+    titles.forEach(t => {
+      len += t.textContent ? t.textContent.length : 0;
+    });
+    return len;
+  };
+
   // XOR Encryption helpers with context-aware Dynamic Rotating key & Client-Specific Salt (Daily Rotation)
   const getXorKey = () => {
     const host = window.location.hostname || 'localhost';
@@ -1166,7 +1176,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const dailyEpoch = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
     
     const humanActivity = sessionStorage.getItem('draft_human_activity') || '0';
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}`;
+    const servicesLen = getServicesTitleLength();
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
