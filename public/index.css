@@ -180,6 +180,22 @@ header.scrolled {
   }
 }
 
+/* Touch haptic pulse effect for mobile */
+@keyframes touch-pulse-glow {
+  0% {
+    filter: drop-shadow(0 0 2px rgba(0, 229, 255, 0.45)) scale(1);
+  }
+  30% {
+    filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.95)) scale(1.15);
+  }
+  100% {
+    filter: drop-shadow(0 0 2px rgba(99, 102, 241, 0.3)) scale(1);
+  }
+}
+.logo-area.touch-pulse img {
+  animation: touch-pulse-glow 0.6s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+
 .logo-text span {
   background: linear-gradient(
     90deg,

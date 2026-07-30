@@ -1114,6 +1114,39 @@ document.addEventListener('DOMContentLoaded', () => {
     })[m]);
   }
 
+  // 24. Human Cursor-Velocity & Touch verification for local data security
+  let lastMouseX = null;
+  let lastMouseY = null;
+  let lastMouseTime = null;
+  
+  const verifyHumanActivity = (e) => {
+    const now = Date.now();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    if (lastMouseX !== null && lastMouseTime !== null) {
+      const dt = now - lastMouseTime;
+      if (dt > 10 && dt < 200) {
+        const dx = clientX - lastMouseX;
+        const dy = clientY - lastMouseY;
+        const velocity = Math.hypot(dx, dy) / dt; // px/ms
+        
+        // Organic human movement speed typically falls within 0.05 to 15 px/ms
+        if (velocity > 0.05 && velocity < 15) {
+          sessionStorage.setItem('draft_human_activity', '1');
+          document.removeEventListener('mousemove', verifyHumanActivity);
+          document.removeEventListener('touchmove', verifyHumanActivity);
+        }
+      }
+    }
+    lastMouseX = clientX;
+    lastMouseY = clientY;
+    lastMouseTime = now;
+  };
+  
+  document.addEventListener('mousemove', verifyHumanActivity, { passive: true });
+  document.addEventListener('touchmove', verifyHumanActivity, { passive: true });
+
   // XOR Encryption helpers with context-aware Dynamic Rotating key & Client-Specific Salt (Daily Rotation)
   const getXorKey = () => {
     const host = window.location.hostname || 'localhost';
@@ -1132,7 +1165,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Daily rotating epoch
     const dailyEpoch = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
     
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}`;
+    const humanActivity = sessionStorage.getItem('draft_human_activity') || '0';
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
@@ -2237,5 +2271,18 @@ END:VCARD`;
       logoImg.style.transform = 'translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg)';
       logoImg.style.filter = 'drop-shadow(0 0 2px rgba(99, 102, 241, 0.3))';
     });
+
+    // Reassuring warm touch vibration & circular expand light glow ring for mobile
+    logoArea.addEventListener('touchstart', () => {
+      if (navigator.vibrate) {
+        navigator.vibrate(12); // Reassuring short touch vibration
+      }
+      logoArea.classList.remove('touch-pulse');
+      void logoArea.offsetWidth; // Force reflow to restart animation
+      logoArea.classList.add('touch-pulse');
+      setTimeout(() => {
+        logoArea.classList.remove('touch-pulse');
+      }, 600);
+    }, { passive: true });
   }
 });
