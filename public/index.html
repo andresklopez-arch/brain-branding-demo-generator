@@ -1564,6 +1564,69 @@
       overflow: hidden;
       transform-style: preserve-3d;
       perspective: 1000px;
+      transition: max-width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), aspect-ratio 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), padding 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), border-radius 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    
+    /* Device Switcher Mock Classes */
+    .tablet-container.mock-mobile {
+      max-width: 320px;
+      aspect-ratio: 9 / 16;
+      padding: 24px 8px;
+      border-radius: 36px;
+    }
+    .tablet-container.mock-mobile .pos-body {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1.2fr 1fr;
+    }
+    .tablet-container.mock-mobile .pos-cart-panel {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .tablet-container.mock-mobile .pos-grid-menu {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .tablet-container.mock-desktop {
+      max-width: 820px;
+      aspect-ratio: 16 / 9;
+      padding: 8px;
+      border-radius: 12px;
+    }
+    .tablet-container.mock-desktop .pos-body {
+      grid-template-columns: 1.4fr 0.8fr;
+    }
+
+    /* POS DEVICE SWITCHER STYLES */
+    .pos-device-switcher {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 25px;
+      justify-content: center;
+      width: 100%;
+    }
+    .pos-device-switcher .switcher-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    .pos-device-switcher .switcher-btn:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+    .pos-device-switcher .switcher-btn.active {
+      background: rgba(0, 229, 255, 0.1);
+      border-color: rgba(0, 229, 255, 0.4);
+      color: #00e5ff;
+      box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
     }
     
     .tablet-screen {
@@ -2178,6 +2241,13 @@
         <p class="section-subtitle">
           Visualiza nuestra interfaz de Punto de Venta: una solución de facturación, caja e inventarios unificada en tiempo real para celular, tablet y computadora.
         </p>
+      </div>
+
+      <!-- Device Switcher Botonera -->
+      <div class="pos-device-switcher">
+        <button class="switcher-btn" data-device="mobile">📱 Celular</button>
+        <button class="switcher-btn active" data-device="tablet">📟 Tablet</button>
+        <button class="switcher-btn" data-device="desktop">💻 Computadora</button>
       </div>
 
       <div class="asistente-ia-grid">

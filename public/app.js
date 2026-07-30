@@ -1174,6 +1174,13 @@ document.addEventListener('DOMContentLoaded', () => {
     return pills.length;
   };
 
+  // Helper to compute Viewport Ratio salt for Viewport-Ratio Locked XOR
+  const getViewportSalt = () => {
+    const w = window.innerWidth || 1;
+    const h = window.innerHeight || 1;
+    return Math.round((w / h) * 10) / 10;
+  };
+
   const getXorKey = () => {
     const host = window.location.hostname || 'localhost';
     const userAgentLength = navigator.userAgent ? navigator.userAgent.length : 0;
@@ -1198,7 +1205,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const colorDepth = window.screen ? window.screen.colorDepth : 0;
     const appVersion = '1.3.6';
     const posFeaturesCount = getPOSFeaturesCount();
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}`;
+    const viewportSalt = getViewportSalt();
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}_${viewportSalt}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
@@ -2676,6 +2684,26 @@ END:VCARD`;
     } else {
       runPOSCycle();
     }
+
+    // Device switcher button interactions
+    const switcherBtns = document.querySelectorAll('.pos-device-switcher .switcher-btn');
+    const tabletMock = document.querySelector('.tablet-container');
+    switcherBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        switcherBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const device = btn.getAttribute('data-device');
+        if (tabletMock) {
+          tabletMock.classList.remove('mock-mobile', 'mock-desktop');
+          if (device === 'mobile') {
+            tabletMock.classList.add('mock-mobile');
+          } else if (device === 'desktop') {
+            tabletMock.classList.add('mock-desktop');
+          }
+        }
+      });
+    });
   };
 
   initPOSSimulator();
