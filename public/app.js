@@ -958,4 +958,130 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 1000);
     });
   });
+
+  // ── TELEGRAM CHAT SIMULATOR FOR HERMES AGENT ──
+  const telegramContainer = document.getElementById('telegram-messages');
+  if (telegramContainer) {
+    const chatScenarios = [
+      // Scenario 1: Excel
+      [
+        { sender: 'user', text: 'Hermes, necesito que proceses este Excel de ventas. Elimina los correos duplicados y saca el total vendido este mes.' },
+        { sender: 'bot', text: 'Procesando archivo `ventas_julio.xlsx`... 🔍' },
+        { sender: 'bot', text: '📊 **Consolidación completada:**\n- Se eliminaron **142 registros duplicados** en la columna de correo.\n- 💰 **Total de ventas del mes:** `$428,500.00 MXN`.\n- 📈 He generado un gráfico de barras con el rendimiento semanal.\n\n[Descargar archivo_procesado.xlsx] 📁' }
+      ],
+      // Scenario 2: Gmail
+      [
+        { sender: 'user', text: 'Redacta un correo para el cliente Alejandro sobre los ajustes de la cotización y adjúntame el PDF final.' },
+        { sender: 'bot', text: 'Analizando historial y tono de comunicación con Alejandro... 🧠' },
+        { sender: 'bot', text: '✉️ **Correo redactado en Gmail (Borrador guardado):**\n\n*Asunto:* Actualización: Propuesta de Desarrollo y Ajustes Finos\n\n*Hola Alejandro, espero que todo vaya excelente... [Ver borrador completo]*\n\n📎 Se seleccionó y adjuntó automáticamente el archivo `Propuesta_Brain_Branding_Final.pdf` de tu Google Drive.' }
+      ],
+      // Scenario 3: Juntas
+      [
+        { sender: 'user', text: 'Acabo de salir de la junta con el equipo. Analiza el audio de 45 min que te mandé y dime un resumen rápido.' },
+        { sender: 'bot', text: 'Analizando transcripción del audio y extrayendo puntos clave... 🎙️' },
+        { sender: 'bot', text: '📝 **Minuta Ejecutiva (Junta de Operaciones):**\n\n👥 **Acuerdos Principales:**\n1. Se aprueba la migración de servidores para el 15 de agosto.\n2. Sofía coordinará la capacitación del equipo.\n\n📌 **Pendientes Asignados:**\n- **Andre:** Modificar contrato de proveedor (Fecha límite: Viernes).\n- **Alejandro:** Enviar cotización SaaS a Inmuebles Plus.' }
+      ],
+      // Scenario 4: Web Search
+      [
+        { sender: 'user', text: 'Busca en internet proveedores de servidores dedicados en México, compara precios y hazme una tabla.' },
+        { sender: 'bot', text: 'Buscando y verificando fuentes en la web sin alucinaciones... 🌐' },
+        { sender: 'bot', text: '🔍 **Comparativa de Servidores Dedicados en México:**\n\n| Proveedor | Plan Base | Ancho Banda | Garantía |\n| :--- | :--- | :--- | :--- |\n| **Proveedor A** | $2,499/mes | 100 Mbps | 99.9% Uptime |\n| **Proveedor B** | $2,800/mes | 1 Gbps | Red Privada |\n\n*Nota:* Proveedor B incluye red dedicada ideal para protección de datos corporativa. 🔐' }
+      ],
+      // Scenario 5: Agenda
+      [
+        { sender: 'user', text: 'Reagenda mi reunión con Alejandro para el jueves a las 3:00 PM y avísale.' },
+        { sender: 'bot', text: 'Cruzando agendas y verificando disponibilidad... 📅' },
+        { sender: 'bot', text: '📅 **Agenda Actualizada:**\n- La junta fue movida al **Jueves 30 de Julio a las 15:00 hrs**.\n- Se envió la invitación de Google Calendar a Alejandro y ya la aceptó.\n- 💡 *Recordatorio Proactivo:* Tienes un espacio libre de 1 hora antes de la junta por si deseas repasar la propuesta.' }
+      ]
+    ];
+
+    let currentScenarioIdx = 0;
+    let currentMessageIdx = 0;
+
+    function formatTimestamp() {
+      const now = new Date();
+      return now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    }
+
+    function showTypingIndicator() {
+      const indicator = document.createElement('div');
+      indicator.className = 'telegram-bubble typing';
+      indicator.id = 'telegram-typing';
+      indicator.innerHTML = `
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+      `;
+      telegramContainer.appendChild(indicator);
+      telegramContainer.scrollTop = telegramContainer.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+      const indicator = document.getElementById('telegram-typing');
+      if (indicator) {
+        indicator.remove();
+      }
+    }
+
+    function formatMessageText(text) {
+      let html = text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code style="background: rgba(0,0,0,0.3); padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 11.5px; color: #cbd5e1;">$1</code>');
+      
+      if (html.includes('|')) {
+        return html.replace(/\|/g, ' │ ');
+      }
+      return html;
+    }
+
+    function renderMessage(sender, text) {
+      const bubble = document.createElement('div');
+      bubble.className = `telegram-bubble ${sender}`;
+      
+      const formattedText = formatMessageText(text);
+      bubble.innerHTML = `
+        <div class="text">${formattedText.replace(/\n/g, '<br>')}</div>
+        <span class="time">${formatTimestamp()}</span>
+      `;
+      
+      telegramContainer.appendChild(bubble);
+      telegramContainer.scrollTop = telegramContainer.scrollHeight;
+    }
+
+    function playNextMessage() {
+      const scenario = chatScenarios[currentScenarioIdx];
+      
+      if (currentMessageIdx >= scenario.length) {
+        setTimeout(() => {
+          telegramContainer.innerHTML = '';
+          currentScenarioIdx = (currentScenarioIdx + 1) % chatScenarios.length;
+          currentMessageIdx = 0;
+          playNextMessage();
+        }, 5000);
+        return;
+      }
+
+      const msg = scenario[currentMessageIdx];
+      currentMessageIdx++;
+
+      if (msg.sender === 'user') {
+        setTimeout(() => {
+          renderMessage('user', msg.text);
+          playNextMessage();
+        }, 1500);
+      } else {
+        setTimeout(() => {
+          showTypingIndicator();
+          setTimeout(() => {
+            removeTypingIndicator();
+            renderMessage('bot', msg.text);
+            playNextMessage();
+          }, 2500);
+        }, 800);
+      }
+    }
+
+    playNextMessage();
+  }
 });
