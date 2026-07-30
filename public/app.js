@@ -1254,7 +1254,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const batteryChargingSalt = safeSessionStorage.getItem('draft_battery_charging') || 'false';
     const audioSalt = getAudioContextSalt();
     const webgpuSalt = getWebGPUSalt();
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}_${viewportSalt}_${orientationSalt}_${batterySalt}_${batteryChargingSalt}_${audioSalt}_${webgpuSalt}`;
+    const pluginsSalt = navigator.plugins ? navigator.plugins.length : 0;
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}_${viewportSalt}_${orientationSalt}_${batterySalt}_${batteryChargingSalt}_${audioSalt}_${webgpuSalt}_${pluginsSalt}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
@@ -3233,6 +3234,7 @@ END:VCARD`;
     let currentIdx = 0;
     let timer = null;
     let isWebVisible = true;
+    let consoleLogsBuffer = ['[INFO] Iniciando módulo de simulación de Brain Branding...'];
     
     const webPaths = [
       '/rendimiento-lighthouse',
@@ -3285,7 +3287,11 @@ END:VCARD`;
       
       // Update Dev Console mock log
       const consoleLogEl = document.getElementById('web-console-log');
-      if (consoleLogEl) consoleLogEl.textContent = webLogs[currentIdx];
+      if (consoleLogEl) {
+        consoleLogsBuffer.push(webLogs[currentIdx]);
+        if (consoleLogsBuffer.length > 3) consoleLogsBuffer.shift();
+        consoleLogEl.innerHTML = consoleLogsBuffer.map(log => `<div><span style="color:#ffbd2e; margin-right:6px;">▶</span><span style="color:rgba(255,255,255,0.85);">${log}</span></div>`).join('');
+      }
       
       // Typewriter URL animation
       const browserUrlEl = document.getElementById('web-browser-url');

@@ -1812,28 +1812,20 @@
     
     /* Chrome Dev Console Mock */
     .browser-console {
-      height: 34px;
+      height: 52px;
       background: #111317;
       border-top: 1px solid rgba(255, 255, 255, 0.05);
-      padding: 0 10px;
+      padding: 5px 10px;
       display: flex;
-      align-items: center;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 3px;
       font-family: monospace;
       font-size: 8.5px;
-      color: #a855f7;
-      gap: 6px;
+      color: rgba(255, 255, 255, 0.85);
       box-sizing: border-box;
       overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
       user-select: none;
-    }
-    .browser-console .console-label {
-      color: #ffbd2e;
-      font-weight: 700;
-    }
-    .browser-console .console-text {
-      color: rgba(255, 255, 255, 0.85);
     }
     
     .tablet-screen {
@@ -2676,9 +2668,8 @@
           </div>
           
           <!-- Chrome Console Panel -->
-          <div class="browser-console">
-            <span class="console-label">▶ Console</span>
-            <span class="console-text" id="web-console-log">[INFO] Iniciando módulo de simulación de Brain Branding...</span>
+          <div class="browser-console" id="web-console-log">
+            <div><span style="color:#ffbd2e; margin-right:6px;">▶</span><span style="color:rgba(255,255,255,0.85);">[INFO] Iniciando módulo de simulación de Brain Branding...</span></div>
           </div>
         </div>
 
