@@ -349,14 +349,6 @@
       opacity: 0.3;
     }
     @media (min-width: 768px) {
-      #whatsapp-fab:hover + #fab-tooltip, #fab-tooltip:hover {
-        opacity: 1 !important;
-        transform: translateY(0) !important;
-        pointer-events: auto !important;
-      }
-      #fab-tooltip .qr-container {
-        display: block !important;
-      }
       div:hover > .vcard-qr-tooltip {
         opacity: 1 !important;
         transform: translateX(-50%) translateY(0) !important;
@@ -2514,21 +2506,7 @@
     <span style="position: absolute; inset: -4px; border-radius: 50%; border: 2px solid #25d366; animation: fab-radar 2s infinite; opacity: 0; pointer-events: none;"></span>
   </a>
 
-  <div id="fab-tooltip" style="position: fixed; bottom: 100px; right: 30px; background: rgba(6, 8, 12, 0.9); border: 1px solid rgba(37, 211, 102, 0.3); color: #fff; padding: 12px 16px; border-radius: 12px; font-size: 12.5px; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 997; pointer-events: none; opacity: 0; transform: translateY(10px); transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(10px); display: flex; flex-direction: column; align-items: center; gap: 8px;">
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <span style="display: inline-block; width: 8px; height: 8px; background: #25d366; border-radius: 50%; animation: fab-radar 1.5s infinite;"></span>
-      ¿Tienes dudas? Chatea con nosotros en vivo 💬
-    </div>
-    <div class="qr-container" style="display: none; margin-top: 8px; text-align: center;">
-      <div id="whatsapp-qr-container" style="width: 120px; height: 120px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #fff; padding: 4px; box-sizing: border-box; display: inline-block; position: relative;">
-        <!-- Center icon overlay -->
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 24px; height: 24px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15); z-index: 1;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#25d366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="color: #25d366;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-        </div>
-      </div>
-      <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px; font-weight: 500;">Escanea con tu celular</div>
-    </div>
-  </div>
+  <!-- Tooltip removed to clean up interface clutter -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nOMXZgO514051LaIa5sDXDSLJdyShXX46wKs8tTqnGPEX+TzECPMkgEXY9EObGs1uzKczWDqUBdA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="app.js?v=1.3.5"></script>
 </body>

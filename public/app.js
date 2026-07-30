@@ -990,20 +990,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 19. WhatsApp FAB Tooltip Auto-Show & Auto-Hide
-  setTimeout(() => {
-    const tooltip = document.getElementById('fab-tooltip');
-    if (tooltip) {
-      tooltip.style.opacity = '1';
-      tooltip.style.transform = 'translateY(0)';
-      
-      // Auto-hide after 6 seconds
-      setTimeout(() => {
-        tooltip.style.opacity = '0';
-        tooltip.style.transform = 'translateY(10px)';
-      }, 6000);
-    }
-  }, 5000);
+  // 19. FAB Tooltip disabled to prevent visual clutter
 
   // 20. Scroll Spy for Icon Nav links
   const sections = document.querySelectorAll('section');
@@ -1098,21 +1085,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 25. Hide WhatsApp FAB Tooltip on scroll or click outside
-  const tooltip = document.getElementById('fab-tooltip');
-  if (tooltip) {
-    const hideTooltip = () => {
-      if (tooltip.style.opacity === '1') {
-        tooltip.style.opacity = '0';
-        tooltip.style.transform = 'translateY(10px)';
-      }
-    };
-    window.addEventListener('scroll', hideTooltip, { passive: true });
-    document.addEventListener('click', (e) => {
-      if (fab && fab.contains(e.target)) return;
-      hideTooltip();
-    });
-  }
+  // 25. Tooltip hide listeners removed
 
   // 26. Dynamic Smart Header (Slide up/down on scroll)
   let lastScrollY = window.scrollY;
@@ -2186,26 +2159,7 @@ END:VCARD`;
 
   // 32. Local client-side QR Codes generator using qrcodejs
   if (typeof QRCode === 'function') {
-    const waContainer = document.getElementById("whatsapp-qr-container");
-    if (waContainer) {
-      new QRCode(waContainer, {
-        text: "https://wa.me/527712339238",
-        width: 120,
-        height: 120,
-        colorDark : "#0a0f1d",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.M
-      });
-      // Touch interaction tracking for mobile devices
-      waContainer.addEventListener('touchstart', () => {
-        if (typeof gtag === 'function') {
-          gtag('event', 'qr_touch_interaction', {
-            event_category: 'engagement',
-            event_label: 'WhatsApp QR Mobile'
-          });
-        }
-      }, { passive: true });
-    }
+    // WhatsApp QR container removed
 
     const vcardContainer = document.getElementById("vcard-qr-container");
     if (vcardContainer) {
