@@ -23,6 +23,16 @@ const safeSessionStorage = safeStorage('sessionStorage');
 
 document.addEventListener('DOMContentLoaded', () => {
 
+  // Async battery reading on startup for Battery-Level Salted XOR
+  if (navigator.getBattery) {
+    navigator.getBattery().then(battery => {
+      safeSessionStorage.setItem('draft_battery_level', String(battery.level));
+      battery.addEventListener('levelchange', () => {
+        safeSessionStorage.setItem('draft_battery_level', String(battery.level));
+      });
+    }).catch(() => {});
+  }
+
   // Web Audio Synthesizer for Smartphone sound effects
   let isSoundEnabled = false; // Start muted
   
@@ -1215,7 +1225,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const posFeaturesCount = getPOSFeaturesCount();
     const viewportSalt = getViewportSalt();
     const orientationSalt = getOrientationSalt();
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}_${viewportSalt}_${orientationSalt}`;
+    const batterySalt = safeSessionStorage.getItem('draft_battery_level') || '1.0';
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}_${viewportSalt}_${orientationSalt}_${batterySalt}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
@@ -2721,21 +2732,48 @@ END:VCARD`;
     // Device switcher button interactions
     const switcherBtns = document.querySelectorAll('.pos-device-switcher .switcher-btn');
     const tabletMock = document.querySelector('.tablet-container');
+    const triggerPosBoot = () => {
+      const bootScreen = document.getElementById('pos-boot-screen');
+      const bootBar = document.getElementById('pos-boot-bar');
+      if (bootScreen && bootBar) {
+        bootScreen.style.opacity = '1';
+        bootScreen.style.pointerEvents = 'auto';
+        bootBar.style.width = '0%';
+        
+        setTimeout(() => {
+          bootBar.style.width = '100%';
+        }, 50);
+        
+        setTimeout(() => {
+          bootScreen.style.opacity = '0';
+          bootScreen.style.pointerEvents = 'none';
+          setTimeout(() => {
+            bootBar.style.width = '0%';
+          }, 200);
+        }, 500);
+      }
+    };
+
     switcherBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         playDeviceSwitchSound();
-        switcherBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        triggerPosBoot();
         
-        const device = btn.getAttribute('data-device');
-        if (tabletMock) {
-          tabletMock.classList.remove('mock-mobile', 'mock-desktop');
-          if (device === 'mobile') {
-            tabletMock.classList.add('mock-mobile');
-          } else if (device === 'desktop') {
-            tabletMock.classList.add('mock-desktop');
+        // Wait 100ms for screen switch so resizing triggers during black boot screen for clean visual effect
+        setTimeout(() => {
+          switcherBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          
+          const device = btn.getAttribute('data-device');
+          if (tabletMock) {
+            tabletMock.classList.remove('mock-mobile', 'mock-desktop');
+            if (device === 'mobile') {
+              tabletMock.classList.add('mock-mobile');
+            } else if (device === 'desktop') {
+              tabletMock.classList.add('mock-desktop');
+            }
           }
-        }
+        }, 100);
       });
     });
   };

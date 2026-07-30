@@ -2257,6 +2257,16 @@
           <div id="tablet-screen-wash" class="tablet-screen-wash"></div>
           
           <div class="tablet-screen">
+            <!-- Device Boot Screen -->
+            <div id="pos-boot-screen" style="position: absolute; inset: 0; background: #090b0f; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; opacity: 0; pointer-events: none; transition: opacity 0.2s ease;">
+              <div style="font-size: 20px; font-weight: 800; color: #fff; font-family: var(--font-title); display: flex; align-items: center; gap: 8px;">
+                🧠 <span style="background: linear-gradient(90deg, #00e5ff, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Brain POS</span>
+              </div>
+              <div style="width: 100px; height: 3px; background: rgba(255, 255, 255, 0.05); border-radius: 2px; overflow: hidden;">
+                <div id="pos-boot-bar" style="width: 0%; height: 100%; background: #00e5ff; transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);"></div>
+              </div>
+            </div>
+
             <!-- Tablet Status Bar -->
             <div class="tablet-status-bar">
               <span class="status-time" id="tablet-status-time">12:30 PM</span>
