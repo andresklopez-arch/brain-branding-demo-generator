@@ -1053,14 +1053,45 @@ document.addEventListener('DOMContentLoaded', () => {
   const operationField = document.getElementById('contact-operation');
   if (agencyContactForm) {
     agencyContactForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      // Honeypot anti-spam check
+      const honeypot = document.getElementById('contact-honeypot');
+      if (honeypot && honeypot.value !== '') {
+        console.warn('Bot detected via honeypot.');
+        return;
+      }
+      
       const urlPattern = /https?:\/\/[^\s$.?#].[^\s]*/i;
       const hasUrl = (descField && urlPattern.test(descField.value)) || 
                      (operationField && urlPattern.test(operationField.value));
       
       if (hasUrl) {
-        e.preventDefault();
         alert('Por razones de seguridad, no se permiten enlaces HTTP/HTTPS en la descripción o detalles de la operación.');
+        return;
       }
+      
+      // Clear drafts
+      Object.values(draftFields).forEach(key => safeLocalStorage.removeItem(key));
+      
+      // Extract form details
+      const name = document.getElementById('contact-name')?.value || '';
+      const business = document.getElementById('contact-business')?.value || '';
+      const vertical = document.getElementById('contact-vertical')?.value || '';
+      const desc = descField?.value || '';
+      const operation = operationField?.value || '';
+      
+      // Construct formatted WhatsApp message
+      const text = `Hola Brain Branding, quiero solicitar asesoría para un proyecto a la medida.\n\n` +
+                   `📝 *Nombre:* ${name}\n` +
+                   `💼 *Empresa:* ${business}\n` +
+                   `🏷️ *Giro:* ${vertical}\n` +
+                   `🛠️ *Funciones deseadas:* ${desc}\n` +
+                   `⚙️ *Operación actual:* ${operation}`;
+      
+      // Open WhatsApp web or api
+      const whatsappUrl = `https://api.whatsapp.com/send?phone=527712339238&text=${encodeURIComponent(text)}`;
+      window.open(whatsappUrl, '_blank');
     });
   }
 
@@ -1113,32 +1144,32 @@ document.addEventListener('DOMContentLoaded', () => {
       [
         { sender: 'user', text: 'Hola, necesito que proceses este Excel de ventas. Elimina los correos duplicados y saca el total vendido este mes.' },
         { sender: 'bot', text: 'Procesando archivo `ventas_julio.xlsx`... 🔍' },
-        { sender: 'bot', text: '📊 **Consolidación completada:**\n- Se eliminaron **142 registros duplicados** en la columna de correo.\n- 💰 **Total de ventas del mes:** `$428,500.00 MXN`.\n- 📈 He generado un gráfico de barras con el rendimiento semanal.\n\n[Descargar archivo_procesado.xlsx] 📁' }
+        { sender: 'bot', text: '📊 **Consolidación completada:**\n- Se eliminaron **142 registros duplicados** en la columna de correo.\n- 💰 **Total de ventas del mes:** `$428,500.00 MXN`.\n- 📈 He generado un gráfico de barras con el rendimiento semanal.\n\n[Descargar archivo_procesado.xlsx](#) 📁\n\n💬 *¿Quieres un asistente como yo? Escríbenos por WhatsApp al [7712339238](https://api.whatsapp.com/send?phone=527712339238&text=Hola%20Brain%20Branding,%20quiero%20solicitar%20asesor%C3%ADa%20para%20un%20proyecto%20a%20la%20medida) o al correo [andreskrebollo@gmail.com](mailto:andreskrebollo@gmail.com)*' }
       ],
       // Scenario 2: Gmail
       [
         { sender: 'user', text: 'Redacta un correo para el cliente Alejandro sobre los ajustes de la cotización y adjúntame el PDF final.' },
         { sender: 'bot', text: 'Analizando historial y tono de comunicación con Alejandro... 🧠' },
-        { sender: 'bot', text: '✉️ **Correo redactado en Gmail (Borrador guardado):**\n\n*Asunto:* Actualización: Propuesta de Desarrollo y Ajustes Finos\n\n*Hola Alejandro, espero que todo vaya excelente... [Ver borrador completo]*\n\n📎 Se seleccionó y adjuntó automáticamente el archivo `Propuesta_Brain_Branding_Final.pdf` de tu Google Drive.' }
+        { sender: 'bot', text: '✉️ **Correo redactado en Gmail (Borrador guardado):**\n\n*Asunto:* Actualización: Propuesta de Desarrollo y Ajustes Finos\n\n*Hola Alejandro, espero que todo vaya excelente... [Ver borrador completo]*\n\n📎 Se seleccionó y adjuntó automáticamente el archivo `Propuesta_Brain_Branding_Final.pdf` de tu Google Drive.\n\n💬 *¿Quieres automatizar tus correos? Escríbenos al WhatsApp [7712339238](https://api.whatsapp.com/send?phone=527712339238&text=Hola%20Brain%20Branding,%20quiero%20solicitar%20asesor%C3%ADa%20para%20un%20proyecto%20a%20la%20medida) o al correo [andreskrebollo@gmail.com](mailto:andreskrebollo@gmail.com)*' }
       ],
       // Scenario 3: Juntas (Voice Note Simulation)
       [
         { sender: 'user', isVoice: true, text: 'Nota de voz de 0:45' },
         { sender: 'bot', text: '🎤 **Nota de voz transcrita:**\n*"Acabo de salir de la junta con el equipo. Analiza el audio de 45 min que te mandé y dime un resumen rápido."*' },
         { sender: 'bot', text: 'Analizando transcripción del audio y extrayendo puntos clave... 🎙️' },
-        { sender: 'bot', text: '📝 **Minuta Ejecutiva (Junta de Operaciones):**\n\n👥 **Acuerdos Principales:**\n1. Se aprueba la migración de servidores para el 15 de agosto.\n2. Sofía coordinará la capacitación del equipo.\n\n📌 **Pendientes Asignados:**\n- **Andre:** Modificar contrato de proveedor (Fecha límite: Viernes).\n- **Alejandro:** Enviar cotización SaaS a Inmuebles Plus.' }
+        { sender: 'bot', text: '📝 **Minuta Ejecutiva (Junta de Operaciones):**\n\n👥 **Acuerdos Principales:**\n1. Se aprueba la migración de servidores para el 15 de agosto.\n2. Sofía coordinará la capacitación del equipo.\n\n📌 **Pendientes Asignados:**\n- **Andre:** Modificar contrato de proveedor (Fecha límite: Viernes).\n- **Alejandro:** Enviar cotización SaaS a Inmuebles Plus.\n\n💬 *¿Quieres resumir tus juntas con IA? Escríbenos al WhatsApp [7712339238](https://api.whatsapp.com/send?phone=527712339238&text=Hola%20Brain%20Branding,%20quiero%20solicitar%20asesor%C3%ADa%20para%20un%20proyecto%20a%20la%20medida) o al correo [andreskrebollo@gmail.com](mailto:andreskrebollo@gmail.com)*' }
       ],
       // Scenario 4: Web Search
       [
         { sender: 'user', text: 'Busca en internet proveedores de servidores dedicados en México, compara precios y hazme una tabla.' },
         { sender: 'bot', text: 'Buscando y verificando fuentes en la web sin alucinaciones... 🌐' },
-        { sender: 'bot', text: '🔍 **Comparativa de Servidores Dedicados en México:**\n\n| Proveedor | Plan Base | Ancho Banda | Garantía |\n| :--- | :--- | :--- | :--- |\n| **Proveedor A** | $2,499/mes | 100 Mbps | 99.9% Uptime |\n| **Proveedor B** | $2,800/mes | 1 Gbps | Red Privada |\n\n*Nota:* Proveedor B incluye red dedicada ideal para protección de datos corporativa. 🔐' }
+        { sender: 'bot', text: '🔍 **Comparativa de Servidores Dedicados en México:**\n\n| Proveedor | Plan Base | Ancho Banda | Garantía |\n| :--- | :--- | :--- | :--- |\n| **Proveedor A** | $2,499/mes | 100 Mbps | 99.9% Uptime |\n| **Proveedor B** | $2,800/mes | 1 Gbps | Red Privada |\n\n*Nota:* Proveedor B incluye red dedicada ideal para protección de datos corporativa. 🔐\n\n💬 *¿Quieres conectar búsquedas a tu IA? Escríbenos al WhatsApp [7712339238](https://api.whatsapp.com/send?phone=527712339238&text=Hola%20Brain%20Branding,%20quiero%20solicitar%20asesor%C3%ADa%20para%20un%20proyecto%20a%20la%20medida) o al correo [andreskrebollo@gmail.com](mailto:andreskrebollo@gmail.com)*' }
       ],
       // Scenario 5: Agenda
       [
         { sender: 'user', text: 'Reagenda mi reunión con Alejandro para el jueves a las 3:00 PM y avísale.' },
         { sender: 'bot', text: 'Cruzando agendas y verificando disponibilidad... 📅' },
-        { sender: 'bot', text: '📅 **Agenda Actualizada:**\n- La junta fue movida al **Jueves 30 de Julio a las 15:00 hrs**.\n- Se envió la invitación de Google Calendar a Alejandro y ya la aceptó.\n- 💡 *Recordatorio Proactivo:* Tienes un espacio libre de 1 hora antes de la junta por si deseas repasar la propuesta.' }
+        { sender: 'bot', text: '📅 **Agenda Actualizada:**\n- La junta fue movida al **Jueves 30 de Julio a las 15:00 hrs**.\n- Se envió la invitación de Google Calendar a Alejandro y ya la aceptó.\n- 💡 *Recordatorio Proactivo:* Tienes un espacio libre de 1 hora antes de la junta por si deseas repasar la propuesta.\n\n💬 *¿Quieres delegar tu agenda a una IA? Escríbenos al WhatsApp [7712339238](https://api.whatsapp.com/send?phone=527712339238&text=Hola%20Brain%20Branding,%20quiero%20solicitar%20asesor%C3%ADa%20para%20un%20proyecto%20a%20la%20medida) o al correo [andreskrebollo@gmail.com](mailto:andreskrebollo@gmail.com)*' }
       ]
     ];
 
@@ -1242,7 +1273,8 @@ document.addEventListener('DOMContentLoaded', () => {
       let html = text
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/`([^`]+)`/g, '<code style="background: rgba(0,0,0,0.3); padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 11.5px; color: #cbd5e1;">$1</code>');
+        .replace(/`([^`]+)`/g, '<code style="background: rgba(0,0,0,0.3); padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 11.5px; color: #cbd5e1;">$1</code>')
+        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color: #40c4ff; text-decoration: underline; font-weight: bold;">$1</a>');
       
       if (html.includes('|')) {
         return html.replace(/\|/g, ' │ ');
