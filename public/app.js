@@ -1497,13 +1497,45 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // IntersectionObserver implementation for visibility check
+    // IntersectionObserver implementation for visibility check (Auto-Unlock on Scroll)
     if (typeof IntersectionObserver !== 'undefined') {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             if (!isSectionVisible) {
               isSectionVisible = true;
+            }
+            
+            // Auto-unlock instantly when visitor scrolls to the phone
+            if (isLocked) {
+              isLocked = false;
+              if (lockscreen) {
+                lockscreen.classList.add('unlocked');
+              }
+              const container = document.querySelector('.smartphone-container');
+              if (container) {
+                container.classList.add('unlocked-mockup');
+              }
+              playSynthSound('unlock');
+              triggerHaptic('haptic-pulse');
+              
+              if (simulatorTimeout) {
+                clearTimeout(simulatorTimeout);
+              }
+              removeTypingIndicator();
+              telegramContainer.innerHTML = '';
+              currentScenarioIdx = 0;
+              currentMessageIdx = 0;
+              updateActiveIcon(0);
+              
+              const scenario = chatScenarios[0];
+              if (scenario && scenario.length > 0) {
+                const firstMsg = scenario[0];
+                currentMessageIdx = 1;
+                renderMessage(firstMsg.sender, firstMsg);
+                playNextMessage();
+              }
+            } else {
               playNextMessage();
             }
           } else {
@@ -1514,7 +1546,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           }
         });
-      }, { threshold: 0.1 });
+      }, { threshold: 0.15 });
 
       const targetSection = document.getElementById('asistente-ia');
       if (targetSection) {
