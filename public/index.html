@@ -268,9 +268,6 @@
       margin-bottom: 25px !important;
       line-height: 1.2 !important;
       min-height: 125px; /* Reserves space to prevent vertical page jump */
-      display: flex;
-      align-items: center;
-      justify-content: center;
       position: relative;
       overflow: hidden;
       cursor: default;
@@ -302,13 +299,15 @@
       --font-body: 'Plus Jakarta Sans', sans-serif !important;
     }
     .hero-desc {
-      transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+      transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, filter 0.3s ease-in-out;
       transform: translateX(0);
       min-height: 58px; /* Reserves space to prevent layout shift */
+      filter: blur(0px);
     }
     .hero-desc.fade-out {
       opacity: 0;
       transform: translateX(-10px);
+      filter: blur(1.5px);
     }
     #typing-text::after {
       content: '|';
@@ -317,6 +316,11 @@
       color: #ec4899;
       font-weight: 300;
       -webkit-text-fill-color: #ec4899 !important; /* Force color on webkit transparent text */
+    }
+    #typing-text.deleting::after {
+      animation: blink-cursor-fast 0.3s step-end infinite !important;
+      color: #ec4899;
+      -webkit-text-fill-color: #ec4899 !important;
     }
     #typing-text.finished::after {
       color: #00e5ff !important;
@@ -329,6 +333,10 @@
       100% { opacity: 1; }
     }
     @keyframes blink-cursor {
+      from, to { color: transparent; }
+      50% { color: #ec4899; }
+    }
+    @keyframes blink-cursor-fast {
       from, to { color: transparent; }
       50% { color: #ec4899; }
     }
@@ -444,9 +452,6 @@
         word-wrap: break-word !important;
         overflow-wrap: break-word !important;
         min-height: 110px; /* Reserves space to prevent page shift on mobile */
-        display: flex;
-        align-items: center;
-        justify-content: center;
       }
       .hero-desc {
         font-size: 15px !important;
@@ -1496,11 +1501,11 @@
     <!-- 1. HERO SECTION -->
     <section id="inicio" class="hero">
       <div class="hero-content">
-        <h1 class="hero-title">Creamos para ti<span class="accent">:</span> <span class="accent" id="typing-text">Asistente Personal IA</span></h1>
+        <h1 class="hero-title">Creamos para ti <span class="accent" id="typing-text">Asistente Personal IA</span></h1>
         <p class="hero-desc">
           Implementamos tu Asistente Personal de Inteligencia Artificial que puedes controlar desde Whatsapp o Telegram para que puedas disfrutar más de las cosas que valen la pena.
         </p>
-        <div style="margin: -10px 0 25px 0; display: flex; justify-content: center;">
+        <div style="margin: -10px 0 25px 0; display: flex; justify-content: center; height: 38px; align-items: center;">
           <a href="#detail-asistente-ia" id="hero-more-info-btn" class="glass-pill-btn" style="display: inline-flex; align-items: center; gap: 10px; padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #fff; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); cursor: pointer; text-decoration: none; transition: all 0.3s ease;">
             <span style="display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #a855f7, #ec4899); font-size: 14px; font-weight: bold; color: #fff; line-height: 1; padding-bottom: 2px;">+</span>
             <span id="more-info-text">Ver ventajas de tu Asistente Personal IA</span>

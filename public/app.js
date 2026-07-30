@@ -234,9 +234,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isDeleting) {
         typingElement.textContent = currentWord.substring(0, charIndex - 1);
         charIndex--;
+        typingElement.classList.add('deleting');
       } else {
         typingElement.textContent = currentWord.substring(0, charIndex + 1);
         charIndex++;
+        typingElement.classList.remove('deleting');
       }
       
       let typeSpeed = isDeleting ? 40 : 80;
