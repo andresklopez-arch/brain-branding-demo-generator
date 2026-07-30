@@ -1181,6 +1181,14 @@ document.addEventListener('DOMContentLoaded', () => {
     return Math.round((w / h) * 10) / 10;
   };
 
+  // Helper to compute Screen Orientation salt for Orientation-Locked XOR
+  const getOrientationSalt = () => {
+    if (window.screen && window.screen.orientation && window.screen.orientation.type) {
+      return window.screen.orientation.type;
+    }
+    return 'unknown';
+  };
+
   const getXorKey = () => {
     const host = window.location.hostname || 'localhost';
     const userAgentLength = navigator.userAgent ? navigator.userAgent.length : 0;
@@ -1206,7 +1214,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const appVersion = '1.3.6';
     const posFeaturesCount = getPOSFeaturesCount();
     const viewportSalt = getViewportSalt();
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}_${viewportSalt}`;
+    const orientationSalt = getOrientationSalt();
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}_${viewportSalt}_${orientationSalt}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
@@ -2231,6 +2240,30 @@ END:VCARD`;
     }
   }
 
+  // Synthesize digital sweep click using Web Audio API (Zero Asset Dependency)
+  const playDeviceSwitchSound = () => {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.08);
+      
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.08);
+    } catch (e) {}
+  };
+
   // 31. Tablet POS Simulator State Machine and Animations
   const posScenarios = [
     {
@@ -2690,6 +2723,7 @@ END:VCARD`;
     const tabletMock = document.querySelector('.tablet-container');
     switcherBtns.forEach(btn => {
       btn.addEventListener('click', () => {
+        playDeviceSwitchSound();
         switcherBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         
