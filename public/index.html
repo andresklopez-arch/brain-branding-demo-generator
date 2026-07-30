@@ -1544,6 +1544,321 @@
     .tg-check.read {
       color: #40c4ff;
     }
+
+    /* TABLET SIMULATOR CONTAINER */
+    .tablet-container {
+      width: 100%;
+      max-width: 620px; /* Tablet landscape size */
+      aspect-ratio: 4 / 3;
+      position: relative;
+      padding: 16px; /* Tablet uniform bezels */
+      background: #18191d; /* Metallic space-gray tablet body */
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-radius: 28px;
+      box-shadow: 
+        0 30px 70px rgba(0, 0, 0, 0.85),
+        0 0 50px rgba(0, 229, 255, 0.12),
+        inset 0 0 5px rgba(255, 255, 255, 0.2);
+      box-sizing: border-box;
+      margin: 0 auto;
+      overflow: hidden;
+      transform-style: preserve-3d;
+      perspective: 1000px;
+    }
+    
+    .tablet-screen {
+      width: 100%;
+      height: 100%;
+      background: #090b0f;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+    
+    .tablet-status-bar {
+      height: 24px;
+      background: #111317;
+      padding: 0 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.6);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      box-sizing: border-box;
+    }
+    
+    .tablet-status-bar .status-bar-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .tablet-wifi {
+      font-size: 10px;
+      color: #00e5ff;
+    }
+    
+    .tablet-screen-wash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.03) 100%);
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* POS APP INTERFACE */
+    .pos-app {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: calc(100% - 24px);
+      box-sizing: border-box;
+    }
+    
+    .pos-header {
+      height: 40px;
+      background: #15181f;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 15px;
+      box-sizing: border-box;
+    }
+    
+    .pos-logo {
+      font-family: var(--font-title);
+      font-weight: 800;
+      font-size: 14px;
+      color: #fff;
+    }
+    .pos-logo span {
+      background: linear-gradient(90deg, #00e5ff, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .pos-user {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    
+    .pos-body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.3fr 0.9fr;
+      height: calc(100% - 40px);
+      box-sizing: border-box;
+      background: #0b0c10;
+    }
+    
+    .pos-left-panel {
+      padding: 15px;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      overflow-y: auto;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .pos-cart-panel {
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      background: #0d0f14;
+      box-sizing: border-box;
+    }
+    
+    .cart-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding-bottom: 6px;
+    }
+    
+    .cart-items {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 15px;
+      padding-right: 4px;
+    }
+    
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 11px;
+      animation: cartItemFadeIn 0.3s ease forwards;
+    }
+    @keyframes cartItemFadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .cart-item-name {
+      color: #fff;
+      font-weight: 600;
+    }
+    
+    .cart-item-price {
+      color: #00e5ff;
+      font-weight: 700;
+    }
+    
+    .cart-totals {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 15px;
+    }
+    
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    
+    .total-row.main-total {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      border-top: 1px dashed rgba(255,255,255,0.1);
+      padding-top: 6px;
+    }
+    
+    .cart-checkout {
+      height: 38px;
+      background: linear-gradient(135deg, #00e5ff, #6366f1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 229, 255, 0.25);
+      transition: all 0.3s;
+    }
+    .cart-checkout.active-pay {
+      background: #10b981;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+    }
+    
+    /* Left Panel Scenario Layouts */
+    .pos-grid-menu {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    
+    .pos-item-button {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 12px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pos-item-button.active-item {
+      background: rgba(0, 229, 255, 0.08);
+      border-color: rgba(0, 229, 255, 0.3);
+      transform: scale(1.03);
+    }
+    .pos-item-icon {
+      font-size: 20px;
+    }
+    .pos-item-label {
+      font-size: 10px;
+      color: #fff;
+      font-weight: 600;
+      text-align: center;
+    }
+    .pos-item-price {
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+    
+    /* Stock / Inventory View */
+    .pos-inventory-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .pos-inventory-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 11px;
+    }
+    
+    .pos-stock-badge {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 700;
+    }
+    .pos-stock-badge.in-stock {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+    }
+    .pos-stock-badge.low-stock {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      animation: pulseLowStock 1s infinite alternate;
+    }
+    @keyframes pulseLowStock {
+      from { opacity: 0.7; }
+      to { opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+      .tablet-container {
+        border-radius: 18px;
+        padding: 12px;
+        max-width: 100%;
+      }
+      .tablet-screen {
+        border-radius: 10px;
+      }
+      .pos-body {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1.2fr 1fr;
+      }
+      .pos-cart-panel {
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+    }
   </style>
 </head>
 <body>
@@ -1849,6 +2164,162 @@
             <span class="metric-val">🔐 100%</span>
             <span class="metric-label">Red Privada</span>
             <span class="metric-desc">Seguridad de grado empresarial dedicada</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 1.8. SIMULADOR PUNTO DE VENTA SECTION -->
+    <section id="simulador-pos" class="asistente-ia-section" style="border-top: 1px solid var(--border-color); padding-top: 50px;">
+      <div style="text-align:center; display:flex; flex-direction:column; align-items:center;">
+        <span class="section-tag">Punto de Venta Ultramoderno</span>
+        <h2 class="section-title">POS en <span>Tablet</span></h2>
+        <p class="section-subtitle">
+          Visualiza nuestra interfaz táctil de Punto de Venta: una solución de facturación y control de caja optimizada en tiempo real dentro de una tablet.
+        </p>
+      </div>
+
+      <div class="asistente-ia-grid">
+        <!-- Col 1: Tablet POS Simulator -->
+        <div class="tablet-container">
+          <!-- Screen Glare Sweep highlight -->
+          <div id="tablet-screen-wash" class="tablet-screen-wash"></div>
+          
+          <div class="tablet-screen">
+            <!-- Tablet Status Bar -->
+            <div class="tablet-status-bar">
+              <span class="status-time" id="tablet-status-time">12:30 PM</span>
+              <div class="status-bar-icons">
+                <span class="tablet-wifi">📶</span>
+                <span style="font-size: 10px; font-weight: 700; color: #fff; margin-left: 2px;">ONLINE</span>
+                <div class="status-battery" style="margin-left: 6px;">
+                  <span style="font-size: 8px; opacity: 0.8; color: #fff;">98%</span>
+                  <div class="battery-body" style="border-color: #fff;">
+                    <span class="battery-level" style="width: 98%; background-color: #10b981;"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- POS Main App Interface -->
+            <div class="pos-app">
+              <!-- POS Header -->
+              <div class="pos-header">
+                <div class="pos-logo">🧠 <span>Brain POS</span></div>
+                <div class="pos-user">Cajero: <b>Administrador</b></div>
+              </div>
+              
+              <!-- POS Body Layout -->
+              <div class="pos-body">
+                <!-- Left panel: Catalog or Module view -->
+                <div class="pos-left-panel" id="pos-screen-content">
+                  <!-- Dynamic content will be injected by JS -->
+                </div>
+                
+                <!-- Right panel: Cart / Transaction -->
+                <div class="pos-cart-panel">
+                  <div class="cart-title">Detalle de Venta</div>
+                  <div class="cart-items" id="pos-cart-items">
+                    <!-- Dynamic cart items will be injected by JS -->
+                  </div>
+                  <div class="cart-totals">
+                    <div class="total-row"><span>Subtotal:</span><span id="pos-subtotal">$0.00</span></div>
+                    <div class="total-row"><span>IVA (16%):</span><span id="pos-tax">$0.00</span></div>
+                    <div class="total-row main-total"><span>Total:</span><span id="pos-total">$0.00</span></div>
+                  </div>
+                  <div class="cart-checkout" id="pos-checkout-btn">
+                    <span>Cobrar Ticket</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+
+        <!-- Col 2: Interactive Icons Row (POS features) -->
+        <div class="agent-features-icons" id="pos-features-icons">
+          <!-- Ventas -->
+          <div class="feature-icon-pill active" data-pos-feature="ventas" data-pos-scenario="0">
+            <div class="icon-circle">
+              🛒
+            </div>
+            <span class="pill-label">Ventas</span>
+          </div>
+          <!-- Inventario -->
+          <div class="feature-icon-pill" data-pos-feature="inventario" data-pos-scenario="1">
+            <div class="icon-circle">
+              📦
+            </div>
+            <span class="pill-label">Inventario</span>
+          </div>
+          <!-- Caja -->
+          <div class="feature-icon-pill" data-pos-feature="caja" data-pos-scenario="2">
+            <div class="icon-circle">
+              💵
+            </div>
+            <span class="pill-label">Caja</span>
+          </div>
+          <!-- Facturacion -->
+          <div class="feature-icon-pill" data-pos-feature="facturacion" data-pos-scenario="3">
+            <div class="icon-circle">
+              🧾
+            </div>
+            <span class="pill-label">Facturas</span>
+          </div>
+          <!-- Reportes -->
+          <div class="feature-icon-pill" data-pos-feature="reportes" data-pos-scenario="4">
+            <div class="icon-circle">
+              📈
+            </div>
+            <span class="pill-label">Reportes</span>
+          </div>
+          <!-- Clientes -->
+          <div class="feature-icon-pill" data-pos-feature="clientes" data-pos-scenario="5">
+            <div class="icon-circle">
+              👥
+            </div>
+            <span class="pill-label">Clientes</span>
+          </div>
+          <!-- Pagos -->
+          <div class="feature-icon-pill" data-pos-feature="pagos" data-pos-scenario="6">
+            <div class="icon-circle">
+              💳
+            </div>
+            <span class="pill-label">Pagos</span>
+          </div>
+          <!-- Auditoria -->
+          <div class="feature-icon-pill" data-pos-feature="auditoria" data-pos-scenario="7">
+            <div class="icon-circle">
+              🛡️
+            </div>
+            <span class="pill-label">Auditoría</span>
+          </div>
+        </div>
+
+        <!-- Detail display card -->
+        <div class="feature-detail-card" id="pos-detail-card" style="color: #00e5ff;">
+          <h3 id="pos-detail-title">Registro y Cobro de Ventas</h3>
+          <p id="pos-detail-desc">Interfaz táctil fluida para agregar productos al ticket de compra, procesar pagos y calcular impuestos al instante.</p>
+        </div>
+
+        <!-- Impact Metrics Bar -->
+        <div class="metrics-bar" style="width: 100%; border-top: 1px solid var(--border-color); padding-top: 30px; margin-top: 20px;">
+          <div class="metric-item">
+            <span class="metric-val">⚡ 0.8s</span>
+            <span class="metric-label">Cobro Ultra-Rápido</span>
+            <span class="metric-desc">Transacciones procesadas en menos de un segundo</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-val">🔄 100%</span>
+            <span class="metric-label">Nube Activa</span>
+            <span class="metric-desc">Sincronización instantánea de inventario multi-sucursal</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-val">📊 +22%</span>
+            <span class="metric-label">Eficiencia Operativa</span>
+            <span class="metric-desc">Arqueos de caja y auditorías contables automatizadas</span>
           </div>
         </div>
 

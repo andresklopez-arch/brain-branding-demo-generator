@@ -2216,6 +2216,463 @@ END:VCARD`;
     }
   }
 
+  // 31. Tablet POS Simulator State Machine and Animations
+  const posScenarios = [
+    {
+      title: "Ventas Táctiles",
+      desc: "Simula el registro y cobro de ventas en segundos. Selecciona productos, calcula impuestos y genera el total de forma automática.",
+      run: (leftPanel, cartContainer, totalObj) => {
+        leftPanel.innerHTML = `
+          <div style="font-size:12px; color:#fff; font-weight:700; margin-bottom:8px;">Menú Rápido</div>
+          <div class="pos-grid-menu">
+            <div class="pos-item-button" id="pos-btn-cafe">
+              <span class="pos-item-icon">☕</span>
+              <span class="pos-item-label">Café Americano</span>
+              <span class="pos-item-price">$45.00</span>
+            </div>
+            <div class="pos-item-button" id="pos-btn-croissant">
+              <span class="pos-item-icon">🥐</span>
+              <span class="pos-item-label">Croissant</span>
+              <span class="pos-item-price">$35.00</span>
+            </div>
+            <div class="pos-item-button" id="pos-btn-cake">
+              <span class="pos-item-icon">🍰</span>
+              <span class="pos-item-label">Pastel Choc</span>
+              <span class="pos-item-price">$60.00</span>
+            </div>
+          </div>
+          <div style="font-size:10px; color:var(--text-muted); margin-top:10px;">* Pulsa cualquier producto para simular la venta en la tablet.</div>
+        `;
+        
+        cartContainer.innerHTML = '';
+        totalObj.subtotal.textContent = '$0.00';
+        totalObj.tax.textContent = '$0.00';
+        totalObj.total.textContent = '$0.00';
+        totalObj.checkout.classList.remove('active-pay');
+        totalObj.checkout.innerHTML = '<span>Cobrar Ticket</span>';
+        
+        const t1 = setTimeout(() => {
+          const btn = document.getElementById('pos-btn-cafe');
+          if (btn) btn.classList.add('active-item');
+          cartContainer.innerHTML += `
+            <div class="cart-item">
+              <span class="cart-item-name">☕ Café Americano x1</span>
+              <span class="cart-item-price">$45.00</span>
+            </div>
+          `;
+          totalObj.subtotal.textContent = '$45.00';
+          totalObj.tax.textContent = '$7.20';
+          totalObj.total.textContent = '$52.20';
+        }, 1200);
+        leftPanel.dataset.t1 = t1;
+        
+        const t2 = setTimeout(() => {
+          const btn = document.getElementById('pos-btn-croissant');
+          if (btn) btn.classList.add('active-item');
+          cartContainer.innerHTML += `
+            <div class="cart-item">
+              <span class="cart-item-name">🥐 Croissant x1</span>
+              <span class="cart-item-price">$35.00</span>
+            </div>
+          `;
+          totalObj.subtotal.textContent = '$80.00';
+          totalObj.tax.textContent = '$12.80';
+          totalObj.total.textContent = '$92.80';
+        }, 2800);
+        leftPanel.dataset.t2 = t2;
+      }
+    },
+    {
+      title: "Control de Inventario",
+      desc: "Monitoreo en tiempo real de existencias. Recibe alertas de stock crítico y reabastecimiento automatizado.",
+      run: (leftPanel, cartContainer, totalObj) => {
+        leftPanel.innerHTML = `
+          <div style="font-size:12px; color:#fff; font-weight:700; margin-bottom:8px;">Estado de Inventario</div>
+          <div class="pos-inventory-list">
+            <div class="pos-inventory-item">
+              <span>☕ Café en Grano (KG)</span>
+              <span class="pos-stock-badge in-stock">45 KG (OK)</span>
+            </div>
+            <div class="pos-inventory-item">
+              <span>🥐 Croissant (Pzas)</span>
+              <span class="pos-stock-badge low-stock" style="background:rgba(239,68,68,0.15); color:#ef4444; font-weight:700;">3 pzs (Crítico)</span>
+            </div>
+            <div class="pos-inventory-item">
+              <span>🍰 Pastel Chocolate (Pzas)</span>
+              <span class="pos-stock-badge in-stock">12 pzs (OK)</span>
+            </div>
+          </div>
+          <div id="pos-inv-alert" style="margin-top:10px; background:rgba(239, 68, 68, 0.1); border:1px solid rgba(239, 68, 68, 0.2); padding:10px; border-radius:8px; font-size:10.5px; color:#ef4444; opacity:0; transition:opacity 0.3s;">
+            🚨 <b>Alerta de Compra:</b> Proveedor notificado para envío de 50 croissants.
+          </div>
+        `;
+        
+        cartContainer.innerHTML = `
+          <div class="cart-item" style="opacity:0.5;">
+            <span class="cart-item-name">☕ Café Americano x1</span>
+            <span class="cart-item-price">$45.00</span>
+          </div>
+          <div class="cart-item" style="opacity:0.5;">
+            <span class="cart-item-name">🥐 Croissant x1</span>
+            <span class="cart-item-price">$35.00</span>
+          </div>
+        `;
+        totalObj.subtotal.textContent = '$80.00';
+        totalObj.tax.textContent = '$12.80';
+        totalObj.total.textContent = '$92.80';
+        
+        const t1 = setTimeout(() => {
+          const alert = document.getElementById('pos-inv-alert');
+          if (alert) alert.style.opacity = '1';
+        }, 1500);
+        leftPanel.dataset.t1 = t1;
+      }
+    },
+    {
+      title: "Control de Caja (Arqueo)",
+      desc: "Control absoluto del flujo de efectivo. Registra aperturas, retiros parciales de seguridad y cierres automáticos.",
+      run: (leftPanel, cartContainer, totalObj) => {
+        leftPanel.innerHTML = `
+          <div style="font-size:12px; color:#fff; font-weight:700; margin-bottom:8px;">Bitácora de Caja (Shift #4)</div>
+          <div style="display:flex; flex-direction:column; gap:8px; font-size:10.5px; color:rgba(255,255,255,0.7);">
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
+              <span>🔑 Apertura de Caja (Fondo)</span>
+              <span style="color:#10b981;">+$1,500.00</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
+              <span>🛒 Ventas Registradas (Efectivo)</span>
+              <span style="color:#10b981;">+$2,840.00</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;" id="pos-cash-withdraw">
+              <span>🛡️ Retiro de Seguridad (Envío a Bóveda)</span>
+              <span style="color:#ef4444;">-$2,000.00</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-weight:700; color:#fff; padding-top:4px;">
+              <span>💵 Saldo Actual en Cajón</span>
+              <span id="pos-cash-total">$2,340.00</span>
+            </div>
+          </div>
+        `;
+        
+        cartContainer.innerHTML = '';
+        totalObj.subtotal.textContent = '$0.00';
+        totalObj.tax.textContent = '$0.00';
+        totalObj.total.textContent = '$0.00';
+        
+        const t1 = setTimeout(() => {
+          const withdraw = document.getElementById('pos-cash-withdraw');
+          if (withdraw) {
+            withdraw.style.background = 'rgba(239, 68, 68, 0.1)';
+            setTimeout(() => {
+              withdraw.style.background = 'transparent';
+            }, 800);
+          }
+        }, 1500);
+        leftPanel.dataset.t1 = t1;
+      }
+    },
+    {
+      title: "Facturación XML / CFDI 4.0",
+      desc: "Autofacturación integrada para tus clientes. Genera facturas al instante y envíalas directamente por correo electrónico.",
+      run: (leftPanel, cartContainer, totalObj) => {
+        leftPanel.innerHTML = `
+          <div style="font-size:12px; color:#fff; font-weight:700; margin-bottom:8px;">Autofacturación Express</div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center;">
+            <div style="background:#fff; padding:6px; border-radius:8px; width:100px; height:100px; display:flex; align-items:center; justify-content:center;" id="pos-invoice-qr">
+              <svg viewBox="0 0 100 100" width="80" height="80">
+                <rect x="10" y="10" width="20" height="20" fill="#000"/>
+                <rect x="70" y="10" width="20" height="20" fill="#000"/>
+                <rect x="10" y="70" width="20" height="20" fill="#000"/>
+                <rect x="35" y="35" width="30" height="30" fill="#000" opacity="0.8"/>
+                <rect x="20" y="45" width="10" height="10" fill="#000"/>
+                <rect x="50" y="15" width="10" height="10" fill="#000"/>
+              </svg>
+            </div>
+            <div style="font-size:10.5px; color:#fff;" id="pos-invoice-status">Esperando escaneo de ticket...</div>
+          </div>
+        `;
+        
+        cartContainer.innerHTML = `
+          <div class="cart-item">
+            <span class="cart-item-name">Ticket #1002</span>
+            <span class="cart-item-price">$92.80</span>
+          </div>
+        `;
+        totalObj.subtotal.textContent = '$80.00';
+        totalObj.tax.textContent = '$12.80';
+        totalObj.total.textContent = '$92.80';
+        
+        const t1 = setTimeout(() => {
+          const status = document.getElementById('pos-invoice-status');
+          if (status) status.innerHTML = "✅ <b>CFDI Generado:</b> Enviado a cliente@ejemplo.com";
+          const qr = document.getElementById('pos-invoice-qr');
+          if (qr) qr.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.4)';
+        }, 2200);
+        leftPanel.dataset.t1 = t1;
+      }
+    },
+    {
+      title: "Reportes en Tiempo Real",
+      desc: "Analiza el rendimiento comercial al instante con gráficas visuales automatizadas actualizadas al segundo.",
+      run: (leftPanel, cartContainer, totalObj) => {
+        leftPanel.innerHTML = `
+          <div style="font-size:12px; color:#fff; font-weight:700; margin-bottom:8px;">Reporte de Ventas (Hoy)</div>
+          <div class="pos-chart-container" style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; flex-direction:column; gap:4px; font-size:10px; color:var(--text-muted);">
+              <div style="display:flex; justify-content:space-between; color:#fff;">
+                <span>Café Americano (65%)</span>
+                <span>$1,480.00</span>
+              </div>
+              <div style="width:100%; height:8px; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden;">
+                <div id="pos-bar-cafe" style="width:0%; height:100%; background:#00e5ff; transition:width 1.2s ease-out;"></div>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px; font-size:10px; color:var(--text-muted);">
+              <div style="display:flex; justify-content:space-between; color:#fff;">
+                <span>Croissants (35%)</span>
+                <span>$810.00</span>
+              </div>
+              <div style="width:100%; height:8px; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden;">
+                <div id="pos-bar-croissant" style="width:0%; height:100%; background:#a855f7; transition:width 1.2s ease-out;"></div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        cartContainer.innerHTML = '';
+        totalObj.subtotal.textContent = '$0.00';
+        totalObj.tax.textContent = '$0.00';
+        totalObj.total.textContent = '$0.00';
+        
+        const t1 = setTimeout(() => {
+          const barCafe = document.getElementById('pos-bar-cafe');
+          const barCroissant = document.getElementById('pos-bar-croissant');
+          if (barCafe) barCafe.style.width = '65%';
+          if (barCroissant) barCroissant.style.width = '35%';
+        }, 300);
+        leftPanel.dataset.t1 = t1;
+      }
+    },
+    {
+      title: "CRM y Clientes VIP",
+      desc: "Base de datos unificada de clientes. Premia a tus compradores frecuentes con puntos acumulados y descuentos automáticos.",
+      run: (leftPanel, cartContainer, totalObj) => {
+        leftPanel.innerHTML = `
+          <div style="font-size:12px; color:#fff; font-weight:700; margin-bottom:8px;">Perfil de Cliente</div>
+          <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:10px; padding:12px; font-size:11px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="width:30px; height:30px; border-radius:50%; background:#a855f7; display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; font-size:12px;">AM</div>
+              <div>
+                <div style="color:#fff; font-weight:700;">Alejandro Mendoza</div>
+                <div style="font-size:9.5px; color:var(--text-muted);">Membresía: VIP Oro</div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.05); padding-top:8px;">
+              <span style="color:var(--text-muted);">Puntos Disponibles:</span>
+              <span style="color:#00e5ff; font-weight:700;">1,240 pts</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;" id="pos-crm-disc-row">
+              <span style="color:var(--text-muted);">Descuento Especial:</span>
+              <span style="color:#10b981; font-weight:700;">-10% Activo</span>
+            </div>
+          </div>
+        `;
+        
+        cartContainer.innerHTML = `
+          <div class="cart-item">
+            <span class="cart-item-name">☕ Café Americano x1</span>
+            <span class="cart-item-price">$45.00</span>
+          </div>
+        `;
+        totalObj.subtotal.textContent = '$45.00';
+        totalObj.tax.textContent = '$7.20';
+        totalObj.total.textContent = '$52.20';
+        
+        const t1 = setTimeout(() => {
+          const discRow = document.getElementById('pos-crm-disc-row');
+          if (discRow) {
+            discRow.style.background = 'rgba(16, 185, 129, 0.1)';
+            totalObj.subtotal.textContent = '$40.50';
+            totalObj.tax.textContent = '$6.48';
+            totalObj.total.textContent = '$46.98';
+          }
+        }, 1500);
+        leftPanel.dataset.t1 = t1;
+      }
+    },
+    {
+      title: "Cobros sin Contacto (NFC)",
+      desc: "Acepta cobros con tarjetas de crédito, débito y transferencias móviles directamente desde tu tableta.",
+      run: (leftPanel, cartContainer, totalObj) => {
+        leftPanel.innerHTML = `
+          <div style="font-size:12px; color:#fff; font-weight:700; margin-bottom:8px;">Procesando Pago NFC</div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; padding:10px 0;">
+            <div id="pos-card-reader" style="font-size:32px; border:2px dashed rgba(255,255,255,0.15); border-radius:50%; width:70px; height:70px; display:flex; align-items:center; justify-content:center; position:relative; background:rgba(255,255,255,0.01);">
+              💳
+              <div id="pos-card-glow" style="position:absolute; inset:-5px; border-radius:50%; border:2px solid #00e5ff; opacity:0; transition:all 0.3s;"></div>
+            </div>
+            <div id="pos-nfc-status" style="font-size:11px; color:#fff;">Acerque la tarjeta o celular...</div>
+          </div>
+        `;
+        
+        cartContainer.innerHTML = `
+          <div class="cart-item">
+            <span class="cart-item-name">☕ Café Americano x1</span>
+            <span class="cart-item-price">$45.00</span>
+          </div>
+          <div class="cart-item">
+            <span class="cart-item-name">🥐 Croissant x1</span>
+            <span class="cart-item-price">$35.00</span>
+          </div>
+        `;
+        totalObj.subtotal.textContent = '$80.00';
+        totalObj.tax.textContent = '$12.80';
+        totalObj.total.textContent = '$92.80';
+        totalObj.checkout.classList.remove('active-pay');
+        totalObj.checkout.innerHTML = '<span>Cobrar Ticket</span>';
+        
+        const t1 = setTimeout(() => {
+          const glow = document.getElementById('pos-card-glow');
+          const status = document.getElementById('pos-nfc-status');
+          if (glow) {
+            glow.style.opacity = '1';
+            glow.style.transform = 'scale(1.1)';
+          }
+          if (status) status.innerHTML = "⚡ <b>Procesando transacciones...</b>";
+        }, 1500);
+        leftPanel.dataset.t1 = t1;
+        
+        const t2 = setTimeout(() => {
+          const status = document.getElementById('pos-nfc-status');
+          if (status) status.innerHTML = "✅ <b>Pago Aprobado (Ref #8491)</b>";
+          totalObj.checkout.classList.add('active-pay');
+          totalObj.checkout.innerHTML = '<span>Aprobado ✓</span>';
+          if (navigator.vibrate) navigator.vibrate([15, 10, 15]);
+        }, 3200);
+        leftPanel.dataset.t2 = t2;
+      }
+    },
+    {
+      title: "Auditoría Contable Cifrada",
+      desc: "Historial de transacciones y retiros firmado criptográficamente, previniendo fraudes y fugas de capital interno.",
+      run: (leftPanel, cartContainer, totalObj) => {
+        leftPanel.innerHTML = `
+          <div style="font-size:12px; color:#fff; font-weight:700; margin-bottom:8px;">Historial de Auditoría Cifrada</div>
+          <div style="background:#05070a; border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:10px; font-family:monospace; font-size:8px; color:#10b981; display:flex; flex-direction:column; gap:4px; max-height:100px; overflow:hidden;" id="pos-audit-logs">
+            <div>[12:30:10] SYS_OPEN FUND: $1500.00</div>
+            <div>[12:31:05] TX_1001 APPR BY NFC_REF: 4291</div>
+            <div>[12:32:45] TX_1002 APPR BY NFC_REF: 8491</div>
+          </div>
+          <div style="font-size:10px; color:#10b981; margin-top:8px; display:flex; align-items:center; gap:5px;">
+            <span>🛡️</span> <b>Firma SHA-256 Activa e Inviolable</b>
+          </div>
+        `;
+        
+        cartContainer.innerHTML = '';
+        totalObj.subtotal.textContent = '$0.00';
+        totalObj.tax.textContent = '$0.00';
+        totalObj.total.textContent = '$0.00';
+        
+        const t1 = setTimeout(() => {
+          const logs = document.getElementById('pos-audit-logs');
+          if (logs) {
+            logs.innerHTML += `<div>[12:33:01] SECURE_WITHDRAW SHIFT: #4 - $2000.00</div>`;
+            logs.innerHTML += `<div style="color:#00e5ff;">[12:33:02] INTEGRITY_VERIFIED HASH: SHA_9fa4b...</div>`;
+          }
+        }, 1500);
+        leftPanel.dataset.t1 = t1;
+      }
+    }
+  ];
+
+  const initPOSSimulator = () => {
+    const leftPanel = document.getElementById('pos-screen-content');
+    const cartContainer = document.getElementById('pos-cart-items');
+    const totalObj = {
+      subtotal: document.getElementById('pos-subtotal'),
+      tax: document.getElementById('pos-tax'),
+      total: document.getElementById('pos-total'),
+      checkout: document.getElementById('pos-checkout-btn')
+    };
+    const pills = document.querySelectorAll('#pos-features-icons .feature-icon-pill');
+    const detailTitle = document.getElementById('pos-detail-title');
+    const detailDesc = document.getElementById('pos-detail-desc');
+    
+    if (!leftPanel || !cartContainer) return;
+    
+    let currentIdx = 0;
+    let timer = null;
+    let isPOSVisible = true;
+    
+    const clearPosTimeouts = () => {
+      if (leftPanel.dataset.t1) { clearTimeout(parseInt(leftPanel.dataset.t1, 10)); delete leftPanel.dataset.t1; }
+      if (leftPanel.dataset.t2) { clearTimeout(parseInt(leftPanel.dataset.t2, 10)); delete leftPanel.dataset.t2; }
+    };
+    
+    const updatePOSActiveIcon = (idx) => {
+      pills.forEach(p => {
+        const pScenario = p.getAttribute('data-pos-scenario');
+        if (pScenario === String(idx)) {
+          p.classList.add('active');
+        } else {
+          p.classList.remove('active');
+        }
+      });
+      
+      const scenario = posScenarios[idx];
+      detailTitle.textContent = scenario.title;
+      detailDesc.textContent = scenario.desc;
+    };
+    
+    const runPOSCycle = () => {
+      if (!isPOSVisible) return;
+      
+      clearPosTimeouts();
+      updatePOSActiveIcon(currentIdx);
+      const scenario = posScenarios[currentIdx];
+      scenario.run(leftPanel, cartContainer, totalObj);
+      
+      timer = setTimeout(() => {
+        currentIdx = (currentIdx + 1) % posScenarios.length;
+        runPOSCycle();
+      }, 5000);
+    };
+    
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        if (timer) clearTimeout(timer);
+        const scenarioIdx = parseInt(pill.getAttribute('data-pos-scenario'), 10);
+        currentIdx = scenarioIdx;
+        runPOSCycle();
+      });
+    });
+    
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            isPOSVisible = true;
+            if (!timer) runPOSCycle();
+          } else {
+            isPOSVisible = false;
+            if (timer) {
+              clearTimeout(timer);
+              timer = null;
+            }
+            clearPosTimeouts();
+          }
+        });
+      }, { threshold: 0.15 });
+      
+      const targetSection = document.getElementById('simulador-pos');
+      if (targetSection) observer.observe(targetSection);
+    } else {
+      runPOSCycle();
+    }
+  };
+
+  initPOSSimulator();
+
   // 32. Local client-side QR Codes generator using qrcodejs
   if (typeof QRCode === 'function') {
     // WhatsApp QR container removed
