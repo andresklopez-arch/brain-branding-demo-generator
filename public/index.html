@@ -266,11 +266,24 @@
     .hero-title {
       font-size: 52px !important;
       margin-bottom: 25px !important;
-      line-height: 1.2 !important;
-      min-height: 125px; /* Reserves space to prevent vertical page jump */
+      line-height: 1.25 !important;
+      min-height: 140px; /* Reserves space for 2 structured lines to prevent vertical page jump */
       position: relative;
       overflow: hidden;
       cursor: default;
+    }
+    .title-main {
+      font-weight: 900 !important;
+      letter-spacing: -2px;
+      background: linear-gradient(135deg, #ffffff 60%, rgba(255, 255, 255, 0.7) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .title-sub {
+      font-weight: 700 !important;
+      font-size: 0.9em;
+      letter-spacing: -1.2px;
+      color: var(--text-muted);
     }
     /* Metallic Shine hover effect */
     .hero-title::before {
@@ -313,6 +326,11 @@
       border-bottom: 2.5px solid rgba(0, 229, 255, 0.45);
       padding-bottom: 2px;
       box-shadow: 0 4px 12px -4px rgba(0, 229, 255, 0.3);
+      animation: underglowPulse 2s infinite alternate ease-in-out;
+    }
+    @keyframes underglowPulse {
+      0% { border-bottom-color: rgba(0, 229, 255, 0.35); box-shadow: 0 4px 8px -4px rgba(0, 229, 255, 0.2); }
+      100% { border-bottom-color: rgba(0, 229, 255, 0.85); box-shadow: 0 4px 18px -2px rgba(0, 229, 255, 0.5); }
     }
     #typing-text::after {
       content: '|';
@@ -1506,9 +1524,9 @@
     <!-- 1. HERO SECTION -->
     <section id="inicio" class="hero">
       <div class="hero-content">
-        <h1 class="hero-title">
-          Creamos<br>
-          para ti <span class="accent" id="typing-text">Asistente Personal IA</span>
+        <h1 class="hero-title" aria-label="Creamos para ti: Asistente Personal IA, Punto de Venta, Página Web y Software a Medida">
+          <span class="title-main">Creamos</span><br>
+          <span class="title-sub">para ti <span class="accent" id="typing-text">Asistente Personal IA</span></span>
         </h1>
         <p class="hero-desc">
           Implementamos tu Asistente Personal de Inteligencia Artificial que puedes controlar desde Whatsapp o Telegram para que puedas disfrutar más de las cosas que valen la pena.
