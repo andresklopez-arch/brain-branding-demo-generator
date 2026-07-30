@@ -1213,6 +1213,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  // Helper to compute GPU/WebGL support salt for GPU-Locked XOR
+  const getWebGPUSalt = () => {
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      return gl ? 'webgl_supported' : 'webgl_unsupported';
+    } catch (e) {
+      return 'webgl_error';
+    }
+  };
+
   const getXorKey = () => {
     const host = window.location.hostname || 'localhost';
     const userAgentLength = navigator.userAgent ? navigator.userAgent.length : 0;
@@ -1242,7 +1253,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const batterySalt = safeSessionStorage.getItem('draft_battery_level') || '1.0';
     const batteryChargingSalt = safeSessionStorage.getItem('draft_battery_charging') || 'false';
     const audioSalt = getAudioContextSalt();
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}_${viewportSalt}_${orientationSalt}_${batterySalt}_${batteryChargingSalt}_${audioSalt}`;
+    const webgpuSalt = getWebGPUSalt();
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}_${viewportSalt}_${orientationSalt}_${batterySalt}_${batteryChargingSalt}_${audioSalt}_${webgpuSalt}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
@@ -3222,9 +3234,32 @@ END:VCARD`;
     let timer = null;
     let isWebVisible = true;
     
+    const webPaths = [
+      '/rendimiento-lighthouse',
+      '/diseno-premium-ux',
+      '/checkout-pasarela',
+      '/seo-google-index',
+      '/certificado-ssl-https',
+      '/dashboard-administrador',
+      '/api-database-json',
+      '/pwa-offline-app'
+    ];
+
+    const webLogs = [
+      '[SUCCESS] Lighthouse audit completed in 0.4s. 100/100 scores verified.',
+      '[THEME] Visual mode changed: Dark / Light theme synchronization active.',
+      '[CHECKOUT] Stripe API token verification: coupon BRAIN20 successfully applied.',
+      '[SEO] Google index crawler status: verified site indexing Rank #1.',
+      '[SECURITY] TLS 1.3 handshakes verified. SSL certificate SHA-256 validation status A+.',
+      '[DASHBOARD] Realtime analytics channel connected. Active websocket listeners: 1.',
+      '[DATABASE] Executing query SELECT * FROM portafolio. Query latency: 8ms.',
+      '[PWA] Progressive web app service worker registered. Ready for offline mode.'
+    ];
+
     const clearWebTimeouts = () => {
       if (screen.dataset.t1) { clearTimeout(parseInt(screen.dataset.t1, 10)); delete screen.dataset.t1; }
       if (screen.dataset.t2) { clearTimeout(parseInt(screen.dataset.t2, 10)); delete screen.dataset.t2; }
+      if (screen.dataset.typewriter) { clearInterval(parseInt(screen.dataset.typewriter, 10)); delete screen.dataset.typewriter; }
     };
     
     const updateWebActiveIcon = (idx) => {
@@ -3247,6 +3282,31 @@ END:VCARD`;
       
       clearWebTimeouts();
       updateWebActiveIcon(currentIdx);
+      
+      // Update Dev Console mock log
+      const consoleLogEl = document.getElementById('web-console-log');
+      if (consoleLogEl) consoleLogEl.textContent = webLogs[currentIdx];
+      
+      // Typewriter URL animation
+      const browserUrlEl = document.getElementById('web-browser-url');
+      if (browserUrlEl) {
+        const base = 'https://brainbranding.com.mx';
+        const path = webPaths[currentIdx];
+        browserUrlEl.textContent = base;
+        
+        const chars = path.split('');
+        let curChar = 0;
+        const typeInterval = setInterval(() => {
+          if (curChar >= chars.length) {
+            clearInterval(typeInterval);
+          } else {
+            browserUrlEl.textContent += chars[curChar];
+            curChar++;
+          }
+        }, 50);
+        screen.dataset.typewriter = typeInterval;
+      }
+      
       const scenario = webScenarios[currentIdx];
       scenario.run(screen);
       

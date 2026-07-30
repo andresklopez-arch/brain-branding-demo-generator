@@ -1810,6 +1810,32 @@
       text-align: center;
     }
     
+    /* Chrome Dev Console Mock */
+    .browser-console {
+      height: 34px;
+      background: #111317;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 0 10px;
+      display: flex;
+      align-items: center;
+      font-family: monospace;
+      font-size: 8.5px;
+      color: #a855f7;
+      gap: 6px;
+      box-sizing: border-box;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      user-select: none;
+    }
+    .browser-console .console-label {
+      color: #ffbd2e;
+      font-weight: 700;
+    }
+    .browser-console .console-text {
+      color: rgba(255, 255, 255, 0.85);
+    }
+    
     .tablet-screen {
       width: 100%;
       height: 100%;
@@ -2647,6 +2673,12 @@
           <!-- Main View -->
           <div class="browser-view" id="web-screen-content">
             <!-- Dynamic web content will be injected by JS -->
+          </div>
+          
+          <!-- Chrome Console Panel -->
+          <div class="browser-console">
+            <span class="console-label">▶ Console</span>
+            <span class="console-text" id="web-console-log">[INFO] Iniciando módulo de simulación de Brain Branding...</span>
           </div>
         </div>
 
