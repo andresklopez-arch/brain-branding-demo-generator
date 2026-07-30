@@ -1029,14 +1029,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Clear drafts on successful submit
-  const agencyContactForm = document.getElementById('agency-contact-form');
-  if (agencyContactForm) {
-    agencyContactForm.addEventListener('submit', () => {
-      Object.values(draftFields).forEach(key => safeLocalStorage.removeItem(key));
-    });
-  }
-
   // 28. Scroll Progress Bar Update
   const progressBar = document.getElementById('scroll-progress');
   if (progressBar) {
@@ -1048,10 +1040,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: true });
   }
 
-  // 29. Anti-spam link validation for form submit
-  const descField = document.getElementById('contact-desc');
-  const operationField = document.getElementById('contact-operation');
+  // Clear drafts on successful submit
+  const agencyContactForm = document.getElementById('agency-contact-form');
   if (agencyContactForm) {
+    // Add contact-phone to draft fields saving
+    draftFields['contact-phone'] = 'draft_phone';
+    
     agencyContactForm.addEventListener('submit', (e) => {
       e.preventDefault();
       
@@ -1059,6 +1053,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const honeypot = document.getElementById('contact-honeypot');
       if (honeypot && honeypot.value !== '') {
         console.warn('Bot detected via honeypot.');
+        return;
+      }
+      
+      // Phone format validation (10 digits)
+      const phoneInput = document.getElementById('contact-phone');
+      const phoneVal = phoneInput?.value || '';
+      const phonePattern = /^[0-9]{10}$/;
+      if (!phonePattern.test(phoneVal)) {
+        alert('Por favor ingresa un número de WhatsApp válido de 10 dígitos.');
+        if (phoneInput) phoneInput.focus();
         return;
       }
       
@@ -1084,6 +1088,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Construct formatted WhatsApp message
       const text = `Hola Brain Branding, quiero solicitar asesoría para un proyecto a la medida.\n\n` +
                    `📝 *Nombre:* ${name}\n` +
+                   `📞 *Teléfono:* ${phoneVal}\n` +
                    `💼 *Empresa:* ${business}\n` +
                    `🏷️ *Giro:* ${vertical}\n` +
                    `🛠️ *Funciones deseadas:* ${desc}\n` +
@@ -1094,6 +1099,36 @@ document.addEventListener('DOMContentLoaded', () => {
       window.open(whatsappUrl, '_blank');
     });
   }
+
+  // Expose downloadVCard globally
+  window.downloadVCard = function() {
+    const vcardData = `BEGIN:VCARD
+VERSION:3.0
+FN:Andre Krebollo - Brain Branding
+TEL;TYPE=CELL,VOICE:+527712339238
+EMAIL;TYPE=PREF,INTERNET:andreskrebollo@gmail.com
+URL:https://brainbranding.com.mx
+ORG:Brain Branding
+TITLE:Fundador / Director de Software
+END:VCARD`;
+
+    const blob = new Blob([vcardData], { type: 'text/vcard;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'Andre_Krebollo_Brain_Branding.vcf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    if (typeof confetti === 'function') {
+      confetti({
+        particleCount: 50,
+        spread: 40,
+        origin: { y: 0.8 },
+        colors: ['#00e5ff', '#6366f1']
+      });
+    }
+  };
 
 
   // 31. Custom Smooth Scroll Physics for Nav links with Offset
