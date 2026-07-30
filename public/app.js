@@ -846,6 +846,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof window.dismissDraftToast === 'function') {
         window.dismissDraftToast();
       }
+      // Hide inline restore link when typing starts
+      const restoreLink = document.getElementById('form-restore-link');
+      if (restoreLink) {
+        restoreLink.style.display = 'none';
+      }
     }
   };
 
@@ -945,6 +950,19 @@ document.addEventListener('DOMContentLoaded', () => {
           // Clear error tooltip if present
           const errSpan = el.parentNode.querySelector('.error-msg');
           if (errSpan) errSpan.remove();
+
+          // Report validation correction speed if error start timestamp was set
+          if (el.dataset.errorStartTime) {
+            const correctionTime = Math.round((Date.now() - parseInt(el.dataset.errorStartTime, 10)) / 1000);
+            delete el.dataset.errorStartTime;
+            if (typeof gtag === 'function') {
+              gtag('event', 'field_correction_time', {
+                event_category: 'performance',
+                event_label: id,
+                value: correctionTime
+              });
+            }
+          }
         } else {
           el.style.borderColor = 'var(--border-color)';
           el.style.boxShadow = 'none';
@@ -1132,12 +1150,15 @@ document.addEventListener('DOMContentLoaded', () => {
       sessionStorage.setItem('draft_session_token', sessionToken);
     }
     
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}`;
+    // Hourly rotating epoch
+    const hourEpoch = Math.floor(Date.now() / (1000 * 60 * 60));
+    
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${hourEpoch}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
     }
-    return (sum % 250) + 1; // dynamic XOR key between 1 and 250 salted by client details and session token
+    return (sum % 250) + 1; // dynamic XOR key between 1 and 250 salted by client details, session token, and rotating hour
   };
 
   function xorEncrypt(str) {
@@ -1394,6 +1415,11 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.borderColor = 'rgba(244, 63, 94, 0.6)';
         el.style.boxShadow = '0 0 12px rgba(244, 63, 94, 0.3)';
         el.focus();
+
+        // Track when error was first shown to measure correction speed
+        if (!el.dataset.errorStartTime) {
+          el.dataset.errorStartTime = Date.now().toString();
+        }
         
         // 31. Google Analytics Event for Input validation error (Debounced to 2s)
         if (typeof gtag === 'function') {
