@@ -2862,6 +2862,498 @@ END:VCARD`;
 
   initPOSSimulator();
 
+  // 35. Web Simulator State Machine and Animations
+  const webScenarios = [
+    {
+      title: "Velocidad de Carga",
+      desc: "Optimización extrema de archivos estáticos y renderizado del lado del cliente para cargar la plataforma en milisegundos.",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div class="mock-web-page">
+            <div style="font-size:12px; font-weight:700; color:#fff; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:6px; margin-bottom:8px;">Google Lighthouse Score</div>
+            <div class="web-lighthouse-grid">
+              <div class="lighthouse-metric">
+                <div class="lighthouse-circle" id="lh-perf">0</div>
+                <span class="lighthouse-label">Rendimiento</span>
+              </div>
+              <div class="lighthouse-metric">
+                <div class="lighthouse-circle" id="lh-acc">0</div>
+                <span class="lighthouse-label">Accesibilidad</span>
+              </div>
+              <div class="lighthouse-metric">
+                <div class="lighthouse-circle" id="lh-bp">0</div>
+                <span class="lighthouse-label">Prácticas</span>
+              </div>
+              <div class="lighthouse-metric">
+                <div class="lighthouse-circle" id="lh-seo">0</div>
+                <span class="lighthouse-label">SEO</span>
+              </div>
+            </div>
+            <div id="lh-status" style="font-size:10.5px; text-align:center; color:#10b981; opacity:0; transition:opacity 0.3s; margin-top:5px;">
+              Sitio optimizado: Carga instantánea en 0.4s
+            </div>
+          </div>
+        `;
+        
+        // Animate metrics to 100
+        const animateLH = (id, target, delay) => {
+          setTimeout(() => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            let current = 0;
+            const interval = setInterval(() => {
+              if (current >= target) {
+                el.textContent = target;
+                clearInterval(interval);
+              } else {
+                current += 5;
+                el.textContent = current;
+              }
+            }, 20);
+          }, delay);
+        };
+        
+        animateLH('lh-perf', 100, 200);
+        animateLH('lh-acc', 100, 500);
+        animateLH('lh-bp', 100, 800);
+        animateLH('lh-seo', 100, 1100);
+        
+        const t1 = setTimeout(() => {
+          const status = document.getElementById('lh-status');
+          if (status) status.style.opacity = '1';
+        }, 1600);
+        screen.dataset.t1 = t1;
+      }
+    },
+    {
+      title: "Diseño Premium & UX",
+      desc: "Estética refinada con soporte nativo de temas oscuro/claro y efectos de cristal líquido (glassmorphism).",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div class="mock-web-page" id="web-theme-page" style="transition: background 0.5s ease, color 0.5s ease;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:6px; margin-bottom:8px;">
+              <span style="font-size:11px; font-weight:700;">Modo Oscuro / Claro</span>
+              <button id="theme-toggle-btn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; font-size:10px; padding:3px 8px; border-radius:12px; cursor:pointer;">
+                ☀️ Claro
+              </button>
+            </div>
+            <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:10px;" id="web-theme-card">
+              <h4 style="font-size:11px; font-weight:700; margin-bottom:4px; color:#fff;" id="theme-card-title">Tarjeta con Glassmorphism</h4>
+              <p style="font-size:9.5px; color:var(--text-muted); margin:0;" id="theme-card-desc">Soporte dinámico de colores HSL metálicos adaptados al entorno visual de tu marca.</p>
+            </div>
+          </div>
+        `;
+        
+        const toggleBtn = document.getElementById('theme-toggle-btn');
+        const themePage = document.getElementById('web-theme-page');
+        const themeCard = document.getElementById('web-theme-card');
+        const cardTitle = document.getElementById('theme-card-title');
+        const cardDesc = document.getElementById('theme-card-desc');
+        
+        const t1 = setTimeout(() => {
+          if (toggleBtn && themePage) {
+            toggleBtn.textContent = '🌙 Oscuro';
+            toggleBtn.style.background = '#e4e6eb';
+            toggleBtn.style.color = '#000';
+            themePage.style.background = '#f4f5f6';
+            themePage.style.color = '#1f2023';
+            if (themeCard) {
+              themeCard.style.background = 'rgba(0,0,0,0.02)';
+              themeCard.style.borderColor = 'rgba(0,0,0,0.06)';
+            }
+            if (cardTitle) cardTitle.style.color = '#1f2023';
+            if (cardDesc) cardDesc.style.color = '#65676b';
+          }
+        }, 1800);
+        screen.dataset.t1 = t1;
+        
+        const t2 = setTimeout(() => {
+          if (toggleBtn && themePage) {
+            toggleBtn.textContent = '☀️ Claro';
+            toggleBtn.style.background = 'rgba(255,255,255,0.05)';
+            toggleBtn.style.color = '#fff';
+            themePage.style.background = '#090b0f';
+            themePage.style.color = '#fff';
+            if (themeCard) {
+              themeCard.style.background = 'rgba(255,255,255,0.02)';
+              themeCard.style.borderColor = 'rgba(255,255,255,0.05)';
+            }
+            if (cardTitle) cardTitle.style.color = '#fff';
+            if (cardDesc) cardDesc.style.color = 'var(--text-muted)';
+          }
+        }, 3800);
+        screen.dataset.t2 = t2;
+      }
+    },
+    {
+      title: "Pasarela de Pagos",
+      desc: "Checkout seguro integrado con Stripe y PayPal, incluyendo cálculo de descuentos mediante cupones inteligentes.",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div class="mock-web-page">
+            <div style="font-size:11px; font-weight:700; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">Carrito de Compra</div>
+            <div style="display:flex; flex-direction:column; gap:6px; font-size:10px;">
+              <div style="display:flex; justify-content:space-between;">
+                <span>Plan Desarrollo Web</span>
+                <span>$15,000.00</span>
+              </div>
+              <div style="display:flex; gap:8px; margin-top:5px;">
+                <input type="text" id="web-coupon-input" value="" placeholder="Cupón" style="flex:1; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:4px; padding:3px 6px; font-size:9.5px; color:#fff;" readonly>
+                <button id="coupon-apply-btn" style="background:#a855f7; border:none; border-radius:4px; color:#fff; font-size:9px; padding:3px 8px;">Aplicar</button>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-top:6px; border-top:1px dashed rgba(255,255,255,0.05); padding-top:6px; font-weight:700; color:#fff;">
+                <span>Total a Pagar:</span>
+                <span id="web-cart-total">$15,000.00</span>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        const couponInput = document.getElementById('web-coupon-input');
+        const cartTotal = document.getElementById('web-cart-total');
+        
+        const t1 = setTimeout(() => {
+          if (couponInput) couponInput.value = 'BRAIN20';
+        }, 1200);
+        screen.dataset.t1 = t1;
+        
+        const t2 = setTimeout(() => {
+          if (couponInput) {
+            couponInput.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+            couponInput.style.background = 'rgba(16, 185, 129, 0.05)';
+          }
+          if (cartTotal) {
+            cartTotal.textContent = '$12,000.00 (-20%)';
+            cartTotal.style.color = '#10b981';
+          }
+        }, 2500);
+        screen.dataset.t2 = t2;
+      }
+    },
+    {
+      title: "Optimización SEO Orgánica",
+      desc: "Posicionamiento natural en buscadores con meta-tags automatizados y marcado de datos estructurados Schema.org.",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div class="mock-web-page" style="background:#202124; font-family:arial,sans-serif; padding:12px;">
+            <div style="font-size:10px; color:#969ba1; margin-bottom:8px;">Cerca de 452,000 resultados (0.42 segundos)</div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <div style="font-size:9px; color:#bdc1c6; display:flex; align-items:center; gap:4px;">
+                <span>https://brainbranding.com.mx</span> <span>▼</span>
+              </div>
+              <div style="font-size:12px; color:#8ab4f8; font-weight:500; cursor:pointer;" id="seo-title-link">
+                Brain Branding - Software y Páginas Web a la Medida
+              </div>
+              <div style="font-size:10px; color:#bdc1c6; line-height:1.4;">
+                Desarrollo premium de aplicaciones web, SaaS y software personalizado. Velocidad extrema de carga y SEO A+ garantizado para tu empresa.
+              </div>
+              <div style="display:flex; gap:10px; font-size:9.5px; color:#8ab4f8; margin-top:4px;">
+                <span>⭐ Calificación: 5.0 - 48 votos</span>
+                <span>• Portafolio</span>
+                <span>• Contacto</span>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        const link = document.getElementById('seo-title-link');
+        const t1 = setTimeout(() => {
+          if (link) {
+            link.style.color = '#c5a5ff';
+            link.style.textDecoration = 'underline';
+          }
+        }, 1500);
+        screen.dataset.t1 = t1;
+      }
+    },
+    {
+      title: "Seguridad de Datos SSL",
+      desc: "Conexión HTTPS cifrada con TLS 1.3 de última generación, headers de seguridad HTTP y protección de cookies.",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div class="mock-web-page">
+            <div style="font-size:11px; font-weight:700; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">Detalles de Certificado de Seguridad</div>
+            <div style="display:flex; flex-direction:column; gap:6px; font-size:10px; color:rgba(255,255,255,0.76);">
+              <div style="display:flex; justify-content:space-between;">
+                <span>Estado de Conexión:</span>
+                <span style="color:#10b981; font-weight:700;">Segura (HTTPS)</span>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <span>Algoritmo:</span>
+                <span>TLS 1.3 / AES_256_GCM</span>
+              </div>
+              <div style="display:flex; justify-content:space-between;" id="ssl-validation-row">
+                <span>Firma Emisor:</span>
+                <span style="color:#a855f7;">Let's Encrypt R3</span>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <span>Validez:</span>
+                <span>Expira en 90 días (Autorenovación)</span>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        const row = document.getElementById('ssl-validation-row');
+        const t1 = setTimeout(() => {
+          if (row) {
+            row.style.background = 'rgba(168, 85, 247, 0.1)';
+            row.innerHTML = '<span>Integridad del Sitio:</span> <span style="color:#10b981; font-weight:700;">Verificado ✓</span>';
+          }
+        }, 1800);
+        screen.dataset.t1 = t1;
+      }
+    },
+    {
+      title: "Panel de Administración",
+      desc: "Dashboard interactivo con gráficas en tiempo real de visitas, tasas de rebote y embudos de ventas.",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div class="mock-web-page">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px; margin-bottom:8px;">
+              <span style="font-size:11px; font-weight:700;">Métricas de Tráfico (Hoy)</span>
+              <span style="font-size:9.5px; background:rgba(0,229,255,0.1); color:#00e5ff; padding:2px 6px; border-radius:6px; font-weight:700;" id="active-users-counter">124 Activos</span>
+            </div>
+            <div style="display:flex; align-items:flex-end; gap:8px; height:60px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">
+              <div style="flex:1; height:20%; background:rgba(168,85,247,0.3); border-radius:2px 2px 0 0;"></div>
+              <div style="flex:1; height:45%; background:rgba(168,85,247,0.3); border-radius:2px 2px 0 0;"></div>
+              <div style="flex:1; height:35%; background:rgba(168,85,247,0.3); border-radius:2px 2px 0 0;"></div>
+              <div style="flex:1; height:80%; background:#a855f7; border-radius:2px 2px 0 0;" id="active-bar-4"></div>
+              <div style="flex:1; height:60%; background:rgba(168,85,247,0.3); border-radius:2px 2px 0 0;"></div>
+            </div>
+          </div>
+        `;
+        
+        const counter = document.getElementById('active-users-counter');
+        const activeBar = document.getElementById('active-bar-4');
+        
+        const t1 = setTimeout(() => {
+          if (counter) counter.textContent = '148 Activos';
+          if (activeBar) activeBar.style.height = '95%';
+        }, 1500);
+        screen.dataset.t1 = t1;
+        
+        const t2 = setTimeout(() => {
+          if (counter) counter.textContent = '182 Activos';
+        }, 3000);
+        screen.dataset.t2 = t2;
+      }
+    },
+    {
+      title: "Integración de Base de Datos",
+      desc: "Consultas de base de datos ultrarrápidas a través de APIs REST y GraphQL firmadas criptográficamente.",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div class="mock-web-page">
+            <div style="font-size:11px; font-weight:700; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">API Response (JSON)</div>
+            <div style="background:#05070a; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:10px; font-family:monospace; font-size:8.5px; color:#a855f7; display:flex; flex-direction:column; gap:4px; max-height:85px; overflow:hidden;" id="web-api-response">
+              <div>{</div>
+              <div style="padding-left:10px;">"status": "success",</div>
+              <div style="padding-left:10px;">"records_fetched": 45,</div>
+              <div style="padding-left:10px;" id="api-resp-latency">"latency": "14ms"</div>
+              <div>}</div>
+            </div>
+          </div>
+        `;
+        
+        const latency = document.getElementById('api-resp-latency');
+        const t1 = setTimeout(() => {
+          if (latency) {
+            latency.style.color = '#10b981';
+            latency.innerHTML = '"latency": "8ms" ⚡';
+          }
+        }, 1500);
+        screen.dataset.t1 = t1;
+      }
+    },
+    {
+      title: "Aplicación Web Progresiva (PWA)",
+      desc: "Instala la plataforma como aplicación nativa en tu escritorio o celular con soporte offline y notificaciones push.",
+      run: (screen) => {
+        screen.innerHTML = `
+          <div class="mock-web-page">
+            <div style="font-size:11px; font-weight:700; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">Compatibilidad de Aplicación</div>
+            <div style="display:flex; flex-direction:column; gap:8px;" id="pwa-install-container">
+              <div style="background:rgba(168, 85, 247, 0.05); border:1px solid rgba(168, 85, 247, 0.2); border-radius:8px; padding:10px; display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                  <div style="font-size:10px; font-weight:700; color:#fff;">Instalar Brain Branding</div>
+                  <div style="font-size:8.5px; color:var(--text-muted);">Accede al instante desde tu escritorio</div>
+                </div>
+                <button id="pwa-install-btn" style="background:#a855f7; border:none; color:#fff; font-size:9.5px; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:700;">Instalar</button>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        const container = document.getElementById('pwa-install-container');
+        const btn = document.getElementById('pwa-install-btn');
+        
+        const t1 = setTimeout(() => {
+          if (btn) {
+            btn.style.background = '#10b981';
+            btn.textContent = 'Instalando...';
+          }
+        }, 1500);
+        screen.dataset.t1 = t1;
+        
+        const t2 = setTimeout(() => {
+          if (container) {
+            container.innerHTML = `
+              <div style="background:rgba(16, 185, 129, 0.05); border:1px solid rgba(16, 185, 129, 0.2); border-radius:8px; padding:10px; font-size:10px; color:#10b981; text-align:center; font-weight:700;">
+                ✓ Aplicación Instalada con éxito en Escritorio
+              </div>
+            `;
+          }
+        }, 3000);
+        screen.dataset.t2 = t2;
+      }
+    }
+  ];
+
+  const initWebSimulator = () => {
+    const screen = document.getElementById('web-screen-content');
+    const pills = document.querySelectorAll('#web-features-icons .feature-icon-pill');
+    const detailTitle = document.getElementById('web-detail-title');
+    const detailDesc = document.getElementById('web-detail-desc');
+    
+    if (!screen) return;
+    
+    let currentIdx = 0;
+    let timer = null;
+    let isWebVisible = true;
+    
+    const clearWebTimeouts = () => {
+      if (screen.dataset.t1) { clearTimeout(parseInt(screen.dataset.t1, 10)); delete screen.dataset.t1; }
+      if (screen.dataset.t2) { clearTimeout(parseInt(screen.dataset.t2, 10)); delete screen.dataset.t2; }
+    };
+    
+    const updateWebActiveIcon = (idx) => {
+      pills.forEach(p => {
+        const pScenario = p.getAttribute('data-web-scenario');
+        if (pScenario === String(idx)) {
+          p.classList.add('active');
+        } else {
+          p.classList.remove('active');
+        }
+      });
+      
+      const scenario = webScenarios[idx];
+      detailTitle.textContent = scenario.title;
+      detailDesc.textContent = scenario.desc;
+    };
+    
+    const runWebCycle = () => {
+      if (!isWebVisible) return;
+      
+      clearWebTimeouts();
+      updateWebActiveIcon(currentIdx);
+      const scenario = webScenarios[currentIdx];
+      scenario.run(screen);
+      
+      timer = setTimeout(() => {
+        currentIdx = (currentIdx + 1) % webScenarios.length;
+        runWebCycle();
+      }, 5000);
+    };
+    
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        if (timer) clearTimeout(timer);
+        const scenarioIdx = parseInt(pill.getAttribute('data-web-scenario'), 10);
+        currentIdx = scenarioIdx;
+        runWebCycle();
+      });
+    });
+    
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            isWebVisible = true;
+            if (!timer) runWebCycle();
+          } else {
+            isWebVisible = false;
+            if (timer) {
+              clearTimeout(timer);
+              timer = null;
+            }
+            clearWebTimeouts();
+          }
+        });
+      }, { threshold: 0.15 });
+      
+      const targetSection = document.getElementById('simulador-web');
+      if (targetSection) observer.observe(targetSection);
+    } else {
+      runWebCycle();
+    }
+    
+    // Device switcher button interactions for web browser container
+    const switcherBtns = document.querySelectorAll('#web-device-switcher .switcher-btn');
+    const browserMock = document.querySelector('.browser-container');
+    const triggerWebBoot = () => {
+      const bootScreen = document.getElementById('web-boot-screen');
+      const bootBar = document.getElementById('web-boot-bar');
+      if (bootScreen && bootBar) {
+        bootScreen.style.opacity = '1';
+        bootScreen.style.pointerEvents = 'auto';
+        bootBar.style.width = '0%';
+        setTimeout(() => { bootBar.style.width = '100%'; }, 50);
+        setTimeout(() => {
+          bootScreen.style.opacity = '0';
+          bootScreen.style.pointerEvents = 'none';
+          setTimeout(() => { bootBar.style.width = '0%'; }, 200);
+        }, 500);
+      }
+    };
+    
+    switcherBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (typeof playDeviceSwitchSound === 'function') {
+          playDeviceSwitchSound();
+        }
+        triggerWebBoot();
+        
+        setTimeout(() => {
+          switcherBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const device = btn.getAttribute('data-web-device');
+          if (browserMock) {
+            browserMock.classList.remove('mock-mobile', 'mock-tablet', 'mock-desktop');
+            if (device === 'mobile') {
+              browserMock.classList.add('mock-mobile');
+            } else if (device === 'tablet') {
+              browserMock.classList.add('mock-tablet');
+            } else if (device === 'desktop') {
+              browserMock.classList.add('mock-desktop');
+            }
+          }
+        }, 100);
+      });
+    });
+    
+    // 3D Parallax on browserContainer
+    if (browserMock) {
+      browserMock.addEventListener('mousemove', (e) => {
+        const rect = browserMock.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const rotateX = ((centerY - y) / centerY) * 3; // 3 deg max
+        const rotateY = ((x - centerX) / centerX) * 3;
+        browserMock.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        browserMock.style.transition = 'transform 0.1s ease';
+      });
+      browserMock.addEventListener('mouseleave', () => {
+        browserMock.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+        browserMock.style.transition = 'transform 0.5s ease';
+      });
+    }
+  };
+
+  initWebSimulator();
+
   // 32. Local client-side QR Codes generator using qrcodejs
   if (typeof QRCode === 'function') {
     // WhatsApp QR container removed
