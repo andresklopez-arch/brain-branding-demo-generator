@@ -318,9 +318,9 @@
       transition: left 1.2s ease-in-out;
     }
     .hero-title span.accent {
-      color: inherit !important;
+      color: #ffffff !important;
       background: none !important;
-      -webkit-text-fill-color: currentColor !important;
+      -webkit-text-fill-color: #ffffff !important;
       text-shadow: none !important;
     }
     :root {
@@ -339,18 +339,14 @@
       filter: blur(1.5px);
     }
     #typing-text {
-      border-bottom: 2.5px solid rgba(0, 229, 255, 0.45);
-      padding-bottom: 2px;
-      box-shadow: 0 4px 12px -4px rgba(0, 229, 255, 0.3);
-      animation: underglowPulse 2s infinite alternate ease-in-out;
+      border-bottom: none !important;
+      padding-bottom: 0 !important;
+      box-shadow: none !important;
+      animation: none !important;
       transition: opacity 0.2s ease;
     }
     #typing-text.word-fade {
       opacity: 0.3;
-    }
-    @keyframes underglowPulse {
-      0% { border-bottom-color: rgba(0, 229, 255, 0.35); box-shadow: 0 4px 8px -4px rgba(0, 229, 255, 0.2); }
-      100% { border-bottom-color: rgba(0, 229, 255, 0.85); box-shadow: 0 4px 18px -2px rgba(0, 229, 255, 0.5); }
     }
     @media (min-width: 768px) {
       #whatsapp-fab:hover + #fab-tooltip, #fab-tooltip:hover {
