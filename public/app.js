@@ -278,7 +278,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!el) return;
 
     // Find or create label indicator
-    const labelEl = el.closest('div').querySelector('label');
+    let labelEl = el.closest('div').querySelector('label');
+    if (!labelEl && el.closest('div').parentElement) {
+      labelEl = el.closest('div').parentElement.querySelector('label');
+    }
+    if (!labelEl) return;
+
     let indicator = labelEl.querySelector('.val-indicator');
     if (!indicator) {
       indicator = document.createElement('span');
