@@ -849,14 +849,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Track field level drop-off on unload
+  // Dismiss draft toast on scroll > 300px
+  const handleScrollToastDismiss = () => {
+    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    if (winScroll > 300) {
+      if (typeof window.dismissDraftToast === 'function') {
+        window.dismissDraftToast();
+      }
+      window.removeEventListener('scroll', handleScrollToastDismiss);
+    }
+  };
+  window.addEventListener('scroll', handleScrollToastDismiss, { passive: true });
+
+  // Track field level drop-off on unload with progress percentage
   window.addEventListener('beforeunload', () => {
     if (formStarted && lastEditedField) {
+      let filledCount = 0;
+      const totalFields = validateInputs.length;
+      validateInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value.trim().length > 0) {
+          filledCount++;
+        }
+      });
+      const progressPct = Math.round((filledCount / totalFields) * 100);
+
       if (typeof gtag === 'function') {
         gtag('event', 'form_abandoned_field', {
           event_category: 'engagement',
           event_label: 'Contact Form',
           value: lastEditedField,
+          progress_pct: progressPct,
           transport_type: 'beacon'
         });
       }
@@ -1083,14 +1106,20 @@ document.addEventListener('DOMContentLoaded', () => {
     })[m]);
   }
 
-  // XOR Encryption helpers with context-aware Dynamic Rotating key
+  // XOR Encryption helpers with context-aware Dynamic Rotating key & Client-Specific Salt
   const getXorKey = () => {
     const host = window.location.hostname || 'localhost';
+    const userAgentLength = navigator.userAgent ? navigator.userAgent.length : 0;
+    const screenWidth = window.screen ? window.screen.width : 0;
+    const screenHeight = window.screen ? window.screen.height : 0;
+    const lang = navigator.language || 'es';
+    
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}`;
     let sum = 0;
-    for (let i = 0; i < host.length; i++) {
-      sum += host.charCodeAt(i);
+    for (let i = 0; i < salt.length; i++) {
+      sum += salt.charCodeAt(i);
     }
-    return (sum % 250) + 1; // dynamic XOR key between 1 and 250
+    return (sum % 250) + 1; // dynamic XOR key between 1 and 250 salted by client details
   };
 
   function xorEncrypt(str) {
