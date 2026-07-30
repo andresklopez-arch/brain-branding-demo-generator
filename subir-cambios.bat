@@ -25,6 +25,7 @@ goto end
 
 :noremote
 echo [WARNING] No hay repositorio remoto origin configurado.
+echo [INFO] Para conectar GitHub, ejecuta: git remote add origin https://github.com/TU_USUARIO/TU_REPOSITORIO.git
 
 :end
 echo [SUCCESS] Cambios locales confirmados en Git.

@@ -825,14 +825,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 17. Real-Time Visual Field Validation
-  const validateInputs = ['contact-name', 'contact-business', 'contact-desc', 'contact-operation'];
+  const validateInputs = ['contact-name', 'contact-business', 'contact-phone', 'contact-desc', 'contact-operation'];
   validateInputs.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.addEventListener('input', () => {
-        if (el.value.trim().length >= 3) {
-          el.style.borderColor = 'rgba(34, 197, 94, 0.4)';
-          el.style.boxShadow = '0 0 10px rgba(34, 197, 94, 0.1)';
+        let isValid = false;
+        if (id === 'contact-phone') {
+          isValid = /^[0-9]{10}$/.test(el.value);
+        } else {
+          isValid = el.value.trim().length >= 3;
+        }
+        
+        if (isValid) {
+          el.style.borderColor = 'rgba(34, 197, 94, 0.5)';
+          el.style.boxShadow = '0 0 12px rgba(34, 197, 94, 0.25)';
         } else {
           el.style.borderColor = 'var(--border-color)';
           el.style.boxShadow = 'none';
@@ -1021,17 +1028,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const savedVal = safeLocalStorage.getItem(key);
       if (savedVal) {
         let val = savedVal;
-        if (id === 'contact-phone') {
-          try { val = atob(savedVal); } catch(e) {}
-        }
+        try { val = atob(savedVal); } catch(e) {}
         el.value = val;
         el.dispatchEvent(new Event('input'));
       }
       el.addEventListener('input', () => {
-        let val = el.value;
-        if (id === 'contact-phone') {
-          val = btoa(val);
-        }
+        const val = btoa(el.value);
         safeLocalStorage.setItem(key, sanitizeInput(val));
       });
     }
