@@ -3423,12 +3423,56 @@ END:VCARD`;
   initWebSimulator();
 
   // 36. Custom Software Simulator State Machine and Animations
+  const renderErpTabs = (activeIdx) => {
+    const tabs = [
+      { label: "📊 Panel", idx: 0 },
+      { label: "💸 Caja", idx: 1 },
+      { label: "🧪 LIS", idx: 2 },
+      { label: "📄 Facturas", idx: 3 },
+      { label: "🎯 CRM", idx: 4 },
+      { label: "📦 Almacén", idx: 5 },
+      { label: "🛡️ Auditoría", idx: 6 },
+      { label: "🔒 Seguridad", idx: 7 }
+    ];
+    return `
+      <div class="erp-tab-bar">
+        ${tabs.map(t => `<button class="erp-tab-btn ${t.idx === activeIdx ? 'active' : ''}" data-tab-idx="${t.idx}">${t.label}</button>`).join('')}
+      </div>
+    `;
+  };
+
+  let currentIdx = 0;
+  let timer = null;
+  let isSoftVisible = true;
+  let consoleLogsBuffer = ['[INFO] Iniciando sistema ERP empresarial corporativo...'];
+  const screen = document.getElementById('software-screen-content');
+
+  const attachViewportTabListeners = () => {
+    if (!screen) return;
+    const btns = screen.querySelectorAll('.erp-tab-btn');
+    btns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt(btn.getAttribute('data-tab-idx'), 10);
+        if (!isNaN(idx)) {
+          if (timer) clearTimeout(timer);
+          currentIdx = idx;
+          if (typeof playDeviceSwitchSound === 'function') {
+            playDeviceSwitchSound();
+          }
+          runSoftCycle();
+        }
+      });
+    });
+  };
+
   const softScenarios = [
     {
       title: "Dashboard Corporativo",
       desc: "Consola central con indicadores clave de rendimiento (KPIs), ingresos netos y monitoreo de eficiencia operativa en tiempo real.",
       run: (screen) => {
         screen.innerHTML = `
+          ${renderErpTabs(0)}
           <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px; height:100%;">
             <div style="font-weight:700; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">Indicadores de Rendimiento (Global)</div>
             <div class="erp-widget-grid">
@@ -3445,13 +3489,27 @@ END:VCARD`;
                 <span class="erp-widget-label">Eficiencia General</span>
               </div>
             </div>
-            <div id="soft-kpi-status" style="font-size:9.5px; text-align:center; color:#10b981; opacity:0; transition:opacity 0.3s;">
+            
+            <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); border-radius:8px; padding:10px; height:60px; display:flex; align-items:flex-end;">
+              <svg style="width:100%; height:45px;" viewBox="0 0 300 50">
+                <defs>
+                  <linearGradient id="purpleGlow" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#a855f7" stop-opacity="0.3"></stop>
+                    <stop offset="100%" stop-color="#a855f7" stop-opacity="0.0"></stop>
+                  </linearGradient>
+                </defs>
+                <path d="M0,50 L0,45 Q40,35 80,42 T160,20 T240,15 T300,5" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round"></path>
+                <path d="M0,50 L0,45 Q40,35 80,42 T160,20 T240,15 T300,5 L300,50 Z" fill="url(#purpleGlow)"></path>
+                <circle cx="300" cy="5" r="3" fill="#00e5ff" class="animate-pulse"></circle>
+              </svg>
+            </div>
+            
+            <div id="soft-kpi-status" style="font-size:9px; text-align:center; color:#10b981; opacity:0; transition:opacity 0.3s; margin-top:2px;">
               ✓ Todos los sistemas operativos operando al 100% de capacidad.
             </div>
           </div>
         `;
         
-        // Counter animations
         const countUp = (id, target, suffix = '', steps = 20) => {
           const el = document.getElementById(id);
           if (!el) return;
@@ -3472,7 +3530,6 @@ END:VCARD`;
         countUp('soft-kpi-2', 42);
         countUp('soft-kpi-3', 96, '%');
         
-        // Currency formatting animation
         setTimeout(() => {
           const el = document.getElementById('soft-kpi-1');
           if (el) el.textContent = '$485,250.00';
@@ -3483,89 +3540,108 @@ END:VCARD`;
           if (status) status.style.opacity = '1';
         }, 1200);
         screen.dataset.t1 = t1;
+        attachViewportTabListeners();
       }
     },
     {
-      title: "Control de Inventario",
-      desc: "Gestión inteligente de stocks mínimos, almacenes y disparadores automáticos para órdenes de compra en tiempo real.",
+      title: "Caja y Arqueo Diario",
+      desc: "Recepción física de pagos, facturación y cuadre de caja del turno con metas diarias de ventas.",
       run: (screen) => {
         screen.innerHTML = `
-          <div style="display:flex; flex-direction:column; gap:8px; color:#fff; font-family:var(--font-sans); font-size:10px;">
-            <div style="font-weight:700; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
-              <span>Inventario: Bodega Central</span>
-              <span style="font-size:9px; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px;">92 artículos</span>
+          ${renderErpTabs(1)}
+          <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
+              <span style="font-weight:700;">Arqueo Diario: Turno Activo</span>
+              <span style="font-size:8.5px; background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.2); padding:2px 6px; border-radius:10px; font-weight:700;">✓ Caja Abierta</span>
             </div>
-            <div style="display:flex; flex-direction:column; gap:5px;" id="soft-inv-list">
-              <div style="display:flex; justify-content:space-between; background:rgba(255,255,255,0.01); padding:5px; border-radius:4px; border:1px solid rgba(255,255,255,0.03);">
-                <span>Servidores de Cómputo CPU</span>
-                <span style="color:#10b981; font-weight:700;">14 pzs (Óptimo)</span>
+            <div class="erp-widget-grid">
+              <div class="erp-widget-card">
+                <span class="erp-widget-val">$124,500</span>
+                <span class="erp-widget-label">Efectivo Físico</span>
               </div>
-              <div style="display:flex; justify-content:space-between; background:rgba(255,255,255,0.01); padding:5px; border-radius:4px; border:1px solid rgba(255,255,255,0.03);" id="soft-low-stock-row">
-                <span>Dispositivos Lector NFC</span>
-                <span style="color:#ef4444; font-weight:700;" id="soft-low-stock-val">2 pzs (Mínimo)</span>
+              <div class="erp-widget-card">
+                <span class="erp-widget-val">$85,420</span>
+                <span class="erp-widget-label">Terminales POS</span>
+              </div>
+              <div class="erp-widget-card">
+                <span class="erp-widget-val" style="color:#10b981;">$209,920</span>
+                <span class="erp-widget-label">Total en Caja</span>
+              </div>
+            </div>
+            <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; justify-content:space-between; font-size:9px;">
+                <span>Progreso Meta Diaria</span>
+                <span style="font-weight:700; color:#00e5ff;" id="caja-goal-txt">0%</span>
+              </div>
+              <div style="height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden;">
+                <div id="caja-goal-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #a855f7, #00e5ff); border-radius:3px; transition:width 1.5s cubic-bezier(0.25, 0.8, 0.25, 1);"></div>
               </div>
             </div>
           </div>
         `;
-        
-        const row = document.getElementById('soft-low-stock-row');
-        const val = document.getElementById('soft-low-stock-val');
-        
-        const t1 = setTimeout(() => {
-          if (row && val) {
-            row.style.background = 'rgba(239, 68, 68, 0.05)';
-            row.style.borderColor = 'rgba(239, 68, 68, 0.2)';
-            val.textContent = '2 pzs (🚨 Alerta de Reabastecimiento)';
+        setTimeout(() => {
+          const txt = document.getElementById('caja-goal-txt');
+          const bar = document.getElementById('caja-goal-bar');
+          if (txt && bar) {
+            txt.textContent = '84%';
+            bar.style.width = '84%';
           }
-        }, 1800);
-        screen.dataset.t1 = t1;
+        }, 300);
+        attachViewportTabListeners();
       }
     },
     {
-      title: "Gestión de Clientes CRM",
-      desc: "Embudo de ventas visual interactivo para clasificar prospectos, registrar interacciones e incrementar el cierre de tratos.",
+      title: "Automatización LIS",
+      desc: "Gestión digital y automatización de la recepción de muestras clínicas, toma de muestras y flujo analítico.",
       run: (screen) => {
         screen.innerHTML = `
-          <div style="display:flex; flex-direction:column; gap:8px; color:#fff; font-family:var(--font-sans); font-size:10px; height:100%;">
-            <div style="font-weight:700; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">Embudo de Ventas (Pipeline)</div>
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; flex:1;" id="crm-kanban-cols">
-              <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:6px; display:flex; flex-direction:column; gap:5px;">
-                <div style="font-weight:700; font-size:8.5px; color:var(--text-muted); border-bottom:1px solid rgba(255,255,255,0.03); padding-bottom:3px;">Prospecto</div>
-                <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:4px; padding:5px; font-size:9px;" id="kanban-card">
-                  <strong>Andrés K.</strong><br>SaaS Corporativo
-                </div>
-              </div>
-              <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:6px; display:flex; flex-direction:column; gap:5px;" id="crm-col-1">
-                <div style="font-weight:700; font-size:8.5px; color:var(--text-muted); border-bottom:1px solid rgba(255,255,255,0.03); padding-bottom:3px;">Propuesta</div>
-              </div>
-              <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:6px; display:flex; flex-direction:column; gap:5px;" id="crm-col-2">
-                <div style="font-weight:700; font-size:8.5px; color:var(--text-muted); border-bottom:1px solid rgba(255,255,255,0.03); padding-bottom:3px;">Ganado</div>
-              </div>
+          ${renderErpTabs(2)}
+          <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
+              <span style="font-weight:700;">Monitoreo de Muestras LIS (Labtivity)</span>
+              <span style="font-size:8.5px; background:rgba(168,85,247,0.1); color:#c084fc; border:1px solid rgba(168,85,247,0.2); padding:2px 6px; border-radius:10px; font-weight:700;">📡 Telemetría Activa</span>
             </div>
+            <table class="erp-data-table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Estudio</th>
+                  <th>Paciente</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>#1024</td>
+                  <td>Biometría Hemática</td>
+                  <td>Andrés Krebollo</td>
+                  <td style="color:#00e5ff;" id="lis-status-1">En Analizador 🔬</td>
+                </tr>
+                <tr>
+                  <td>#1025</td>
+                  <td>Perfil Lipídico</td>
+                  <td>Sofía Méndez</td>
+                  <td style="color:#10b981;">Validado Sero-AI ✅</td>
+                </tr>
+                <tr>
+                  <td>#1026</td>
+                  <td>Examen Orina</td>
+                  <td>Pedro Gómez</td>
+                  <td style="color:#a855f7;">En Toma de Muestra 💉</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         `;
-        
-        const card = document.getElementById('kanban-card');
-        const col1 = document.getElementById('crm-col-1');
-        const col2 = document.getElementById('crm-col-2');
-        
         const t1 = setTimeout(() => {
-          if (card && col1) {
-            col1.appendChild(card);
-            card.style.background = 'rgba(168, 85, 247, 0.05)';
-            card.style.borderColor = 'rgba(168, 85, 247, 0.2)';
+          const row1 = document.getElementById('lis-status-1');
+          if (row1) {
+            row1.style.color = '#10b981';
+            row1.innerHTML = 'Resultados Listos ✅';
           }
-        }, 1500);
+        }, 2200);
         screen.dataset.t1 = t1;
-        
-        const t2 = setTimeout(() => {
-          if (card && col2) {
-            col2.appendChild(card);
-            card.style.background = 'rgba(16, 185, 129, 0.05)';
-            card.style.borderColor = 'rgba(16, 185, 129, 0.2)';
-          }
-        }, 3200);
-        screen.dataset.t2 = t2;
+        attachViewportTabListeners();
       }
     },
     {
@@ -3573,87 +3649,177 @@ END:VCARD`;
       desc: "Generación instantánea de timbrado XML de facturas con firmas SHA-256 integradas directamente en el flujo financiero.",
       run: (screen) => {
         screen.innerHTML = `
-          <div style="display:flex; flex-direction:column; gap:8px; color:#fff; font-family:var(--font-sans); font-size:10px;">
-            <div style="font-weight:700; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">Timbrado Fiscal Digital XML</div>
-            <div style="background:#05070a; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:10px; font-family:monospace; font-size:8.5px; color:#a855f7; display:flex; flex-direction:column; gap:4px; max-height:85px; overflow:hidden;" id="cfdi-xml-response">
-              <div>&lt;cfdi:Comprobante Version="4.0"&gt;</div>
-              <div style="padding-left:10px;">&lt;cfdi:Emisor Rfc="BBR180512KK8" Nombre="Brain Branding" /&gt;</div>
-              <div style="padding-left:10px;" id="cfdi-sign-row">&lt;cfdi:Sello&gt;SHA256_HASHING_SIGNATURE...&lt;/cfdi:Sello&gt;</div>
-              <div>&lt;/cfdi:Comprobante&gt;</div>
+          ${renderErpTabs(3)}
+          <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px; position:relative; height:100%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
+              <span style="font-weight:700;">Facturas CFDI & Timbrado SAT v4.0</span>
+              <span style="font-size:8.5px; background:rgba(0,229,255,0.1); color:#00e5ff; border:1px solid rgba(0,229,255,0.2); padding:2px 6px; border-radius:10px; font-weight:700;">✓ SAT Online</span>
+            </div>
+            <table class="erp-data-table">
+              <thead>
+                <tr>
+                  <th>Factura</th>
+                  <th>Receptor</th>
+                  <th>Total</th>
+                  <th>Timbrado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>FAC-4015</td>
+                  <td>Serolab Connect</td>
+                  <td>$3,450.00</td>
+                  <td style="color:#10b981;">✓ Timbrado XML</td>
+                </tr>
+                <tr>
+                  <td>FAC-4016</td>
+                  <td>Dr. Alejandro Gómez</td>
+                  <td>$1,200.00</td>
+                  <td style="color:#10b981;">✓ Timbrado XML</td>
+                </tr>
+              </tbody>
+            </table>
+            
+            <!-- Simulated XML Pop-up -->
+            <div class="erp-xml-popup" id="sat-xml-popup">
+              <div style="background:#090a0d; padding:6px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05);">
+                <span style="font-size:8.5px; color:#00e5ff; font-weight:700;">Firma Digital CFDI y Timbrado XML</span>
+                <span style="font-size:8px; color:rgba(255,255,255,0.4);">xml_generator_v4_0.bin</span>
+              </div>
+              <div style="padding:10px; font-family:monospace; font-size:8px; color:#c084fc; overflow-y:auto; flex:1; line-height:1.3; background:#05070a;">
+                <div>&lt;?xml version="1.0" encoding="UTF-8"?&gt;</div>
+                <div>&lt;cfdi:Comprobante Version="4.0" Serie="FAC" Folio="4016"&gt;</div>
+                <div style="padding-left:10px; color:#60a5fa;">&lt;cfdi:Emisor Rfc="BBR180512KK8" Nombre="Brain Branding" /&gt;</div>
+                <div style="padding-left:10px; color:#34d399;" id="xml-seal-text">&lt;cfdi:Sello&gt;SHA256_HASHING_SIGNATURE_PENDING...&lt;/cfdi:Sello&gt;</div>
+                <div>&lt;/cfdi:Comprobante&gt;</div>
+              </div>
             </div>
           </div>
         `;
+        const popup = document.getElementById('sat-xml-popup');
+        const sealText = document.getElementById('xml-seal-text');
         
-        const row = document.getElementById('cfdi-sign-row');
         const t1 = setTimeout(() => {
-          if (row) {
-            row.style.color = '#10b981';
-            row.innerHTML = '&lt;cfdi:Sello&gt;✓ FIRMA DIGITAL SAT VERIFICADA&lt;/cfdi:Sello&gt;';
+          if (sealText) {
+            sealText.style.color = '#10b981';
+            sealText.innerHTML = '&lt;cfdi:Sello&gt;✓ FIRMA SAT: 7a83bc12de0f...&lt;/cfdi:Sello&gt;';
           }
-        }, 1800);
+        }, 1200);
         screen.dataset.t1 = t1;
+        
+        const t2 = setTimeout(() => {
+          if (popup) popup.style.opacity = '0';
+        }, 3800);
+        screen.dataset.t2 = t2;
+        attachViewportTabListeners();
       }
     },
     {
-      title: "Generación de Reportes PDF",
-      desc: "Compilación dinámica y exportación automatizada de reportes corporativos en PDF con diseño e identidad corporativa.",
+      title: "Gestión de Clientes CRM",
+      desc: "Embudo de ventas visual interactivo para clasificar prospectos, registrar interacciones e incrementar el cierre de tratos.",
       run: (screen) => {
         screen.innerHTML = `
-          <div style="display:flex; flex-direction:column; gap:8px; color:#fff; font-family:var(--font-sans); font-size:10px; align-items:center; justify-content:center; height:100%; text-align:center;">
-            <div id="pdf-icon" style="font-size:24px; margin-bottom:5px;">📄</div>
-            <div style="font-weight:700; font-size:10.5px;" id="pdf-status-title">Exportador de Reportes Corporativos</div>
-            <div style="font-size:9px; color:var(--text-muted);" id="pdf-status-desc">Generando reporte de balance anual (PDF)</div>
-            <button id="pdf-trigger-btn" style="background:#a855f7; border:none; border-radius:6px; color:#fff; font-size:9.5px; padding:4px 10px; cursor:pointer; font-weight:700; margin-top:8px;">
-              Generando...
-            </button>
+          ${renderErpTabs(4)}
+          <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px; height:100%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
+              <span style="font-weight:700;">Pipeline y Embudo de Ventas</span>
+              <span style="font-size:8.5px; background:rgba(168,85,247,0.1); color:#c084fc; border:1px solid rgba(168,85,247,0.2); padding:2px 6px; border-radius:10px; font-weight:700;">📈 6 tratos activos</span>
+            </div>
+            <div class="erp-kanban">
+              <div class="erp-kanban-col">
+                <div class="erp-kanban-title"><span>Leads</span> <span>2</span></div>
+                <div class="erp-kanban-card">Hospital Ángeles</div>
+                <div class="erp-kanban-card">Lab Ruiz</div>
+              </div>
+              <div class="erp-kanban-col" id="crm-col-prop">
+                <div class="erp-kanban-title"><span>Propuesta</span> <span id="crm-prop-count">1</span></div>
+                <div class="erp-kanban-card" id="crm-movable-card">Serolab Connect</div>
+              </div>
+              <div class="erp-kanban-col" id="crm-col-won">
+                <div class="erp-kanban-title"><span>Ganados</span> <span id="crm-won-count">3</span></div>
+                <div class="erp-kanban-card" style="border-color:rgba(16,185,129,0.2); background:rgba(16,185,129,0.02);">Clínica Lomas</div>
+              </div>
+            </div>
           </div>
         `;
-        
-        const btn = document.getElementById('pdf-trigger-btn');
-        const icon = document.getElementById('pdf-icon');
-        const title = document.getElementById('pdf-status-title');
-        const desc = document.getElementById('pdf-status-desc');
+        const card = document.getElementById('crm-movable-card');
+        const colProp = document.getElementById('crm-col-prop');
+        const colWon = document.getElementById('crm-col-won');
+        const propCount = document.getElementById('crm-prop-count');
+        const wonCount = document.getElementById('crm-won-count');
         
         const t1 = setTimeout(() => {
-          if (btn) {
-            btn.style.background = '#10b981';
-            btn.textContent = 'Descargar PDF';
+          if (card && colWon && colProp) {
+            colProp.removeChild(card);
+            colWon.appendChild(card);
+            card.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+            card.style.background = 'rgba(16, 185, 129, 0.05)';
+            card.innerHTML = 'Serolab Connect 🎉';
+            if (propCount) propCount.textContent = '0';
+            if (wonCount) wonCount.textContent = '4';
           }
-          if (icon) icon.textContent = '💾';
-          if (title) title.textContent = 'Reporte Generado';
-          if (desc) desc.textContent = 'Listo para descarga en local';
+        }, 2200);
+        screen.dataset.t1 = t1;
+        attachViewportTabListeners();
+      }
+    },
+    {
+      title: "Control de Inventario",
+      desc: "Gestión inteligente de stocks mínimos, almacenes y disparadores automáticos para órdenes de compra en tiempo real.",
+      run: (screen) => {
+        screen.innerHTML = `
+          ${renderErpTabs(5)}
+          <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
+              <span style="font-weight:700;">Reactivos & Insumos Clínicos (Sero-AI)</span>
+              <span style="font-size:8.5px; background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2); padding:2px 6px; border-radius:10px; font-weight:700;">⚠️ Re-evaluar Stock</span>
+            </div>
+            <table class="erp-data-table">
+              <thead>
+                <tr>
+                  <th>Insumo</th>
+                  <th>Almacén</th>
+                  <th>Estado</th>
+                  <th>Acción Pred.</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr id="inv-row-1">
+                  <td>Tubos Gel Separador</td>
+                  <td>120 pzs</td>
+                  <td style="color:#ef4444; font-weight:700;" id="inv-status-1">15% (Bajo)</td>
+                  <td id="inv-action-1">Reabastecer</td>
+                </tr>
+                <tr>
+                  <td>Agujas Vacutainer</td>
+                  <td>850 pzs</td>
+                  <td style="color:#10b981;">85% (Óptimo)</td>
+                  <td>Ninguna</td>
+                </tr>
+                <tr>
+                  <td>Reactivo PCR SARS</td>
+                  <td>140 pzs</td>
+                  <td style="color:#10b981;">40% (Normal)</td>
+                  <td>Ninguna</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+        const row = document.getElementById('inv-row-1');
+        const status = document.getElementById('inv-status-1');
+        const action = document.getElementById('inv-action-1');
+        
+        const t1 = setTimeout(() => {
+          if (row && status && action) {
+            row.style.background = 'rgba(16, 185, 129, 0.05)';
+            status.style.color = '#10b981';
+            status.innerHTML = 'Orden de Compra IA Enviada 📦';
+            action.innerHTML = 'En Tránsito';
+          }
         }, 2000);
         screen.dataset.t1 = t1;
-      }
-    },
-    {
-      title: "Infraestructura & Servidores",
-      desc: "Monitoreo integrado del estado y tiempos de respuesta de servidores dedicados de bases de datos remotas en milisegundos.",
-      run: (screen) => {
-        screen.innerHTML = `
-          <div style="display:flex; flex-direction:column; gap:8px; color:#fff; font-family:var(--font-sans); font-size:10px;">
-            <div style="font-weight:700; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">Estado de Clúster Multi-Servidor</div>
-            <div style="display:flex; flex-direction:column; gap:5px;">
-              <div style="display:flex; justify-content:space-between; font-size:9.5px; background:rgba(255,255,255,0.02); padding:4px; border-radius:4px;">
-                <span>Servidor 1: Dallas Database Dedicated</span>
-                <span style="color:#10b981; font-weight:700;" id="ping-srv-1">12ms (Activo)</span>
-              </div>
-              <div style="display:flex; justify-content:space-between; font-size:9.5px; background:rgba(255,255,255,0.02); padding:4px; border-radius:4px;">
-                <span>Servidor 2: Monterrey Backup Mirror</span>
-                <span style="color:#10b981; font-weight:700;" id="ping-srv-2">16ms (Activo)</span>
-              </div>
-            </div>
-          </div>
-        `;
-        
-        const p1 = document.getElementById('ping-srv-1');
-        const p2 = document.getElementById('ping-srv-2');
-        
-        const t1 = setTimeout(() => {
-          if (p1) p1.textContent = '8ms ⚡';
-          if (p2) p2.textContent = '11ms ⚡';
-        }, 1500);
-        screen.dataset.t1 = t1;
+        attachViewportTabListeners();
       }
     },
     {
@@ -3661,27 +3827,25 @@ END:VCARD`;
       desc: "Sistema nativo de notificaciones push de sistema para avisar de movimientos de caja o inventario crítico al instante.",
       run: (screen) => {
         screen.innerHTML = `
-          <div style="display:flex; flex-direction:column; gap:8px; color:#fff; font-family:var(--font-sans); font-size:10px; height:100%; position:relative; overflow:hidden;">
-            <div style="font-weight:700; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">Log de Alertas de Seguridad</div>
-            <div id="soft-push-banner" style="position:absolute; top:-60px; left:50%; transform:translateX(-50%); width:90%; background:rgba(168,85,247,0.9); border:1px solid rgba(168,85,247,0.4); border-radius:6px; padding:6px; color:#fff; font-size:9px; z-index:99; transition:top 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow:0 5px 15px rgba(0,0,0,0.5);">
-              <strong>🔔 Alerta de Sistema</strong><br>Nueva venta registrada: $12,000 MXN.
+          ${renderErpTabs(6)}
+          <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
+              <span style="font-weight:700;">Monitor de Auditoría de IA y Logs</span>
+              <span style="font-size:8.5px; background:rgba(0,229,255,0.1); color:#00e5ff; border:1px solid rgba(0,229,255,0.2); padding:2px 6px; border-radius:10px; font-weight:700;">🛡️ Sistema Seguro</span>
             </div>
-            <div style="font-size:9.5px; color:var(--text-muted); text-align:center; padding-top:20px;">
-              Esperando disparadores de sistema...
+            <div style="background:#090a0d; border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:10px; font-family:monospace; font-size:8.5px; display:flex; flex-direction:column; gap:6px; height:120px; overflow-y:auto;" id="audit-logs-viewport">
+              <div><span style="color:#00e5ff;">[AUDIT]</span> IP 192.168.1.45 conectada con base Dallas</div>
+              <div><span style="color:#00e5ff;">[AUDIT]</span> Sincronización de base local Monterrey al 100%</div>
+              <div id="audit-log-new" style="opacity:0; transition:opacity 0.3s;"><span style="color:#a855f7;">[SECURITY]</span> Llaves AES-256 rotadas correctamente</div>
             </div>
           </div>
         `;
-        
-        const banner = document.getElementById('soft-push-banner');
+        const logNew = document.getElementById('audit-log-new');
         const t1 = setTimeout(() => {
-          if (banner) banner.style.top = '15px';
-        }, 1200);
+          if (logNew) logNew.style.opacity = '1';
+        }, 1500);
         screen.dataset.t1 = t1;
-        
-        const t2 = setTimeout(() => {
-          if (banner) banner.style.top = '-60px';
-        }, 4000);
-        screen.dataset.t2 = t2;
+        attachViewportTabListeners();
       }
     },
     {
@@ -3689,66 +3853,80 @@ END:VCARD`;
       desc: "Rotación activa de llaves de encriptación AES y rastreo de conexiones maliciosas mediante geolocalización de IPs.",
       run: (screen) => {
         screen.innerHTML = `
-          <div style="display:flex; flex-direction:column; gap:8px; color:#fff; font-family:var(--font-sans); font-size:10px;">
-            <div style="font-weight:700; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">Rotación de Llaves Criptográficas</div>
-            <div style="font-size:9px; color:var(--text-muted);">Llave activa AES-256:</div>
-            <div style="background:#05070a; border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px; font-family:monospace; font-size:8.5px; color:#00e5ff;" id="aes-key-visual">
-              e8b9_34fd_a771_0b45_993c
+          ${renderErpTabs(7)}
+          <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
+              <span style="font-weight:700;">Control de Accesos y Permisos (RBAC)</span>
+              <span style="font-size:8.5px; background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.2); padding:2px 6px; border-radius:10px; font-weight:700;">✓ Config. Aplicada</span>
             </div>
-            <div style="font-size:9px; color:#10b981; text-align:center;" id="aes-key-status">
-              Estado: Protegido y verificado
-            </div>
+            <table class="erp-data-table">
+              <thead>
+                <tr>
+                  <th>Módulo</th>
+                  <th>Crear</th>
+                  <th>Modificar</th>
+                  <th>Consultar</th>
+                  <th>Eliminar</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Caja y Cobro</td>
+                  <td>✓</td>
+                  <td>✓</td>
+                  <td>✓</td>
+                  <td>-</td>
+                </tr>
+                <tr>
+                  <td>Estudios LIS</td>
+                  <td>✓</td>
+                  <td>✓</td>
+                  <td>✓</td>
+                  <td>✓</td>
+                </tr>
+                <tr>
+                  <td>Facturación CFDI</td>
+                  <td>✓</td>
+                  <td>-</td>
+                  <td>✓</td>
+                  <td>-</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         `;
-        
-        const keyVisual = document.getElementById('aes-key-visual');
-        const status = document.getElementById('aes-key-status');
-        
-        const t1 = setTimeout(() => {
-          if (keyVisual && status) {
-            keyVisual.textContent = 'a1f8_90bc_3478_910d_e24f';
-            keyVisual.style.color = '#a855f7';
-            status.textContent = 'Rotación de llave exitosa (Ciclo de 60s)';
-          }
-        }, 2000);
-        screen.dataset.t1 = t1;
+        attachViewportTabListeners();
       }
     }
   ];
 
   const initSoftwareSimulator = () => {
-    const screen = document.getElementById('software-screen-content');
     const pills = document.querySelectorAll('#software-features-icons .feature-icon-pill');
     const detailTitle = document.getElementById('software-detail-title');
     const detailDesc = document.getElementById('software-detail-desc');
     
     if (!screen) return;
     
-    let currentIdx = 0;
-    let timer = null;
-    let isSoftVisible = true;
-    let consoleLogsBuffer = ['[INFO] Iniciando sistema ERP empresarial corporativo...'];
-    
     const softPaths = [
       'System://brain-erp/dashboard/overview',
-      'System://brain-erp/warehouse/inventory',
-      'System://brain-erp/crm/leads-pipeline',
+      'System://brain-erp/cash/daily-checkout',
+      'System://brain-erp/laboratory/samples-lis',
       'System://brain-erp/billing/cfdi-xml',
-      'System://brain-erp/reporting/pdf-exporter',
-      'System://brain-erp/infrastructure/db-servers',
-      'System://brain-erp/notifications/push-service',
-      'System://brain-erp/security/aes-keys'
+      'System://brain-erp/crm/leads-pipeline',
+      'System://brain-erp/warehouse/inventory',
+      'System://brain-erp/audit/security-logs',
+      'System://brain-erp/rbac/privileges-config'
     ];
 
     const softLogs = [
       '[DASHBOARD] Enterprise console initialized. 3 dynamic widgets active.',
-      '[WAREHOUSE] Restocking threshold verified. Alarm triggered on low items.',
-      '[CRM] Pipeline synced. Card Андрей K. transitioned from leads to wins.',
+      '[CASHIER] Safe register initialized. Morning shift active ($209,920).',
+      '[LIS] Process queue updated. Telemetry locked on analyzer #1024.',
       '[BILLING] CFDI generator parsed client certificate. Hashing key signed.',
-      '[REPORTER] Document exporter completed compilation. Binary PDF buffer outputted.',
-      '[DATABASE] Ping test finished. Cluster latencies stabilized below 15ms.',
-      '[ALERTING] Push engine initialized. Dispatched alert of system purchase to admin.',
-      '[SECURITY] Decryption visualizer triggered key rot. Generated AES-256 sal.'
+      '[CRM] Pipeline synced. Card Serolab Connect transitioned from Proposal to Won.',
+      '[WAREHOUSE] Restocking threshold verified. Auto purchase order dispatched.',
+      '[AUDITING] AI threat mitigation agent locked connection 192.168.1.45.',
+      '[RBAC] Security matrix updated. Denied DELETE privilege on CFDI to cashier.'
     ];
 
     const clearSoftTimeouts = () => {
@@ -3822,7 +4000,7 @@ END:VCARD`;
       timer = setTimeout(() => {
         currentIdx = (currentIdx + 1) % softScenarios.length;
         runSoftCycle();
-      }, 5000);
+      }, 6000);
     };
     
     pills.forEach(pill => {
