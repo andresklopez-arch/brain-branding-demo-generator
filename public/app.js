@@ -826,9 +826,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 17. Real-Time Visual Field Validation
   let formStarted = false;
+  let formStartTime = null;
   const trackFormStart = () => {
     if (!formStarted) {
       formStarted = true;
+      formStartTime = Date.now();
       if (typeof gtag === 'function') {
         gtag('event', 'form_start', {
           event_category: 'engagement',
@@ -1231,6 +1233,18 @@ document.addEventListener('DOMContentLoaded', () => {
                    `🛠️ *Funciones deseadas:* ${desc}\n` +
                    `⚙️ *Operación actual:* ${operation}`;
       
+      // Track form fill time metrics
+      if (formStartTime) {
+        const fillTimeSec = Math.round((Date.now() - formStartTime) / 1000);
+        if (typeof gtag === 'function') {
+          gtag('event', 'form_submit_time', {
+            event_category: 'performance',
+            event_label: 'Contact Form',
+            value: fillTimeSec
+          });
+        }
+      }
+
       // Open WhatsApp web or api
       const whatsappUrl = `https://api.whatsapp.com/send?phone=527712339238&text=${encodeURIComponent(text)}`;
       window.open(whatsappUrl, '_blank');
@@ -1249,12 +1263,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const vcardData = `BEGIN:VCARD
 VERSION:3.0
-FN:Andre Krebollo - Brain Branding
-TEL;TYPE=CELL,VOICE:+527712339238
-EMAIL;TYPE=PREF,INTERNET:andreskrebollo@gmail.com
-URL:https://brainbranding.com.mx
-ORG:Brain Branding
-TITLE:Fundador / Director de Software
+FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Andre Krebollo - Brain Branding
+TEL;TYPE=CELL,VOICE;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:=2B527712339238
+EMAIL;TYPE=PREF,INTERNET;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:andreskrebollo=40gmail=2Ecom
+URL;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:https=3A=2F=2Fbrainbranding=2Ecom=2Emx
+ORG;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Brain Branding
+TITLE;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Fundador =2F Director de Software
 END:VCARD`;
 
     const blob = new Blob([vcardData], { type: 'text/vcard;charset=utf-8;' });
