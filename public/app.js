@@ -1913,7 +1913,7 @@ END:VCARD`;
         simulatorTimeout = setTimeout(() => {
           renderMessage('user', msg);
           playNextMessage();
-        }, 1500);
+        }, 5000); // 5s transition per user message
       } else {
         simulatorTimeout = setTimeout(() => {
           showTypingIndicator();
@@ -1921,8 +1921,8 @@ END:VCARD`;
             removeTypingIndicator();
             renderMessage('bot', msg);
             playNextMessage();
-          }, 2500);
-        }, 800);
+          }, 4000); // 4s typing + 1s delay = 5s transition per bot message
+        }, 1000);
       }
     }
 
