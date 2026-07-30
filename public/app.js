@@ -1012,6 +1012,28 @@ document.addEventListener('DOMContentLoaded', () => {
     })[m]);
   }
 
+  // XOR Encryption helpers for LocalStorage drafts protection
+  const xorKey = 42;
+  function xorEncrypt(str) {
+    let result = '';
+    for (let i = 0; i < str.length; i++) {
+      result += String.fromCharCode(str.charCodeAt(i) ^ xorKey);
+    }
+    return btoa(result);
+  }
+  function xorDecrypt(str) {
+    try {
+      const decoded = atob(str);
+      let result = '';
+      for (let i = 0; i < decoded.length; i++) {
+        result += String.fromCharCode(decoded.charCodeAt(i) ^ xorKey);
+      }
+      return result;
+    } catch (e) {
+      return '';
+    }
+  }
+
   // 27. Form draft auto-save
   const draftFields = {
     'contact-name': 'draft_name',
@@ -1027,13 +1049,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) {
       const savedVal = safeLocalStorage.getItem(key);
       if (savedVal) {
-        let val = savedVal;
-        try { val = atob(savedVal); } catch(e) {}
+        const val = xorDecrypt(savedVal);
         el.value = val;
         el.dispatchEvent(new Event('input'));
       }
       el.addEventListener('input', () => {
-        const val = btoa(el.value);
+        const val = xorEncrypt(el.value);
         safeLocalStorage.setItem(key, sanitizeInput(val));
       });
     }
@@ -1085,6 +1106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       
+      let gaErrorTimeout = null;
       const showInputError = (el, msg) => {
         let errSpan = el.parentNode.querySelector('.error-msg');
         if (!errSpan) {
@@ -1102,13 +1124,16 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.boxShadow = '0 0 12px rgba(244, 63, 94, 0.3)';
         el.focus();
         
-        // 31. Google Analytics Event for Input validation error
+        // 31. Google Analytics Event for Input validation error (Debounced to 2s)
         if (typeof gtag === 'function') {
-          gtag('event', 'form_input_error', {
-            event_category: 'validation',
-            event_label: el.id || 'unknown_field',
-            value: msg
-          });
+          if (gaErrorTimeout) clearTimeout(gaErrorTimeout);
+          gaErrorTimeout = setTimeout(() => {
+            gtag('event', 'form_input_error', {
+              event_category: 'validation',
+              event_label: el.id || 'unknown_field',
+              value: msg
+            });
+          }, 2000);
         }
       };
 
