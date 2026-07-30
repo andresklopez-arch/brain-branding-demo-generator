@@ -2269,6 +2269,11 @@
         font-size: 26px !important;
       }
     }
+
+    @keyframes pingPulse {
+      0% { opacity: 0.35; transform: scale(0.85); }
+      100% { opacity: 1; transform: scale(1.15); }
+    }
     
     /* Interactive Chart Tooltips */
     .erp-tooltip {
@@ -3260,7 +3265,13 @@
               <span class="control-dot minimize"></span>
               <span class="control-dot maximize"></span>
             </div>
-            <span class="software-title">Brain ERP Enterprise - Client v4.2</span>
+            <span class="software-title" style="display:flex; align-items:center; justify-content:center; gap:8px;">
+              Brain ERP Enterprise
+              <span id="erp-ping-indicator" style="font-size:8px; font-family:monospace; background:rgba(255,255,255,0.06); padding:2px 5px; border-radius:4px; color:#10b981; display:flex; align-items:center; gap:4px; font-weight:700;">
+                <span class="ping-dot" style="width:4px; height:4px; border-radius:50%; background:#10b981; display:inline-block; animation:pingPulse 1.5s infinite alternate;"></span>
+                <span>12ms</span>
+              </span>
+            </span>
           </div>
 
           <!-- Breadcrumb Navbar -->

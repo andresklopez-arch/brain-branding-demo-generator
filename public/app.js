@@ -3572,6 +3572,74 @@ END:VCARD`;
     }
   };
 
+  const initSignaturePad = (canvas, clearBtn, confirmBtn, onConfirm) => {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#00e5ff';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    
+    let drawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    
+    const getPos = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = (e.touches && e.touches.length) ? e.touches[0].clientX : e.clientX;
+      const clientY = (e.touches && e.touches.length) ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    };
+    
+    const startDrawing = (e) => {
+      drawing = true;
+      const pos = getPos(e);
+      lastX = pos.x;
+      lastY = pos.y;
+    };
+    
+    const draw = (e) => {
+      if (!drawing) return;
+      e.preventDefault();
+      const pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      lastX = pos.x;
+      lastY = pos.y;
+    };
+    
+    const stopDrawing = () => {
+      drawing = false;
+    };
+    
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
+    
+    if (clearBtn) {
+      clearBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      });
+    }
+    
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        onConfirm();
+      });
+    }
+  };
+
   let currentIdx = 0;
   let timer = null;
   let isSoftVisible = true;
@@ -3718,10 +3786,10 @@ END:VCARD`;
       run: (screen) => {
         screen.innerHTML = `
           ${renderErpTabs(1)}
-          <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px;">
+          <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px; position:relative; height:100%;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
               <span style="font-weight:700;">Arqueo Diario: Turno Activo</span>
-              <span style="font-size:8.5px; background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.2); padding:2px 6px; border-radius:10px; font-weight:700;">✓ Caja Abierta</span>
+              <span id="caja-status-badge" style="font-size:8.5px; background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.2); padding:2px 6px; border-radius:10px; font-weight:700; transition:all 0.3s;">✓ Caja Abierta</span>
             </div>
             <div class="erp-widget-grid">
               <div class="erp-widget-card">
@@ -3746,15 +3814,37 @@ END:VCARD`;
                 <div id="caja-goal-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #a855f7, #00e5ff); border-radius:3px; transition:width 1.5s cubic-bezier(0.25, 0.8, 0.25, 1);"></div>
               </div>
               
-              <button id="caja-scanner-btn" style="background:rgba(0, 229, 255, 0.12); border:1px solid rgba(0, 229, 255, 0.35); border-radius:6px; color:#00e5ff; font-size:9px; padding:5px 8px; cursor:pointer; font-weight:700; margin-top:4px; text-align:center; transition: all 0.2s;">
-                📸 Escanear Artículo (Cámara / QR)
-              </button>
+              <div style="display:flex; gap:6px; margin-top:4px;">
+                <button id="caja-scanner-btn" style="flex:1; background:rgba(0, 229, 255, 0.12); border:1px solid rgba(0, 229, 255, 0.35); border-radius:6px; color:#00e5ff; font-size:9px; padding:5px 8px; cursor:pointer; font-weight:700; text-align:center; transition: all 0.2s;">
+                  📸 Escanear Artículo
+                </button>
+                <button id="caja-btn-cerrar-turno" style="flex:1; background:rgba(168, 85, 247, 0.12); border:1px solid rgba(168, 85, 247, 0.35); border-radius:6px; color:#c084fc; font-size:9px; padding:5px 8px; cursor:pointer; font-weight:700; text-align:center; transition: all 0.2s;">
+                  🔒 Cerrar Turno
+                </button>
+              </div>
               <div id="caja-scan-success-log" style="font-size:8px; color:#10b981; text-align:center; display:none; margin-top:2px; font-weight:700;">
                 ✓ Artículo Escaneado: REAC-HEM-991 (+$1,500.00)
               </div>
             </div>
+
+            <!-- Simulated Signature Pop-up -->
+            <div class="erp-xml-popup" id="caja-firmar-popup" style="display:none; opacity:0; transition:opacity 0.3s ease; align-items:center; justify-content:center; padding:10px; z-index:150;">
+              <div style="background:#090a0d; border:1px solid rgba(0, 229, 255, 0.3); border-radius:8px; width:95%; padding:10px; display:flex; flex-direction:column; gap:8px; box-shadow:0 8px 25px rgba(0,0,0,0.85); box-sizing:border-box;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:9px; font-weight:700; color:#00e5ff;">Firma Digital de Conformidad</span>
+                  <button class="caja-firmar-close" style="background:transparent; border:none; color:#fff; font-size:9px; cursor:pointer;">✕</button>
+                </div>
+                <div style="font-size:7.5px; color:rgba(255,255,255,0.6);">Dibuja tu firma para validar arqueo de caja de $209,920.00</div>
+                <canvas id="caja-signature-canvas" width="220" height="90" style="background:#111317; border:1px dashed rgba(255,255,255,0.15); border-radius:6px; cursor:crosshair; width:100%; height:75px; box-sizing:border-box; touch-action:none;"></canvas>
+                <div style="display:flex; gap:6px;">
+                  <button id="caja-btn-limpiar-firma" style="flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; font-size:8px; padding:4px; border-radius:4px; cursor:pointer; font-weight:700;">Limpiar</button>
+                  <button id="caja-btn-confirmar-firma" style="flex:1; background:linear-gradient(90deg, #00e5ff, #a855f7); border:none; color:#0a0f1d; font-size:8px; padding:4px; border-radius:4px; font-weight:700; cursor:pointer;">Confirmar</button>
+                </div>
+              </div>
+            </div>
           </div>
         `;
+        
         setTimeout(() => {
           const txt = document.getElementById('caja-goal-txt');
           const bar = document.getElementById('caja-goal-bar');
@@ -3791,6 +3881,60 @@ END:VCARD`;
             });
           });
         }
+
+        const btnCerrarTurno = document.getElementById('caja-btn-cerrar-turno');
+        const firmarPopup = document.getElementById('caja-firmar-popup');
+        const firmarClose = screen.querySelector('.caja-firmar-close');
+        
+        if (btnCerrarTurno) {
+          btnCerrarTurno.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (firmarPopup) {
+              firmarPopup.style.display = 'flex';
+              firmarPopup.style.opacity = '1';
+            }
+            
+            const canvas = document.getElementById('caja-signature-canvas');
+            const clearBtn = document.getElementById('caja-btn-limpiar-firma');
+            const confirmBtn = document.getElementById('caja-btn-confirmar-firma');
+            
+            initSignaturePad(canvas, clearBtn, confirmBtn, () => {
+              // On Confirm
+              if (firmarPopup) firmarPopup.style.opacity = '0';
+              setTimeout(() => { if (firmarPopup) firmarPopup.style.display = 'none'; }, 300);
+              
+              const statusBadge = document.getElementById('caja-status-badge');
+              if (statusBadge) {
+                statusBadge.style.background = 'rgba(168, 85, 247, 0.15)';
+                statusBadge.style.color = '#c084fc';
+                statusBadge.style.borderColor = 'rgba(168, 85, 247, 0.3)';
+                statusBadge.textContent = '🔒 Turno Cerrado';
+              }
+              
+              const totalVal = document.getElementById('caja-val-total');
+              const totalStr = totalVal ? totalVal.textContent : '$209,920';
+              
+              // Push to console log
+              const consoleLogEl = document.getElementById('software-console-log');
+              if (consoleLogEl) {
+                consoleLogsBuffer.push(`[CASHIER] Turno Auditado y Firmado por operador (${totalStr}).`);
+                if (consoleLogsBuffer.length > 3) consoleLogsBuffer.shift();
+                consoleLogEl.innerHTML = consoleLogsBuffer.map(log => `<div><span style="color:#ffbd2e; margin-right:6px;">▶</span><span style="color:rgba(255,255,255,0.85);">${log}</span></div>`).join('');
+              }
+              
+              triggerConfetti();
+            });
+          });
+        }
+        
+        if (firmarClose) {
+          firmarClose.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (firmarPopup) firmarPopup.style.opacity = '0';
+            setTimeout(() => { if (firmarPopup) firmarPopup.style.display = 'none'; }, 300);
+          });
+        }
+        
         attachViewportTabListeners();
       }
     },
@@ -3801,7 +3945,7 @@ END:VCARD`;
       run: (screen) => {
         screen.innerHTML = `
           ${renderErpTabs(2)}
-          <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px;">
+          <div style="display:flex; flex-direction:column; gap:10px; color:#fff; font-family:var(--font-sans); font-size:10px; position:relative; height:100%;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
               <span style="font-weight:700;">Monitoreo de Muestras LIS (Labtivity)</span>
               <span style="font-size:8.5px; background:rgba(168,85,247,0.1); color:#c084fc; border:1px solid rgba(168,85,247,0.2); padding:2px 6px; border-radius:10px; font-weight:700;">📡 Telemetría Activa</span>
@@ -3816,19 +3960,19 @@ END:VCARD`;
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr style="cursor:pointer;" class="lis-clickable-row">
                   <td>#1024</td>
                   <td>Biometría Hemática</td>
                   <td>Andrés Krebollo</td>
                   <td style="color:#00e5ff;" id="lis-status-1">En Analizador 🔬</td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer;" class="lis-clickable-row">
                   <td>#1025</td>
                   <td>Perfil Lipídico</td>
                   <td>Sofía Méndez</td>
                   <td style="color:#10b981;">Validado Sero-AI ✅</td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer;" class="lis-clickable-row">
                   <td>#1026</td>
                   <td>Examen Orina</td>
                   <td>Pedro Gómez</td>
@@ -3836,8 +3980,32 @@ END:VCARD`;
                 </tr>
               </tbody>
             </table>
+            
+            <div style="font-size:8px; color:rgba(255,255,255,0.4); text-align:center; margin-top:2px;">
+              * Toca cualquier fila de muestra para ver detalles del análisis en tiempo real
+            </div>
+
+            <!-- Simulated LIS Detail Pop-up -->
+            <div class="erp-xml-popup" id="lis-detail-popup" style="display:none; opacity:0; transition:opacity 0.3s ease; align-items:center; justify-content:center; padding:10px; z-index:150;">
+              <div style="background:#090a0d; border:1px solid rgba(168, 85, 247, 0.3); border-radius:8px; width:95%; padding:10px; display:flex; flex-direction:column; gap:8px; box-shadow:0 8px 25px rgba(0,0,0,0.85); box-sizing:border-box;">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
+                  <span style="font-size:9px; font-weight:700; color:#c084fc;" id="lis-detail-title">Detalle de Muestra #1024</span>
+                  <button class="lis-detail-close" style="background:transparent; border:none; color:#fff; font-size:9px; cursor:pointer;">✕</button>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:8px;">
+                  <div><strong>Paciente:</strong> <br><span id="lis-detail-patient">Andrés Krebollo</span></div>
+                  <div><strong>Estudio:</strong> <br><span id="lis-detail-study">Biometría Hemática</span></div>
+                  <div><strong>Fecha Toma:</strong> <br><span id="lis-detail-date">30-07-2026 09:12</span></div>
+                  <div><strong>Estado LIS:</strong> <br><span id="lis-detail-status" style="color:#00e5ff;">En Analizador</span></div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:6px; font-family:monospace; font-size:7.5px; color:rgba(255,255,255,0.85); line-height:1.2; word-break:break-all;" id="lis-detail-metrics">
+                  Hb: 14.2 g/dL | Hct: 42.1% | Wbc: 7.2 x10^3 | Plt: 245 x10^3
+                </div>
+              </div>
+            </div>
           </div>
         `;
+        
         const t1 = setTimeout(() => {
           const row1 = document.getElementById('lis-status-1');
           if (row1) {
@@ -3846,6 +4014,58 @@ END:VCARD`;
           }
         }, 2200);
         screen.dataset.t1 = t1;
+
+        const rows = screen.querySelectorAll('.lis-clickable-row');
+        const detailPopup = document.getElementById('lis-detail-popup');
+        const detailClose = screen.querySelector('.lis-detail-close');
+        
+        rows.forEach(row => {
+          row.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 4) return;
+            
+            const code = cells[0].textContent;
+            const study = cells[1].textContent;
+            const patient = cells[2].textContent;
+            const status = cells[3].textContent;
+            
+            document.getElementById('lis-detail-title').textContent = `Muestra ${code} - Telemetría`;
+            document.getElementById('lis-detail-patient').textContent = patient;
+            document.getElementById('lis-detail-study').textContent = study;
+            
+            const statusEl = document.getElementById('lis-detail-status');
+            statusEl.textContent = status.replace('🔬', '').replace('✅', '').replace('💉', '').trim();
+            statusEl.style.color = cells[3].style.color || '#fff';
+            
+            const metricsEl = document.getElementById('lis-detail-metrics');
+            if (code.includes('1024')) {
+              metricsEl.textContent = "Hb: 14.2 g/dL (Normal) | Hct: 42.1% | Wbc: 7.2 x10^3/µL | Plt: 245 x10^3/µL";
+            } else if (code.includes('1025')) {
+              metricsEl.textContent = "Colesterol: 185 mg/dL (Normal) | Triglicéridos: 140 mg/dL | HDL: 48 mg/dL";
+            } else {
+              metricsEl.textContent = "Glucosa: 88 mg/dL (Normal) | Urea: 24 mg/dL | Creatinina: 0.9 mg/dL";
+            }
+            
+            if (detailPopup) {
+              detailPopup.style.display = 'flex';
+              detailPopup.style.opacity = '1';
+            }
+            
+            if (typeof playDeviceSwitchSound === 'function') {
+              playDeviceSwitchSound();
+            }
+          });
+        });
+        
+        if (detailClose) {
+          detailClose.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (detailPopup) detailPopup.style.opacity = '0';
+            setTimeout(() => { if (detailPopup) detailPopup.style.display = 'none'; }, 300);
+          });
+        }
+        
         attachViewportTabListeners();
       }
     },
@@ -4471,6 +4691,30 @@ END:VCARD`;
         containerMock.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
         containerMock.style.transition = 'transform 0.5s ease';
       });
+    }
+
+    // Simulated Latency Telemetry Ping
+    const pingEl = document.getElementById('erp-ping-indicator');
+    if (pingEl) {
+      setInterval(() => {
+        const randomPing = Math.floor(Math.random() * 12) + 6; // 6ms - 18ms
+        const pingDot = pingEl.querySelector('.ping-dot');
+        const pingTxt = pingEl.querySelector('span:not(.ping-dot)');
+        if (pingTxt) pingTxt.textContent = `${randomPing}ms`;
+        
+        if (pingDot) {
+          if (randomPing < 10) {
+            pingEl.style.color = '#00e5ff';
+            pingDot.style.background = '#00e5ff';
+          } else if (randomPing < 15) {
+            pingEl.style.color = '#10b981';
+            pingDot.style.background = '#10b981';
+          } else {
+            pingEl.style.color = '#c084fc';
+            pingDot.style.background = '#c084fc';
+          }
+        }
+      }, 3500);
     }
   };
 
