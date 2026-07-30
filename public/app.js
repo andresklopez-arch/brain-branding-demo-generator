@@ -1007,6 +1007,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showTypingIndicator() {
+      // Mark last user check as read (double check)
+      const lastCheck = telegramContainer.querySelector('.telegram-bubble.user:last-of-type .tg-check');
+      if (lastCheck) {
+        lastCheck.textContent = '✓✓';
+        lastCheck.classList.add('read');
+      }
+
       const indicator = document.createElement('div');
       indicator.className = 'telegram-bubble typing';
       indicator.id = 'telegram-typing';
@@ -1064,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <span style="font-size: 11px; font-weight: 600; margin-right: 5px;">0:45</span>
           </div>
-          <span class="time">${formatTimestamp()}</span>
+          <span class="time">${formatTimestamp()} <span class="tg-check">✓</span></span>
         `;
         setTimeout(() => {
           const bars = bubble.querySelectorAll('.vn-wave-bar');
@@ -1080,9 +1087,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
       } else {
         const formattedText = formatMessageText(msgObj.text);
+        const checkHtml = sender === 'user' ? ` <span class="tg-check">✓</span>` : '';
         bubble.innerHTML = `
           <div class="text">${formattedText.replace(/\n/g, '<br>')}</div>
-          <span class="time">${formatTimestamp()}</span>
+          <span class="time">${formatTimestamp()}${checkHtml}</span>
         `;
       }
       
@@ -1148,8 +1156,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isNaN(scenarioIdx)) return;
 
         isPillTransitioning = true;
+        cmdPills.forEach(p => p.classList.add('disabled'));
         setTimeout(() => {
           isPillTransitioning = false;
+          cmdPills.forEach(p => p.classList.remove('disabled'));
         }, 1200);
 
         // Reset Active pill

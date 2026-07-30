@@ -777,6 +777,14 @@
       border-color: #3b9ed2;
       box-shadow: 0 0 10px rgba(59, 158, 210, 0.2);
     }
+    .telegram-cmd-pill.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+      border-color: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.02);
+      color: rgba(255, 255, 255, 0.2);
+    }
     .voice-note-player {
       display: flex;
       align-items: center;
@@ -804,14 +812,34 @@
       height: 24px;
       padding-bottom: 2px;
     }
+    .voice-note-player:hover .vn-wave-bar {
+      transform: scaleY(1.35);
+    }
     .vn-wave-bar {
       width: 2.5px;
       background: rgba(255, 255, 255, 0.35);
       border-radius: 1.5px;
-      transition: height 0.1s ease;
+      transform-origin: bottom;
+      transition: height 0.1s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
     }
     .vn-wave-bar.active {
       background: #fff;
+    }
+    .telegram-bubble.user .time {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+    .tg-check {
+      font-size: 11px;
+      line-height: 1;
+      color: rgba(255, 255, 255, 0.45);
+      font-weight: bold;
+      transition: color 0.3s ease;
+    }
+    .tg-check.read {
+      color: #40c4ff;
     }
   </style>
 </head>
