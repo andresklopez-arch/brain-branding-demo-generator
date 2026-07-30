@@ -2196,4 +2196,46 @@ END:VCARD`;
       }
     }
   }, 6000);
+
+  // 23. Neuromarketing "Attentive Gaze" Interactive Logo
+  const logoArea = document.querySelector('.logo-area');
+  const logoImg = document.querySelector('.logo-area img');
+  if (logoArea && logoImg) {
+    logoImg.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s ease';
+    document.addEventListener('mousemove', (e) => {
+      const rect = logoImg.getBoundingClientRect();
+      const imgCenterX = rect.left + rect.width / 2;
+      const imgCenterY = rect.top + rect.height / 2;
+      
+      const deltaX = e.clientX - imgCenterX;
+      const deltaY = e.clientY - imgCenterY;
+      const distance = Math.hypot(deltaX, deltaY);
+      
+      if (distance < 700) { // Track if mouse is relatively nearby (within 700px)
+        const maxMove = 3.5; // Max pixels to translate
+        const maxRotate = 12; // Max degrees to rotate in 3D
+        
+        const angle = Math.atan2(deltaY, deltaX);
+        const intensity = 1 - distance / 700;
+        const moveX = Math.cos(angle) * maxMove * intensity;
+        const moveY = Math.sin(angle) * maxMove * intensity;
+        
+        const rotX = -(moveY / maxMove) * maxRotate;
+        const rotY = (moveX / maxMove) * maxRotate;
+        
+        logoImg.style.transform = `translate3d(${moveX}px, ${moveY}px, 0) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+        // Reassuring warm cian/gold shadow follows the gaze parallax
+        logoImg.style.filter = `drop-shadow(${-moveX * 0.8}px ${-moveY * 0.8}px 4px rgba(0, 229, 255, 0.65))`;
+      } else {
+        logoImg.style.transform = 'translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg)';
+        logoImg.style.filter = 'drop-shadow(0 0 2px rgba(99, 102, 241, 0.3))';
+      }
+    });
+    
+    // Smooth reset on mouse leave window
+    document.addEventListener('mouseleave', () => {
+      logoImg.style.transform = 'translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg)';
+      logoImg.style.filter = 'drop-shadow(0 0 2px rgba(99, 102, 241, 0.3))';
+    });
+  }
 });
