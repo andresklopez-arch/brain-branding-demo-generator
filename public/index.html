@@ -666,6 +666,48 @@
       50% { transform: rotate(180deg) scale(1.15); filter: drop-shadow(0 0 20px rgba(0, 229, 255, 1)) saturate(1.5); }
       100% { transform: rotate(360deg) scale(1); filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.7)); }
     }
+    
+    /* Trace Glow sequentially on boot */
+    .telegram-avatar.activated .chip-pin {
+      animation: pinPulseBoot 0.8s ease-in-out forwards;
+    }
+    .telegram-avatar.activated .chip-pin:nth-child(1) { animation-delay: 0.05s; }
+    .telegram-avatar.activated .chip-pin:nth-child(2) { animation-delay: 0.1s; }
+    .telegram-avatar.activated .chip-pin:nth-child(3) { animation-delay: 0.15s; }
+    .telegram-avatar.activated .chip-pin:nth-child(4) { animation-delay: 0.2s; }
+    .telegram-avatar.activated .chip-pin:nth-child(5) { animation-delay: 0.25s; }
+    .telegram-avatar.activated .chip-pin:nth-child(6) { animation-delay: 0.3s; }
+    .telegram-avatar.activated .chip-pin:nth-child(7) { animation-delay: 0.35s; }
+    .telegram-avatar.activated .chip-pin:nth-child(8) { animation-delay: 0.4s; }
+    .telegram-avatar.activated .chip-pin:nth-child(9) { animation-delay: 0.45s; }
+    .telegram-avatar.activated .chip-pin:nth-child(10) { animation-delay: 0.5s; }
+    .telegram-avatar.activated .chip-pin:nth-child(11) { animation-delay: 0.55s; }
+    .telegram-avatar.activated .chip-pin:nth-child(12) { animation-delay: 0.6s; }
+
+    @keyframes pinPulseBoot {
+      0% { opacity: 0.35; }
+      50% { opacity: 1; stroke: #00e5ff; filter: drop-shadow(0 0 6px #00e5ff) saturate(1.5); }
+      100% { opacity: 1; }
+    }
+
+    /* Vector Sparkles on boot */
+    .chip-sparkle {
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .telegram-avatar.activated .chip-sparkle {
+      animation: sparkleBoot 1.2s ease-out forwards;
+    }
+    .telegram-avatar.activated .chip-sparkle:nth-of-type(1) { --tx: -20px; --ty: -20px; }
+    .telegram-avatar.activated .chip-sparkle:nth-of-type(2) { --tx: 20px; --ty: 20px; }
+    .telegram-avatar.activated .chip-sparkle:nth-of-type(3) { --tx: -20px; --ty: 20px; }
+    .telegram-avatar.activated .chip-sparkle:nth-of-type(4) { --tx: 20px; --ty: -20px; }
+    
+    @keyframes sparkleBoot {
+      0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+      30% { opacity: 1; }
+      100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(1.5); }
+    }
     .status-notif {
       animation: notifPulse 1s infinite alternate;
       display: inline-flex;
@@ -1468,6 +1510,11 @@
                   <line class="chip-pin" x1="70" y1="38" x2="80" y2="38" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
                   <line class="chip-pin" x1="70" y1="50" x2="80" y2="50" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
                   <line class="chip-pin" x1="70" y1="62" x2="80" y2="62" stroke="url(#chip-grad)" stroke-width="2" stroke-linecap="round" />
+                  <!-- Particles -->
+                  <circle class="chip-sparkle" cx="30" cy="30" r="1.5" fill="#00e5ff" opacity="0" />
+                  <circle class="chip-sparkle" cx="70" cy="70" r="1.5" fill="#a855f7" opacity="0" />
+                  <circle class="chip-sparkle" cx="30" cy="70" r="1.5" fill="#a855f7" opacity="0" />
+                  <circle class="chip-sparkle" cx="70" cy="30" r="1.5" fill="#00e5ff" opacity="0" />
                 </svg>
               </div>
               <div class="telegram-user-info">

@@ -1509,8 +1509,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (scenario && scenario.length > 0) {
           const firstMsg = scenario[0];
           currentMessageIdx = 1;
-          renderMessage(firstMsg.sender, firstMsg);
-          playNextMessage();
+          
+          // Realistic typing delay on welcome message
+          simulatorTimeout = setTimeout(() => {
+            showTypingIndicator();
+            simulatorTimeout = setTimeout(() => {
+              removeTypingIndicator();
+              renderMessage(firstMsg.sender, firstMsg);
+              playNextMessage();
+            }, 1200);
+          }, 350);
         }
       });
     }
@@ -1559,8 +1567,16 @@ document.addEventListener('DOMContentLoaded', () => {
               if (scenario && scenario.length > 0) {
                 const firstMsg = scenario[0];
                 currentMessageIdx = 1;
-                renderMessage(firstMsg.sender, firstMsg);
-                playNextMessage();
+                
+                // Realistic typing delay on welcome message
+                simulatorTimeout = setTimeout(() => {
+                  showTypingIndicator();
+                  simulatorTimeout = setTimeout(() => {
+                    removeTypingIndicator();
+                    renderMessage(firstMsg.sender, firstMsg);
+                    playNextMessage();
+                  }, 1200);
+                }, 350);
               }
             } else {
               playNextMessage();
