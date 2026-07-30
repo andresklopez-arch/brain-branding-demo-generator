@@ -1166,7 +1166,25 @@ document.addEventListener('DOMContentLoaded', () => {
       toast.style.opacity = '1';
     }, 500);
 
+    // Auto-dismiss Toast after 10s of inactivity
+    const autoDismissTimeout = setTimeout(() => {
+      if (typeof gtag === 'function') {
+        gtag('event', 'draft_toast_action', {
+          event_category: 'engagement',
+          event_label: 'Auto-dismiss'
+        });
+      }
+      dismissToast();
+    }, 10000);
+
     document.getElementById('btn-restore-draft').addEventListener('click', () => {
+      clearTimeout(autoDismissTimeout);
+      if (typeof gtag === 'function') {
+        gtag('event', 'draft_toast_action', {
+          event_category: 'engagement',
+          event_label: 'Restore'
+        });
+      }
       Object.keys(tempDrafts).forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -1178,6 +1196,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-discard-draft').addEventListener('click', () => {
+      clearTimeout(autoDismissTimeout);
+      if (typeof gtag === 'function') {
+        gtag('event', 'draft_toast_action', {
+          event_category: 'engagement',
+          event_label: 'Discard'
+        });
+      }
       Object.keys(draftFields).forEach(id => {
         safeLocalStorage.removeItem(draftFields[id]);
       });
