@@ -1463,50 +1463,37 @@ document.addEventListener('DOMContentLoaded', () => {
       lockscreen.addEventListener('click', () => {
         if (!isLocked) return;
         
-        // Start biometric scanning transition
-        lockscreen.classList.add('scanning');
+        // Unlock immediately
+        isLocked = false;
+        lockscreen.classList.add('unlocked');
         
-        setTimeout(() => {
-          // Authorized biometric state
-          lockscreen.classList.add('authorized');
-          const bioText = document.getElementById('bio-text');
-          if (bioText) {
-            bioText.textContent = 'Acceso Autorizado ✓';
-          }
-          
-          setTimeout(() => {
-            // Unlock smartphone
-            isLocked = false;
-            lockscreen.classList.add('unlocked');
-            
-            // Trigger depth blur removal
-            const container = document.querySelector('.smartphone-container');
-            if (container) {
-              container.classList.add('unlocked-mockup');
-            }
-            
-            // Play unlock chime
-            playSynthSound('unlock');
-            
-            // Reset and start simulation
-            if (simulatorTimeout) {
-              clearTimeout(simulatorTimeout);
-            }
-            removeTypingIndicator();
-            telegramContainer.innerHTML = '';
-            currentScenarioIdx = 0;
-            currentMessageIdx = 0;
-            updateActiveIcon(0);
-            
-            const scenario = chatScenarios[0];
-            if (scenario && scenario.length > 0) {
-              const firstMsg = scenario[0];
-              currentMessageIdx = 1;
-              renderMessage(firstMsg.sender, firstMsg);
-              playNextMessage();
-            }
-          }, 400);
-        }, 800);
+        // Trigger depth blur removal
+        const container = document.querySelector('.smartphone-container');
+        if (container) {
+          container.classList.add('unlocked-mockup');
+        }
+        
+        // Play unlock chime
+        playSynthSound('unlock');
+        triggerHaptic('haptic-pulse');
+        
+        // Reset and start simulation
+        if (simulatorTimeout) {
+          clearTimeout(simulatorTimeout);
+        }
+        removeTypingIndicator();
+        telegramContainer.innerHTML = '';
+        currentScenarioIdx = 0;
+        currentMessageIdx = 0;
+        updateActiveIcon(0);
+        
+        const scenario = chatScenarios[0];
+        if (scenario && scenario.length > 0) {
+          const firstMsg = scenario[0];
+          currentMessageIdx = 1;
+          renderMessage(firstMsg.sender, firstMsg);
+          playNextMessage();
+        }
       });
     }
 
