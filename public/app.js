@@ -23,12 +23,16 @@ const safeSessionStorage = safeStorage('sessionStorage');
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // Async battery reading on startup for Battery-Level Salted XOR
+  // Async battery reading on startup for Battery-Level/Charging Salted XOR
   if (navigator.getBattery) {
     navigator.getBattery().then(battery => {
       safeSessionStorage.setItem('draft_battery_level', String(battery.level));
+      safeSessionStorage.setItem('draft_battery_charging', String(battery.charging));
       battery.addEventListener('levelchange', () => {
         safeSessionStorage.setItem('draft_battery_level', String(battery.level));
+      });
+      battery.addEventListener('chargingchange', () => {
+        safeSessionStorage.setItem('draft_battery_charging', String(battery.charging));
       });
     }).catch(() => {});
   }
@@ -1226,7 +1230,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewportSalt = getViewportSalt();
     const orientationSalt = getOrientationSalt();
     const batterySalt = safeSessionStorage.getItem('draft_battery_level') || '1.0';
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}_${viewportSalt}_${orientationSalt}_${batterySalt}`;
+    const batteryChargingSalt = safeSessionStorage.getItem('draft_battery_charging') || 'false';
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}_${colorDepth}_${appVersion}_${posFeaturesCount}_${viewportSalt}_${orientationSalt}_${batterySalt}_${batteryChargingSalt}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
@@ -2662,6 +2667,32 @@ END:VCARD`;
     let currentIdx = 0;
     let timer = null;
     let isPOSVisible = true;
+    let posBatteryPercent = 98;
+    let posBatteryInterval = null;
+    
+    const updateBatteryVisual = () => {
+      const batteryText = document.querySelector('.tablet-status-bar span');
+      const batteryLevelBar = document.querySelector('.tablet-status-bar .battery-level');
+      if (batteryText) batteryText.textContent = `${posBatteryPercent}%`;
+      if (batteryLevelBar) batteryLevelBar.style.width = `${posBatteryPercent}%`;
+    };
+    
+    const startBatteryDischarging = () => {
+      if (posBatteryInterval) return;
+      posBatteryInterval = setInterval(() => {
+        if (posBatteryPercent > 3) {
+          posBatteryPercent--;
+          updateBatteryVisual();
+        }
+      }, 180000);
+    };
+    
+    const stopBatteryDischarging = () => {
+      if (posBatteryInterval) {
+        clearInterval(posBatteryInterval);
+        posBatteryInterval = null;
+      }
+    };
     
     const clearPosTimeouts = () => {
       if (leftPanel.dataset.t1) { clearTimeout(parseInt(leftPanel.dataset.t1, 10)); delete leftPanel.dataset.t1; }
@@ -2711,9 +2742,11 @@ END:VCARD`;
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             isPOSVisible = true;
+            startBatteryDischarging();
             if (!timer) runPOSCycle();
           } else {
             isPOSVisible = false;
+            stopBatteryDischarging();
             if (timer) {
               clearTimeout(timer);
               timer = null;
@@ -2726,6 +2759,7 @@ END:VCARD`;
       const targetSection = document.getElementById('simulador-pos');
       if (targetSection) observer.observe(targetSection);
     } else {
+      startBatteryDischarging();
       runPOSCycle();
     }
 
