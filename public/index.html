@@ -1953,7 +1953,7 @@
       flex: 1;
       height: 100%;
       background: rgba(15, 17, 21, 0.65);
-      overflow-y: auto;
+      overflow: auto;
       padding: 18px;
       box-sizing: border-box;
       display: flex;
@@ -2209,6 +2209,32 @@
     }
     .erp-scanner-close:hover {
       background: rgba(239, 68, 68, 0.3);
+    }
+
+    /* Prevent Tab Squashing and Overlaps on Mobile Screens */
+    .erp-tab-btn, .browser-tab {
+      flex-shrink: 0 !important;
+    }
+
+    /* Responsive overrides for simulated device containers on physical mobile screens */
+    @media (max-width: 768px) {
+      .software-container:not(.mock-mobile),
+      .browser-container:not(.mock-mobile) {
+        aspect-ratio: auto !important;
+        height: 480px !important;
+      }
+      .erp-widget-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+      }
+      .erp-kanban {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+      }
+      /* Ensure inner tables do not overflow or overlap on mobile screen widths */
+      .erp-data-table {
+        min-width: 320px;
+      }
     }
     
     /* Interactive Chart Tooltips */
