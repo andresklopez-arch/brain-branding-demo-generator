@@ -463,7 +463,9 @@
         width: 95%;
         padding: 10px 15px;
         height: auto !important;
-        flex-direction: column;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
         gap: 8px;
         border-radius: 20px !important;
         backdrop-filter: blur(25px) !important;
@@ -472,15 +474,6 @@
       }
       header.header-hidden {
         transform: translateX(-50%) translateY(-120%) !important;
-      }
-      header nav {
-        margin: 2px 0;
-        gap: 6px;
-      }
-      header nav a {
-        width: 34px !important;
-        height: 34px !important;
-        font-size: 16px !important;
       }
       header .logo-area img {
         height: 30px !important;
@@ -1565,22 +1558,12 @@
   </div>
 
   <!-- NAVIGATION HEADER -->
-  <header>
-    <div style="display: flex; gap: 15px; align-items: center;">
-      <a href="#inicio" class="logo-area">
-        <img src="/favicon.png" alt="Logo Brain Branding" style="height: 38px; object-fit: contain; margin-right: 10px;">
-        <div class="logo-text" style="line-height: 1.1; font-size: 15px;">Empoderando <span>Marcas</span><br><span style="font-size: 10px; font-weight: 500; color: var(--text-muted); -webkit-text-fill-color: initial; background: none; letter-spacing: 0.5px; display: block; margin-top: 1px;">Reprogramando Mentes</span></div>
-      </a>
-      <button id="theme-toggle-btn" class="header-btn custom-tooltip" data-tooltip="Cambiar Modo" style="padding: 0; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; font-size: 15px; cursor: pointer; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.02); color: var(--text-main);">🌓</button>
-    </div>
-    <nav style="display: flex; gap: 10px; align-items: center;">
-      <a href="#inicio" class="nav-link custom-tooltip" data-tooltip="Inicio" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">🏠</a>
-      <a href="#servicios" class="nav-link custom-tooltip" data-tooltip="Servicios" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">🛠️</a>
-      <a href="#prototipos" class="nav-link custom-tooltip" data-tooltip="Showcase" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">🖥️</a>
-      <a href="#testimonios" class="nav-link custom-tooltip" data-tooltip="Opiniones" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">💬</a>
-      <a href="#contacto" class="nav-link custom-tooltip" data-tooltip="Contacto" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0;">✉️</a>
-      <a href="/propuesta_campana/" class="nav-link custom-tooltip" data-tooltip="Campaña IA" style="font-size: 19px; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; transition: background 0.3s; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0; color: #00e5ff; font-weight: bold;">⚡</a>
-    </nav>
+  <header style="justify-content: space-between !important;">
+    <a href="#inicio" class="logo-area">
+      <img src="/favicon.png" alt="Logo Brain Branding" style="height: 38px; object-fit: contain; margin-right: 10px;">
+      <div class="logo-text" style="line-height: 1.1; font-size: 15px;">Empoderando <span>Marcas</span><br><span style="font-size: 10px; font-weight: 500; color: var(--text-muted); -webkit-text-fill-color: initial; background: none; letter-spacing: 0.5px; display: block; margin-top: 1px;">Reprogramando Mentes</span></div>
+    </a>
+    <button id="theme-toggle-btn" class="header-btn custom-tooltip" data-tooltip="Cambiar Modo" style="padding: 0; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; font-size: 15px; cursor: pointer; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.02); color: var(--text-main);">🌓</button>
     <div style="position: absolute; bottom: 0; left: 25px; right: 25px; height: 2px; background: rgba(255, 255, 255, 0.03); border-radius: 1px;">
       <div id="scroll-progress" style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), #00e5ff); transition: width 0.1s ease; box-shadow: 0 0 8px #00e5ff; border-radius: 1px;"></div>
     </div>
