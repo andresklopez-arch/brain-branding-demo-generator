@@ -842,6 +842,10 @@ document.addEventListener('DOMContentLoaded', () => {
           event_label: 'Contact Form'
         });
       }
+      // Auto-dismiss draft toast if still visible when typing starts
+      if (typeof window.dismissDraftToast === 'function') {
+        window.dismissDraftToast();
+      }
     }
   };
 
@@ -1079,21 +1083,31 @@ document.addEventListener('DOMContentLoaded', () => {
     })[m]);
   }
 
-  // XOR Encryption helpers for LocalStorage drafts protection
-  const xorKey = 42;
+  // XOR Encryption helpers with context-aware Dynamic Rotating key
+  const getXorKey = () => {
+    const host = window.location.hostname || 'localhost';
+    let sum = 0;
+    for (let i = 0; i < host.length; i++) {
+      sum += host.charCodeAt(i);
+    }
+    return (sum % 250) + 1; // dynamic XOR key between 1 and 250
+  };
+
   function xorEncrypt(str) {
+    const key = getXorKey();
     let result = '';
     for (let i = 0; i < str.length; i++) {
-      result += String.fromCharCode(str.charCodeAt(i) ^ xorKey);
+      result += String.fromCharCode(str.charCodeAt(i) ^ key);
     }
     return btoa(result);
   }
   function xorDecrypt(str) {
     try {
       const decoded = atob(str);
+      const key = getXorKey();
       let result = '';
       for (let i = 0; i < decoded.length; i++) {
-        result += String.fromCharCode(decoded.charCodeAt(i) ^ xorKey);
+        result += String.fromCharCode(decoded.charCodeAt(i) ^ key);
       }
       return result;
     } catch (e) {
@@ -2019,6 +2033,15 @@ END:VCARD`;
         colorLight : "#ffffff",
         correctLevel : QRCode.CorrectLevel.M
       });
+      // Touch interaction tracking for mobile devices
+      waContainer.addEventListener('touchstart', () => {
+        if (typeof gtag === 'function') {
+          gtag('event', 'qr_touch_interaction', {
+            event_category: 'engagement',
+            event_label: 'WhatsApp QR Mobile'
+          });
+        }
+      }, { passive: true });
     }
 
     const vcardContainer = document.getElementById("vcard-qr-container");
@@ -2031,6 +2054,15 @@ END:VCARD`;
         colorLight : "#ffffff",
         correctLevel : QRCode.CorrectLevel.M
       });
+      // Touch interaction tracking for mobile devices
+      vcardContainer.addEventListener('touchstart', () => {
+        if (typeof gtag === 'function') {
+          gtag('event', 'qr_touch_interaction', {
+            event_category: 'engagement',
+            event_label: 'VCard QR Mobile'
+          });
+        }
+      }, { passive: true });
     }
   }
 });
