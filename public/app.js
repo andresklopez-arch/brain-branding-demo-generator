@@ -91,12 +91,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Haptic Feedback simulation helper
+  function triggerHaptic(type) {
+    const container = document.querySelector('.smartphone-container');
+    if (!container) return;
+    container.classList.remove('shake', 'haptic-pulse');
+    void container.offsetWidth; // trigger reflow
+    container.classList.add(type);
+    setTimeout(() => {
+      container.classList.remove(type);
+    }, 150);
+  }
+
   // Sound Toggle Button Handler
   const soundToggle = document.getElementById('smartphone-sound-toggle');
   if (soundToggle) {
     soundToggle.addEventListener('click', (e) => {
       e.stopPropagation(); // Prevent unlocking lockscreen
       isSoundEnabled = !isSoundEnabled;
+      triggerHaptic('haptic-pulse');
       if (isSoundEnabled) {
         soundToggle.textContent = '🔊';
         soundToggle.classList.add('active');
@@ -117,6 +130,121 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     updateTime();
     setInterval(updateTime, 60000);
+  }
+
+  // Randomize Lockscreen Push Notification
+  const lockscreenNotifs = [
+    { app: '💬 WhatsApp', title: 'Brain Agent', body: 'He terminado de limpiar tu reporte de Excel. Presiona aquí para ingresar y revisar.' },
+    { app: '✉️ Gmail', title: 'Borrador Guardado', body: 'Preparé el correo de cotización para Alejandro con el PDF final adjunto. Listo para enviar.' },
+    { app: '🎙️ Resumen de Junta', title: 'Minuta Lista', body: 'Analicé el audio de la junta de operaciones de hoy. Extraje 2 acuerdos y 3 pendientes.' },
+    { app: '📅 Calendario', title: 'Recordatorio Proactivo', body: 'Reunión reagendada con Alejandro para este Jueves. Tienes 1 hora libre antes para repasar.' },
+    { app: '🌐 Búsqueda Web', title: 'Comparativa de Servidores', body: 'Terminé la investigación de proveedores dedicados. Creé la tabla comparativa con Red Privada.' }
+  ];
+  
+  const randomNotif = lockscreenNotifs[Math.floor(Math.random() * lockscreenNotifs.length)];
+  const notifApp = document.querySelector('.notif-app');
+  const notifTitle = document.querySelector('.notif-title');
+  const notifBody = document.querySelector('.notif-body');
+  if (notifApp && notifTitle && notifBody) {
+    notifApp.innerHTML = randomNotif.app;
+    if (randomNotif.app.includes('WhatsApp')) {
+      notifApp.style.color = '#10b981';
+    } else if (randomNotif.app.includes('Gmail')) {
+      notifApp.style.color = '#ef4444';
+    } else if (randomNotif.app.includes('Junta')) {
+      notifApp.style.color = '#ec4899';
+    } else if (randomNotif.app.includes('Calendario')) {
+      notifApp.style.color = '#10b981';
+    } else {
+      notifApp.style.color = '#3b82f6';
+    }
+    notifTitle.textContent = randomNotif.title;
+    notifBody.textContent = randomNotif.body;
+  }
+
+  // Smartphone Control Center Slide Toggle
+  const statusBar = document.querySelector('.smartphone-status-bar');
+  const phoneContainer = document.querySelector('.smartphone-container');
+  const ccClose = document.getElementById('cc-handle-close');
+  
+  if (statusBar && phoneContainer) {
+    statusBar.addEventListener('click', (e) => {
+      // Allow only if unlocked
+      if (isLocked) {
+        triggerHaptic('shake');
+        playSynthSound('msg_send'); // error buzzer style tone
+        return;
+      }
+      triggerHaptic('haptic-pulse');
+      phoneContainer.classList.toggle('control-center-open');
+    });
+  }
+  
+  if (ccClose) {
+    ccClose.addEventListener('click', (e) => {
+      triggerHaptic('haptic-pulse');
+      phoneContainer.classList.remove('control-center-open');
+    });
+  }
+
+  // Brightness Mask Adjustment
+  const brightnessSlider = document.getElementById('cc-brightness');
+  const brightnessMask = document.getElementById('smartphone-brightness-mask');
+  if (brightnessSlider && brightnessMask) {
+    brightnessSlider.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      const opacity = (100 - val) * 0.007;
+      brightnessMask.style.opacity = opacity;
+      if (val % 10 === 0) {
+        triggerHaptic('haptic-pulse');
+      }
+    });
+  }
+
+  // Private mode Theme Toggler
+  const privateToggle = document.getElementById('cc-private-toggle');
+  const privateIcon = document.getElementById('cc-private-icon');
+  const privateStatus = document.getElementById('cc-private-status');
+  const mockupScreen = document.querySelector('.telegram-mockup');
+  
+  if (privateToggle && mockupScreen) {
+    privateToggle.addEventListener('click', () => {
+      const isPrivateActive = mockupScreen.classList.toggle('private-mode-theme');
+      triggerHaptic('haptic-pulse');
+      playSynthSound('unlock');
+      
+      if (isPrivateActive) {
+        privateToggle.classList.add('active');
+        privateStatus.textContent = 'Activo';
+        privateIcon.textContent = '🔐';
+      } else {
+        privateToggle.classList.remove('active');
+        privateStatus.textContent = 'Inactivo';
+        privateIcon.textContent = '🔓';
+      }
+    });
+  }
+
+  // Network Celular indicator switcher
+  const networkToggle = document.getElementById('cc-network-toggle');
+  const networkStatus = document.getElementById('cc-network-status');
+  const netLabelEl = document.querySelector('.smartphone-status-bar span[style*="5G"]');
+  
+  if (networkToggle) {
+    networkToggle.addEventListener('click', () => {
+      triggerHaptic('haptic-pulse');
+      playSynthSound('msg_send');
+      
+      if (networkStatus.textContent === '5G') {
+        networkStatus.textContent = 'Wi-Fi';
+        networkToggle.classList.add('active');
+        if (netLabelEl) netLabelEl.textContent = 'LTE';
+      } else {
+        networkStatus.textContent = '5G';
+        networkToggle.classList.remove('active');
+        if (netLabelEl) netLabelEl.textContent = '5G';
+      }
+    });
   }
 
   // 1. Header scroll animation
@@ -1245,11 +1373,13 @@ document.addEventListener('DOMContentLoaded', () => {
       telegramContainer.appendChild(bubble);
       telegramContainer.scrollTop = telegramContainer.scrollHeight;
       
-      // Play sound
+      // Play sound and trigger haptic pulse
       if (sender === 'user') {
         playSynthSound('msg_send');
+        triggerHaptic('haptic-pulse');
       } else {
         playSynthSound('msg_recv');
+        triggerHaptic('haptic-pulse');
       }
     }
 
