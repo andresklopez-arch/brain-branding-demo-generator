@@ -1085,22 +1085,43 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       
+      const showInputError = (el, msg) => {
+        let errSpan = el.parentNode.querySelector('.error-msg');
+        if (!errSpan) {
+          errSpan = document.createElement('span');
+          errSpan.className = 'error-msg';
+          errSpan.style.color = '#f43f5e';
+          errSpan.style.fontSize = '11.5px';
+          errSpan.style.fontWeight = '600';
+          errSpan.style.marginTop = '6px';
+          errSpan.style.display = 'block';
+          el.parentNode.appendChild(errSpan);
+        }
+        errSpan.textContent = msg;
+        el.style.borderColor = 'rgba(244, 63, 94, 0.6)';
+        el.style.boxShadow = '0 0 12px rgba(244, 63, 94, 0.3)';
+        el.focus();
+      };
+
       // Phone format validation (10 digits)
       const phoneInput = document.getElementById('contact-phone');
       const phoneVal = phoneInput?.value || '';
       const phonePattern = /^[0-9]{10}$/;
       if (!phonePattern.test(phoneVal)) {
-        alert('Por favor ingresa un número de WhatsApp válido de 10 dígitos.');
-        if (phoneInput) phoneInput.focus();
+        showInputError(phoneInput, 'Por favor ingresa un número de WhatsApp válido de 10 dígitos.');
         return;
       }
       
       const urlPattern = /https?:\/\/[^\s$.?#].[^\s]*/i;
-      const hasUrl = (descField && urlPattern.test(descField.value)) || 
-                     (operationField && urlPattern.test(operationField.value));
+      const hasUrlDesc = descField && urlPattern.test(descField.value);
+      const hasUrlOp = operationField && urlPattern.test(operationField.value);
       
-      if (hasUrl) {
-        alert('Por razones de seguridad, no se permiten enlaces HTTP/HTTPS en la descripción o detalles de la operación.');
+      if (hasUrlDesc) {
+        showInputError(descField, 'Por razones de seguridad, no se permiten enlaces HTTP/HTTPS aquí.');
+        return;
+      }
+      if (hasUrlOp) {
+        showInputError(operationField, 'Por razones de seguridad, no se permiten enlaces HTTP/HTTPS aquí.');
         return;
       }
       
@@ -1159,7 +1180,11 @@ END:VCARD`;
     const blob = new Blob([vcardData], { type: 'text/vcard;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'Andre_Krebollo_Brain_Branding.vcf';
+    
+    // Generate timestamp for filename
+    const now = new Date();
+    const dateStr = now.getFullYear() + '_' + String(now.getMonth() + 1).padStart(2, '0') + '_' + String(now.getDate()).padStart(2, '0');
+    link.download = `Andre_Krebollo_Brain_Branding_${dateStr}.vcf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
