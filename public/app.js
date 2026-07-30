@@ -283,12 +283,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Update more info button dynamic link & label
-        const targets = ["#detail-asistente-ia", "#detail-punto-venta", "#detail-pagina-web", "#detail-software-medida"];
+        const targets = ["#inclusiones", "#inclusiones", "#inclusiones"];
         const buttonLabels = [
           "Ver ventajas de tu Asistente Personal IA",
           "Ver ventajas de tu Punto de Venta",
-          "Ver ventajas de tu Página Web",
-          "Ver ventajas de tu Software a Medida"
+          "Ver ventajas de tu Página Web"
         ];
         const moreInfoBtn = document.getElementById('hero-more-info-btn');
         const moreInfoText = document.getElementById('more-info-text');
@@ -305,8 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const templates = [
           "Hola! Me interesa diseñar mi Asistente Personal de IA para automatizar mis procesos.",
           "Hola! Me interesa cotizar un Sistema de Punto de Venta a la medida.",
-          "Hola! Me interesa crear mi Página Web corporativa premium.",
-          "Hola! Me interesa cotizar un Software a Medida para mi empresa."
+          "Hola! Me interesa crear mi Página Web corporativa premium."
         ];
         const descField = document.getElementById('contact-desc');
         if (descField) {
@@ -3723,7 +3721,7 @@ END:VCARD`;
     });
 
     // 27. 3D Interactive Card Tilt Effect for Services
-    const serviceCards = document.querySelectorAll('#servicios .service-card');
+    const serviceCards = document.querySelectorAll('.service-card');
     serviceCards.forEach(card => {
       card.addEventListener('mousemove', (e) => {
         const rect = card.getBoundingClientRect();
