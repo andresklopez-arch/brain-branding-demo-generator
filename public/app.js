@@ -1161,6 +1161,12 @@ document.addEventListener('DOMContentLoaded', () => {
     return inputs.length;
   };
 
+  // Helper to compute dynamic browser-date calendar salt (weekday and month)
+  const getDateSalt = () => {
+    const d = new Date();
+    return `${d.getDay()}_${d.getMonth()}`;
+  };
+
   // XOR Encryption helpers with context-aware Dynamic Rotating key & Client-Specific Salt (Daily Rotation)
   const getXorKey = () => {
     const host = window.location.hostname || 'localhost';
@@ -1182,7 +1188,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const humanActivity = sessionStorage.getItem('draft_human_activity') || '0';
     const servicesLen = getServicesTitleLength();
     const inputsCount = getFormInputsCount();
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}`;
+    const dateSalt = getDateSalt();
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}_${humanActivity}_${servicesLen}_${inputsCount}_${dateSalt}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
@@ -2286,6 +2293,30 @@ END:VCARD`;
     document.addEventListener('mouseleave', () => {
       logoImg.style.transform = 'translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg)';
       logoImg.style.filter = 'drop-shadow(0 0 2px rgba(99, 102, 241, 0.3))';
+    });
+
+    // 27. 3D Interactive Card Tilt Effect for Services
+    const serviceCards = document.querySelectorAll('#servicios .service-card');
+    serviceCards.forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        const rotateX = ((centerY - y) / centerY) * 8;
+        const rotateY = ((x - centerX) / centerX) * 8;
+        
+        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
+        card.style.transition = 'transform 0.1s ease, box-shadow 0.2s ease, border-color 0.2s ease';
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)';
+        card.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s';
+      });
     });
 
     // Reassuring warm touch vibration & circular expand light glow ring for mobile
