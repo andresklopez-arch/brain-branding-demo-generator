@@ -1135,7 +1135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     })[m]);
   }
 
-  // XOR Encryption helpers with context-aware Dynamic Rotating key & Client-Specific Salt
+  // XOR Encryption helpers with context-aware Dynamic Rotating key & Client-Specific Salt (Daily Rotation)
   const getXorKey = () => {
     const host = window.location.hostname || 'localhost';
     const userAgentLength = navigator.userAgent ? navigator.userAgent.length : 0;
@@ -1150,15 +1150,24 @@ document.addEventListener('DOMContentLoaded', () => {
       sessionStorage.setItem('draft_session_token', sessionToken);
     }
     
-    // Hourly rotating epoch
-    const hourEpoch = Math.floor(Date.now() / (1000 * 60 * 60));
+    // Daily rotating epoch
+    const dailyEpoch = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
     
-    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${hourEpoch}`;
+    const salt = `${host}_${userAgentLength}_${screenWidth}x${screenHeight}_${lang}_${sessionToken}_${dailyEpoch}`;
     let sum = 0;
     for (let i = 0; i < salt.length; i++) {
       sum += salt.charCodeAt(i);
     }
-    return (sum % 250) + 1; // dynamic XOR key between 1 and 250 salted by client details, session token, and rotating hour
+    return (sum % 250) + 1; // dynamic XOR key between 1 and 250 salted by client details, session token, and rotating day
+  };
+
+  const getStaticXorKey = () => {
+    const host = window.location.hostname || 'localhost';
+    let sum = 0;
+    for (let i = 0; i < host.length; i++) {
+      sum += host.charCodeAt(i);
+    }
+    return (sum % 250) + 1; // static XOR key salted only by host, no session/day expiration
   };
 
   function xorEncrypt(str) {
@@ -1173,6 +1182,29 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const decoded = atob(str);
       const key = getXorKey();
+      let result = '';
+      for (let i = 0; i < decoded.length; i++) {
+        result += String.fromCharCode(decoded.charCodeAt(i) ^ key);
+      }
+      return result;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // Static salted XOR helpers for non-confidential fields
+  function xorEncryptStatic(str) {
+    const key = getStaticXorKey();
+    let result = '';
+    for (let i = 0; i < str.length; i++) {
+      result += String.fromCharCode(str.charCodeAt(i) ^ key);
+    }
+    return btoa(result);
+  }
+  function xorDecryptStatic(str) {
+    try {
+      const decoded = atob(str);
+      const key = getStaticXorKey();
       let result = '';
       for (let i = 0; i < decoded.length; i++) {
         result += String.fromCharCode(decoded.charCodeAt(i) ^ key);
@@ -1208,11 +1240,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Check if there is any draft
   let hasSavedDrafts = false;
   const tempDrafts = {};
+  const confidentialIds = ['contact-name', 'contact-phone', 'contact-desc'];
+
   Object.keys(draftFields).forEach(id => {
     const key = draftFields[id];
     const savedVal = safeLocalStorage.getItem(key);
     if (savedVal) {
-      const val = xorDecrypt(savedVal);
+      // Non-confidential fields decrypt with static key, confidential with daily rotating session key
+      const isConfidential = confidentialIds.includes(id);
+      const val = isConfidential ? xorDecrypt(savedVal) : xorDecryptStatic(savedVal);
       if (val.trim().length > 0) {
         hasSavedDrafts = true;
         tempDrafts[id] = val;
@@ -1344,7 +1380,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const key = draftFields[id];
     if (el) {
       el.addEventListener('input', () => {
-        const val = xorEncrypt(el.value);
+        const isConfidential = confidentialIds.includes(id);
+        const val = isConfidential ? xorEncrypt(el.value) : xorEncryptStatic(el.value);
         safeLocalStorage.setItem(key, sanitizeInput(val));
         // Update draft activity timestamp
         safeLocalStorage.setItem('draft_timestamp', Date.now().toString());
@@ -1399,6 +1436,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       let gaErrorTimeout = null;
+      const errorCounts = {};
       const showInputError = (el, msg) => {
         let errSpan = el.parentNode.querySelector('.error-msg');
         if (!errSpan) {
@@ -1420,6 +1458,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!el.dataset.errorStartTime) {
           el.dataset.errorStartTime = Date.now().toString();
         }
+
+        // Increment error count for this field to track loop frustration
+        const fieldId = el.id || 'unknown_field';
+        errorCounts[fieldId] = (errorCounts[fieldId] || 0) + 1;
+        if (errorCounts[fieldId] >= 3) {
+          if (typeof gtag === 'function') {
+            gtag('event', 'error_loop_triggered', {
+              event_category: 'validation',
+              event_label: fieldId,
+              value: errorCounts[fieldId]
+            });
+          }
+        }
         
         // 31. Google Analytics Event for Input validation error (Debounced to 2s)
         if (typeof gtag === 'function') {
@@ -1427,7 +1478,7 @@ document.addEventListener('DOMContentLoaded', () => {
           gaErrorTimeout = setTimeout(() => {
             gtag('event', 'form_input_error', {
               event_category: 'validation',
-              event_label: el.id || 'unknown_field',
+              event_label: fieldId,
               value: msg
             });
           }, 2000);
