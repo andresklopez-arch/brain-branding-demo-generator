@@ -825,14 +825,41 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 17. Real-Time Visual Field Validation
+  let formStarted = false;
+  const trackFormStart = () => {
+    if (!formStarted) {
+      formStarted = true;
+      if (typeof gtag === 'function') {
+        gtag('event', 'form_start', {
+          event_category: 'engagement',
+          event_label: 'Contact Form'
+        });
+      }
+    }
+  };
+
   const validateInputs = ['contact-name', 'contact-business', 'contact-phone', 'contact-desc', 'contact-operation'];
   validateInputs.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.addEventListener('input', () => {
+        // Track form start engagement
+        trackFormStart();
+
         let isValid = false;
         if (id === 'contact-phone') {
-          isValid = /^[0-9]{10}$/.test(el.value);
+          // Apply numeric formatting mask (XXX-XXX-XXXX)
+          const rawVal = el.value.replace(/\D/g, '').substring(0, 10);
+          let formatted = '';
+          if (rawVal.length <= 3) {
+            formatted = rawVal;
+          } else if (rawVal.length <= 6) {
+            formatted = `${rawVal.substring(0, 3)}-${rawVal.substring(3)}`;
+          } else {
+            formatted = `${rawVal.substring(0, 3)}-${rawVal.substring(3, 6)}-${rawVal.substring(6)}`;
+          }
+          el.value = formatted;
+          isValid = rawVal.length === 10;
         } else {
           isValid = el.value.trim().length >= 3;
         }
@@ -840,6 +867,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isValid) {
           el.style.borderColor = 'rgba(34, 197, 94, 0.5)';
           el.style.boxShadow = '0 0 12px rgba(34, 197, 94, 0.25)';
+          // Clear error tooltip if present
+          const errSpan = el.parentNode.querySelector('.error-msg');
+          if (errSpan) errSpan.remove();
         } else {
           el.style.borderColor = 'var(--border-color)';
           el.style.boxShadow = 'none';
@@ -1042,6 +1072,20 @@ document.addEventListener('DOMContentLoaded', () => {
     'contact-operation': 'draft_operation'
   };
 
+  // Check and expire drafts after 48 hours
+  const draftTimestamp = safeLocalStorage.getItem('draft_timestamp');
+  if (draftTimestamp) {
+    const ageHours = (Date.now() - parseInt(draftTimestamp, 10)) / (1000 * 60 * 60);
+    if (ageHours > 48) {
+      // Clear drafts and timestamp
+      Object.keys(draftFields).forEach(id => {
+        safeLocalStorage.removeItem(draftFields[id]);
+      });
+      safeLocalStorage.removeItem('draft_phone'); // clear phone draft too
+      safeLocalStorage.removeItem('draft_timestamp');
+    }
+  }
+
   // Restore drafts on load
   Object.keys(draftFields).forEach(id => {
     const el = document.getElementById(id);
@@ -1056,6 +1100,8 @@ document.addEventListener('DOMContentLoaded', () => {
       el.addEventListener('input', () => {
         const val = xorEncrypt(el.value);
         safeLocalStorage.setItem(key, sanitizeInput(val));
+        // Update draft activity timestamp
+        safeLocalStorage.setItem('draft_timestamp', Date.now().toString());
       });
     }
   });
