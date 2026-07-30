@@ -975,9 +975,10 @@ document.addEventListener('DOMContentLoaded', () => {
         { sender: 'bot', text: 'Analizando historial y tono de comunicación con Alejandro... 🧠' },
         { sender: 'bot', text: '✉️ **Correo redactado en Gmail (Borrador guardado):**\n\n*Asunto:* Actualización: Propuesta de Desarrollo y Ajustes Finos\n\n*Hola Alejandro, espero que todo vaya excelente... [Ver borrador completo]*\n\n📎 Se seleccionó y adjuntó automáticamente el archivo `Propuesta_Brain_Branding_Final.pdf` de tu Google Drive.' }
       ],
-      // Scenario 3: Juntas
+      // Scenario 3: Juntas (Voice Note Simulation)
       [
-        { sender: 'user', text: 'Acabo de salir de la junta con el equipo. Analiza el audio de 45 min que te mandé y dime un resumen rápido.' },
+        { sender: 'user', isVoice: true, text: 'Nota de voz de 0:45' },
+        { sender: 'bot', text: '🎤 **Nota de voz transcrita:**\n*"Acabo de salir de la junta con el equipo. Analiza el audio de 45 min que te mandé y dime un resumen rápido."*' },
         { sender: 'bot', text: 'Analizando transcripción del audio y extrayendo puntos clave... 🎙️' },
         { sender: 'bot', text: '📝 **Minuta Ejecutiva (Junta de Operaciones):**\n\n👥 **Acuerdos Principales:**\n1. Se aprueba la migración de servidores para el 15 de agosto.\n2. Sofía coordinará la capacitación del equipo.\n\n📌 **Pendientes Asignados:**\n- **Andre:** Modificar contrato de proveedor (Fecha límite: Viernes).\n- **Alejandro:** Enviar cotización SaaS a Inmuebles Plus.' }
       ],
@@ -997,6 +998,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentScenarioIdx = 0;
     let currentMessageIdx = 0;
+    let simulatorTimeout = null;
+    let isSectionVisible = true;
 
     function formatTimestamp() {
       const now = new Date();
@@ -1035,28 +1038,80 @@ document.addEventListener('DOMContentLoaded', () => {
       return html;
     }
 
-    function renderMessage(sender, text) {
+    function renderMessage(sender, msgObj) {
       const bubble = document.createElement('div');
       bubble.className = `telegram-bubble ${sender}`;
       
-      const formattedText = formatMessageText(text);
-      bubble.innerHTML = `
-        <div class="text">${formattedText.replace(/\n/g, '<br>')}</div>
-        <span class="time">${formatTimestamp()}</span>
-      `;
+      if (msgObj.isVoice) {
+        bubble.innerHTML = `
+          <div class="voice-note-player">
+            <div class="vn-play-btn">▶</div>
+            <div class="vn-waveform">
+              <span class="vn-wave-bar" style="height: 10px;"></span>
+              <span class="vn-wave-bar" style="height: 14px;"></span>
+              <span class="vn-wave-bar" style="height: 8px;"></span>
+              <span class="vn-wave-bar" style="height: 16px;"></span>
+              <span class="vn-wave-bar" style="height: 12px;"></span>
+              <span class="vn-wave-bar" style="height: 18px;"></span>
+              <span class="vn-wave-bar" style="height: 10px;"></span>
+              <span class="vn-wave-bar" style="height: 14px;"></span>
+              <span class="vn-wave-bar" style="height: 6px;"></span>
+              <span class="vn-wave-bar" style="height: 12px;"></span>
+              <span class="vn-wave-bar" style="height: 16px;"></span>
+              <span class="vn-wave-bar" style="height: 8px;"></span>
+              <span class="vn-wave-bar" style="height: 14px;"></span>
+              <span class="vn-wave-bar" style="height: 10px;"></span>
+            </div>
+            <span style="font-size: 11px; font-weight: 600; margin-right: 5px;">0:45</span>
+          </div>
+          <span class="time">${formatTimestamp()}</span>
+        `;
+        setTimeout(() => {
+          const bars = bubble.querySelectorAll('.vn-wave-bar');
+          let barIdx = 0;
+          const animateInterval = setInterval(() => {
+            if (barIdx >= bars.length) {
+              clearInterval(animateInterval);
+              return;
+            }
+            bars[barIdx].classList.add('active');
+            barIdx++;
+          }, 60);
+        }, 100);
+      } else {
+        const formattedText = formatMessageText(msgObj.text);
+        bubble.innerHTML = `
+          <div class="text">${formattedText.replace(/\n/g, '<br>')}</div>
+          <span class="time">${formatTimestamp()}</span>
+        `;
+      }
       
       telegramContainer.appendChild(bubble);
       telegramContainer.scrollTop = telegramContainer.scrollHeight;
     }
 
+    function updateActivePill(idx) {
+      const pills = document.querySelectorAll('.telegram-cmd-pill');
+      pills.forEach(p => {
+        if (parseInt(p.getAttribute('data-scenario'), 10) === idx) {
+          p.classList.add('active');
+        } else {
+          p.classList.remove('active');
+        }
+      });
+    }
+
     function playNextMessage() {
+      if (!isSectionVisible) return;
+
       const scenario = chatScenarios[currentScenarioIdx];
       
       if (currentMessageIdx >= scenario.length) {
-        setTimeout(() => {
+        simulatorTimeout = setTimeout(() => {
           telegramContainer.innerHTML = '';
           currentScenarioIdx = (currentScenarioIdx + 1) % chatScenarios.length;
           currentMessageIdx = 0;
+          updateActivePill(currentScenarioIdx);
           playNextMessage();
         }, 5000);
         return;
@@ -1066,22 +1121,80 @@ document.addEventListener('DOMContentLoaded', () => {
       currentMessageIdx++;
 
       if (msg.sender === 'user') {
-        setTimeout(() => {
-          renderMessage('user', msg.text);
+        simulatorTimeout = setTimeout(() => {
+          renderMessage('user', msg);
           playNextMessage();
         }, 1500);
       } else {
-        setTimeout(() => {
+        simulatorTimeout = setTimeout(() => {
           showTypingIndicator();
-          setTimeout(() => {
+          simulatorTimeout = setTimeout(() => {
             removeTypingIndicator();
-            renderMessage('bot', msg.text);
+            renderMessage('bot', msg);
             playNextMessage();
           }, 2500);
         }, 800);
       }
     }
 
-    playNextMessage();
+    // Interactive command pills listener
+    const cmdPills = document.querySelectorAll('.telegram-cmd-pill');
+    cmdPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        const scenarioIdx = parseInt(pill.getAttribute('data-scenario'), 10);
+        if (isNaN(scenarioIdx)) return;
+
+        // Reset Active pill
+        cmdPills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+
+        // Reset loops
+        if (simulatorTimeout) {
+          clearTimeout(simulatorTimeout);
+          simulatorTimeout = null;
+        }
+        removeTypingIndicator();
+        telegramContainer.innerHTML = '';
+        currentScenarioIdx = scenarioIdx;
+        currentMessageIdx = 0;
+
+        // Start selected scenario instantly
+        const scenario = chatScenarios[currentScenarioIdx];
+        if (scenario && scenario.length > 0) {
+          const firstMsg = scenario[0];
+          currentMessageIdx = 1;
+          renderMessage(firstMsg.sender, firstMsg);
+          playNextMessage();
+        }
+      });
+    });
+
+    // IntersectionObserver implementation for visibility check
+    if (typeof IntersectionObserver !== 'undefined') {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            if (!isSectionVisible) {
+              isSectionVisible = true;
+              playNextMessage();
+            }
+          } else {
+            isSectionVisible = false;
+            if (simulatorTimeout) {
+              clearTimeout(simulatorTimeout);
+              simulatorTimeout = null;
+            }
+          }
+        });
+      }, { threshold: 0.1 });
+
+      const targetSection = document.getElementById('asistente-ia');
+      if (targetSection) {
+        observer.observe(targetSection);
+      }
+    } else {
+      // Fallback: start loop directly
+      playNextMessage();
+    }
   }
 });
