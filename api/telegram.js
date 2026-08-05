@@ -231,8 +231,10 @@ function getDynamicKeyboard(chatId, userText) {
 
   const buttons = [
     [
-      { text: "🏪 Negocio Físico / Local", callback_data: "opcion_1" },
-      { text: "📅 Servicios por Citas", callback_data: "opcion_2" }
+      { 
+        text: "📅 Servicios por Citas (WhatsApp)", 
+        url: "https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20me%20interesa%20informaci%C3%B3n%20sobre%20el%20Servicio%20de%20Citas%20y%20Automatizaci%C3%B3n" 
+      }
     ],
     [
       { text: "🌐 Ver Demos Interactivas", callback_data: "opcion_3" }
