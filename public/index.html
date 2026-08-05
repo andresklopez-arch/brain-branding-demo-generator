@@ -137,7 +137,7 @@
       0% { opacity: 0; transform: translateX(-8px); }
       100% { opacity: 1; transform: translateX(0); }
     }
-    /* EXTRA-WHITE 3D SWAPPING NEURO LOGO TYPOGRAPHY */
+    /* EXTRA-CRISP SHARP NEURO LOGO TYPOGRAPHY & OFFICIAL SLOGAN DIFFERENTIATOR */
     header .logo-area, footer .logo-area {
       display: flex;
       align-items: center;
@@ -147,19 +147,19 @@
     header .logo-area img, footer .logo-area img {
       height: 38px !important;
       object-fit: contain;
-      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.45));
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
       transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
     }
     header .logo-area:hover img, footer .logo-area:hover img {
       transform: scale(1.08) rotate(3deg);
-      filter: drop-shadow(0 0 16px rgba(0, 229, 255, 0.75));
+      filter: drop-shadow(0 0 14px rgba(0, 229, 255, 0.6));
     }
     .neuro-swap-container {
       perspective: 500px;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      line-height: 1.15 !important;
+      line-height: 1.16 !important;
       user-select: none;
       opacity: 0;
       animation: brand-phrase-entrance 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
@@ -173,7 +173,7 @@
       color: #ffffff !important;
       text-transform: uppercase;
       white-space: nowrap;
-      text-shadow: 0 0 12px rgba(255, 255, 255, 0.9), 0 0 24px rgba(0, 229, 255, 0.45);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85); /* Crisp sharp contrast, NO blur glow */
       transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease, filter 0.35s ease;
       transform-origin: 50% 50%;
       will-change: transform, opacity, filter;
@@ -181,17 +181,33 @@
     .neuro-swap-container.swapping .logo-line-1 {
       transform: translateY(-10px) rotateX(90deg);
       opacity: 0;
-      filter: blur(4px);
+      filter: blur(3px);
     }
     .neuro-swap-container.swapping .logo-line-2 {
       transform: translateY(10px) rotateX(-90deg);
       opacity: 0;
-      filter: blur(4px);
+      filter: blur(3px);
+    }
+
+    /* OFFICIAL SLOGAN ACCENT DIFFERENTIATOR */
+    .neuro-swap-container.is-official-slogan .highlight-marcas {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
+      font-weight: 900;
+    }
+    .neuro-swap-container.is-official-slogan .highlight-mentes {
+      background: linear-gradient(135deg, #38bdf8 0%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
+      font-weight: 900;
     }
 
     body.light-theme .neuro-swap-container .logo-line {
       color: #0f172a !important;
-      text-shadow: 0 0 10px rgba(15, 23, 42, 0.25);
+      text-shadow: none;
     }
     @keyframes theme-toggle-entrance {
       0% { opacity: 0; transform: scale(0.8) rotate(-45deg); }
@@ -2867,9 +2883,9 @@
   <header style="justify-content: space-between !important;">
     <a href="#inicio" class="logo-area" aria-label="Brain Branding - Empoderando Marcas, Reprogramando Mentes">
       <img src="/favicon.png" alt="Logo Brain Branding" style="height: 38px; object-fit: contain;">
-      <div class="logo-text neuro-swap-container" id="header-logo-text">
-        <div class="logo-line logo-line-1">EMPODERANDO</div>
-        <div class="logo-line logo-line-2">MARCAS</div>
+      <div class="logo-text neuro-swap-container is-official-slogan" id="header-logo-text">
+        <div class="logo-line logo-line-1">EMPODERANDO <span class="accent-word highlight-marcas">MARCAS</span></div>
+        <div class="logo-line logo-line-2">REPROGRAMANDO <span class="accent-word highlight-mentes">MENTES</span></div>
       </div>
     </a>
     <button id="theme-toggle-btn" class="header-btn custom-tooltip" data-tooltip="Cambiar Modo" style="padding: 0; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; font-size: 15px; cursor: pointer; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.02); color: var(--text-main);">🌓</button>
@@ -3858,9 +3874,9 @@
       <div class="footer-left">
         <a href="#inicio" class="logo-area" aria-label="Brain Branding">
           <img src="/favicon.png" alt="Logo" style="height: 32px; object-fit: contain;">
-          <div class="logo-text neuro-swap-container" id="footer-logo-text">
-            <div class="logo-line logo-line-1">EMPODERANDO</div>
-            <div class="logo-line logo-line-2">MARCAS</div>
+          <div class="logo-text neuro-swap-container is-official-slogan" id="footer-logo-text">
+            <div class="logo-line logo-line-1">EMPODERANDO <span class="accent-word highlight-marcas">MARCAS</span></div>
+            <div class="logo-line logo-line-2">REPROGRAMANDO <span class="accent-word highlight-mentes">MENTES</span></div>
           </div>
         </a>
         <p>© 2026 Empoderando Marcas, Reprogramando Mentes. Todos los derechos reservados.</p>

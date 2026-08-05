@@ -1091,10 +1091,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 19. Dynamic Extra-White 3D Word Swapper for Header & Footer Logo
-  const wordPairs = [
-    ['EMPODERANDO', 'MARCAS'],
-    ['REPROGRAMANDO', 'MENTES'],
+  // 19. 12-Second Rhythm: Official Slogan vs Random Word Swapping
+  const randomPairs = [
     ['EMPODERANDO', 'MENTES'],
     ['REPROGRAMANDO', 'MARCAS'],
     ['MARCAS', 'MENTES'],
@@ -1103,37 +1101,78 @@ document.addEventListener('DOMContentLoaded', () => {
     ['MARCAS', 'REPROGRAMANDO']
   ];
 
-  let currentPairIdx = 0;
   const headerLogoContainer = document.getElementById('header-logo-text');
   const footerLogoContainer = document.getElementById('footer-logo-text');
 
   if (headerLogoContainer || footerLogoContainer) {
-    setInterval(() => {
-      let nextIdx;
-      do {
-        nextIdx = Math.floor(Math.random() * wordPairs.length);
-      } while (nextIdx === currentPairIdx);
-      
-      currentPairIdx = nextIdx;
-      const [word1, word2] = wordPairs[currentPairIdx];
+    let cycleState = 0; // 0 = Official Slogan, 1, 2, 3 = Random swaps
+    let randomIdx = 0;
 
-      const swapTarget = (container) => {
+    const renderLogoState = () => {
+      const isOfficial = (cycleState === 0);
+      
+      let htmlLine1 = '';
+      let htmlLine2 = '';
+
+      if (isOfficial) {
+        htmlLine1 = 'EMPODERANDO <span class="accent-word highlight-marcas">MARCAS</span>';
+        htmlLine2 = 'REPROGRAMANDO <span class="accent-word highlight-mentes">MENTES</span>';
+      } else {
+        const pair = randomPairs[randomIdx % randomPairs.length];
+        randomIdx++;
+        htmlLine1 = pair[0];
+        htmlLine2 = pair[1];
+      }
+
+      const applyToContainer = (container) => {
         if (!container) return;
         const line1 = container.querySelector('.logo-line-1');
         const line2 = container.querySelector('.logo-line-2');
         if (line1 && line2) {
           container.classList.add('swapping');
           setTimeout(() => {
-            line1.textContent = word1;
-            line2.textContent = word2;
+            if (isOfficial) {
+              container.classList.add('is-official-slogan');
+            } else {
+              container.classList.remove('is-official-slogan');
+            }
+            line1.innerHTML = htmlLine1;
+            line2.innerHTML = htmlLine2;
             container.classList.remove('swapping');
           }, 350);
         }
       };
 
-      swapTarget(headerLogoContainer);
-      swapTarget(footerLogoContainer);
-    }, 3500);
+      applyToContainer(headerLogoContainer);
+      applyToContainer(footerLogoContainer);
+    };
+
+    const runRhythm = () => {
+      if (cycleState === 0) {
+        // Official slogan: Hold for 4.5 seconds
+        setTimeout(() => {
+          cycleState = 1;
+          renderLogoState();
+          runRhythm();
+        }, 4500);
+      } else if (cycleState < 3) {
+        // Random swaps 1 & 2: 2.5 seconds each
+        setTimeout(() => {
+          cycleState++;
+          renderLogoState();
+          runRhythm();
+        }, 2500);
+      } else {
+        // Random swap 3: 2.5 seconds then back to Official Slogan (12s total cycle!)
+        setTimeout(() => {
+          cycleState = 0;
+          renderLogoState();
+          runRhythm();
+        }, 2500);
+      }
+    };
+
+    runRhythm();
   }
 
   // 20. Scroll Spy for Icon Nav links
