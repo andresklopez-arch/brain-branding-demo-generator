@@ -4370,6 +4370,144 @@ END:VCARD`;
   }
 });
 
+/* ════════════════ SECURE ADMIN DASHBOARD & EDITABLE BUSINESS KNOWLEDGE BASE ════════════════ */
+(function initAdminDashboard() {
+  // SHA-256 hash of password (NEVER stored in plain text to prevent source code leaks)
+  const ADMIN_PASS_HASH = "5f746de363014fcf4c725d94e0ade7189b0fd6142d2a8484316946262fa7abd0";
+
+  async function sha256Hex(str) {
+    const buffer = new TextEncoder().encode(str);
+    const digest = await crypto.subtle.digest('SHA-256', buffer);
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  // Pre-filled Master Knowledge Base Text
+  const DEFAULT_BUSINESS_FEATURES = `# BRAIN BRANDING — REGLAS Y CARACTERÍSTICAS DEL NEGOCIO (KNOWLEDGE BASE)
+
+## 🏢 1. INFORMACIÓN CORPORATIVA
+- Nombre: Brain Branding
+- Eslogan: "Empoderando Marcas, Reprogramando Mentes"
+- Metodología: Arquitectura Digital e Inteligencia Artificial inspirada en Juanpe Navarro (Tribu Divisual - España).
+- Sitio Web Oficial: https://brainbranding.com.mx
+- WhatsApp Oficial: +52 771 233 9238 (https://wa.me/527712339238)
+- Telegram Bot: @Brainbranding_bot
+
+## 🚀 2. NUESTROS 3 PILARES CORE
+1. Asistentes Personales con IA (24/7): Agentes cognitivos autónomos en WhatsApp/Telegram que atienden prospectos, agendan citas, transcriben audios y filtran ventas.
+2. Software a la Medida con Motor IA (POS / ERP / CRM): Plataformas 100% móviles sin rentas por terminal, inventarios predictivos, báscula integrada y arqueos de caja con firma digital.
+3. Páginas Web de Alta Conversión: Diseño disruptivo futurista (glassmorphism, micro-animaciones) con score 98+ en Google Lighthouse y velocidad de carga instantánea.
+
+## 💼 3. ESQUEMA COMERCIAL Y GARANTÍA CERO RIESGO
+- Activación Inicial: Cuota plana de desarrollo e implementación a la medida.
+- Mantenimiento Nube: 10% mensual para servidor resiliente, respaldos diarios automáticos, actualizaciones y soporte técnico 24/7.
+- Garantía Cero Riesgo: Garantía de Satisfacción por contrato y entregables por fases con visto bueno previo.
+- Bono Acción Rápida: Primeros 2 meses de mantenimiento en la nube 100% GRATIS al contratar esta semana.
+
+## 🎯 4. REGLAS PARA BOTS Y ASESORÍA CONSULTIVA
+- Tono conversacional 100% humano, profesional, empático y directo al retorno de inversión (ROI).
+- Nunca hacer listas aburridas ni usar lenguaje robótico.
+- Cero repetición de preguntas o frases previas al cliente.
+- Diagnóstico inteligente por giro (Panaderías, Mascotas, Jardinería, Salud, Talleres, Restaurantes, etc.).`;
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const logoArea = document.querySelector('header .logo-area');
+    const loginModal = document.getElementById('admin-login-modal');
+    const dashboardModal = document.getElementById('admin-dashboard-modal');
+    const passInput = document.getElementById('admin-pass-input');
+    const loginError = document.getElementById('admin-login-error');
+    const loginForm = document.getElementById('admin-login-form');
+    const loginCancel = document.getElementById('admin-login-cancel');
+    const dashboardClose = document.getElementById('admin-dashboard-close');
+    const kbEditor = document.getElementById('admin-kb-editor');
+    const kbSaveBtn = document.getElementById('admin-kb-save-btn');
+    const kbResetBtn = document.getElementById('admin-kb-reset-btn');
+
+    if (!logoArea || !loginModal || !dashboardModal) return;
+
+    // Load saved KB features from localStorage or default
+    const savedKB = localStorage.getItem('brain_branding_kb_features') || DEFAULT_BUSINESS_FEATURES;
+    if (kbEditor) kbEditor.value = savedKB;
+    window.customKnowledgeBaseText = savedKB;
+
+    // Double-click event on Brain Logo to open password login modal
+    logoArea.addEventListener('dblclick', (e) => {
+      e.preventDefault();
+      loginModal.style.display = 'flex';
+      if (passInput) {
+        passInput.value = '';
+        passInput.classList.remove('shake-input');
+        if (loginError) loginError.style.display = 'none';
+        setTimeout(() => passInput.focus(), 150);
+      }
+    });
+
+    // Handle Login Form Submit
+    if (loginForm) {
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const inputVal = (passInput ? passInput.value : '').trim();
+        const hash = await sha256Hex(inputVal);
+
+        if (hash === ADMIN_PASS_HASH) {
+          loginModal.style.display = 'none';
+          dashboardModal.style.display = 'block';
+          if (kbEditor) {
+            kbEditor.value = localStorage.getItem('brain_branding_kb_features') || DEFAULT_BUSINESS_FEATURES;
+          }
+        } else {
+          if (loginError) loginError.style.display = 'block';
+          if (passInput) {
+            passInput.classList.add('shake-input');
+            setTimeout(() => passInput.classList.remove('shake-input'), 450);
+          }
+        }
+      });
+    }
+
+    if (loginCancel) {
+      loginCancel.addEventListener('click', () => {
+        loginModal.style.display = 'none';
+      });
+    }
+
+    if (dashboardClose) {
+      dashboardClose.addEventListener('click', () => {
+        dashboardModal.style.display = 'none';
+      });
+    }
+
+    // Save edited business features
+    if (kbSaveBtn) {
+      kbSaveBtn.addEventListener('click', () => {
+        const textToSave = (kbEditor ? kbEditor.value : '').trim();
+        localStorage.setItem('brain_branding_kb_features', textToSave);
+        window.customKnowledgeBaseText = textToSave;
+
+        // Show green toast notification
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed; bottom:40px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #10b981, #059669); color:#fff; padding:14px 28px; border-radius:30px; font-weight:800; font-size:14px; z-index:999999; box-shadow:0 10px 35px rgba(16,185,129,0.5); transition:all 0.3s ease; pointer-events:none; border:1px solid rgba(255,255,255,0.2);';
+        toast.textContent = '💾 ¡Características del negocio guardadas con éxito! Los bots consultarán estos datos de inmediato. 🚀';
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          setTimeout(() => toast.remove(), 300);
+        }, 3500);
+      });
+    }
+
+    // Reset KB button
+    if (kbResetBtn) {
+      kbResetBtn.addEventListener('click', () => {
+        if (confirm('¿Deseas restablecer las características del negocio a sus valores iniciales?')) {
+          localStorage.removeItem('brain_branding_kb_features');
+          if (kbEditor) kbEditor.value = DEFAULT_BUSINESS_FEATURES;
+          window.customKnowledgeBaseText = DEFAULT_BUSINESS_FEATURES;
+        }
+      });
+    }
+  });
+})();
+
 
 
 
