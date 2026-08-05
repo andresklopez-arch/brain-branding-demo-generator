@@ -22,14 +22,7 @@ const safeSessionStorage = safeStorage('sessionStorage');
 /* Brain Branding - Interactive Scripts */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Auto-generate tooltips for feature pills dynamically from their hidden labels
   document.querySelectorAll('.feature-icon-pill').forEach(pill => {
-    const label = pill.querySelector('.pill-label');
-    if (label && label.textContent) {
-      pill.classList.add('custom-tooltip');
-      pill.setAttribute('data-tooltip', label.textContent.trim());
-    }
-    
     pill.addEventListener('click', () => {
       pill.classList.remove('clicked');
       void pill.offsetWidth;
