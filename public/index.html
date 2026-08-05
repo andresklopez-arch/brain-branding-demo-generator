@@ -2982,11 +2982,30 @@
     <!-- ASISTENTE IA SECTION -->
     <section id="asistente-ia" class="asistente-ia-section">
       <div style="text-align:center; display:flex; flex-direction:column; align-items:center;">
-        <span class="section-tag">Copiloto Inteligente</span>
-        <h2 class="section-title">Asistente <span>IA</span></h2>
+        <span class="section-tag">Copiloto Inteligente & Simuladores</span>
+        <h2 class="section-title">Asistente & Demos <span>IA</span></h2>
         <p class="section-subtitle">
           Descubre el poder de tu Agente Personal IA: tu asistente corporativo ultra-discreto que procesa tu negocio directamente desde tu mensajería favorita.
         </p>
+      </div>
+
+      <!-- PERSONALIZADOR DE DEMO EN TIEMPO REAL -->
+      <div id="demo-customizer-box" class="glass-card" style="max-width: 900px; margin: 25px auto 40px auto; padding: 20px 24px; border-radius: 20px; background: rgba(6, 8, 12, 0.75); border: 1px solid rgba(0, 229, 255, 0.3); box-shadow: 0 0 25px rgba(0, 229, 255, 0.15);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+          <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 260px;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: rgba(0, 229, 255, 0.15); border: 1px solid rgba(0, 229, 255, 0.3); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; color: #00e5ff;">✨</div>
+            <div>
+              <strong style="font-size: 15px; color: #ffffff; display: block; margin-bottom: 2px;">Genera e Inyecta el Demo de tu Negocio</strong>
+              <span style="font-size: 12.5px; color: var(--text-muted); display: block;">Escribe el nombre de tu empresa para transformar los 3 simuladores en tiempo real:</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 290px; justify-content: flex-end;">
+            <input type="text" id="demo-business-name-input" placeholder="Ej: Abarrotes Don Pepe / Cafetería La Aroma" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 13px; outline: none; flex: 1; max-width: 320px; transition: border-color 0.3s;" onfocus="this.style.borderColor='#00e5ff'" onblur="this.style.borderColor='rgba(255,255,255,0.2)'" onkeydown="if(event.key==='Enter') applyCustomBusinessDemo();">
+            <button type="button" id="apply-custom-demo-btn" onclick="applyCustomBusinessDemo()" style="background: linear-gradient(135deg, var(--primary), #00e5ff); color: #fff; border: none; padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 15px rgba(0,229,255,0.4)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+              Ver mi Demo 🚀
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="asistente-ia-grid">

@@ -4019,4 +4019,61 @@ END:VCARD`;
       }, 600);
     }, { passive: true });
   }
+
+  // 20. DYNAMIC CUSTOM BUSINESS DEMO GENERATOR ENGINE
+  window.applyCustomBusinessDemo = function(customName) {
+    const input = document.getElementById('demo-business-name-input');
+    let name = customName || (input ? input.value.trim() : '');
+    if (!name) {
+      const params = new URLSearchParams(window.location.search);
+      name = params.get('negocio') || params.get('nombre') || 'Tu Empresa';
+    }
+    
+    if (input && name && name !== 'Tu Empresa') {
+      input.value = name;
+    }
+
+    // Update POS Tablet mockup header
+    const posTitles = document.querySelectorAll('#pos-device-screen h3, #pos-screen-content h3, .pos-header-title, .software-topbar strong');
+    posTitles.forEach(title => {
+      title.textContent = `${name} - Punto de Venta IA`;
+    });
+    
+    // Update Web Browser URL & Title
+    const webUrl = document.getElementById('web-browser-url');
+    if (webUrl) {
+      const cleanSlug = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
+      webUrl.textContent = `https://www.${cleanSlug || 'tunegocio'}.com.mx`;
+    }
+    
+    const webTabTitle = document.querySelector('.browser-tab span:last-child');
+    if (webTabTitle) webTabTitle.textContent = `${name} | Web IA`;
+
+    // Update Smartphone header & Telegram title
+    const phoneHeader = document.querySelector('#phone-screen-content .chat-user-name, #phone-header-title, .telegram-title');
+    if (phoneHeader) phoneHeader.textContent = `${name} (Asistente IA)`;
+
+    if (typeof triggerConfetti === 'function') triggerConfetti();
+
+    // Show Toast
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:rgba(0,229,255,0.95); color:#000; padding:12px 24px; border-radius:30px; font-weight:bold; font-size:14px; z-index:99999; box-shadow:0 10px 30px rgba(0,229,255,0.5); transition:all 0.3s; pointer-events:none;';
+    toast.textContent = `🚀 ¡Demo personalizado generado para "${name}"!`;
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3200);
+  };
+
+  // Check URL Params on Load (e.g. ?negocio=Abarrotes%20Don%20Pepe)
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialNegocio = urlParams.get('negocio') || urlParams.get('nombre');
+  if (initialNegocio) {
+    setTimeout(() => {
+      window.applyCustomBusinessDemo(initialNegocio);
+      const customSection = document.getElementById('asistente-ia');
+      if (customSection) {
+        customSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 600);
+  }
 });
+
