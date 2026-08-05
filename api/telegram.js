@@ -110,8 +110,46 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
-  // Specific Business Triggers
-  if (textLower.includes('hojalatero') || textLower.includes('hojalateria') || textLower.includes('hojalatería') || textLower.includes('carroceria') || textLower.includes('carrocería') || textLower.includes('pintura') || textLower.includes('taller') || textLower.includes('mecanico') || textLower.includes('mecánico') || textLower.includes('enderezado') || textLower.includes('autos') || textLower.includes('vehiculo') || textLower.includes('vehículo')) {
+  // 1. Numeric Choice Evaluator (1, 2, 3)
+  if (textLower === '1' || textLower === '1.' || textLower === '1.-' || textLower.includes('opcion 1') || textLower.includes('opción 1')) {
+    const reply = `¡Excelente elección! 🏪 Para negocios locales y comercios (talleres, tiendas, restaurantes, panaderías, etc.), la solución estrella es nuestro **Brain POS Móvil & Asistente IA**:\n\n• Registro rápido de ventas en 3 segundos desde celular o tablet.\n• Control automático de inventario, stock e insumos.\n• Emisión de tickets digitales y avisos a clientes por WhatsApp.\n\n🌐 *Probar Demo en Vivo:*\nhttps://brainbranding.com.mx/#simulador-pos\n\nPlatícame: ¿De qué giro exacto es tu negocio local o cuántos productos o notas manejan al día?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  if (textLower === '2' || textLower === '2.' || textLower === '2.-' || textLower.includes('opcion 2') || textLower.includes('opción 2')) {
+    const reply = `¡Extraordinaria opción! 📅 Para profesionales y servicios por cita o cotización (jardinería, consultorías, salud, hojalatería, talleres, etc.):\n\n• **Asistente IA 24/7:** Tus clientes agendan y cotizan por WhatsApp/Telegram sin quitarte tiempo.\n• **Cotizador PDF Express:** Envías presupuestos profesionales en 10 segundos desde tu celular.\n• **Recordatorios Automáticos:** Cero cancelaciones de último momento.\n\n🌐 *Probar Demo de Citas:*\nhttps://brainbranding.com.mx/#asistente-ia\n\nPlatícame: ¿Qué servicio ofrece tu empresa o cómo agendan actualmente tus clientes?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  if (textLower === '3' || textLower === '3.' || textLower === '3.-' || textLower.includes('opcion 3') || textLower.includes('opción 3')) {
+    const reply = `¡Con mucho gusto! Aquí tienes el acceso directo a nuestras 3 Demostraciones Interactivas en Vivo en la web: 🌐\n\n1. 📱 *Punto de Venta POS:* https://brainbranding.com.mx/#simulador-pos\n2. 🤖 *Asistente IA de Citas & Pedidos:* https://brainbranding.com.mx/#asistente-ia\n3. 💻 *Catálogo Web & ERP:* https://brainbranding.com.mx/#simulador-web\n\nVerás el funcionamiento en tiempo real con el nombre de tu marca. ¿Cuál de estas 3 demos te llama más la atención?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 2. Location & FAQ Triggers
+  if (textLower.includes('donde estan') || textLower.includes('dónde están') || textLower.includes('ubicacion') || textLower.includes('ubicación') || textLower.includes('oficina') || textLower.includes('donde se ubican')) {
+    const reply = `Operamos de forma 100% digital e implementamos proyectos en todo México y Latinoamérica 🇲🇽🌎.\n\nNuestras oficinas centrales de desarrollo están en Pachuca, Hidalgo, y brindamos soporte en la nube 24/7. Todas las demostraciones e implementaciones se realizan en línea sin necesidad de que salgas de tu negocio.\n\n¿Te gustaría ver una demostración en vivo o agendar una llamada rápida?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  if (textLower.includes('factura') || textLower.includes('facturan') || textLower.includes('cfdi') || textLower.includes('sat') || textLower.includes('impuestos')) {
+    const reply = `¡Sí, por supuesto! 📜 Todos nuestros proyectos de software, desarrollo y mantenimiento son 100% deducibles de impuestos y te emitimos factura fiscal CFDI 4.0 al instante.\n\n¿Requieres facturar la inversión a nombre de tu empresa o como persona física?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  if (textLower.includes('cuanto tardan') || textLower.includes('cuánto tardan') || textLower.includes('tiempo de entrega') || textLower.includes('cuanto tiempo') || textLower.includes('tardanza')) {
+    const reply = `Nuestros tiempos de entrega son los más rápidos del mercado gracias a nuestros módulos pre-diseñados:\n\n⚡ *Asistentes IA y Bots:* En 24 a 48 horas operando en tu WhatsApp.\n📱 *Puntos de Venta (POS):* Entrega inmediata en 24 horas.\n🌐 *Software y Webs a la Medida:* De 3 a 7 días hábiles.\n\n¿Para qué fecha te gustaría tener tu sistema funcionando?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 3. Business Triggers (Automotive, Services, Retail, Medical, Hospitality)
+  if (textLower.includes('hojalat') || textLower.includes('carroc') || textLower.includes('pintur') || textLower.includes('taller') || textLower.includes('mecanic') || textLower.includes('enderezad') || textLower.includes('auto') || textLower.includes('vehic')) {
     state.giro = 'Taller de Hojalatería, Pintura & Mecánica Automotriz';
     const demoUrl = kb.generadorDemos.getUrlDemo('Taller Automotriz & Hojalatería');
     const reply = `¡Excelente giro! 🚗 Para un Taller de Hojalatería, Pintura y Mecánica, las soluciones que más aceleran la operación son:\n\n• *Gestor Móvil de Órdenes de Servicio:* Registras el ingreso del auto con fotos de abolladuras/detalles, inventario de piezas y envías la cotización al cliente por WhatsApp en 10 segundos.\n• *Avisos Automáticos de Estatus por WhatsApp/Telegram:* El bot notifica al cliente cuando su auto pase a preparación, pintura o esté listo para entrega ("Tu auto ya está listo para recolección 🚗✨").\n• *Control de Refacciones y Anticipos:* Registro de señas cobradas y pagos finales con corte de caja diario.\n\n🌐 *Ver Demo en Vivo:*\n${demoUrl}\n\nPlatícame: ¿Cómo le dan seguimiento a los autos que entran al taller o cómo envían sus presupuestos actualmente?`;
@@ -119,13 +157,13 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
-  if (textLower.includes('cuales') || textLower.includes('cuáles') || textLower.includes('que hay') || textLower.includes('qué hay') || textLower.includes('que modulos') || textLower.includes('qué módulos') || textLower.includes('opciones') || textLower.includes('que tienen') || textLower.includes('que ofrecen') || textLower.includes('en que me puede ayudar') || textLower.includes('en qué me puede ayudar') || textLower.includes('como me puedes ayudar') || textLower.includes('cómo me puedes ayudar')) {
+  if (textLower.includes('cuales') || textLower.includes('cuáles') || textLower.includes('que hay') || textLower.includes('qué hay') || textLower.includes('que modulos') || textLower.includes('qué módulos') || textLower.includes('opciones') || textLower.includes('que tienen') || textLower.includes('que ofrecen') || textLower.includes('en que me puede ayudar') || textLower.includes('en qué me puede ayudar') || textLower.includes('como me puedes ayudar')) {
     const reply = `¡Con mucho gusto te muestro cómo te podemos impulsar! 🚀\n\nNuestras 4 Soluciones Principales a la Medida son:\n\n1. 🤖 *Asistente IA 24/7 (WhatsApp & Telegram):* Atiende clientes, responde dudas de tus servicios, agenda citas y toma pedidos automáticamente 24/7.\n2. 🚗 *Gestor de Órdenes & Servicios a la Medida:* Control de trabajos, recepción de vehículos/equipos con fotos, estatus de avance y presupuestos en PDF.\n3. 📱 *Punto de Venta (POS) Móvil y Nube:* Cobro rápido desde celular o tablet, tickets digitales, inventarios y corte de caja.\n4. 🌐 *Página Web y Catálogo Interactivo:* Presentación profesional con testimonios y demostraciones visuales de tu negocio.\n\n¿Cuál de estas opciones te llama más la atención o quisieras probar en una demostración gratuita?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  if (textLower.includes('jardinero') || textLower.includes('jardineria') || textLower.includes('jardinería') || textLower.includes('jardin') || textLower.includes('jardín') || textLower.includes('paisajismo') || textLower.includes('poda') || textLower.includes('plantas')) {
+  if (textLower.includes('jardin') || textLower.includes('paisaj') || textLower.includes('poda') || textLower.includes('plant') || textLower.includes('fumig')) {
     state.giro = 'Jardinería & Mantenimiento de Áreas Verdes';
     const demoUrl = kb.generadorDemos.getUrlDemo('Jardinería & Paisajismo');
     const reply = `¡Excelente giro! 🌿 Para servicios de jardinería, paisajismo y mantenimiento, las mejores soluciones que implementamos son:\n\n• *Asistente IA para Agendar Citas:* Tus clientes solicitan visitas o cotizaciones por WhatsApp/Telegram y el bot organiza tu agenda automáticamente.\n• *Cotizador Móvil Rápido:* Envías presupuestos profesionales en PDF desde tu celular en 10 segundos.\n• *Catálogo Web de Trabajos:* Galería interactiva con tus proyectos realizados para transmitir máxima confianza.\n\n🌐 *Ver Demo para Jardinería:*\n${demoUrl}\n\nPlatícame: ¿Cómo agendan las citas o cotizan los servicios con tus clientes actualmente?`;
@@ -133,14 +171,14 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
-  if (textLower.includes('cita') || textLower.includes('citas') || textLower.includes('agendar') || textLower.includes('agenda') || textLower.includes('agendamiento') || textLower.includes('horario') || textLower.includes('reserva') || textLower.includes('reservar')) {
+  if (textLower.includes('cita') || textLower.includes('agend') || textLower.includes('horari') || textLower.includes('reserv')) {
     state.dolor = 'Agendamiento y gestión de citas';
     const reply = `¡Justo lo que automatizamos a la perfección! 📅 Cuando operas por citas, atender mensajes a mano quita tiempo valioso y provoca cancelaciones de último momento.\n\nCon nuestro **Asistente IA de Citas por WhatsApp/Telegram**:\n1. El cliente consulta tus horarios disponibles 24/7.\n2. El bot agenda la cita en tu calendario automáticamente.\n3. Envía un recordatorio 24 horas antes para confirmar la asistencia.\n\n¿Te gustaría probar una demo en vivo de cómo tus clientes agendarían su cita por WhatsApp?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  if (textLower.includes('alimento') || textLower.includes('perro') || textLower.includes('perros') || textLower.includes('gato') || textLower.includes('mascota') || textLower.includes('croqueta') || textLower.includes('forrajera')) {
+  if (textLower.includes('aliment') || textLower.includes('perr') || textLower.includes('gat') || textLower.includes('mascot') || textLower.includes('croquet') || textLower.includes('veterin')) {
     state.giro = 'Venta de Alimentos para Mascotas / Pet Shop';
     const demoUrl = kb.generadorDemos.getUrlDemo('Venta de Alimentos para Mascotas');
     const reply = `¡Excelente giro! 🐾 Para venta de alimentos y artículos para mascotas, los retos principales son controlar inventario por bulto/kilo y agilizar el cobro en mostrador.\n\nNuestras soluciones clave son:\n• *POS con Integración de Báscula:* Pesa y calcula el precio por kilo al instante.\n• *Control de Inventario de Bultos:* Descuento automático de kilos del costal al vender a granel.\n• *Asistente IA por WhatsApp:* Atiende pedidos a domicilio y envía ubicación.\n\n🌐 *Ver Demo para Alimento de Mascotas:*\n${demoUrl}\n\nPlatícame: ¿Cómo registran el pesaje o las ventas en mostrador actualmente?`;
@@ -148,21 +186,7 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
-  if (textLower.includes('pesar') || textLower.includes('pesado') || textLower.includes('pesando') || textLower.includes('bascula') || textLower.includes('báscula') || textLower.includes('granel') || textLower.includes('kilo') || textLower.includes('kilos')) {
-    state.dolor = 'Pesaje manual a granel';
-    const reply = `Entiendo perfecto. Pesar a mano y calcular precios por kilo quita mucho tiempo en mostrador y provoca errores en las cuentas. ⚖️\n\nJusto para eso conectamos el **Módulo de Pesaje con Báscula Electrónica Integrada**: al poner el producto en la báscula, el sistema lee el peso exacto en milisegundos y calcula el total sin fallas.\n\n¿Cómo realizan el cobro y registro de notas en caja actualmente?`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  if (textLower.includes('papel') || textLower.includes('lapiz') || textLower.includes('lápiz') || textLower.includes('cuaderno') || textLower.includes('libreta') || textLower.includes('mano') || textLower.includes('bitacora')) {
-    state.cobro = 'Papel y lápiz / Libreta manual';
-    const reply = `¡Nombre, con toda razón! Cobrar con papel y lápiz es un dolor de cabeza diario: las notas se traspapelan, toma minutos con cada cliente y al final del día el corte de caja nunca cuadra. 📄✏️\n\nCon nuestro **Brain POS Móvil**, registras la venta en 3 segundos desde una tablet o tu celular, emites el ticket y ves tu ganancia neta en vivo sin volver a tocar lápiz ni calculadora.\n\n¿Te gustaría que te preparemos una propuesta sin compromiso o ver una demostración en vivo?`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  if (textLower.includes('panaderia') || textLower.includes('panadería') || textLower.includes('pan') || textLower.includes('pasteleria') || textLower.includes('pastelería') || textLower.includes('reposteria')) {
+  if (textLower.includes('panader') || textLower.includes('pan') || textLower.includes('pastel') || textLower.includes('reposter')) {
     state.giro = 'Panadería & Pastelería';
     const demoUrl = kb.generadorDemos.getUrlDemo('Panadería & Pastelería');
     const reply = `¡Qué excelente giro! 🍞 Para panaderías y reposterías, las soluciones con mayor impacto son:\n\n• *Punto de Venta (POS) Táctil:* Registro rápido de pan dulce/blanco, corte de caja y control de inventario de insumos (harina, huevo, azúcar).\n• *Asistente IA por WhatsApp:* Toma pedidos de pasteles sobre diseño o encargos de pan mayoreo 24/7.\n• *Página Web Catálogo:* Folleto digital interactivo para mostrar tus especialidades.\n\n🌐 *Ver Demo en Vivo para Panadería:*\n${demoUrl}\n\nPlatícame: ¿Tienes una sola sucursal o varias? ¿O cuántos clientes/pedidos atienden al día aprox?`;
@@ -170,48 +194,22 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
-  if (textLower.includes('modernizar') || textLower.includes('modernizarme') || textLower.includes('innovar') || textLower.includes('crecer') || textLower.includes('actualizar') || textLower.includes('cambiar') || textLower.includes('mejorar')) {
-    const reply = `¡Extraordinaria visión! Modernizar la operación es la clave para liberar tu tiempo y acelerar ventas. 🚀\n\nPodemos sugerirte un Punto de Venta (POS) móvil, un Software de Gestión Personalizado o un Asistente IA por WhatsApp.\n\nPara armarte la propuesta ideal, platícame:\n1. ¿De qué giro es tu negocio y cuántas sucursales manejas actualmente?\n2. ¿Qué tanto has explorado o utilizado la Inteligencia Artificial en tus procesos diarios?\n3. ¿Cuál es esa meta o idea con la que has soñado para automatizar tu empresa?`;
+  // 4. Uncommunicative / Short Input Smart Handling (1-3 words)
+  const isShortInput = userText.trim().split(/\s+/).length <= 3;
+  const genericWords = ['si', 'sí', 'ok', 'no', 'bien', 'hola', 'interesa', 'mm', 'a ver', 'saludos', 'gracias', 'grax'];
+  const isGeneric = genericWords.some(w => textLower === w || textLower === w + '.');
+
+  if (isShortInput && isGeneric) {
+    const reply = `¡Perfecto! Para darte la información exacta sin hacerte perder tiempo, responde únicamente con el número 1, 2 o 3: 💡\n\n1️⃣ Tengo un Negocio Físico / Local (taller, tienda, restaurante, panadería, etc.)\n2️⃣ Ofrezco Servicios por Cita o Cotización (jardinería, consultoría, salud, etc.)\n3️⃣ Quiero ver las Demostraciones Interactivas en Vivo 🌐`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  if (textLower.includes('sucursal') || textLower.includes('sucursales') || textLower.includes('tiendas') || textLower.includes('varias')) {
-    const reply = `¡Excelente! Cuando se manejan varias sucursales, el valor de nuestra solución se multiplica:\n\n• Sincronización en tiempo real de inventarios y caja de todas tus sucursales desde tu celular.\n• Asistente IA que deriva a los clientes a la sucursal más cercana automáticamente.\n\n¿Actualmente cómo controlas la venta y los inventarios entre tus sucursales?`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  if (textLower.includes('idea') || textLower.includes('sueño') || textLower.includes('soñado') || textLower.includes('meta') || textLower.includes('proyecto')) {
-    const reply = `¡Ese es el punto de partida perfecto! En Brain Branding nos apasiona convertir esas ideas ambiciosas en sistemas reales. 💡\n\nYa sea un Punto de Venta personalizado, una Plataforma Web visual o un Asistente IA 24/7, platícame tu idea con total libertad y le damos forma juntos.\n\n¿De qué trata tu negocio o proyecto?`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  // Anti-Repetition Fallback Queue
-  const fallbackMatrix = [
-    `Entiendo perfecto. Para sugerirte la solución idónea, platícame: ¿Cuántas sucursales o puntos de servicio atiendes en tu negocio? 🏢`,
-    `¡Excelente! Una pregunta clave: ¿Qué proceso operativo te quita más tiempo en el día a día? ⚙️`,
-    `Si pudieras automatizar una sola tarea en tu empresa mañana para liberar tu tiempo, ¿cuál sería esa meta que has soñado? 💡`,
-    `Te podemos generar una demostración interactiva con el nombre de tu marca en minutos. 🌐 Platícame el giro o nombre de tu negocio.`
-  ];
-
-  let selectedFallback = '';
-  for (const f of fallbackMatrix) {
-    if (!state.askedFallbacks.has(f.trim())) {
-      selectedFallback = f;
-      state.askedFallbacks.add(f.trim());
-      break;
-    }
-  }
-
-  if (!selectedFallback) {
-    selectedFallback = `Con gusto te armamos una propuesta a la medida para tu negocio. Platícame: ¿Qué módulo te gustaría probar primero en tu demostración? 🚀`;
-  }
-
-  const reply = getUniqueReply(chatId, selectedFallback);
-  history.push({ role: 'model', text: reply });
-  return reply;
+  // 5. Bulletproof Fallback Menu for Unforeseen Queries
+  const fallbackReply = `Te entiendo perfectamente. En Brain Branding nos especializamos en resolver cualquier reto operativo o de ventas con tecnología a la medida. 🚀\n\nPara mostrarte la solución idónea en 10 segundos, dime qué número describe mejor lo que buscas:\n\n1️⃣ Controlar mis Ventas e Inventario con un Punto de Venta (POS) 📱\n2️⃣ Automatizar la Atención a Clientes y Citas por WhatsApp 🤖\n3️⃣ Desarrollar una Página Web o Sistema Personalizado para mi Empresa 🌐`;
+  
+  history.push({ role: 'model', text: fallbackReply });
+  return getUniqueReply(chatId, fallbackReply);
 }
 
 const express = require('express');
