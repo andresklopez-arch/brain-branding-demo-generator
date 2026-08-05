@@ -455,12 +455,15 @@ async function handleWebhookRequest(req, res) {
   }
 }
 
+const whatsappApp = require('./whatsapp.js');
+app.use(whatsappApp);
+
 app.post('*', handleWebhookRequest);
-app.get('*', (req, res) => res.json({ status: 'active', bot: '@Brainbranding_bot', service: 'Brain Branding 24/7 AI Engine' }));
+app.get('*', (req, res) => res.json({ status: 'active', bot: '@Brainbranding_bot', service: 'Brain Branding 24/7 AI Engine (Telegram & WhatsApp)' }));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Brain Branding 24/7 AI Telegram Bot Webhook running on port ${PORT}`);
+  console.log(`🚀 Brain Branding 24/7 AI Telegram & WhatsApp Engine running on port ${PORT}`);
 });
 
 module.exports = handleWebhookRequest;
