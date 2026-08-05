@@ -1054,28 +1054,30 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Handle native Web Share API
-  if (nativeShareBtn) {
-    nativeShareBtn.addEventListener('click', async () => {
-      const shareData = {
-        title: 'Brain Branding',
-        text: 'Hola Brain Branding, quiero solicitar asesoría para un proyecto a la medida.',
-        url: 'https://brainbranding.com.mx'
-      };
+  const handleShare = async () => {
+    const shareData = {
+      title: 'Brain Branding',
+      text: 'Hola Brain Branding, quiero solicitar información para un proyecto a la medida.',
+      url: 'https://brainbranding.com.mx'
+    };
 
-      if (navigator.share) {
-        try {
-          await navigator.share(shareData);
-          closeContactModal();
-        } catch (err) {
-          // Fallback if share cancelled
-        }
-      } else {
-        // Fallback for desktop/unsupported: open default whatsapp
-        window.open(`https://api.whatsapp.com/send?phone=527712339238&text=${encodeURIComponent(shareData.text)}`, '_blank');
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
         closeContactModal();
+      } catch (err) {
+        // Fallback if share cancelled
       }
-    });
-  }
+    } else {
+      // Fallback for desktop/unsupported: open default whatsapp
+      window.open(`https://api.whatsapp.com/send?phone=527712339238&text=${encodeURIComponent(shareData.text)}`, '_blank');
+      closeContactModal();
+    }
+  };
+
+  if (nativeShareBtn) nativeShareBtn.addEventListener('click', handleShare);
+  const hubShareBtn = document.getElementById('hub-native-share-btn');
+  if (hubShareBtn) hubShareBtn.addEventListener('click', handleShare);
 
   // Close modal when tapping any contact channel item link
   document.querySelectorAll('.contact-channel-item[href]').forEach(link => {

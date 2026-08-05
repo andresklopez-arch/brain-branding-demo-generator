@@ -3677,95 +3677,108 @@
       </div>
     </section>
 
-    <!-- 5. CONTACT / CTA SECTION -->
-    <section id="contacto" class="contact">
-      <div class="contact-container">
-        <div class="contact-info">
-          <span class="section-tag">Lanzemos tu proyecto</span>
-          <h2 class="section-title">¿Listo para dar el <span>salto digital?</span></h2>
-          <p class="section-subtitle" style="margin-bottom: 30px;">
-            Completa el formulario y te crearemos una maqueta interactiva funcional descriptiva de tu software adaptada a tu negocio.
-          </p>
-          <p style="color:var(--text-muted); font-size:14px; line-height:1.7;">
-            Una vez enviado, nuestro sistema procesará los datos para estructurar tu propuesta comercial interactiva y enviarte el enlace directamente.
-          </p>
-          <div style="position: relative; display: inline-block;">
-            <button id="vcard-download-btn" onclick="downloadVCard()" class="glass-pill-btn" style="border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 20px; font-size: 13.5px; font-weight: 600; margin-top: 20px; text-decoration: none; transition: all 0.3s ease;">
-              💾 Guardar Contacto de la Agencia
-            </button>
-            <div class="vcard-qr-tooltip" style="position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%) translateY(10px); background: rgba(6, 8, 12, 0.95); border: 1px solid rgba(255,255,255,0.08); padding: 12px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); pointer-events: none; opacity: 0; transition: all 0.3s ease; text-align: center; width: 160px; z-index: 10; backdrop-filter: blur(10px);">
-              <div id="vcard-qr-container" style="width: 130px; height: 130px; border-radius: 8px; background: #fff; padding: 4px; box-sizing: border-box; display: inline-block; position: relative;">
-                <!-- Center icon overlay -->
-                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 26px; height: 26px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15); z-index: 1;">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="color: #00e5ff;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </div>
-              </div>
-              <div style="font-size: 10px; color: var(--text-muted); margin-top: 6px;">Escanea para guardar contacto 📲</div>
+    <!-- 5. DIRECT CONTACT HUB SECTION (NO FORM) -->
+    <section id="contacto" class="contact" style="padding: 50px 20px 60px 20px;">
+      <div style="text-align:center; display:flex; flex-direction:column; align-items:center; margin-bottom: 30px;">
+        <span class="section-tag">Contacto Directo</span>
+        <h2 class="section-title">¿Listo para dar el <span>salto digital?</span></h2>
+        <p class="section-subtitle" style="margin-bottom: 0;">
+          Sin formularios ni esperas. Conéctate al instante mediante tu canal de comunicación favorito.
+        </p>
+      </div>
+
+      <div class="glass-card contact-hub-capsule" style="max-width: 950px; margin: 0 auto; padding: 30px; border-radius: 24px; background: rgba(6, 8, 12, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 15px 40px rgba(0,0,0,0.4);">
+        <div class="contact-channels-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+          
+          <!-- 1. WhatsApp Personal -->
+          <a href="https://api.whatsapp.com/send?phone=527712339238&text=Hola%20Brain%20Branding,%20quiero%20informaci%C3%B3n" target="_blank" rel="noopener" class="contact-channel-card" style="display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-radius: 16px; background: rgba(37, 211, 102, 0.06); border: 1px solid rgba(37, 211, 102, 0.2); text-decoration: none; transition: all 0.3s ease;">
+            <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(37, 211, 102, 0.15); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">💬</div>
+            <div>
+              <strong style="font-size: 14.5px; color: #ffffff; display: block; margin-bottom: 2px;">WhatsApp Personal</strong>
+              <span style="font-size: 12px; color: var(--text-muted); display: block;">Chat directo inmediato</span>
             </div>
+          </a>
+
+          <!-- 2. WhatsApp Business -->
+          <a href="https://wa.me/527712339238?text=Hola%20Brain%20Branding,%20deseo%20una%20propuesta%20comercial" target="_blank" rel="noopener" class="contact-channel-card" style="display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-radius: 16px; background: rgba(18, 140, 126, 0.08); border: 1px solid rgba(18, 140, 126, 0.25); text-decoration: none; transition: all 0.3s ease;">
+            <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(18, 140, 126, 0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">💼</div>
+            <div>
+              <strong style="font-size: 14.5px; color: #ffffff; display: block; margin-bottom: 2px;">WhatsApp Business</strong>
+              <span style="font-size: 12px; color: var(--text-muted); display: block;">Atención corporativa y demos</span>
+            </div>
+          </a>
+
+          <!-- 3. Mail -->
+          <a href="mailto:hola@brainbranding.com.mx?subject=Solicitud%20de%20Informacion%20Brain%20Branding" target="_blank" class="contact-channel-card" style="display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-radius: 16px; background: rgba(234, 67, 53, 0.06); border: 1px solid rgba(234, 67, 53, 0.2); text-decoration: none; transition: all 0.3s ease;">
+            <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(234, 67, 53, 0.15); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">✉️</div>
+            <div>
+              <strong style="font-size: 14.5px; color: #ffffff; display: block; margin-bottom: 2px;">Correo Electrónico</strong>
+              <span style="font-size: 12px; color: var(--text-muted); display: block;">hola@brainbranding.com.mx</span>
+            </div>
+          </a>
+
+          <!-- 4. Mensajes de Texto (SMS) -->
+          <a href="sms:+527712339238?body=Hola%20Brain%20Branding,%20deseo%20m%C3%A1s%20informaci%C3%B3n" class="contact-channel-card" style="display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-radius: 16px; background: rgba(52, 168, 83, 0.06); border: 1px solid rgba(52, 168, 83, 0.2); text-decoration: none; transition: all 0.3s ease;">
+            <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(52, 168, 83, 0.15); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">💬</div>
+            <div>
+              <strong style="font-size: 14.5px; color: #ffffff; display: block; margin-bottom: 2px;">Mensajes de Texto (SMS)</strong>
+              <span style="font-size: 12px; color: var(--text-muted); display: block;">Mensajería celular directa</span>
+            </div>
+          </a>
+
+          <!-- 5. Maps / Ubicación Google Maps -->
+          <a href="https://share.google/xOCfU6TpcXxlANgXS" target="_blank" rel="noopener" class="contact-channel-card" style="display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-radius: 16px; background: rgba(66, 133, 244, 0.08); border: 1px solid rgba(66, 133, 244, 0.25); text-decoration: none; transition: all 0.3s ease;">
+            <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(66, 133, 244, 0.18); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">📍</div>
+            <div>
+              <strong style="font-size: 14.5px; color: #ffffff; display: block; margin-bottom: 2px;">Ubicación en Google Maps</strong>
+              <span style="font-size: 12px; color: var(--text-muted); display: block;">Ver oficinas e instalaciones</span>
+            </div>
+          </a>
+
+          <!-- 6. Telegram -->
+          <a href="https://t.me/+527712339238" target="_blank" rel="noopener" class="contact-channel-card" style="display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-radius: 16px; background: rgba(34, 158, 217, 0.08); border: 1px solid rgba(34, 158, 217, 0.25); text-decoration: none; transition: all 0.3s ease;">
+            <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(34, 158, 217, 0.18); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">✈️</div>
+            <div>
+              <strong style="font-size: 14.5px; color: #ffffff; display: block; margin-bottom: 2px;">Telegram Oficial</strong>
+              <span style="font-size: 12px; color: var(--text-muted); display: block;">Asistencia y canal corporativo</span>
+            </div>
+          </a>
+
+          <!-- 7. Llamada Telefónica Directa -->
+          <a href="tel:+527712339238" class="contact-channel-card" style="display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-radius: 16px; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); text-decoration: none; transition: all 0.3s ease;">
+            <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(168, 85, 247, 0.18); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">📞</div>
+            <div>
+              <strong style="font-size: 14.5px; color: #ffffff; display: block; margin-bottom: 2px;">Llamada Telefónica</strong>
+              <span style="font-size: 12px; color: var(--text-muted); display: block;">+52 771 233 9238</span>
+            </div>
+          </a>
+
+          <!-- 8. Guardar Contacto vCard / QR -->
+          <div class="contact-channel-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-radius: 16px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); position: relative;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(245, 158, 11, 0.18); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">💾</div>
+              <div>
+                <strong style="font-size: 14.5px; color: #ffffff; display: block; margin-bottom: 2px;">Guardar Contacto (vCard)</strong>
+                <span style="font-size: 12px; color: var(--text-muted); display: block;">Agrega la agencia a tu agenda</span>
+              </div>
+            </div>
+            <button id="vcard-download-btn" onclick="downloadVCard()" style="border: none; background: linear-gradient(135deg, var(--primary), #00e5ff); color: #fff; padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+              Descargar 📥
+            </button>
           </div>
-        </div>
-        
-        <div class="glass-card contact-card">
-          <form id="agency-contact-form" style="display: flex; flex-direction: column;">
-            <button id="form-restore-link" type="button" style="display: none; background: none; border: none; color: var(--primary); font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline; margin-bottom: 15px; padding: 0; text-align: left; align-self: flex-start; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--primary)'">
-              📝 Restaurar datos del borrador anterior
-            </button>
-            <!-- Honeypot anti-spam field -->
-            <div style="position: absolute; left: -9999px; overflow: hidden; height: 0; width: 0;">
-              <label for="contact-honeypot">No rellenar este campo si eres humano</label>
-              <input type="text" id="contact-honeypot" tabindex="-1" autocomplete="off">
-            </div>
-            <div class="form-group">
-              <label for="contact-name">Tu Nombre</label>
-              <input type="text" id="contact-name" placeholder="Ej. Alejandro Torres" required>
-            </div>
-            <div class="form-group">
-              <label for="contact-business">Nombre de tu Empresa</label>
-              <input type="text" id="contact-business" placeholder="Ej. Cafetería La Aroma" required>
-            </div>
-            <div class="form-group">
-              <label for="contact-phone">Tu Teléfono (WhatsApp de 10 dígitos)</label>
-              <div style="display: flex; gap: 10px; margin-top: 4px;">
-                <select id="contact-country-code" style="width: 100px; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border-color)'">
-                  <option value="52" selected>🇲🇽 +52</option>
-                  <option value="1">🇺🇸 +1</option>
-                  <option value="34">🇪🇸 +34</option>
-                  <option value="54">🇦🇷 +54</option>
-                  <option value="57">🇨🇴 +57</option>
-                  <option value="56">🇨🇱 +56</option>
-                  <option value="51">🇵🇪 +51</option>
-                  <option value="58">🇻🇪 +58</option>
-                </select>
-                <input type="tel" id="contact-phone" placeholder="Ej. 7712339238" required pattern="[0-9]{10}" style="flex: 1;">
+
+          <!-- 9. Compartir Tarjeta Digital -->
+          <div class="contact-channel-card" id="hub-native-share-btn" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-radius: 16px; background: rgba(0, 229, 255, 0.08); border: 1px solid rgba(0, 229, 255, 0.25); cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(0, 229, 255, 0.18); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">🌐</div>
+              <div>
+                <strong style="font-size: 14.5px; color: #ffffff; display: block; margin-bottom: 2px;">Compartir Tarjeta Digital</strong>
+                <span style="font-size: 12px; color: var(--text-muted); display: block;">Enviar este contacto a un colega</span>
               </div>
             </div>
-            <div class="form-group">
-              <label>Giro del Negocio</label>
-              <div class="giro-chips" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; margin-bottom: 8px;">
-                <div class="giro-chip active-chip" data-value="Restaurante / Alimentos" style="padding: 8px 14px; border: 1px solid var(--primary); border-radius: 20px; font-size: 13px; color: #fff; cursor: pointer; transition: all 0.2s; background: rgba(99, 102, 241, 0.1);">🍔 Alimentos/Café</div>
-                <div class="giro-chip" data-value="Clínica / Médica" style="padding: 8px 14px; border: 1px solid var(--border-color); border-radius: 20px; font-size: 13px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.02);">🏥 Salud / Clínicas</div>
-                <div class="giro-chip" data-value="Tienda / Ventas" style="padding: 8px 14px; border: 1px solid var(--border-color); border-radius: 20px; font-size: 13px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.02);">🛍️ Tiendas / Ventas</div>
-                <div class="giro-chip" data-value="Servicios / Oficinas" style="padding: 8px 14px; border: 1px solid var(--border-color); border-radius: 20px; font-size: 13px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.02);">💼 Servicios / Oficinas</div>
-                <div class="giro-chip" data-value="Otro Giro Comercial" style="padding: 8px 14px; border: 1px solid var(--border-color); border-radius: 20px; font-size: 13px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.02);">✨ Otro / Personalizado</div>
-              </div>
-              <input type="hidden" id="contact-vertical" value="Restaurante / Alimentos">
-            </div>
-            <div class="form-group">
-              <label for="contact-desc">¿Qué funciones te gustaría que tuviera tu app o sistema?</label>
-              <textarea id="contact-desc" rows="3" placeholder="Ej. Puntos de Venta, Gestión de inventarios centralizado, Asistente con motor IA para atención en WhatsApp..." required></textarea>
-            </div>
-            <div class="form-group">
-              <label for="contact-operation">¿Actualmente cómo operas tu negocio? (¿usas algún sistema, software o referencia de cómo lo quieres?)</label>
-              <textarea id="contact-operation" rows="3" placeholder="Ej. Llevamos todo en Excel y libretas de papel. Buscamos automatizarlo y tener control desde el celular..." required></textarea>
-            </div>
-            <div class="form-group" style="display: flex; gap: 10px; align-items: flex-start; margin-top: 15px; margin-bottom: 15px;">
-              <input type="checkbox" id="contact-privacy-check" required style="width: 18px; height: 18px; margin-top: 2px; accent-color: var(--primary); cursor: pointer;">
-              <label for="contact-privacy-check" style="font-size: 12px; color: var(--text-muted); line-height: 1.4; cursor: pointer;">
-                Acepto la <a href="/privacidad.html" target="_blank" style="color: var(--primary); text-decoration: underline;">Política de Privacidad</a> y los <a href="/terminos.html" target="_blank" style="color: var(--primary); text-decoration: underline;">Términos de Servicio</a> de la agencia.
-              </label>
-            </div>
-            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;">Enviar Propuesta por WhatsApp 💬</button>
-          </form>
+            <span style="font-size: 13px; color: #00e5ff; font-weight: 700;">Enviar 📲</span>
+          </div>
+
         </div>
       </div>
     </section>
