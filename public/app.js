@@ -2019,6 +2019,14 @@ END:VCARD`;
     let isSmartphoneHovered = false;
     let progressInterval = null;
 
+    window.unlockSmartphoneSimulator = function() {
+      isLocked = false;
+      const lockscreen = document.getElementById('smartphone-lockscreen');
+      if (lockscreen) lockscreen.classList.add('unlocked');
+      const container = document.querySelector('.smartphone-container');
+      if (container) container.classList.add('unlocked-mockup');
+    };
+
     function formatTimestamp() {
       const now = new Date();
       return now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -4023,6 +4031,13 @@ END:VCARD`;
 
   // 20. DYNAMIC CUSTOM BUSINESS DEMO INTERACTIVE AI ANIMATION ENGINE
   window.applyCustomBusinessDemo = function(customName) {
+    window.isCustomDemoActive = true;
+
+    // Force unlock smartphone mockup lockscreen
+    if (typeof window.unlockSmartphoneSimulator === 'function') {
+      window.unlockSmartphoneSimulator();
+    }
+
     const input = document.getElementById('demo-business-name-input');
     let name = customName || (input ? input.value.trim() : '');
     if (!name) {
@@ -4037,12 +4052,6 @@ END:VCARD`;
     const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
     const lowerName = name.toLowerCase();
 
-    // Auto-unlock smartphone lockscreen
-    const lockscreen = document.getElementById('smartphone-lockscreen');
-    if (lockscreen) lockscreen.classList.add('unlocked');
-    const smartphoneContainer = document.querySelector('.smartphone-container');
-    if (smartphoneContainer) smartphoneContainer.classList.add('unlocked-mockup');
-
     // Auto-unlock POS boot screen
     const posBoot = document.getElementById('pos-boot-screen');
     if (posBoot) {
@@ -4054,9 +4063,32 @@ END:VCARD`;
     let industry = 'Comercio & Servicio General';
     let posItems = [];
     let customChatScenarios = [];
-    let webSubtitle = `Plataforma inteligente con atención al cliente 24/7, catálogo en vivo y sincronización para ${capitalizedName}.`;
+    let webSubtitle = `Brochure corporativo digital con atención 24/7, catálogo en vivo y sincronización para ${capitalizedName}.`;
+    let brochureCards = [];
 
-    if (lowerName.includes('veterinari') || lowerName.includes('perro') || lowerName.includes('gato') || lowerName.includes('mascota') || lowerName.includes('canin')) {
+    if (lowerName.includes('norteno') || lowerName.includes('banda') || lowerName.includes('mariachi') || lowerName.includes('musica') || lowerName.includes('evento') || lowerName.includes('fiesta') || lowerName.includes('show') || lowerName.includes('grupo') || lowerName.includes('conjunto')) {
+      industry = 'Agrupación Musical & Eventos en Vivo 🪗🎺';
+      posItems = [
+        { name: 'Show en Vivo (1 Hora)', price: 3500, icon: '🪗' },
+        { name: 'Serenata Especial (5 Canciones)', price: 1800, icon: '🎵' },
+        { name: 'Equipo Audio & Luces Pro', price: 2500, icon: '🔊' },
+        { name: 'Show Completo Evento (3 Hours)', price: 9500, icon: '🎤' }
+      ];
+      customChatScenarios = [
+        [
+          { sender: 'user', text: `Hola, quisiera cotizar a ${capitalizedName} para una boda o evento el próximo sábado` },
+          { sender: 'bot', text: `¡Hola! 🪗 ¡Con gusto! En **${capitalizedName}** amenizamos bodas, XV años y eventos privados con el mejor ambiente en vivo. ¿Para cuántas horas necesitas el show?` },
+          { sender: 'user', text: `Serían 3 horas de evento privado` },
+          { sender: 'bot', text: `¡Excelente! El paquete de 3 horas de **${capitalizedName}** incluye repertorio completo, equipo de audio e iluminación profesional por **$9,500.00 MXN**. ¿Te reservamos la fecha? 🎉` }
+        ]
+      ];
+      webSubtitle = `Brochure interactivo de contratación, repertorio en vivo, disponibilidad de fechas y cotizaciones instantáneas para ${capitalizedName}.`;
+      brochureCards = [
+        { title: 'Show en Vivo 3 Horas', price: '$9,500.00', desc: 'Audio profesional, luces LED y repertorio norteño completo.', icon: '🪗' },
+        { title: 'Serenata Express', price: '$1,800.00', desc: '5 temas a elegir con vestuario de gala e interpretación en vivo.', icon: '🎵' },
+        { title: 'Sonido e Iluminación', price: '$2,500.00', desc: 'Planta de luz y equipo de alta fidelidad para 300 personas.', icon: '🔊' }
+      ];
+    } else if (lowerName.includes('veterinari') || lowerName.includes('perro') || lowerName.includes('gato') || lowerName.includes('mascota') || lowerName.includes('canin')) {
       industry = 'Clínica Veterinaria & Estética Canina 🐾';
       posItems = [
         { name: 'Consulta Vet General', price: 450, icon: '🐶' },
@@ -4070,17 +4102,14 @@ END:VCARD`;
           { sender: 'bot', text: `¡Hola! 🐶 Bienvenido a **${capitalizedName}**. Con gusto agendamos a tu mascota. ¿Te queda bien hoy por la tarde a las 5:00 PM o prefieres mañana?` },
           { sender: 'user', text: `Hoy a las 5:00 PM está perfecto` },
           { sender: 'bot', text: `¡Excelente! Cita confirmada para hoy 5:00 PM en **${capitalizedName}**. Te enviaremos un recordatorio por WhatsApp 1 hora antes. 🐾` }
-        ],
-        [
-          { sender: 'user', text: `¿Tienen disponible alimento premium de 15kg y cuál es el precio?` },
-          { sender: 'bot', text: `¡Sí! Tenemos **Alimento Premium 15kg** a **$1,250.00 MXN** con envío a domicilio sin costo en la compra. ¿Te mandamos un bulto? 🚚` }
-        ],
-        [
-          { sender: 'user', text: `¿Cuánto cuesta el baño y corte para perro mediano?` },
-          { sender: 'bot', text: `El servicio completo de **Baño & Corte Canino** cuesta **$400.00 MXN** e incluye corte de uñas, limpieza de oídos y cepillado. ✂️` }
         ]
       ];
-      webSubtitle = `Servicios veterinarios, agendamiento de citas 24/7 y venta de alimentos premium para ${capitalizedName}.`;
+      webSubtitle = `Folleto digital interactivo, agendamiento de citas 24/7 y alimentos premium para ${capitalizedName}.`;
+      brochureCards = [
+        { title: 'Consulta Veterinaria', price: '$450.00', desc: 'Revisión médica general, pesaje y diagnóstico especializado.', icon: '🩺' },
+        { title: 'Baño & Corte Canino', price: '$400.00', desc: 'Corte de uñas, limpieza de oídos, cepillado y champú antipulgas.', icon: '✂️' },
+        { title: 'Alimento Premium 15kg', price: '$1,250.00', desc: 'Nutrición de alta gama con envío a domicilio sin costo.', icon: '🦴' }
+      ];
     } else if (lowerName.includes('pediatra') || lowerName.includes('pediatria') || lowerName.includes('nino') || lowerName.includes('bebe') || lowerName.includes('infantil')) {
       industry = 'Consultorio Pediatría & Salud Infantil 👶🩺';
       posItems = [
@@ -4095,66 +4124,16 @@ END:VCARD`;
           { sender: 'bot', text: `¡Hola! 👶 Bienvenido al Consultorio Pediátrico **${capitalizedName}**. Con gusto agendamos la consulta de tu pequeño. ¿Deseas fecha para hoy o mañana?` },
           { sender: 'user', text: `Mañana a las 4:00 PM por favor` },
           { sender: 'bot', text: `¡Listo! Cita agendada para mañana 4:00 PM en **${capitalizedName}**. Te enviamos confirmación y pase digital por WhatsApp. 🩺` }
-        ],
-        [
-          { sender: 'user', text: `¿Cuentan con esquema completo de vacunas y costo de aplicación?` },
-          { sender: 'bot', text: `Contamos con esquema completo de vacunas infantiles. La **Aplicación de Vacunas** cuesta **$450.00 MXN** con revisión previa incluida. 💉` }
         ]
       ];
-      webSubtitle = `Consultorio pediátrico especializado, agendamiento de citas en línea y expedientes médicos para ${capitalizedName}.`;
-    } else if (lowerName.includes('abarrote') || lowerName.includes('tienda') || lowerName.includes('super') || lowerName.includes('mini')) {
-      industry = 'Abarrotes & Tienda 🌾';
-      posItems = [
-        { name: 'Arroz Extra 1kg', price: 32, icon: '🌾' },
-        { name: 'Aceite Canola 1L', price: 45, icon: '🍾' },
-        { name: 'Leche Entera 1L', price: 28, icon: '🥛' },
-        { name: 'Huevo Blanco 1kg', price: 48, icon: '🥚' }
+      webSubtitle = `Brochure médico digital, agendamiento de citas infantiles 24/7 y expedientes clínicos para ${capitalizedName}.`;
+      brochureCards = [
+        { title: 'Consulta Pediatría', price: '$600.00', desc: 'Valoración integral del lactante y seguimiento del desarrollo.', icon: '👶' },
+        { title: 'Aplicación de Vacunas', price: '$450.00', desc: 'Esquema completo con certificado de vacunación oficial.', icon: '💉' },
+        { title: 'Control Crecimiento', price: '$500.00', desc: 'Evaluación nutricional, somatometría y recomendaciones.', icon: '📏' }
       ];
-      customChatScenarios = [
-        [
-          { sender: 'user', text: `Hola, ¿cuáles son las promociones de hoy en ${capitalizedName}?` },
-          { sender: 'bot', text: `¡Hola! 🛒 En **${capitalizedName}** tenemos ofertas en Aceite Canola a **$45.00** y Huevo a **$48.00/kg**. ¿Te gustaría armar tu pedido a domicilio?` },
-          { sender: 'user', text: `Sí, me mandas 2kg de huevo y 1 aceite por favor` },
-          { sender: 'bot', text: `¡Entendido! Tu total es de **$141.00 MXN**. Tu pedido va en camino a tu domicilio. 🛵` }
-        ]
-      ];
-      webSubtitle = `Catálogo en línea, pedidos express por WhatsApp e inventario automatizado para ${capitalizedName}.`;
-    } else if (lowerName.includes('cafe') || lowerName.includes('cafeteria') || lowerName.includes('restaurante') || lowerName.includes('taco') || lowerName.includes('comida') || lowerName.includes('bar')) {
-      industry = 'Restaurante & Alimentos ☕';
-      posItems = [
-        { name: 'Café Americano 12oz', price: 45, icon: '☕' },
-        { name: 'Capuchino Vainilla 16oz', price: 58, icon: '🥛' },
-        { name: 'Sandwich de Pavo & Queso', price: 85, icon: '🥪' },
-        { name: 'Pastel de Chocolate', price: 65, icon: '🍰' }
-      ];
-      customChatScenarios = [
-        [
-          { sender: 'user', text: `Hola, me gustaría consultar el menú de ${capitalizedName} y reservar una mesa` },
-          { sender: 'bot', text: `¡Hola! ☕ Bienvenido a **${capitalizedName}**. Puedes consultar nuestro menú digital o reservar mesa. ¿Para cuántas personas deseas la reserva?` },
-          { sender: 'user', text: `Para 4 personas hoy a las 8:00 PM` },
-          { sender: 'bot', text: `¡Mesa reservada con éxito en **${capitalizedName}** para 4 personas a las 8:00 PM! ¡Los esperamos! 🎉` }
-        ]
-      ];
-      webSubtitle = `Menú digital interactivo, reservación de mesas en línea y comandas para ${capitalizedName}.`;
-    } else if (lowerName.includes('taller') || lowerName.includes('refaccionaria') || lowerName.includes('auto') || lowerName.includes('mecanico')) {
-      industry = 'Taller Automotriz & Servicios 🚗';
-      posItems = [
-        { name: 'Servicio Afinación Completa', price: 1800, icon: '🚗' },
-        { name: 'Cambio de Aceite Sintético 4L', price: 750, icon: '🛢️' },
-        { name: 'Juego Balatas Delanteras', price: 950, icon: '🛞' },
-        { name: 'Batería Automotriz 12V', price: 2200, icon: '⚡' }
-      ];
-      customChatScenarios = [
-        [
-          { sender: 'user', text: `Hola, necesito cotizar un cambio de aceite y balatas en ${capitalizedName}` },
-          { sender: 'bot', text: `¡Hola! 🚗 En **${capitalizedName}** el Cambio de Aceite Sintético está en **$750.00** y Balatas Delanteras en **$950.00**. ¿Te agendamos cita en taller?` },
-          { sender: 'user', text: `Sí por favor, ¿tienen espacio mañana en la mañana?` },
-          { sender: 'bot', text: `¡Cita confirmada en **${capitalizedName}** para mañana a las 9:00 AM! Te enviamos recepción digital. 🛞` }
-        ]
-      ];
-      webSubtitle = `Cotizaciones automáticas, órdenes de servicio digitales y estatus en taller para ${capitalizedName}.`;
     } else {
-      industry = `Plataforma Especializada - ${capitalizedName}`;
+      industry = `Brochure Corporativo Digital - ${capitalizedName}`;
       posItems = [
         { name: `${capitalizedName} - Servicio 01`, price: 350, icon: '⭐' },
         { name: `${capitalizedName} - Paquete 02`, price: 680, icon: '🚀' },
@@ -4163,84 +4142,91 @@ END:VCARD`;
       ];
       customChatScenarios = [
         [
-          { sender: 'user', text: `Hola, me gustaría solicitar información sobre los servicios de ${capitalizedName}` },
+          { sender: 'user', text: `Hola, me gustaría solicitar información y cotización sobre ${capitalizedName}` },
           { sender: 'bot', text: `¡Hola! 👋 Bienvenido a la plataforma oficial de **${capitalizedName}**. Contamos con atención 24/7 y automatización con IA. ¿Qué servicio deseas cotizar?` },
-          { sender: 'user', text: `Me interesa cotizar el paquete principal` },
-          { sender: 'bot', text: `¡Con gusto! Te enviamos la propuesta interactiva de **${capitalizedName}** a tu WhatsApp en este momento. 📄` }
+          { sender: 'user', text: `Me interesa cotizar el paquete principal de ${capitalizedName}` },
+          { sender: 'bot', text: `¡Con gusto! Te enviamos el catálogo folleto interactivo de **${capitalizedName}** a tu WhatsApp en este momento. 📄` }
         ]
       ];
-      webSubtitle = `Sistema corporativo inteligente con atención 24/7 y sincronización en vivo para ${capitalizedName}.`;
+      webSubtitle = `Brochure interactivo visual estilo revista corporativa con cotización en tiempo real para ${capitalizedName}.`;
+      brochureCards = [
+        { title: `${capitalizedName} - Servicio Principal`, price: '$3,500.00', desc: 'Solución integral personalizada de alta conversión.', icon: '⭐' },
+        { title: `${capitalizedName} - Paquete Pro`, price: '$6,800.00', desc: 'Mantenimiento continuo y soporte técnico 24/7.', icon: '🚀' },
+        { title: `${capitalizedName} - Módulo Nube`, price: '$9,500.00', desc: 'Infraestructura dedicada y respaldos automáticos.', icon: '💎' }
+      ];
     }
 
-    // A) ANIMATE TABLET POS MOCKUP
+    // A) ANIMATE TABLET POS MOCKUP (2-Column Integration)
     const posScreen = document.getElementById('pos-screen-content');
+    const posCartItems = document.getElementById('pos-cart-items');
+    const posSubtotal = document.getElementById('pos-subtotal');
+    const posTax = document.getElementById('pos-tax');
+    const posTotal = document.getElementById('pos-total');
+    const posCheckoutBtn = document.getElementById('pos-checkout-btn');
+
     if (posScreen) {
       posScreen.innerHTML = `
-        <div style="background:#0f172a; color:#fff; padding:16px; border-radius:14px; font-family:sans-serif; min-height:300px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display:flex; flex-direction:column; justify-content:space-between;">
-          <div>
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-bottom:12px;">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:20px;">🏪</span>
-                <div>
-                  <h4 style="margin:0; font-size:15px; color:#00e5ff;">${capitalizedName}</h4>
-                  <span style="font-size:11px; color:#94a3b8;">Punto de Venta & Operación IA (${industry})</span>
-                </div>
-              </div>
-              <span style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:4px 10px; border-radius:8px; font-size:11px; font-weight:bold;">● Caja Abierta</span>
+        <div style="font-size:12px; color:#fff; font-weight:700; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+          <span>Catálogo de ${capitalizedName}</span>
+          <span style="font-size:10px; color:#10b981;">● Online</span>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px;">
+          ${posItems.map((it, idx) => `
+            <div id="pos-item-${idx}" style="background:rgba(255,255,255,0.05); border:1px solid rgba(0,229,255,0.2); padding:8px; border-radius:8px; text-align:center; transition:all 0.3s;">
+              <div style="font-size:18px;">${it.icon}</div>
+              <div style="font-size:11px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${it.name}</div>
+              <div style="font-size:12px; color:#00e5ff; font-weight:700;">$${it.price.toLocaleString('es-MX', {minimumFractionDigits: 2})}</div>
             </div>
-
-            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin-bottom:14px;">
-              ${posItems.map((it, idx) => `
-                <div id="pos-item-${idx}" style="background:rgba(255,255,255,0.05); border:1px solid rgba(0,229,255,0.2); padding:10px; border-radius:10px; text-align:center; transition:all 0.3s;">
-                  <div style="font-size:22px; margin-bottom:4px;">${it.icon}</div>
-                  <div style="font-size:11.5px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff;">${it.name}</div>
-                  <div style="font-size:12.5px; color:#00e5ff; font-weight:bold; margin-top:2px;">$${it.price.toFixed(2)}</div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-
-          <div style="background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.25); padding:10px 14px; border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <div style="font-size:11px; color:#94a3b8;">Total Ticket Actual</div>
-              <div id="pos-live-total" style="color:#00e5ff; font-size:16px; font-weight:bold;">$0.00 MXN</div>
-            </div>
-            <button id="pos-checkout-btn" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; border:none; padding:8px 16px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer; transition:transform 0.2s;" onclick="triggerConfetti()">Cobrar Ticket 💳</button>
-          </div>
+          `).join('')}
         </div>
       `;
 
-      // Animate POS selection sequence
+      if (posCartItems) {
+        posCartItems.innerHTML = `
+          <div class="cart-item" id="cart-row-0" style="opacity:0.3; transition:opacity 0.4s;">
+            <span class="cart-item-name">${posItems[0].icon} ${posItems[0].name}</span>
+            <span class="cart-item-price">$${posItems[0].price.toFixed(2)}</span>
+          </div>
+        `;
+      }
+
+      // Animate selection sequence
       setTimeout(() => {
         const item0 = document.getElementById('pos-item-0');
-        const liveTotal = document.getElementById('pos-live-total');
-        if (item0) {
-          item0.style.background = 'rgba(0,229,255,0.25)';
-          item0.style.borderColor = '#00e5ff';
-        }
-        if (liveTotal) liveTotal.textContent = `$${posItems[0].price.toFixed(2)} MXN`;
-        playSynthSound('msg_send');
+        const cartRow0 = document.getElementById('cart-row-0');
+        if (item0) { item0.style.background = 'rgba(0,229,255,0.3)'; item0.style.borderColor = '#00e5ff'; }
+        if (cartRow0) cartRow0.style.opacity = '1';
+        if (posSubtotal) posSubtotal.textContent = `$${posItems[0].price.toFixed(2)}`;
+        if (posTax) posTax.textContent = `$${(posItems[0].price * 0.16).toFixed(2)}`;
+        if (posTotal) posTotal.textContent = `$${(posItems[0].price * 1.16).toFixed(2)}`;
+        if (typeof playSynthSound === 'function') playSynthSound('msg_send');
 
         setTimeout(() => {
-          const item1 = document.getElementById('pos-item-1');
-          if (item1) {
-            item1.style.background = 'rgba(0,229,255,0.25)';
-            item1.style.borderColor = '#00e5ff';
+          if (posCartItems) {
+            posCartItems.innerHTML += `
+              <div class="cart-item" id="cart-row-1" style="opacity:1; transition:opacity 0.4s;">
+                <span class="cart-item-name">${posItems[1].icon} ${posItems[1].name}</span>
+                <span class="cart-item-price">$${posItems[1].price.toFixed(2)}</span>
+              </div>
+            `;
           }
-          const sum = posItems[0].price + (posItems[1] ? posItems[1].price : 0);
-          if (liveTotal) liveTotal.textContent = `$${sum.toFixed(2)} MXN`;
-          playSynthSound('msg_send');
+          const item1 = document.getElementById('pos-item-1');
+          if (item1) { item1.style.background = 'rgba(0,229,255,0.3)'; item1.style.borderColor = '#00e5ff'; }
+          const sum = posItems[0].price + posItems[1].price;
+          if (posSubtotal) posSubtotal.textContent = `$${sum.toFixed(2)}`;
+          if (posTax) posTax.textContent = `$${(sum * 0.16).toFixed(2)}`;
+          if (posTotal) posTotal.textContent = `$${(sum * 1.16).toFixed(2)}`;
+          if (typeof playSynthSound === 'function') playSynthSound('msg_send');
 
           setTimeout(() => {
-            const btn = document.getElementById('pos-checkout-btn');
-            if (btn) {
-              btn.style.transform = 'scale(1.08)';
-              btn.innerHTML = '✓ ¡Cobro Exitoso! 💳';
+            if (posCheckoutBtn) {
+              posCheckoutBtn.innerHTML = '<span>✓ ¡Ticket Cobrado! 💳</span>';
+              posCheckoutBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
               if (typeof triggerConfetti === 'function') triggerConfetti();
             }
           }, 1400);
         }, 1200);
-      }, 800);
+      }, 600);
     }
 
     // B) ANIMATE SMARTPHONE CHAT MOCKUP
@@ -4259,10 +4245,10 @@ END:VCARD`;
           setTimeout(() => {
             const bubble = document.createElement('div');
             bubble.className = 'telegram-bubble user';
-            bubble.innerHTML = `<div class="text">${m.text}</div><span class="time">15:25 <span class="tg-check">✓✓</span></span>`;
+            bubble.innerHTML = `<div class="text">${m.text}</div><span class="time">15:28 <span class="tg-check">✓✓</span></span>`;
             tgMessages.appendChild(bubble);
             tgMessages.scrollTop = tgMessages.scrollHeight;
-            playSynthSound('msg_send');
+            if (typeof playSynthSound === 'function') playSynthSound('msg_send');
             playCustomChatSequence();
           }, 600);
         } else {
@@ -4279,10 +4265,10 @@ END:VCARD`;
               if (ind) ind.remove();
               const bubble = document.createElement('div');
               bubble.className = 'telegram-bubble bot';
-              bubble.innerHTML = `<div class="text">${m.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</div><span class="time">15:25</span>`;
+              bubble.innerHTML = `<div class="text">${m.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</div><span class="time">15:28</span>`;
               tgMessages.appendChild(bubble);
               tgMessages.scrollTop = tgMessages.scrollHeight;
-              playSynthSound('msg_recv');
+              if (typeof playSynthSound === 'function') playSynthSound('msg_recv');
               playCustomChatSequence();
             }, 1200);
           }, 500);
@@ -4292,20 +4278,51 @@ END:VCARD`;
       playCustomChatSequence();
     }
 
-    // C) ANIMATE BROWSER WEB APP MOCKUP
+    // C) RENDER VISUAL BROCHURE / MAGAZINE BOOK WEBSITE MOCKUP ("LIBRO A HOJEAR")
     const webView = document.getElementById('web-screen-content');
     if (webView) {
       webView.innerHTML = `
-        <div style="background:#0a0f1d; color:#fff; padding:22px; border-radius:12px; font-family:sans-serif; text-align:center;">
-          <div style="font-size:12px; color:#00e5ff; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px;">${industry}</div>
-          <h2 style="font-size:24px; margin:0 0 8px 0; color:#ffffff;">${capitalizedName}</h2>
-          <p style="font-size:13px; color:#94a3b8; max-width:520px; margin:0 auto 16px auto; line-height:1.4;">${webSubtitle}</p>
-          <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
-            <span style="background:rgba(0,229,255,0.15); border:1px solid rgba(0,229,255,0.3); color:#00e5ff; padding:8px 18px; border-radius:20px; font-size:12px; font-weight:bold;">🚀 Ver Servicios</span>
-            <span style="background:rgba(37,211,102,0.15); border:1px solid rgba(37,211,102,0.3); color:#25d366; padding:8px 18px; border-radius:20px; font-size:12px; font-weight:bold;">💬 Agendar por WhatsApp</span>
+        <div style="background: linear-gradient(180deg, #090d16 0%, #06080c 100%); color:#fff; padding:20px 16px; border-radius:12px; font-family:sans-serif;">
+          
+          <!-- Brochure Header & Logo -->
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:12px; margin-bottom:16px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:24px;">📖</span>
+              <div>
+                <h3 style="margin:0; font-size:16px; color:#ffffff; font-weight:800; letter-spacing:0.5px;">${capitalizedName}</h3>
+                <span style="font-size:10.5px; color:#00e5ff; font-weight:600;">${industry}</span>
+              </div>
+            </div>
+            <span style="background:rgba(0,229,255,0.15); color:#00e5ff; border:1px solid rgba(0,229,255,0.3); padding:4px 10px; border-radius:20px; font-size:10px; font-weight:bold;">Catálogo Digital 2026</span>
           </div>
-          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:10px; border-radius:10px; font-size:11px; color:#10b981; font-weight:bold;">
-            ⚡ Google Lighthouse: 100/100 | Conexión SSL Segura Activa
+
+          <!-- Brochure Hero Flip Banner -->
+          <div style="background:linear-gradient(135deg, rgba(0,229,255,0.12), rgba(168,85,247,0.12)); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:16px; margin-bottom:16px; text-align:center; position:relative; overflow:hidden;">
+            <div style="font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:#a855f7; font-weight:bold; margin-bottom:4px;">Folleto Corporativo Interactivo</div>
+            <h2 style="font-size:20px; color:#fff; margin:0 0 6px 0;">Catálogo de Servicios ${capitalizedName}</h2>
+            <p style="font-size:12px; color:#94a3b8; margin:0 auto 12px auto; max-width:480px;">${webSubtitle}</p>
+            <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
+              <span style="background:#00e5ff; color:#000; padding:6px 14px; border-radius:12px; font-size:11px; font-weight:800; cursor:pointer;" onclick="triggerConfetti()">📖 Hojear Catálogo</span>
+              <span style="background:rgba(37,211,102,0.2); border:1px solid rgba(37,211,102,0.4); color:#25d366; padding:6px 14px; border-radius:12px; font-size:11px; font-weight:bold;">💬 Solicitar por WhatsApp</span>
+            </div>
+          </div>
+
+          <!-- Brochure Visual Cards Grid ("Páginas del Libro") -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:14px;">
+            ${brochureCards.map(c => `
+              <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:12px 10px; border-radius:12px; text-align:center; transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                <div style="font-size:24px; margin-bottom:6px;">${c.icon}</div>
+                <div style="font-size:12px; font-weight:800; color:#fff; margin-bottom:2px;">${c.title}</div>
+                <div style="font-size:13px; color:#00e5ff; font-weight:800; margin-bottom:4px;">${c.price}</div>
+                <div style="font-size:10px; color:#94a3b8; line-height:1.3;">${c.desc}</div>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Live Score & Security Badge -->
+          <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); padding:8px 12px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#10b981; font-weight:bold;">
+            <span>⚡ Google Lighthouse Score: 100/100</span>
+            <span>🔒 Conexión SSL Segura</span>
           </div>
         </div>
       `;
@@ -4343,7 +4360,7 @@ END:VCARD`;
     setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3200);
   };
 
-  // Check URL Params on Load (e.g. ?negocio=Veterinario%20Juan)
+  // Check URL Params on Load (e.g. ?negocio=Conjunto%20norteno)
   const urlParams = new URLSearchParams(window.location.search);
   const initialNegocio = urlParams.get('negocio') || urlParams.get('nombre');
   if (initialNegocio) {
