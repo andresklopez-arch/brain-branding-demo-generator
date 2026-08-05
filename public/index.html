@@ -164,8 +164,15 @@
       opacity: 0;
       pointer-events: none;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      transition-delay: 0.15s;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 10px rgba(99, 102, 241, 0.15);
       z-index: 1000;
+    }
+    body.light-theme .custom-tooltip::after {
+      background: rgba(240, 242, 245, 0.98);
+      border-color: rgba(99, 102, 241, 0.5);
+      color: #0c0f17;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15), 0 0 10px rgba(99, 102, 241, 0.1);
     }
     @media (hover: hover) {
       .custom-tooltip:hover::after {
@@ -1288,6 +1295,23 @@
       color: var(--text-muted);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+    .icon-circle::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .feature-icon-pill.clicked .icon-circle::before {
+      animation: iconRippleEffect 0.4s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+    }
+    @keyframes iconRippleEffect {
+      0% { transform: scale(1); opacity: 1; border-width: 2px; }
+      100% { transform: scale(1.4); opacity: 0; border-width: 0.5px; }
     }
     .feature-icon-pill .pill-label {
       display: none !important;
@@ -1451,11 +1475,7 @@
       text-shadow: 0 0 30px rgba(0, 229, 255, 0.15);
     }
     .metric-label {
-      font-size: 10px;
-      text-transform: uppercase;
-      font-weight: 700;
-      color: var(--text-muted);
-      letter-spacing: 1px;
+      display: none !important;
     }
     .metric-desc {
       font-size: 12.5px;

@@ -29,6 +29,13 @@ document.addEventListener('DOMContentLoaded', () => {
       pill.classList.add('custom-tooltip');
       pill.setAttribute('data-tooltip', label.textContent.trim());
     }
+    
+    pill.addEventListener('click', () => {
+      pill.classList.remove('clicked');
+      void pill.offsetWidth;
+      pill.classList.add('clicked');
+      setTimeout(() => { pill.classList.remove('clicked'); }, 400);
+    });
   });
 
   // Async battery reading on startup for Battery-Level/Charging Salted XOR
