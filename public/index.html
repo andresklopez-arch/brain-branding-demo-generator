@@ -3555,59 +3555,61 @@
 
 
 
-    <!-- 2C. INVESTMENT & GUARANTEE DETAILS -->
-    <section id="detalles-inversion" class="services" style="border-top: 1px solid var(--border-color); padding-top: 100px;">
-      <div style="text-align:center; display:flex; flex-direction:column; align-items:center;">
+    <!-- 2C. INVESTMENT & GUARANTEE DETAILS (COMPACT BULLET LIST) -->
+    <section id="detalles-inversion" class="services" style="border-top: 1px solid var(--border-color); padding: 50px 20px 40px 20px;">
+      <div style="text-align:center; display:flex; flex-direction:column; align-items:center; margin-bottom: 25px;">
         <span class="section-tag">Estructura Comercial</span>
         <h2 class="section-title">Inversión, <span>Garantía y Pasos a Seguir</span></h2>
-        <p class="section-subtitle">
+        <p class="section-subtitle" style="margin-bottom: 0;">
           Esquema transparente de activación y acompañamiento continuo bajo un esquema de cero riesgo para tu negocio.
         </p>
       </div>
 
-      <div class="services-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; max-width: 1200px; margin: 0 auto; margin-bottom: 40px;">
-        <!-- Card Inversion -->
-        <div class="glass-card service-card" style="text-align: left; align-items: flex-start; padding: 35px;">
-          <div class="service-icon">💰</div>
-          <h3 style="margin-bottom: 15px;">Inversión & Mantenimiento</h3>
-          <p style="font-size: 14px; line-height: 1.6; color: var(--text-muted);">
-            <b>• ACTIVACIÓN INICIAL:</b> A partir de los $4,500 MXN.<br><br>
-            <b>• MANTENIMIENTO Y CONECTIVIDAD:</b> Fijo en el 10% de la cuota inicial mensual.<br><br>
-            <i>Esta mensualidad es el "SEGURO Y LA GASOLINA" del sistema: te garantiza almacenamiento ilimitado en la nube, soporte técnico continuo y actualizaciones de por vida para que tu app nunca deje de operar.</i>
-          </p>
-        </div>
+      <div class="glass-card investment-bullet-card" style="max-width: 950px; margin: 0 auto; padding: 25px 30px; border-radius: 20px; background: rgba(6, 8, 12, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+        <div class="investment-bullets-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px 30px;">
+          
+          <!-- Item 1: Inversión -->
+          <div class="bullet-item" style="display: flex; align-items: flex-start; gap: 14px; transition: transform 0.2s ease;">
+            <div class="bullet-icon" style="font-size: 18px; width: 36px; height: 36px; border-radius: 10px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #f59e0b;">💰</div>
+            <div>
+              <strong style="font-size: 14.5px; color: #ffffff; display: block; margin-bottom: 3px;">Inversión y Mantenimiento:</strong>
+              <span style="font-size: 12.5px; color: var(--text-muted); line-height: 1.45; display: block;">
+                <b>• Activación Inicial:</b> A partir de los $4,500 MXN.<br>
+                <b>• Mantenimiento y Conectividad:</b> 10% de cuota mensual (almacenamiento ilimitado en la nube, soporte continuo y actualizaciones de por vida).
+              </span>
+            </div>
+          </div>
 
-        <!-- Card Garantia -->
-        <div class="glass-card service-card" style="text-align: left; align-items: flex-start; padding: 35px;">
-          <div class="service-icon">🛡️</div>
-          <h3 style="margin-bottom: 15px;">Garantía de Cero Riesgo</h3>
-          <p style="font-size: 14px; line-height: 1.6; color: var(--text-muted);">
-            <b>1. ARRANQUE:</b> Iniciamos con el 35% de la inversión inicial.<br><br>
-            <b>2. DEMO FUNCIONAL:</b> De 12 a 24 días recibes una versión terminada de tu sistema.<br><br>
-            <b>3. AJUSTES:</b> Contamos con 10 días para realizar las adecuaciones finas que necesites.<br><br>
-            <b>4. ENTREGA Y LIQUIDACIÓN:</b> Cuando el sistema quede operando a tu entera satisfacción, liquidas el 65% restante y se activa el plan.
-          </p>
-        </div>
+          <!-- Item 2: Garantía -->
+          <div class="bullet-item" style="display: flex; align-items: flex-start; gap: 14px; transition: transform 0.2s ease;">
+            <div class="bullet-icon" style="font-size: 18px; width: 36px; height: 36px; border-radius: 10px; background: rgba(0, 229, 255, 0.1); border: 1px solid rgba(0, 229, 255, 0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #00e5ff;">🛡️</div>
+            <div>
+              <strong style="font-size: 14.5px; color: #ffffff; display: block; margin-bottom: 3px;">Garantía de Cero Riesgo:</strong>
+              <span style="font-size: 12.5px; color: var(--text-muted); line-height: 1.45; display: block;">
+                <b>1. Arranque:</b> 35% de anticipo.<br>
+                <b>2. Demo Funcional:</b> Entrega en 12 a 24 días con 10 días de ajustes finos.<br>
+                <b>3. Liquidación:</b> 65% restante solo al quedar a tu entera satisfacción.
+              </span>
+            </div>
+          </div>
 
-        <!-- Card Bono -->
-        <div class="glass-card service-card" style="text-align: left; align-items: flex-start; padding: 35px; border-color: rgba(6, 182, 212, 0.3); box-shadow: 0 0 25px rgba(6, 182, 212, 0.1);">
-          <div class="service-icon">🎁</div>
-          <h3 style="color: #06b6d4; margin-bottom: 15px;">Bono de Acción Rápida</h3>
-          <p style="font-size: 14px; line-height: 1.6; color: var(--text-muted);">
-            Si concretamos el arranque y el pago del anticipo en los próximos <b>3 días</b>, te bonificamos al <b>100% tus primeros 2 meses</b> de mantenimiento y conectividad.<br><br>
-            El sistema empezará a generar su cuota mensual hasta tu 3er mes de uso.<br><br>
-            <span style="font-size: 12px; color: var(--text-muted); opacity: 0.8;">* Nota: Precios netos antes de IVA (16% por Asesoría Profesional). Los precios se ven afectadas por el salario mínimo vigente.</span>
-          </p>
+          <!-- Item 3: Bono Rápido -->
+          <div class="bullet-item" style="display: flex; align-items: flex-start; gap: 14px; transition: transform 0.2s ease;">
+            <div class="bullet-icon" style="font-size: 18px; width: 36px; height: 36px; border-radius: 10px; background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #06b6d4;">🎁</div>
+            <div>
+              <strong style="font-size: 14.5px; color: #06b6d4; display: block; margin-bottom: 3px;">Bono de Acción Rápida:</strong>
+              <span style="font-size: 12.5px; color: var(--text-muted); line-height: 1.45; display: block;">
+                Si concretamos en los próximos <b>3 días</b>, te bonificamos al <b>100% tus primeros 2 meses</b> de mantenimiento y conectividad.
+              </span>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
 
-
-
-
-
     <!-- 4B. FAQ SECTION -->
-    <section id="faq" class="testimonials" style="border-top: 1px solid var(--border-color); padding-top: 100px;">
+    <section id="faq" class="testimonials" style="border-top: 1px solid var(--border-color); padding: 50px 20px 40px 20px;">
       <div style="text-align:center; display:flex; flex-direction:column; align-items:center;">
         <span class="section-tag">Preguntas Frecuentes</span>
         <h2 class="section-title">Resolvemos tus <span>dudas técnicas</span></h2>
