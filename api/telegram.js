@@ -381,13 +381,23 @@ async function handleWebhookRequest(req, res) {
         }
 
         if (cmdLower === '/reporte' || cmdLower === '/resumen') {
-          const uniqueProspects = new Set(prospectLogs.map(p => p.chatId)).size;
-          const calientes = prospectLogs.filter(p => p.temp === 'CALIENTE' || p.temp === 'CITA_URGENTE').length;
-          let reportMsg = `📊 *REPORTE DIARIO DE PROSPECTOS TELEGRAM* 📊\n📱 *Teléfono:* ${OWNER_PHONE}\n\n• *Interacciones Hoy:* ${prospectLogs.length}\n• *Prospectos Únicos:* ${uniqueProspects}\n• *🔥 Leads Calientes / Citas:* ${calientes}\n\n*Últimos Prospectos:*:\n`;
+          const whatsappLogs = require('./whatsapp.js').whatsappProspectLogs || [];
+          const uniqueTg = new Set(prospectLogs.map(p => p.chatId)).size;
+          const uniqueWa = new Set(whatsappLogs.map(p => p.phone)).size;
+          const calientesTg = prospectLogs.filter(p => p.temp === 'CALIENTE' || p.temp === 'CITA_URGENTE').length;
 
-          prospectLogs.slice(-10).reverse().forEach((p, idx) => {
-            reportMsg += `${idx + 1}. *${p.name}* (@${p.username}) [${p.temp}]\n   💬 "${p.text.substring(0, 35)}..." (ID: \`${p.chatId}\`)\n`;
+          let reportMsg = `📊 *REPORTE CONSOLIDADO TELEGRAM + WHATSAPP* 📊\n📱 *Teléfono:* ${OWNER_PHONE}\n\n🤖 *TELEGRAM:* ${prospectLogs.length} msgs | ${uniqueTg} prospectos | ${calientesTg} 🔥 citas\n📲 *WHATSAPP:* ${whatsappLogs.length} msgs | ${uniqueWa} prospectos\n\n*Últimas Interacciones Telegram:*\n`;
+
+          prospectLogs.slice(-5).reverse().forEach((p, idx) => {
+            reportMsg += `${idx + 1}. [TG] *${p.name}* (@${p.username}) [${p.temp}]\n   💬 "${p.text.substring(0, 30)}..."\n`;
           });
+
+          if (whatsappLogs.length > 0) {
+            reportMsg += `\n*Últimas Interacciones WhatsApp:*\n`;
+            whatsappLogs.slice(-5).reverse().forEach((p, idx) => {
+              reportMsg += `${idx + 1}. [WA] *${p.name}* (\`${p.phone}\`)\n   💬 "${p.text.substring(0, 30)}..."\n`;
+            });
+          }
 
           await callTelegram('sendMessage', {
             chat_id: ADMIN_CHAT_ID,

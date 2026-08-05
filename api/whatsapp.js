@@ -239,4 +239,5 @@ if (require.main === module) {
   });
 }
 
+app.whatsappProspectLogs = whatsappProspectLogs;
 module.exports = app;
