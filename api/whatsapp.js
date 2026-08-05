@@ -240,4 +240,5 @@ if (require.main === module) {
 }
 
 app.whatsappProspectLogs = whatsappProspectLogs;
+app.sendWhatsappMessage = sendWhatsappMessage;
 module.exports = app;

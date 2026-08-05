@@ -408,11 +408,44 @@ async function handleWebhookRequest(req, res) {
         }
 
         if (cmdLower === '/plantilla' || cmdLower === '/citas') {
-          const plantillaMsg = `📱 *PLANTILLAS RÁPIDAS DE RESPUESTA WHATSAPP* 📱\n\n*Plantilla 1 (Respuesta a Citas):*\n"¡Hola! 👋 Soy Andrés R de Brain Branding. Recibí tu mensaje sobre agendar una cita/demo.\n\nPlatícame: ¿qué día u horario prefieres para una llamada rápida de 10 minutos o deseas que te envíe un presupuesto personalizado?"\n\n*Plantilla 2 (Envío de Demos):*\n"¡Con gusto! Aquí puedes probar nuestras demos en vivo:\n🌐 https://brainbranding.com.mx/#asistente-ia"`;
+          const plantillaMsg = `📱 *PLANTILLAS RÁPIDAS DE RESPUESTA WHATSAPP* 📱\n\n*Plantilla 1 (Respuesta a Citas):*\n"¡Hola! 👋 Soy Andrés R de Brain Branding. Recibí tu mensaje sobre agendar una cita/demo.\n\nPlatícame: ¿qué día u horario prefieres para una llamada rápida de 10 minutos o deseas que te envíe un presupuesto personalizado?"\n\n*Plantilla 2 (Envío de Demos):*\n"¡Con gusto! Aquí puedes probar nuestras demos en vivo:\n🌐 https://brainbranding.com.mx/#asistente-ia"\n\n⚡ *Envío Automático Directo:* Usa \`/enviarwa <teléfono> citas\` para enviarla en 1 clic.`;
 
           await callTelegram('sendMessage', {
             chat_id: ADMIN_CHAT_ID,
             text: plantillaMsg,
+            parse_mode: 'Markdown'
+          });
+          return res.status(200).json({ ok: true });
+        }
+
+        if (cmdLower.startsWith('/enviarwa') || cmdLower.startsWith('/wa')) {
+          const parts = userText.split(/\s+/);
+          const targetPhone = parts[1];
+          const typeOrMsg = parts.slice(2).join(' ').trim();
+
+          if (!targetPhone) {
+            await callTelegram('sendMessage', {
+              chat_id: ADMIN_CHAT_ID,
+              text: 'Sintaxis: `/enviarwa <teléfono> citas|demos|<mensaje>`',
+              parse_mode: 'Markdown'
+            });
+            return res.status(200).json({ ok: true });
+          }
+
+          const sendWa = require('./whatsapp.js').sendWhatsappMessage;
+          let finalMsg = typeOrMsg;
+
+          if (!typeOrMsg || typeOrMsg === 'citas') {
+            finalMsg = "¡Hola! 👋 Soy Andrés R de Brain Branding. Recibí tu mensaje sobre agendar una cita/demo.\n\nPlatícame: ¿qué día u horario prefieres para una llamada rápida de 10 minutos o deseas que te envíe un presupuesto personalizado?";
+          } else if (typeOrMsg === 'demos') {
+            finalMsg = "¡Con gusto! Aquí puedes probar nuestras demos en vivo:\n🌐 https://brainbranding.com.mx/#asistente-ia";
+          }
+
+          if (sendWa) sendWa(targetPhone, finalMsg);
+
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: `✅ *Mensaje WhatsApp Enviado Automáticamente por Andrés R* a \`${targetPhone}\`:\n\n💬 "${finalMsg.substring(0, 80)}..."`,
             parse_mode: 'Markdown'
           });
           return res.status(200).json({ ok: true });
