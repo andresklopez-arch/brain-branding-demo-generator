@@ -1091,6 +1091,51 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // 19. Dynamic Extra-White 3D Word Swapper for Header & Footer Logo
+  const wordPairs = [
+    ['EMPODERANDO', 'MARCAS'],
+    ['REPROGRAMANDO', 'MENTES'],
+    ['EMPODERANDO', 'MENTES'],
+    ['REPROGRAMANDO', 'MARCAS'],
+    ['MARCAS', 'MENTES'],
+    ['EMPODERANDO', 'REPROGRAMANDO'],
+    ['MENTES', 'EMPODERANDO'],
+    ['MARCAS', 'REPROGRAMANDO']
+  ];
+
+  let currentPairIdx = 0;
+  const headerLogoContainer = document.getElementById('header-logo-text');
+  const footerLogoContainer = document.getElementById('footer-logo-text');
+
+  if (headerLogoContainer || footerLogoContainer) {
+    setInterval(() => {
+      let nextIdx;
+      do {
+        nextIdx = Math.floor(Math.random() * wordPairs.length);
+      } while (nextIdx === currentPairIdx);
+      
+      currentPairIdx = nextIdx;
+      const [word1, word2] = wordPairs[currentPairIdx];
+
+      const swapTarget = (container) => {
+        if (!container) return;
+        const line1 = container.querySelector('.logo-line-1');
+        const line2 = container.querySelector('.logo-line-2');
+        if (line1 && line2) {
+          container.classList.add('swapping');
+          setTimeout(() => {
+            line1.textContent = word1;
+            line2.textContent = word2;
+            container.classList.remove('swapping');
+          }, 350);
+        }
+      };
+
+      swapTarget(headerLogoContainer);
+      swapTarget(footerLogoContainer);
+    }, 3500);
+  }
+
   // 20. Scroll Spy for Icon Nav links
   const sections = document.querySelectorAll('section');
   const navLinks = document.querySelectorAll('header nav .nav-link');

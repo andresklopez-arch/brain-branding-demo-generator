@@ -137,71 +137,61 @@
       0% { opacity: 0; transform: translateX(-8px); }
       100% { opacity: 1; transform: translateX(0); }
     }
-    /* LUXURY EDITORIAL HIGH-CONTRAST TYPOGRAPHY (INSPIRED BY HIGH-FASHION & ELEGANT BRANDING) */
+    /* EXTRA-WHITE 3D SWAPPING NEURO LOGO TYPOGRAPHY */
     header .logo-area, footer .logo-area {
       display: flex;
       align-items: center;
       text-decoration: none;
-      gap: 10px;
+      gap: 12px;
     }
     header .logo-area img, footer .logo-area img {
-      height: 36px !important;
+      height: 38px !important;
       object-fit: contain;
-      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
-      transition: transform 0.3s ease, filter 0.3s ease;
+      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.45));
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
     }
     header .logo-area:hover img, footer .logo-area:hover img {
-      transform: scale(1.06);
-      filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.5));
+      transform: scale(1.08) rotate(3deg);
+      filter: drop-shadow(0 0 16px rgba(0, 229, 255, 0.75));
     }
-    header .logo-area .logo-text, footer .logo-area .logo-text {
-      opacity: 0;
-      animation: brand-phrase-entrance 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
-      font-family: 'Cinzel', 'Playfair Display', serif !important;
-      user-select: none;
+    .neuro-swap-container {
+      perspective: 500px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       line-height: 1.15 !important;
+      user-select: none;
+      opacity: 0;
+      animation: brand-phrase-entrance 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
     }
-    header .logo-text .logo-line, footer .logo-text .logo-line {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      white-space: nowrap;
-    }
-    header .logo-text .word-base, footer .logo-text .word-base {
-      font-family: 'Cinzel', serif !important;
-      font-size: 10.5px !important;
-      font-weight: 700 !important;
-      letter-spacing: 1.6px !important;
-      color: #f8fafc !important;
-      text-transform: uppercase;
-      opacity: 0.92;
-    }
-    header .logo-text .word-accent, footer .logo-text .word-accent {
-      font-family: 'Cinzel', 'Playfair Display', serif !important;
-      font-size: 13px !important;
+    .neuro-swap-container .logo-line {
+      display: block;
+      font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif !important;
+      font-size: 13.5px !important;
       font-weight: 900 !important;
-      letter-spacing: 1.4px !important;
+      letter-spacing: 0.8px !important;
+      color: #ffffff !important;
       text-transform: uppercase;
+      white-space: nowrap;
+      text-shadow: 0 0 12px rgba(255, 255, 255, 0.9), 0 0 24px rgba(0, 229, 255, 0.45);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease, filter 0.35s ease;
+      transform-origin: 50% 50%;
+      will-change: transform, opacity, filter;
     }
-    header .logo-text .highlight-marcas, footer .logo-text .highlight-marcas {
-      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+    .neuro-swap-container.swapping .logo-line-1 {
+      transform: translateY(-10px) rotateX(90deg);
+      opacity: 0;
+      filter: blur(4px);
     }
-    header .logo-text .highlight-mentes, footer .logo-text .highlight-mentes {
-      background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+    .neuro-swap-container.swapping .logo-line-2 {
+      transform: translateY(10px) rotateX(-90deg);
+      opacity: 0;
+      filter: blur(4px);
     }
 
-    body.light-theme header .logo-text .word-base,
-    body.light-theme footer .logo-text .word-base {
+    body.light-theme .neuro-swap-container .logo-line {
       color: #0f172a !important;
+      text-shadow: 0 0 10px rgba(15, 23, 42, 0.25);
     }
     @keyframes theme-toggle-entrance {
       0% { opacity: 0; transform: scale(0.8) rotate(-45deg); }
@@ -2876,14 +2866,10 @@
   <!-- NAVIGATION HEADER -->
   <header style="justify-content: space-between !important;">
     <a href="#inicio" class="logo-area" aria-label="Brain Branding - Empoderando Marcas, Reprogramando Mentes">
-      <img src="/favicon.png" alt="Logo Brain Branding" style="height: 36px; object-fit: contain;">
-      <div class="logo-text">
-        <div class="logo-line logo-line-1">
-          <span class="word-base">EMPODERANDO</span> <span class="word-accent highlight-marcas">MARCAS</span>
-        </div>
-        <div class="logo-line logo-line-2">
-          <span class="word-base">REPROGRAMANDO</span> <span class="word-accent highlight-mentes">MENTES</span>
-        </div>
+      <img src="/favicon.png" alt="Logo Brain Branding" style="height: 38px; object-fit: contain;">
+      <div class="logo-text neuro-swap-container" id="header-logo-text">
+        <div class="logo-line logo-line-1">EMPODERANDO</div>
+        <div class="logo-line logo-line-2">MARCAS</div>
       </div>
     </a>
     <button id="theme-toggle-btn" class="header-btn custom-tooltip" data-tooltip="Cambiar Modo" style="padding: 0; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; font-size: 15px; cursor: pointer; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.02); color: var(--text-main);">🌓</button>
@@ -3872,13 +3858,9 @@
       <div class="footer-left">
         <a href="#inicio" class="logo-area" aria-label="Brain Branding">
           <img src="/favicon.png" alt="Logo" style="height: 32px; object-fit: contain;">
-          <div class="logo-text">
-            <div class="logo-line logo-line-1">
-              <span class="word-base">EMPODERANDO</span> <span class="word-accent highlight-marcas">MARCAS</span>
-            </div>
-            <div class="logo-line logo-line-2">
-              <span class="word-base">REPROGRAMANDO</span> <span class="word-accent highlight-mentes">MENTES</span>
-            </div>
+          <div class="logo-text neuro-swap-container" id="footer-logo-text">
+            <div class="logo-line logo-line-1">EMPODERANDO</div>
+            <div class="logo-line logo-line-2">MARCAS</div>
           </div>
         </a>
         <p>© 2026 Empoderando Marcas, Reprogramando Mentes. Todos los derechos reservados.</p>
