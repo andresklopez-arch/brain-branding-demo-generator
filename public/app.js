@@ -1185,6 +1185,52 @@ document.addEventListener('DOMContentLoaded', () => {
     runRhythm();
   }
 
+  // 21. Chameleon Section Titles: Organic slow painting & depainting (15s to 40s random interval)
+  const chameleonTitles = document.querySelectorAll('.section-title');
+
+  chameleonTitles.forEach((title) => {
+    // Dynamically structure text into part-a (white) and part-b (colored) if not already done
+    let partA = title.querySelector('.chameleon-part-a');
+    let partB = title.querySelector('.chameleon-part-b');
+
+    if (!partA || !partB) {
+      const spanChild = title.querySelector('span');
+      if (spanChild) {
+        let textBefore = '';
+        title.childNodes.forEach(node => {
+          if (node !== spanChild) {
+            textBefore += node.textContent;
+          }
+        });
+        title.innerHTML = `<span class="chameleon-part-a">${textBefore.trim()}</span> <span class="chameleon-part-b">${spanChild.innerHTML}</span>`;
+        partA = title.querySelector('.chameleon-part-a');
+        partB = title.querySelector('.chameleon-part-b');
+      }
+    }
+
+    const scheduleNextChameleonShift = () => {
+      // Random cycle interval between 15,000ms (15s) and 40,000ms (40s)
+      const randomSeconds = (Math.random() * (40 - 15) + 15).toFixed(1);
+      const randomMs = parseFloat(randomSeconds) * 1000;
+
+      // Transition speed: 4s to 8s for ultra-organic chameleon color morphing
+      const transitionSpeed = Math.min(8, Math.max(4, parseFloat(randomSeconds) * 0.25)).toFixed(1);
+
+      if (partA && partB) {
+        partA.style.transition = `all ${transitionSpeed}s cubic-bezier(0.4, 0, 0.2, 1)`;
+        partB.style.transition = `all ${transitionSpeed}s cubic-bezier(0.4, 0, 0.2, 1)`;
+      }
+
+      title.classList.toggle('chameleon-flipped');
+
+      setTimeout(scheduleNextChameleonShift, randomMs);
+    };
+
+    // Stagger initial start times randomly between 1s and 6s so titles shift organically out of sync
+    const initialDelay = Math.random() * 5000 + 1000;
+    setTimeout(scheduleNextChameleonShift, initialDelay);
+  });
+
   // 20. Scroll Spy for Icon Nav links
   const sections = document.querySelectorAll('section');
   const navLinks = document.querySelectorAll('header nav .nav-link');

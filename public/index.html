@@ -229,6 +229,54 @@
       color: #0f172a !important;
       text-shadow: none;
     }
+
+    /* CHAMELEON ORGANIC TITLE ANIMATIONS (PAINTING & DEPAINTING 15s-40s) */
+    .section-title {
+      font-family: var(--font-title);
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+    .section-title .chameleon-part-a {
+      color: #ffffff;
+      -webkit-text-fill-color: #ffffff;
+      background: none;
+      transition: color 5s ease, background 5s ease, -webkit-text-fill-color 5s ease, filter 5s ease;
+      display: inline-block;
+    }
+    .section-title .chameleon-part-b {
+      background: linear-gradient(135deg, #00e5ff 0%, #a855f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.35));
+      transition: color 5s ease, background 5s ease, -webkit-text-fill-color 5s ease, filter 5s ease;
+      display: inline-block;
+    }
+
+    /* Flipped Chameleon State: Left part gets painted, Right part gets depainted to white */
+    .section-title.chameleon-flipped .chameleon-part-a {
+      background: linear-gradient(135deg, #00e5ff 0%, #a855f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.35));
+      color: transparent;
+    }
+    .section-title.chameleon-flipped .chameleon-part-b {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      background: none !important;
+      filter: none !important;
+    }
+
+    /* Light Theme Support */
+    body.light-theme .section-title .chameleon-part-a {
+      color: #0f172a;
+      -webkit-text-fill-color: #0f172a;
+    }
+    body.light-theme .section-title.chameleon-flipped .chameleon-part-b {
+      color: #0f172a !important;
+      -webkit-text-fill-color: #0f172a !important;
+    }
+
     @keyframes theme-toggle-entrance {
       0% { opacity: 0; transform: scale(0.8) rotate(-45deg); }
       100% { opacity: 1; transform: scale(1) rotate(0deg); }
