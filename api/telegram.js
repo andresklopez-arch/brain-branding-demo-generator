@@ -200,10 +200,14 @@ function generateHumanReply(chatId, userName, userText) {
   return reply;
 }
 
-module.exports = async (req, res) => {
+const express = require('express');
+const app = express();
+app.use(express.json());
+
+async function handleWebhookRequest(req, res) {
   try {
-    if (req.method === 'POST' && req.body && req.body.message) {
-      const update = req.body;
+    const update = req.body || {};
+    if (req.method === 'POST' && update && update.message) {
       const chatId = update.message.chat.id;
       const firstName = update.message.from ? update.message.from.first_name : '';
       let userText = update.message.text || '';
@@ -223,9 +227,19 @@ module.exports = async (req, res) => {
         });
       }
     }
-    res.status(200).json({ ok: true });
+    res.status(200).json({ ok: true, message: 'Brain Branding 24/7 Webhook Active' });
   } catch (err) {
     console.error('[WEBHOOK ERROR]', err);
     res.status(200).json({ ok: true, error: err.message });
   }
-};
+}
+
+app.post('*', handleWebhookRequest);
+app.get('*', (req, res) => res.json({ status: 'active', bot: '@Brainbranding_bot', service: 'Brain Branding 24/7 AI Engine' }));
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Brain Branding 24/7 AI Telegram Bot Webhook running on port ${PORT}`);
+});
+
+module.exports = handleWebhookRequest;

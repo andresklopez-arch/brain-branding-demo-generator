@@ -1,0 +1,13 @@
+{
+  "name": "brain-branding-web",
+  "version": "1.0.0",
+  "description": "Brain Branding - 24/7 AI Telegram Bot Webhook Serverless Service",
+  "main": "api/telegram.js",
+  "scripts": {
+    "start": "node api/telegram.js",
+    "dev": "node api/telegram.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
