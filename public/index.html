@@ -893,8 +893,9 @@
       opacity: 0;
       transform: translateY(-100%);
     }
-    .smartphone-container.unlocked-mockup .telegram-screen-wash {
-      animation: screenWashSweep 1s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+    .smartphone-container.unlocked-mockup .telegram-screen-wash,
+    .telegram-screen-wash.wash-active {
+      animation: screenWashSweep 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
     }
     @keyframes screenWashSweep {
       0% { transform: translateY(-100%); opacity: 1; }
@@ -1289,14 +1290,7 @@
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     }
     .feature-icon-pill .pill-label {
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      text-align: center;
-      white-space: nowrap;
-      transition: color 0.3s;
+      display: none !important;
     }
     
     /* Hover state clues */
@@ -2652,6 +2646,9 @@
       <div class="asistente-ia-grid">
         <!-- Col 1: Telegram Chat Simulator inside Smartphone -->
         <div class="smartphone-container">
+          <!-- Scenario Progress Bar -->
+          <div id="smartphone-progress-bar" style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #00e5ff, #a855f7); width: 0%; z-index: 100; opacity: 0.8; box-shadow: 0 0 5px #00e5ff;"></div>
+          
           <!-- Notch -->
           <div class="smartphone-notch">
             <div class="notch-speaker"></div>

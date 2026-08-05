@@ -1859,6 +1859,8 @@ END:VCARD`;
     let isSectionVisible = true;
     let isLocked = true;
     let scenarioStartTime = Date.now();
+    let isSmartphoneHovered = false;
+    let progressInterval = null;
 
     function formatTimestamp() {
       const now = new Date();
@@ -2000,17 +2002,23 @@ END:VCARD`;
       const descEl = document.getElementById('feature-detail-desc');
       
       if (card && titleEl && descEl && details) {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(10px)';
-        
-        setTimeout(() => {
-          titleEl.textContent = details.title;
-          descEl.textContent = details.desc;
-          card.style.color = details.color;
-          card.style.opacity = '1';
-          card.style.transform = 'translateY(0)';
-        }, 200);
+        titleEl.textContent = details.title;
+        descEl.textContent = details.desc;
+        card.style.color = details.color;
       }
+    }
+
+    function startProgressBar() {
+      const bar = document.getElementById('smartphone-progress-bar');
+      if (!bar) return;
+      if (progressInterval) clearInterval(progressInterval);
+      
+      progressInterval = setInterval(() => {
+        if (isSmartphoneHovered || isLocked) return;
+        const elapsed = Date.now() - scenarioStartTime;
+        const pct = Math.min(100, (elapsed / 10000) * 100);
+        bar.style.width = `${pct}%`;
+      }, 100);
     }
 
     function playNextMessage() {
@@ -2018,16 +2026,38 @@ END:VCARD`;
 
       const scenario = chatScenarios[currentScenarioIdx];
       
+      if (currentMessageIdx === 0) {
+        startProgressBar();
+      }
+      
       if (currentMessageIdx >= scenario.length) {
         const elapsed = Date.now() - scenarioStartTime;
         const remaining = Math.max(1000, 10000 - elapsed);
         simulatorTimeout = setTimeout(() => {
-          telegramContainer.innerHTML = '';
-          currentScenarioIdx = (currentScenarioIdx + 1) % chatScenarios.length;
-          currentMessageIdx = 0;
-          scenarioStartTime = Date.now();
-          updateActiveIcon(currentScenarioIdx);
-          playNextMessage();
+          const checkHoverAndTransition = () => {
+            if (isSmartphoneHovered) {
+              simulatorTimeout = setTimeout(checkHoverAndTransition, 500);
+              return;
+            }
+            
+            const wash = document.getElementById('telegram-screen-wash');
+            if (wash) {
+              wash.classList.remove('wash-active');
+              void wash.offsetWidth; // Force reflow
+              wash.classList.add('wash-active');
+            }
+            
+            setTimeout(() => {
+              telegramContainer.innerHTML = '';
+              currentScenarioIdx = (currentScenarioIdx + 1) % chatScenarios.length;
+              currentMessageIdx = 0;
+              scenarioStartTime = Date.now();
+              startProgressBar();
+              updateActiveIcon(currentScenarioIdx);
+              playNextMessage();
+            }, 250); // Wiping screen duration cover delay
+          };
+          checkHoverAndTransition();
         }, remaining);
         return;
       }
@@ -2283,6 +2313,14 @@ END:VCARD`;
     } else {
       // Fallback: start loop directly
       playNextMessage();
+    }
+
+    const phoneContainer = document.querySelector('.smartphone-container');
+    if (phoneContainer) {
+      phoneContainer.addEventListener('mouseenter', () => { isSmartphoneHovered = true; });
+      phoneContainer.addEventListener('mouseleave', () => { isSmartphoneHovered = false; });
+      phoneContainer.addEventListener('touchstart', () => { isSmartphoneHovered = true; }, { passive: true });
+      phoneContainer.addEventListener('touchend', () => { isSmartphoneHovered = false; });
     }
   }
 
@@ -2697,6 +2735,7 @@ END:VCARD`;
     let currentIdx = 0;
     let timer = null;
     let isPOSVisible = true;
+    let isPOSHovered = false;
     let posBatteryPercent = 98;
     let posBatteryInterval = null;
     
@@ -2784,8 +2823,15 @@ END:VCARD`;
       scenario.run(leftPanel, cartContainer, totalObj);
       
       timer = setTimeout(() => {
-        currentIdx = (currentIdx + 1) % posScenarios.length;
-        runPOSCycle();
+        const checkHoverAndTransition = () => {
+          if (isPOSHovered) {
+            timer = setTimeout(checkHoverAndTransition, 500);
+            return;
+          }
+          currentIdx = (currentIdx + 1) % posScenarios.length;
+          runPOSCycle();
+        };
+        checkHoverAndTransition();
       }, 5000);
     };
     
@@ -2827,6 +2873,12 @@ END:VCARD`;
     // Device switcher button interactions
     const switcherBtns = document.querySelectorAll('.pos-device-switcher .switcher-btn');
     const tabletMock = document.querySelector('.tablet-container');
+    if (tabletMock) {
+      tabletMock.addEventListener('mouseenter', () => { isPOSHovered = true; });
+      tabletMock.addEventListener('mouseleave', () => { isPOSHovered = false; });
+      tabletMock.addEventListener('touchstart', () => { isPOSHovered = true; }, { passive: true });
+      tabletMock.addEventListener('touchend', () => { isPOSHovered = false; });
+    }
     const triggerPosBoot = () => {
       const bootScreen = document.getElementById('pos-boot-screen');
       const bootBar = document.getElementById('pos-boot-bar');
@@ -3240,6 +3292,7 @@ END:VCARD`;
     let currentIdx = 0;
     let timer = null;
     let isWebVisible = true;
+    let isWebHovered = false;
     let consoleLogsBuffer = ['[INFO] Iniciando módulo de simulación de Brain Branding...'];
     
     const webPaths = [
@@ -3323,8 +3376,15 @@ END:VCARD`;
       scenario.run(screen);
       
       timer = setTimeout(() => {
-        currentIdx = (currentIdx + 1) % webScenarios.length;
-        runWebCycle();
+        const checkHoverAndTransition = () => {
+          if (isWebHovered) {
+            timer = setTimeout(checkHoverAndTransition, 500);
+            return;
+          }
+          currentIdx = (currentIdx + 1) % webScenarios.length;
+          runWebCycle();
+        };
+        checkHoverAndTransition();
       }, 5000);
     };
     
@@ -3363,6 +3423,12 @@ END:VCARD`;
     // Device switcher button interactions for web browser container
     const switcherBtns = document.querySelectorAll('#web-device-switcher .switcher-btn');
     const browserMock = document.querySelector('.browser-container');
+    if (browserMock) {
+      browserMock.addEventListener('mouseenter', () => { isWebHovered = true; });
+      browserMock.addEventListener('mouseleave', () => { isWebHovered = false; });
+      browserMock.addEventListener('touchstart', () => { isWebHovered = true; }, { passive: true });
+      browserMock.addEventListener('touchend', () => { isWebHovered = false; });
+    }
     const triggerWebBoot = () => {
       const bootScreen = document.getElementById('web-boot-screen');
       const bootBar = document.getElementById('web-boot-bar');
