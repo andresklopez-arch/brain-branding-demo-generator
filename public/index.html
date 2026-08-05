@@ -88,10 +88,10 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap">
   </noscript>
 
 
@@ -137,70 +137,71 @@
       0% { opacity: 0; transform: translateX(-8px); }
       100% { opacity: 1; transform: translateX(0); }
     }
-    /* NEUROMARKETING HEADER LOGO TYPOGRAPHY & COLOR HARMONY */
-    header .logo-area {
+    /* LUXURY EDITORIAL HIGH-CONTRAST TYPOGRAPHY (INSPIRED BY HIGH-FASHION & ELEGANT BRANDING) */
+    header .logo-area, footer .logo-area {
       display: flex;
       align-items: center;
       text-decoration: none;
       gap: 10px;
     }
-    header .logo-area img {
-      height: 38px !important;
+    header .logo-area img, footer .logo-area img {
+      height: 36px !important;
       object-fit: contain;
-      filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.45));
-      transition: filter 0.3s ease, transform 0.3s ease;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+      transition: transform 0.3s ease, filter 0.3s ease;
     }
-    header .logo-area:hover img {
-      transform: scale(1.06) rotate(3deg);
-      filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.75));
+    header .logo-area:hover img, footer .logo-area:hover img {
+      transform: scale(1.06);
+      filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.5));
     }
-    header .logo-area .logo-text {
+    header .logo-area .logo-text, footer .logo-area .logo-text {
       opacity: 0;
       animation: brand-phrase-entrance 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
-      font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif !important;
-      font-size: 13.5px !important;
-      line-height: 1.16 !important;
-      font-weight: 800 !important;
-      letter-spacing: -0.2px !important;
+      font-family: 'Cinzel', 'Playfair Display', serif !important;
       user-select: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      line-height: 1.15 !important;
     }
-    header .logo-text .line-1 {
-      display: block;
-      color: #ffffff;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    header .logo-text .logo-line, footer .logo-text .logo-line {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
     }
-    header .logo-text .line-2 {
-      display: block;
-      color: #f1f5f9;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    header .logo-text .word-base, footer .logo-text .word-base {
+      font-family: 'Cinzel', serif !important;
+      font-size: 10.5px !important;
+      font-weight: 700 !important;
+      letter-spacing: 1.6px !important;
+      color: #f8fafc !important;
+      text-transform: uppercase;
+      opacity: 0.92;
     }
-    header .logo-text .highlight-marcas {
-      background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+    header .logo-text .word-accent, footer .logo-text .word-accent {
+      font-family: 'Cinzel', 'Playfair Display', serif !important;
+      font-size: 13px !important;
+      font-weight: 900 !important;
+      letter-spacing: 1.4px !important;
+      text-transform: uppercase;
+    }
+    header .logo-text .highlight-marcas, footer .logo-text .highlight-marcas {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      font-weight: 900;
-      filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.55));
-      transition: filter 0.3s ease;
+      filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
     }
-    header .logo-text .highlight-mentes {
-      background: linear-gradient(135deg, #00e5ff 0%, #a855f7 100%);
+    header .logo-text .highlight-mentes, footer .logo-text .highlight-mentes {
+      background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      font-weight: 900;
-      filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.55));
-      transition: filter 0.3s ease;
-    }
-    header .logo-area:hover .highlight-marcas {
-      filter: drop-shadow(0 0 14px rgba(255, 215, 0, 0.9));
-    }
-    header .logo-area:hover .highlight-mentes {
-      filter: drop-shadow(0 0 14px rgba(0, 229, 255, 0.9));
+      filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
     }
 
-    body.light-theme header .logo-text .line-1,
-    body.light-theme header .logo-text .line-2 {
+    body.light-theme header .logo-text .word-base,
+    body.light-theme footer .logo-text .word-base {
       color: #0f172a !important;
-      text-shadow: none;
     }
     @keyframes theme-toggle-entrance {
       0% { opacity: 0; transform: scale(0.8) rotate(-45deg); }
@@ -2875,10 +2876,14 @@
   <!-- NAVIGATION HEADER -->
   <header style="justify-content: space-between !important;">
     <a href="#inicio" class="logo-area" aria-label="Brain Branding - Empoderando Marcas, Reprogramando Mentes">
-      <img src="/favicon.png" alt="Logo Brain Branding" style="height: 38px; object-fit: contain; margin-right: 10px;">
+      <img src="/favicon.png" alt="Logo Brain Branding" style="height: 36px; object-fit: contain;">
       <div class="logo-text">
-        <span class="line-1">Empoderando <span class="highlight-marcas">Marcas</span></span>
-        <span class="line-2">Reprogramando <span class="highlight-mentes">Mentes</span></span>
+        <div class="logo-line logo-line-1">
+          <span class="word-base">EMPODERANDO</span> <span class="word-accent highlight-marcas">MARCAS</span>
+        </div>
+        <div class="logo-line logo-line-2">
+          <span class="word-base">REPROGRAMANDO</span> <span class="word-accent highlight-mentes">MENTES</span>
+        </div>
       </div>
     </a>
     <button id="theme-toggle-btn" class="header-btn custom-tooltip" data-tooltip="Cambiar Modo" style="padding: 0; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; font-size: 15px; cursor: pointer; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.02); color: var(--text-main);">🌓</button>
@@ -3866,10 +3871,14 @@
     <div class="footer-grid">
       <div class="footer-left">
         <a href="#inicio" class="logo-area" aria-label="Brain Branding">
-          <img src="/favicon.png" alt="Logo" style="height: 32px; object-fit: contain; margin-right: 8px;">
-          <div class="logo-text" style="font-size: 13.5px !important;">
-            <span class="line-1">Empoderando <span class="highlight-marcas">Marcas</span></span>
-            <span class="line-2">Reprogramando <span class="highlight-mentes">Mentes</span></span>
+          <img src="/favicon.png" alt="Logo" style="height: 32px; object-fit: contain;">
+          <div class="logo-text">
+            <div class="logo-line logo-line-1">
+              <span class="word-base">EMPODERANDO</span> <span class="word-accent highlight-marcas">MARCAS</span>
+            </div>
+            <div class="logo-line logo-line-2">
+              <span class="word-base">REPROGRAMANDO</span> <span class="word-accent highlight-mentes">MENTES</span>
+            </div>
           </div>
         </a>
         <p>© 2026 Empoderando Marcas, Reprogramando Mentes. Todos los derechos reservados.</p>
