@@ -137,7 +137,7 @@
       0% { opacity: 0; transform: translateX(-8px); }
       100% { opacity: 1; transform: translateX(0); }
     }
-    /* ULTRA-MODERN MIRROR SHINE (BRILLO DE ESPEJO) & BRAND COLOR TYPOGRAPHY */
+    /* PURE FLAT WHITE 3D SWAPPING LOGO TYPOGRAPHY WITH MIRROR SHINE */
     header .logo-area, footer .logo-area {
       display: flex;
       align-items: center;
@@ -174,29 +174,13 @@
       font-size: 13.5px !important;
       font-weight: 900 !important;
       letter-spacing: 0.8px !important;
+      color: #ffffff !important;
       text-transform: uppercase;
       white-space: nowrap;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85); /* Solid crisp flat white, sharp contrast */
       transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease, filter 0.35s ease;
       transform-origin: 50% 50%;
       will-change: transform, opacity, filter;
-    }
-    .neuro-swap-container .word-white {
-      color: #ffffff !important;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
-    }
-    .neuro-swap-container .highlight-marcas {
-      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
-      font-weight: 900;
-    }
-    .neuro-swap-container .highlight-mentes {
-      background: linear-gradient(135deg, #38bdf8 0%, #c084fc 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
-      font-weight: 900;
     }
     .neuro-swap-container.swapping .logo-line-1 {
       transform: translateY(-10px) rotateX(90deg);
@@ -241,7 +225,7 @@
       animation: mirrorShineSweep 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
 
-    body.light-theme .neuro-swap-container .word-white {
+    body.light-theme .neuro-swap-container .logo-line {
       color: #0f172a !important;
       text-shadow: none;
     }
@@ -2920,8 +2904,8 @@
     <a href="#inicio" class="logo-area" aria-label="Brain Branding - Empoderando Marcas, Reprogramando Mentes">
       <img src="/favicon.png" alt="Logo Brain Branding" style="height: 38px; object-fit: contain;">
       <div class="logo-text neuro-swap-container" id="header-logo-text">
-        <div class="logo-line logo-line-1"><span class="word-white">EMPODERANDO</span> <span class="accent-word highlight-marcas">MARCAS</span></div>
-        <div class="logo-line logo-line-2"><span class="word-white">REPROGRAMANDO</span> <span class="accent-word highlight-mentes">MENTES</span></div>
+        <div class="logo-line logo-line-1">EMPODERANDO MARCAS</div>
+        <div class="logo-line logo-line-2">REPROGRAMANDO MENTES</div>
       </div>
     </a>
     <button id="theme-toggle-btn" class="header-btn custom-tooltip" data-tooltip="Cambiar Modo" style="padding: 0; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; font-size: 15px; cursor: pointer; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.02); color: var(--text-main);">🌓</button>
@@ -3911,8 +3895,8 @@
         <a href="#inicio" class="logo-area" aria-label="Brain Branding">
           <img src="/favicon.png" alt="Logo" style="height: 32px; object-fit: contain;">
           <div class="logo-text neuro-swap-container" id="footer-logo-text">
-            <div class="logo-line logo-line-1"><span class="word-white">EMPODERANDO</span> <span class="accent-word highlight-marcas">MARCAS</span></div>
-            <div class="logo-line logo-line-2"><span class="word-white">REPROGRAMANDO</span> <span class="accent-word highlight-mentes">MENTES</span></div>
+            <div class="logo-line logo-line-1">EMPODERANDO MARCAS</div>
+            <div class="logo-line logo-line-2">REPROGRAMANDO MENTES</div>
           </div>
         </a>
         <p>© 2026 Empoderando Marcas, Reprogramando Mentes. Todos los derechos reservados.</p>

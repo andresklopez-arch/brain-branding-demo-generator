@@ -1091,13 +1091,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 19. 12-Second Rhythm with Constant Brand Colors & Mirror Shine Animation
+  // 19. 12-Second Rhythm: Pure Flat White Text Swapping & Official Slogan Mirror Shine Animation
   const randomPairs = [
-    ['EMPODERANDO', 'MARCAS', 'REPROGRAMANDO', 'MENTES'],
-    ['REPROGRAMANDO', 'MARCAS', 'EMPODERANDO', 'MENTES'],
-    ['EMPODERANDO', 'MENTES', 'REPROGRAMANDO', 'MARCAS'],
-    ['MARCAS', 'MENTES', 'EMPODERANDO', 'REPROGRAMANDO'],
-    ['MENTES', 'EMPODERANDO', 'MARCAS', 'REPROGRAMANDO']
+    ['EMPODERANDO MENTES', 'REPROGRAMANDO MARCAS'],
+    ['REPROGRAMANDO MARCAS', 'EMPODERANDO MENTES'],
+    ['MARCAS MENTES', 'EMPODERANDO REPROGRAMANDO'],
+    ['EMPODERANDO REPROGRAMANDO', 'MARCAS MENTES'],
+    ['MENTES EMPODERANDO', 'MARCAS REPROGRAMANDO'],
+    ['MARCAS REPROGRAMANDO', 'MENTES EMPODERANDO']
   ];
 
   const headerLogoContainer = document.getElementById('header-logo-text');
@@ -1117,22 +1118,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderLogoState = () => {
       const isOfficial = (cycleState === 0);
       
-      let word1 = 'EMPODERANDO';
-      let word2 = 'MARCAS';
-      let word3 = 'REPROGRAMANDO';
-      let word4 = 'MENTES';
+      let line1Text = 'EMPODERANDO MARCAS';
+      let line2Text = 'REPROGRAMANDO MENTES';
 
       if (!isOfficial) {
         const combo = randomPairs[randomIdx % randomPairs.length];
         randomIdx++;
-        word1 = combo[0];
-        word2 = combo[1];
-        word3 = combo[2];
-        word4 = combo[3];
+        line1Text = combo[0];
+        line2Text = combo[1];
       }
-
-      const htmlLine1 = `<span class="word-white">${word1}</span> <span class="accent-word highlight-marcas">${word2}</span>`;
-      const htmlLine2 = `<span class="word-white">${word3}</span> <span class="accent-word highlight-mentes">${word4}</span>`;
 
       const applyToContainer = (container) => {
         if (!container) return;
@@ -1141,8 +1135,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (line1 && line2) {
           container.classList.add('swapping');
           setTimeout(() => {
-            line1.innerHTML = htmlLine1;
-            line2.innerHTML = htmlLine2;
+            line1.textContent = line1Text;
+            line2.textContent = line2Text;
             container.classList.remove('swapping');
 
             if (isOfficial) {
