@@ -4021,10 +4021,8 @@ END:VCARD`;
     }, { passive: true });
   }
 
-  // 20. DYNAMIC CUSTOM BUSINESS DEMO GENERATOR ENGINE
+  // 20. DYNAMIC CUSTOM BUSINESS DEMO INTERACTIVE AI ANIMATION ENGINE
   window.applyCustomBusinessDemo = function(customName) {
-    window.isCustomDemoActive = true;
-
     const input = document.getElementById('demo-business-name-input');
     let name = customName || (input ? input.value.trim() : '');
     if (!name) {
@@ -4039,146 +4037,275 @@ END:VCARD`;
     const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
     const lowerName = name.toLowerCase();
 
-    // Auto-unlock smartphone lockscreen if locked
+    // Auto-unlock smartphone lockscreen
     const lockscreen = document.getElementById('smartphone-lockscreen');
     if (lockscreen) lockscreen.classList.add('unlocked');
     const smartphoneContainer = document.querySelector('.smartphone-container');
     if (smartphoneContainer) smartphoneContainer.classList.add('unlocked-mockup');
 
-    // Auto-unlock POS boot screen if present
+    // Auto-unlock POS boot screen
     const posBoot = document.getElementById('pos-boot-screen');
     if (posBoot) {
       posBoot.style.opacity = '0';
       posBoot.style.pointerEvents = 'none';
     }
 
-    // 1. Determine Product & Service Set based on keywords
-    let items = [];
-    let industryLabel = 'Comercio & Servicio General';
-    let welcomeMsg = `¡Hola! Bienvenido a ${capitalizedName}. 😊 ¿En qué te podemos ayudar el día de hoy?`;
+    // 1. Build Custom Industry Dataset
+    let industry = 'Comercio & Servicio General';
+    let posItems = [];
+    let customChatScenarios = [];
+    let webSubtitle = `Plataforma inteligente con atención al cliente 24/7, catálogo en vivo y sincronización para ${capitalizedName}.`;
 
-    if (lowerName.includes('pediatra') || lowerName.includes('pediatria') || lowerName.includes('nino') || lowerName.includes('bebe') || lowerName.includes('infantil')) {
-      industryLabel = 'Consultorio Pediatría & Salud Infantil';
-      items = [
-        { name: 'Consulta Pediatría General', price: '$600.00', stock: 'Disponible', icon: '🩺' },
-        { name: 'Aplicación de Vacunas', price: '$450.00', stock: 'Disponible', icon: '💉' },
-        { name: 'Control Crecimiento & Peso', price: '$500.00', stock: 'Disponible', icon: '📏' },
-        { name: 'Certificado Médico Escolar', price: '$300.00', stock: 'Disponible', icon: '📄' }
+    if (lowerName.includes('veterinari') || lowerName.includes('perro') || lowerName.includes('gato') || lowerName.includes('mascota') || lowerName.includes('canin')) {
+      industry = 'Clínica Veterinaria & Estética Canina 🐾';
+      posItems = [
+        { name: 'Consulta Vet General', price: 450, icon: '🐶' },
+        { name: 'Vacuna Rabia / Séquito', price: 350, icon: '💉' },
+        { name: 'Baño & Corte Canino', price: 400, icon: '✂️' },
+        { name: 'Alimento Premium 15kg', price: 1250, icon: '🦴' }
       ];
-      welcomeMsg = `¡Hola! 👶 Bienvenido al Consultorio de Pediatría ${capitalizedName}. Soy tu asistente virtual. ¿Te gustaría agendar una cita médica o consultar vacunas disponibles?`;
-    } else if (lowerName.includes('clinica') || lowerName.includes('salud') || lowerName.includes('doctor') || lowerName.includes('medico') || lowerName.includes('dental')) {
-      industryLabel = 'Clínica & Salud Especializada';
-      items = [
-        { name: 'Consulta Médica Especializada', price: '$550.00', stock: 'Disponible', icon: '🩺' },
-        { name: 'Biometría Hemática Completa', price: '$380.00', stock: 'Lab 1', icon: '🔬' },
-        { name: 'Ultrasonido Diagnóstico', price: '$850.00', stock: 'Cita prev', icon: '🖥️' },
-        { name: 'Limpieza Dental Ultrasónica', price: '$600.00', stock: 'Disponible', icon: '🦷' }
+      customChatScenarios = [
+        [
+          { sender: 'user', text: `Hola, quisiera agendar una consulta veterinaria en ${capitalizedName} para mi mascota` },
+          { sender: 'bot', text: `¡Hola! 🐶 Bienvenido a **${capitalizedName}**. Con gusto agendamos a tu mascota. ¿Te queda bien hoy por la tarde a las 5:00 PM o prefieres mañana?` },
+          { sender: 'user', text: `Hoy a las 5:00 PM está perfecto` },
+          { sender: 'bot', text: `¡Excelente! Cita confirmada para hoy 5:00 PM en **${capitalizedName}**. Te enviaremos un recordatorio por WhatsApp 1 hora antes. 🐾` }
+        ],
+        [
+          { sender: 'user', text: `¿Tienen disponible alimento premium de 15kg y cuál es el precio?` },
+          { sender: 'bot', text: `¡Sí! Tenemos **Alimento Premium 15kg** a **$1,250.00 MXN** con envío a domicilio sin costo en la compra. ¿Te mandamos un bulto? 🚚` }
+        ],
+        [
+          { sender: 'user', text: `¿Cuánto cuesta el baño y corte para perro mediano?` },
+          { sender: 'bot', text: `El servicio completo de **Baño & Corte Canino** cuesta **$400.00 MXN** e incluye corte de uñas, limpieza de oídos y cepillado. ✂️` }
+        ]
       ];
-      welcomeMsg = `¡Hola! 🏥 Bienvenido a ${capitalizedName}. Soy tu asistente virtual. ¿Te gustaría agendar una cita médica o consultar horarios?`;
+      webSubtitle = `Servicios veterinarios, agendamiento de citas 24/7 y venta de alimentos premium para ${capitalizedName}.`;
+    } else if (lowerName.includes('pediatra') || lowerName.includes('pediatria') || lowerName.includes('nino') || lowerName.includes('bebe') || lowerName.includes('infantil')) {
+      industry = 'Consultorio Pediatría & Salud Infantil 👶🩺';
+      posItems = [
+        { name: 'Consulta Pediatría General', price: 600, icon: '🩺' },
+        { name: 'Aplicación de Vacunas', price: 450, icon: '💉' },
+        { name: 'Control Crecimiento & Peso', price: 500, icon: '📏' },
+        { name: 'Certificado Médico Escolar', price: 300, icon: '📄' }
+      ];
+      customChatScenarios = [
+        [
+          { sender: 'user', text: `Hola, buenas tardes. Quisiera agendar una consulta pediátrica en ${capitalizedName}` },
+          { sender: 'bot', text: `¡Hola! 👶 Bienvenido al Consultorio Pediátrico **${capitalizedName}**. Con gusto agendamos la consulta de tu pequeño. ¿Deseas fecha para hoy o mañana?` },
+          { sender: 'user', text: `Mañana a las 4:00 PM por favor` },
+          { sender: 'bot', text: `¡Listo! Cita agendada para mañana 4:00 PM en **${capitalizedName}**. Te enviamos confirmación y pase digital por WhatsApp. 🩺` }
+        ],
+        [
+          { sender: 'user', text: `¿Cuentan con esquema completo de vacunas y costo de aplicación?` },
+          { sender: 'bot', text: `Contamos con esquema completo de vacunas infantiles. La **Aplicación de Vacunas** cuesta **$450.00 MXN** con revisión previa incluida. 💉` }
+        ]
+      ];
+      webSubtitle = `Consultorio pediátrico especializado, agendamiento de citas en línea y expedientes médicos para ${capitalizedName}.`;
     } else if (lowerName.includes('abarrote') || lowerName.includes('tienda') || lowerName.includes('super') || lowerName.includes('mini')) {
-      industryLabel = 'Abarrotes & Tienda';
-      items = [
-        { name: 'Arroz Extra 1kg', price: '$32.00', stock: '45 uds', icon: '🌾' },
-        { name: 'Aceite Canola 1L', price: '$45.00', stock: '28 uds', icon: '🍾' },
-        { name: 'Leche Entera 1L', price: '$28.00', stock: '60 uds', icon: '🥛' },
-        { name: 'Frijol Negro 1kg', price: '$36.00', stock: '50 uds', icon: '🫘' },
-        { name: 'Huevo Blanco 1kg', price: '$48.00', stock: '30 kg', icon: '🥚' },
-        { name: 'Pan Blanco Grande', price: '$42.00', stock: '18 uds', icon: '🍞' }
+      industry = 'Abarrotes & Tienda 🌾';
+      posItems = [
+        { name: 'Arroz Extra 1kg', price: 32, icon: '🌾' },
+        { name: 'Aceite Canola 1L', price: 45, icon: '🍾' },
+        { name: 'Leche Entera 1L', price: 28, icon: '🥛' },
+        { name: 'Huevo Blanco 1kg', price: 48, icon: '🥚' }
       ];
-      welcomeMsg = `¡Hola! 🛒 Bienvenido a ${capitalizedName}. En nuestro catálogo en vivo tenemos ofertas en Huevo, Leche y Abarrotes. ¿Te gustaría armar tu pedido por WhatsApp?`;
+      customChatScenarios = [
+        [
+          { sender: 'user', text: `Hola, ¿cuáles son las promociones de hoy en ${capitalizedName}?` },
+          { sender: 'bot', text: `¡Hola! 🛒 En **${capitalizedName}** tenemos ofertas en Aceite Canola a **$45.00** y Huevo a **$48.00/kg**. ¿Te gustaría armar tu pedido a domicilio?` },
+          { sender: 'user', text: `Sí, me mandas 2kg de huevo y 1 aceite por favor` },
+          { sender: 'bot', text: `¡Entendido! Tu total es de **$141.00 MXN**. Tu pedido va en camino a tu domicilio. 🛵` }
+        ]
+      ];
+      webSubtitle = `Catálogo en línea, pedidos express por WhatsApp e inventario automatizado para ${capitalizedName}.`;
     } else if (lowerName.includes('cafe') || lowerName.includes('cafeteria') || lowerName.includes('restaurante') || lowerName.includes('taco') || lowerName.includes('comida') || lowerName.includes('bar')) {
-      industryLabel = 'Restaurante & Alimentos';
-      items = [
-        { name: 'Café Americano 12oz', price: '$45.00', stock: 'En menú', icon: '☕' },
-        { name: 'Capuchino Vainilla 16oz', price: '$58.00', stock: 'En menú', icon: '🥛' },
-        { name: 'Sandwich de Pavo & Queso', price: '$85.00', stock: '12 lis', icon: '🥪' },
-        { name: 'Pastel de Chocolate (Rebanada)', price: '$65.00', stock: '8 rebs', icon: '🍰' }
+      industry = 'Restaurante & Alimentos ☕';
+      posItems = [
+        { name: 'Café Americano 12oz', price: 45, icon: '☕' },
+        { name: 'Capuchino Vainilla 16oz', price: 58, icon: '🥛' },
+        { name: 'Sandwich de Pavo & Queso', price: 85, icon: '🥪' },
+        { name: 'Pastel de Chocolate', price: 65, icon: '🍰' }
       ];
-      welcomeMsg = `¡Hola! ☕ Bienvenido a ${capitalizedName}. Consulta nuestro menú digital, realiza tu pedido a domicilio o reserva tu mesa al instante.`;
+      customChatScenarios = [
+        [
+          { sender: 'user', text: `Hola, me gustaría consultar el menú de ${capitalizedName} y reservar una mesa` },
+          { sender: 'bot', text: `¡Hola! ☕ Bienvenido a **${capitalizedName}**. Puedes consultar nuestro menú digital o reservar mesa. ¿Para cuántas personas deseas la reserva?` },
+          { sender: 'user', text: `Para 4 personas hoy a las 8:00 PM` },
+          { sender: 'bot', text: `¡Mesa reservada con éxito en **${capitalizedName}** para 4 personas a las 8:00 PM! ¡Los esperamos! 🎉` }
+        ]
+      ];
+      webSubtitle = `Menú digital interactivo, reservación de mesas en línea y comandas para ${capitalizedName}.`;
     } else if (lowerName.includes('taller') || lowerName.includes('refaccionaria') || lowerName.includes('auto') || lowerName.includes('mecanico')) {
-      industryLabel = 'Taller Automotriz & Servicios';
-      items = [
-        { name: 'Servicio Afinación Completa', price: '$1,800.00', stock: '3 rps', icon: '🚗' },
-        { name: 'Cambio de Aceite Sintético 4L', price: '$750.00', stock: '12 gal', icon: '🛢️' },
-        { name: 'Juego Balatas Delanteras', price: '$950.00', stock: '6 pares', icon: '🛞' },
-        { name: 'Batería Automotriz 12V 65Ah', price: '$2,200.00', stock: '4 uds', icon: '⚡' }
+      industry = 'Taller Automotriz & Servicios 🚗';
+      posItems = [
+        { name: 'Servicio Afinación Completa', price: 1800, icon: '🚗' },
+        { name: 'Cambio de Aceite Sintético 4L', price: 750, icon: '🛢️' },
+        { name: 'Juego Balatas Delanteras', price: 950, icon: '🛞' },
+        { name: 'Batería Automotriz 12V', price: 2200, icon: '⚡' }
       ];
-      welcomeMsg = `¡Hola! 🚗 Bienvenido a ${capitalizedName}. ¿Deseas solicitar una cotización de mantenimiento o revisar el estado de tu vehículo en taller?`;
+      customChatScenarios = [
+        [
+          { sender: 'user', text: `Hola, necesito cotizar un cambio de aceite y balatas en ${capitalizedName}` },
+          { sender: 'bot', text: `¡Hola! 🚗 En **${capitalizedName}** el Cambio de Aceite Sintético está en **$750.00** y Balatas Delanteras en **$950.00**. ¿Te agendamos cita en taller?` },
+          { sender: 'user', text: `Sí por favor, ¿tienen espacio mañana en la mañana?` },
+          { sender: 'bot', text: `¡Cita confirmada en **${capitalizedName}** para mañana a las 9:00 AM! Te enviamos recepción digital. 🛞` }
+        ]
+      ];
+      webSubtitle = `Cotizaciones automáticas, órdenes de servicio digitales y estatus en taller para ${capitalizedName}.`;
     } else {
-      industryLabel = `Plataforma Especializada - ${capitalizedName}`;
-      items = [
-        { name: `${capitalizedName} - Servicio 01`, price: '$350.00', stock: 'Disponible', icon: '⭐' },
-        { name: `${capitalizedName} - Paquete 02`, price: '$680.00', stock: 'Disponible', icon: '🚀' },
-        { name: `${capitalizedName} - Módulo 03`, price: '$950.00', stock: 'En stock', icon: '📦' },
-        { name: `${capitalizedName} - Premium 04`, price: '$1,800.00', stock: 'Disponible', icon: '💎' }
+      industry = `Plataforma Especializada - ${capitalizedName}`;
+      posItems = [
+        { name: `${capitalizedName} - Servicio 01`, price: 350, icon: '⭐' },
+        { name: `${capitalizedName} - Paquete 02`, price: 680, icon: '🚀' },
+        { name: `${capitalizedName} - Módulo 03`, price: 950, icon: '📦' },
+        { name: `${capitalizedName} - Premium 04`, price: 1800, icon: '💎' }
       ];
-      welcomeMsg = `¡Hola! 👋 Bienvenido a la plataforma oficial de ${capitalizedName}. ¿En qué te podemos ayudar el día de hoy?`;
+      customChatScenarios = [
+        [
+          { sender: 'user', text: `Hola, me gustaría solicitar información sobre los servicios de ${capitalizedName}` },
+          { sender: 'bot', text: `¡Hola! 👋 Bienvenido a la plataforma oficial de **${capitalizedName}**. Contamos con atención 24/7 y automatización con IA. ¿Qué servicio deseas cotizar?` },
+          { sender: 'user', text: `Me interesa cotizar el paquete principal` },
+          { sender: 'bot', text: `¡Con gusto! Te enviamos la propuesta interactiva de **${capitalizedName}** a tu WhatsApp en este momento. 📄` }
+        ]
+      ];
+      webSubtitle = `Sistema corporativo inteligente con atención 24/7 y sincronización en vivo para ${capitalizedName}.`;
     }
 
-    // A) RENDER POS TABLET CONTENT
+    // A) ANIMATE TABLET POS MOCKUP
     const posScreen = document.getElementById('pos-screen-content');
     if (posScreen) {
       posScreen.innerHTML = `
-        <div style="background:#0f172a; color:#fff; padding:16px; border-radius:14px; font-family:sans-serif; min-height: 280px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-bottom:12px;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:20px;">🏪</span>
-              <div>
-                <h4 style="margin:0; font-size:15px; color:#00e5ff;">${capitalizedName}</h4>
-                <span style="font-size:11px; color:#94a3b8;">Control de Operación & Ventas IA (${industryLabel})</span>
+        <div style="background:#0f172a; color:#fff; padding:16px; border-radius:14px; font-family:sans-serif; min-height:300px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-bottom:12px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:20px;">🏪</span>
+                <div>
+                  <h4 style="margin:0; font-size:15px; color:#00e5ff;">${capitalizedName}</h4>
+                  <span style="font-size:11px; color:#94a3b8;">Punto de Venta & Operación IA (${industry})</span>
+                </div>
               </div>
+              <span style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:4px 10px; border-radius:8px; font-size:11px; font-weight:bold;">● Caja Abierta</span>
             </div>
-            <span style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:4px 10px; border-radius:8px; font-size:11px; font-weight:bold;">● Sistema Activo</span>
-          </div>
 
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:14px;">
-            ${items.map(it => `
-              <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(0,229,255,0.2); padding:10px; border-radius:10px; text-align:center;">
-                <div style="font-size:22px; margin-bottom:4px;">${it.icon}</div>
-                <div style="font-size:12px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff;">${it.name}</div>
-                <div style="font-size:13px; color:#00e5ff; font-weight:bold; margin-top:2px;">${it.price}</div>
-                <div style="font-size:10px; color:#94a3b8;">Estatus: ${it.stock}</div>
-              </div>
-            `).join('')}
+            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin-bottom:14px;">
+              ${posItems.map((it, idx) => `
+                <div id="pos-item-${idx}" style="background:rgba(255,255,255,0.05); border:1px solid rgba(0,229,255,0.2); padding:10px; border-radius:10px; text-align:center; transition:all 0.3s;">
+                  <div style="font-size:22px; margin-bottom:4px;">${it.icon}</div>
+                  <div style="font-size:11.5px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff;">${it.name}</div>
+                  <div style="font-size:12.5px; color:#00e5ff; font-weight:bold; margin-top:2px;">$${it.price.toFixed(2)}</div>
+                </div>
+              `).join('')}
+            </div>
           </div>
 
           <div style="background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.25); padding:10px 14px; border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:12px; color:#e2e8f0;">Registro Seleccionado: <strong style="color:#00e5ff; font-size:14px;">$${items[0].price} MXN</strong></span>
-            <button style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; border:none; padding:6px 14px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer;" onclick="triggerConfetti()">Procesar Registro 💳</button>
+            <div>
+              <div style="font-size:11px; color:#94a3b8;">Total Ticket Actual</div>
+              <div id="pos-live-total" style="color:#00e5ff; font-size:16px; font-weight:bold;">$0.00 MXN</div>
+            </div>
+            <button id="pos-checkout-btn" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; border:none; padding:8px 16px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer; transition:transform 0.2s;" onclick="triggerConfetti()">Cobrar Ticket 💳</button>
           </div>
         </div>
       `;
+
+      // Animate POS selection sequence
+      setTimeout(() => {
+        const item0 = document.getElementById('pos-item-0');
+        const liveTotal = document.getElementById('pos-live-total');
+        if (item0) {
+          item0.style.background = 'rgba(0,229,255,0.25)';
+          item0.style.borderColor = '#00e5ff';
+        }
+        if (liveTotal) liveTotal.textContent = `$${posItems[0].price.toFixed(2)} MXN`;
+        playSynthSound('msg_send');
+
+        setTimeout(() => {
+          const item1 = document.getElementById('pos-item-1');
+          if (item1) {
+            item1.style.background = 'rgba(0,229,255,0.25)';
+            item1.style.borderColor = '#00e5ff';
+          }
+          const sum = posItems[0].price + (posItems[1] ? posItems[1].price : 0);
+          if (liveTotal) liveTotal.textContent = `$${sum.toFixed(2)} MXN`;
+          playSynthSound('msg_send');
+
+          setTimeout(() => {
+            const btn = document.getElementById('pos-checkout-btn');
+            if (btn) {
+              btn.style.transform = 'scale(1.08)';
+              btn.innerHTML = '✓ ¡Cobro Exitoso! 💳';
+              if (typeof triggerConfetti === 'function') triggerConfetti();
+            }
+          }, 1400);
+        }, 1200);
+      }, 800);
     }
 
-    // B) RENDER SMARTPHONE CHAT MOCKUP CONTENT
+    // B) ANIMATE SMARTPHONE CHAT MOCKUP
     const tgMessages = document.getElementById('telegram-messages');
     if (tgMessages) {
-      tgMessages.innerHTML = `
-        <div class="telegram-msg received" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); padding: 10px 14px; border-radius: 12px; margin-bottom: 8px; max-width: 88%;">
-          <div style="font-size: 11px; color: #00e5ff; font-weight: bold; margin-bottom: 3px;">Asistente IA - ${capitalizedName}</div>
-          <div style="font-size: 13px; color: #fff; line-height: 1.4;">${welcomeMsg}</div>
-        </div>
-        <div class="telegram-msg sent" style="background: rgba(0,229,255,0.2); border: 1px solid rgba(0,229,255,0.4); padding: 10px 14px; border-radius: 12px; margin-bottom: 8px; max-width: 80%; margin-left: auto; text-align: right;">
-          <div style="font-size: 13px; color: #fff;">Quiero agendar y consultar información sobre ${items[0].name}</div>
-        </div>
-        <div class="telegram-msg received" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); padding: 10px 14px; border-radius: 12px; margin-bottom: 8px; max-width: 88%;">
-          <div style="font-size: 11px; color: #00e5ff; font-weight: bold; margin-bottom: 3px;">Asistente IA - ${capitalizedName}</div>
-          <div style="font-size: 13px; color: #fff; line-height: 1.4;">¡Con gusto! El costo de <strong>${items[0].name}</strong> es de <strong>${items[0].price}</strong>. He registrado tu solicitud para <strong>${capitalizedName}</strong> y te envié los detalles por WhatsApp. 📲</div>
-        </div>
-      `;
+      tgMessages.innerHTML = '';
+      const scenario = customChatScenarios[0];
+      let msgIdx = 0;
+
+      const playCustomChatSequence = () => {
+        if (msgIdx >= scenario.length) return;
+        const m = scenario[msgIdx];
+        msgIdx++;
+
+        if (m.sender === 'user') {
+          setTimeout(() => {
+            const bubble = document.createElement('div');
+            bubble.className = 'telegram-bubble user';
+            bubble.innerHTML = `<div class="text">${m.text}</div><span class="time">15:25 <span class="tg-check">✓✓</span></span>`;
+            tgMessages.appendChild(bubble);
+            tgMessages.scrollTop = tgMessages.scrollHeight;
+            playSynthSound('msg_send');
+            playCustomChatSequence();
+          }, 600);
+        } else {
+          setTimeout(() => {
+            const typing = document.createElement('div');
+            typing.className = 'telegram-bubble typing';
+            typing.id = 'custom-typing-ind';
+            typing.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+            tgMessages.appendChild(typing);
+            tgMessages.scrollTop = tgMessages.scrollHeight;
+
+            setTimeout(() => {
+              const ind = document.getElementById('custom-typing-ind');
+              if (ind) ind.remove();
+              const bubble = document.createElement('div');
+              bubble.className = 'telegram-bubble bot';
+              bubble.innerHTML = `<div class="text">${m.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</div><span class="time">15:25</span>`;
+              tgMessages.appendChild(bubble);
+              tgMessages.scrollTop = tgMessages.scrollHeight;
+              playSynthSound('msg_recv');
+              playCustomChatSequence();
+            }, 1200);
+          }, 500);
+        }
+      };
+
+      playCustomChatSequence();
     }
 
-    // C) RENDER BROWSER WEB APP MOCKUP CONTENT
+    // C) ANIMATE BROWSER WEB APP MOCKUP
     const webView = document.getElementById('web-screen-content');
     if (webView) {
       webView.innerHTML = `
         <div style="background:#0a0f1d; color:#fff; padding:22px; border-radius:12px; font-family:sans-serif; text-align:center;">
-          <div style="font-size:12px; color:#00e5ff; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px;">${industryLabel} - Plataforma Oficial</div>
+          <div style="font-size:12px; color:#00e5ff; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px;">${industry}</div>
           <h2 style="font-size:24px; margin:0 0 8px 0; color:#ffffff;">${capitalizedName}</h2>
-          <p style="font-size:13px; color:#94a3b8; max-width:520px; margin:0 auto 16px auto; line-height:1.4;">Sistema corporativo inteligente con atención al cliente 24/7 por Inteligencia Artificial y sincronización en vivo para ${capitalizedName}.</p>
-          <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+          <p style="font-size:13px; color:#94a3b8; max-width:520px; margin:0 auto 16px auto; line-height:1.4;">${webSubtitle}</p>
+          <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
             <span style="background:rgba(0,229,255,0.15); border:1px solid rgba(0,229,255,0.3); color:#00e5ff; padding:8px 18px; border-radius:20px; font-size:12px; font-weight:bold;">🚀 Ver Servicios</span>
             <span style="background:rgba(37,211,102,0.15); border:1px solid rgba(37,211,102,0.3); color:#25d366; padding:8px 18px; border-radius:20px; font-size:12px; font-weight:bold;">💬 Agendar por WhatsApp</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:10px; border-radius:10px; font-size:11px; color:#10b981; font-weight:bold;">
+            ⚡ Google Lighthouse: 100/100 | Conexión SSL Segura Activa
           </div>
         </div>
       `;
@@ -4202,7 +4329,7 @@ END:VCARD`;
 
     if (typeof triggerConfetti === 'function') triggerConfetti();
 
-    // Scroll smoothly to section so user sees the transformed mockups
+    // Scroll smoothly to section so user sees all 3 animated mockups
     const customSection = document.getElementById('asistente-ia');
     if (customSection) {
       customSection.scrollIntoView({ behavior: 'smooth' });
@@ -4211,12 +4338,12 @@ END:VCARD`;
     // Show Toast
     const toast = document.createElement('div');
     toast.style.cssText = 'position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:rgba(0,229,255,0.95); color:#000; padding:12px 24px; border-radius:30px; font-weight:bold; font-size:14px; z-index:99999; box-shadow:0 10px 30px rgba(0,229,255,0.5); transition:all 0.3s; pointer-events:none;';
-    toast.textContent = `🚀 ¡Demo personalizado transformado para "${capitalizedName}"!`;
+    toast.textContent = `🚀 ¡Simulaciones en vivo activadas al 1000% para "${capitalizedName}"!`;
     document.body.appendChild(toast);
     setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3200);
   };
 
-  // Check URL Params on Load (e.g. ?negocio=Pediatra)
+  // Check URL Params on Load (e.g. ?negocio=Veterinario%20Juan)
   const urlParams = new URLSearchParams(window.location.search);
   const initialNegocio = urlParams.get('negocio') || urlParams.get('nombre');
   if (initialNegocio) {
@@ -4225,6 +4352,7 @@ END:VCARD`;
     }, 600);
   }
 });
+
 
 
 
