@@ -1421,3 +1421,25 @@ body.light-theme .cloud-bg-container {
     height: 52px !important;
   }
 }
+
+/* ════════════════ SIMULATOR ENHANCEMENTS & SMOOTH SPACING ════════════════ */
+.asistente-ia-section {
+  scroll-margin-top: 90px !important;
+  padding-top: 60px !important;
+}
+
+#asistente-ia, #simulador-pos, #simulador-web, #inclusiones {
+  scroll-margin-top: 90px !important;
+}
+
+.asistente-ia-grid {
+  margin-top: 35px !important;
+}
+
+.asistente-ia-section .section-title span {
+  background: linear-gradient(135deg, #00e5ff 0%, #a855f7 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  filter: drop-shadow(0 0 14px rgba(0, 229, 255, 0.5)) !important;
+  text-shadow: 0 0 25px rgba(0, 229, 255, 0.35) !important;
+}
