@@ -111,6 +111,20 @@ function generateHumanReply(chatId, userName, userText) {
   }
 
   // Specific Business Triggers
+  if (textLower.includes('hojalatero') || textLower.includes('hojalateria') || textLower.includes('hojalatería') || textLower.includes('carroceria') || textLower.includes('carrocería') || textLower.includes('pintura') || textLower.includes('taller') || textLower.includes('mecanico') || textLower.includes('mecánico') || textLower.includes('enderezado') || textLower.includes('autos') || textLower.includes('vehiculo') || textLower.includes('vehículo')) {
+    state.giro = 'Taller de Hojalatería, Pintura & Mecánica Automotriz';
+    const demoUrl = kb.generadorDemos.getUrlDemo('Taller Automotriz & Hojalatería');
+    const reply = `¡Excelente giro! 🚗 Para un Taller de Hojalatería, Pintura y Mecánica, las soluciones que más aceleran la operación son:\n\n• *Gestor Móvil de Órdenes de Servicio:* Registras el ingreso del auto con fotos de abolladuras/detalles, inventario de piezas y envías la cotización al cliente por WhatsApp en 10 segundos.\n• *Avisos Automáticos de Estatus por WhatsApp/Telegram:* El bot notifica al cliente cuando su auto pase a preparación, pintura o esté listo para entrega ("Tu auto ya está listo para recolección 🚗✨").\n• *Control de Refacciones y Anticipos:* Registro de señas cobradas y pagos finales con corte de caja diario.\n\n🌐 *Ver Demo en Vivo:*\n${demoUrl}\n\nPlatícame: ¿Cómo le dan seguimiento a los autos que entran al taller o cómo envían sus presupuestos actualmente?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  if (textLower.includes('cuales') || textLower.includes('cuáles') || textLower.includes('que hay') || textLower.includes('qué hay') || textLower.includes('que modulos') || textLower.includes('qué módulos') || textLower.includes('opciones') || textLower.includes('que tienen') || textLower.includes('que ofrecen') || textLower.includes('en que me puede ayudar') || textLower.includes('en qué me puede ayudar') || textLower.includes('como me puedes ayudar') || textLower.includes('cómo me puedes ayudar')) {
+    const reply = `¡Con mucho gusto te muestro cómo te podemos impulsar! 🚀\n\nNuestras 4 Soluciones Principales a la Medida son:\n\n1. 🤖 *Asistente IA 24/7 (WhatsApp & Telegram):* Atiende clientes, responde dudas de tus servicios, agenda citas y toma pedidos automáticamente 24/7.\n2. 🚗 *Gestor de Órdenes & Servicios a la Medida:* Control de trabajos, recepción de vehículos/equipos con fotos, estatus de avance y presupuestos en PDF.\n3. 📱 *Punto de Venta (POS) Móvil y Nube:* Cobro rápido desde celular o tablet, tickets digitales, inventarios y corte de caja.\n4. 🌐 *Página Web y Catálogo Interactivo:* Presentación profesional con testimonios y demostraciones visuales de tu negocio.\n\n¿Cuál de estas opciones te llama más la atención o quisieras probar en una demostración gratuita?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
   if (textLower.includes('jardinero') || textLower.includes('jardineria') || textLower.includes('jardinería') || textLower.includes('jardin') || textLower.includes('jardín') || textLower.includes('paisajismo') || textLower.includes('poda') || textLower.includes('plantas')) {
     state.giro = 'Jardinería & Mantenimiento de Áreas Verdes';
     const demoUrl = kb.generadorDemos.getUrlDemo('Jardinería & Paisajismo');
