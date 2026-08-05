@@ -1091,14 +1091,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 19. 12-Second Rhythm: Official Slogan vs Random Word Swapping
+  // 19. 12-Second Rhythm with Constant Brand Colors & Mirror Shine Animation
   const randomPairs = [
-    ['EMPODERANDO', 'MENTES'],
-    ['REPROGRAMANDO', 'MARCAS'],
-    ['MARCAS', 'MENTES'],
-    ['EMPODERANDO', 'REPROGRAMANDO'],
-    ['MENTES', 'EMPODERANDO'],
-    ['MARCAS', 'REPROGRAMANDO']
+    ['EMPODERANDO', 'MARCAS', 'REPROGRAMANDO', 'MENTES'],
+    ['REPROGRAMANDO', 'MARCAS', 'EMPODERANDO', 'MENTES'],
+    ['EMPODERANDO', 'MENTES', 'REPROGRAMANDO', 'MARCAS'],
+    ['MARCAS', 'MENTES', 'EMPODERANDO', 'REPROGRAMANDO'],
+    ['MENTES', 'EMPODERANDO', 'MARCAS', 'REPROGRAMANDO']
   ];
 
   const headerLogoContainer = document.getElementById('header-logo-text');
@@ -1108,21 +1107,32 @@ document.addEventListener('DOMContentLoaded', () => {
     let cycleState = 0; // 0 = Official Slogan, 1, 2, 3 = Random swaps
     let randomIdx = 0;
 
+    const triggerMirrorShine = (container) => {
+      if (!container) return;
+      container.classList.remove('mirror-shine');
+      void container.offsetWidth; // force reflow
+      container.classList.add('mirror-shine');
+    };
+
     const renderLogoState = () => {
       const isOfficial = (cycleState === 0);
       
-      let htmlLine1 = '';
-      let htmlLine2 = '';
+      let word1 = 'EMPODERANDO';
+      let word2 = 'MARCAS';
+      let word3 = 'REPROGRAMANDO';
+      let word4 = 'MENTES';
 
-      if (isOfficial) {
-        htmlLine1 = 'EMPODERANDO <span class="accent-word highlight-marcas">MARCAS</span>';
-        htmlLine2 = 'REPROGRAMANDO <span class="accent-word highlight-mentes">MENTES</span>';
-      } else {
-        const pair = randomPairs[randomIdx % randomPairs.length];
+      if (!isOfficial) {
+        const combo = randomPairs[randomIdx % randomPairs.length];
         randomIdx++;
-        htmlLine1 = pair[0];
-        htmlLine2 = pair[1];
+        word1 = combo[0];
+        word2 = combo[1];
+        word3 = combo[2];
+        word4 = combo[3];
       }
+
+      const htmlLine1 = `<span class="word-white">${word1}</span> <span class="accent-word highlight-marcas">${word2}</span>`;
+      const htmlLine2 = `<span class="word-white">${word3}</span> <span class="accent-word highlight-mentes">${word4}</span>`;
 
       const applyToContainer = (container) => {
         if (!container) return;
@@ -1131,14 +1141,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (line1 && line2) {
           container.classList.add('swapping');
           setTimeout(() => {
-            if (isOfficial) {
-              container.classList.add('is-official-slogan');
-            } else {
-              container.classList.remove('is-official-slogan');
-            }
             line1.innerHTML = htmlLine1;
             line2.innerHTML = htmlLine2;
             container.classList.remove('swapping');
+
+            if (isOfficial) {
+              triggerMirrorShine(container);
+            }
           }, 350);
         }
       };
@@ -1149,7 +1158,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const runRhythm = () => {
       if (cycleState === 0) {
-        // Official slogan: Hold for 4.5 seconds
+        // Official slogan: Hold for 4.5 seconds + trigger Mirror Shine
+        triggerMirrorShine(headerLogoContainer);
+        triggerMirrorShine(footerLogoContainer);
         setTimeout(() => {
           cycleState = 1;
           renderLogoState();
@@ -1163,7 +1174,7 @@ document.addEventListener('DOMContentLoaded', () => {
           runRhythm();
         }, 2500);
       } else {
-        // Random swap 3: 2.5 seconds then back to Official Slogan (12s total cycle!)
+        // Random swap 3: 2.5 seconds then return to Official Slogan (12s total cycle!)
         setTimeout(() => {
           cycleState = 0;
           renderLogoState();
