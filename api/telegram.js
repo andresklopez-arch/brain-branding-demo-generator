@@ -93,7 +93,7 @@ function generateHumanReply(chatId, userName, userText) {
 
   if (userText === '/start') {
     const greetingName = userName ? ` ${userName}` : '';
-    const welcome = `¡Hola${greetingName}! 👋 Qué gusto saludarte.\n\nSoy Alejandro de Brain Branding. Desarrollamos Asistentes con Inteligencia Artificial, Software a la Medida y Páginas Web de alta conversión.\n\nPlatícame, ¿qué área de tu negocio o empresa te gustaría automatizar hoy?`;
+    const welcome = `¡Hola${greetingName}! 👋 Qué gusto saludarte.\n\nSoy Andrés R de Brain Branding. Desarrollamos Asistentes con Inteligencia Artificial, Software a la Medida y Páginas Web de alta conversión.\n\nPlatícame, ¿qué área de tu negocio o empresa te gustaría automatizar hoy?`;
     history.push({ role: 'model', text: welcome });
     return getUniqueReply(chatId, welcome);
   }
@@ -222,20 +222,35 @@ const ADMIN_CHAT_ID = '8337803949'; // Personal Telegram Chat ID of the Owner
 const pausedChats = {}; // chatId -> expiryTimestamp (30 min takeover pause)
 const prospectLogs = []; // Daily activity tracker for prospects
 
-const quickKeyboard = {
-  inline_keyboard: [
+function getDynamicKeyboard(chatId, userText) {
+  const history = conversationHistory[chatId] || [];
+  const msgCount = history.length;
+  const textLower = (userText || '').toLowerCase();
+
+  const isExplicitCallRequest = textLower.includes('hablar') || textLower.includes('llamar') || textLower.includes('llamada') || textLower.includes('telefono') || textLower.includes('teléfono') || textLower.includes('contacto') || textLower.includes('humano') || textLower.includes('asesor') || textLower.includes('persona') || textLower.includes('whatsapp') || textLower.includes('andres') || textLower.includes('andrés');
+
+  const buttons = [
     [
       { text: "🏪 Negocio Físico / Local", callback_data: "opcion_1" },
       { text: "📅 Servicios por Citas", callback_data: "opcion_2" }
     ],
     [
       { text: "🌐 Ver Demos Interactivas", callback_data: "opcion_3" }
-    ],
-    [
-      { text: "📞 Hablar con Alejandro (+52 771 233 9238)", url: "https://wa.me/527712339238?text=Hola%20Alejandro,%20estoy%20viendo%20el%20bot%20de%20Telegram%20y%20me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n" }
     ]
-  ]
-};
+  ];
+
+  // ONLY attach "Hablar con Andrés R" button if 4+ messages HAVE BEEN EXCHANGED or client EXPLICITLY requested human contact!
+  if (msgCount >= 4 || isExplicitCallRequest) {
+    buttons.push([
+      { 
+        text: "📞 Hablar con Andrés R (+52 771 233 9238)", 
+        url: "https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20estoy%20viendo%20el%20bot%20de%20Telegram%20y%20me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n" 
+      }
+    ]);
+  }
+
+  return { inline_keyboard: buttons };
+}
 
 function getLeadTemperature(text) {
   const t = text.toLowerCase();
@@ -309,7 +324,7 @@ async function handleWebhookRequest(req, res) {
         chat_id: chatId,
         text: reply,
         parse_mode: 'Markdown',
-        reply_markup: quickKeyboard
+        reply_markup: getDynamicKeyboard(chatId, textChoice)
       });
 
       return res.status(200).json({ ok: true });
@@ -403,7 +418,7 @@ async function handleWebhookRequest(req, res) {
           return res.status(200).json({ ok: true });
         }
 
-        // 3. Generate Intelligent Reply with Inline Buttons
+        // 3. Generate Intelligent Reply with Dynamic Inline Buttons
         await callTelegram('sendChatAction', { chat_id: chatId, action: 'typing' });
         const reply = generateHumanReply(chatId, firstName, userText);
 
@@ -411,7 +426,7 @@ async function handleWebhookRequest(req, res) {
           chat_id: chatId,
           text: reply,
           parse_mode: 'Markdown',
-          reply_markup: quickKeyboard
+          reply_markup: getDynamicKeyboard(chatId, userText)
         });
       }
     }
