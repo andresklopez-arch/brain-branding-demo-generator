@@ -4033,13 +4033,136 @@ END:VCARD`;
       input.value = name;
     }
 
-    // Update POS Tablet mockup header
+    const lowerName = name.toLowerCase();
+
+    // 1. Determine Product Set based on business name keywords
+    let items = [];
+    let industryLabel = 'Comercio General';
+    let welcomeMsg = `¡Hola! Bienvenido a ${name}. 😊 ¿En qué te podemos ayudar hoy?`;
+
+    if (lowerName.includes('abarrote') || lowerName.includes('tienda') || lowerName.includes('super') || lowerName.includes('mini')) {
+      industryLabel = 'Abarrotes & Tienda';
+      items = [
+        { name: 'Arroz Extra 1kg', price: '$32.00', stock: '45 uds', icon: '🌾' },
+        { name: 'Aceite Canola 1L', price: '$45.00', stock: '28 uds', icon: '🍾' },
+        { name: 'Leche Entera 1L', price: '$28.00', stock: '60 uds', icon: '🥛' },
+        { name: 'Frijol Negro 1kg', price: '$36.00', stock: '50 uds', icon: '🫘' },
+        { name: 'Huevo Blanco 1kg', price: '$48.00', stock: '30 kg', icon: '🥚' },
+        { name: 'Pan Blanco Grande', price: '$42.00', stock: '18 uds', icon: '🍞' }
+      ];
+      welcomeMsg = `¡Hola! 🛒 Bienvenido a ${name}. En nuestro catálogo en vivo tenemos ofertas en Huevo, Leche y Abarrotes. ¿Te gustaría armar tu pedido por WhatsApp?`;
+    } else if (lowerName.includes('cafe') || lowerName.includes('cafeteria') || lowerName.includes('restaurante') || lowerName.includes('taco') || lowerName.includes('comida') || lowerName.includes('bar')) {
+      industryLabel = 'Restaurante & Alimentos';
+      items = [
+        { name: 'Café Americano 12oz', price: '$45.00', stock: 'En menú', icon: '☕' },
+        { name: 'Capuchino Vainilla 16oz', price: '$58.00', stock: 'En menú', icon: '🥛' },
+        { name: 'Sandwich de Pavo & Queso', price: '$85.00', stock: '12 lis', icon: '🥪' },
+        { name: 'Pastel de Chocolate (Rebanada)', price: '$65.00', stock: '8 rebs', icon: '🍰' },
+        { name: 'Jugo Natural Naranja 500ml', price: '$40.00', stock: 'En menú', icon: '🥤' }
+      ];
+      welcomeMsg = `¡Hola! ☕ Bienvenido a ${name}. Consulta nuestro menú digital, realiza tu pedido a domicilio o reserva tu mesa al instante.`;
+    } else if (lowerName.includes('clinica') || lowerName.includes('salud') || lowerName.includes('doctor') || lowerName.includes('dental') || lowerName.includes('medico')) {
+      industryLabel = 'Clínica & Salud';
+      items = [
+        { name: 'Consulta General Especializada', price: '$500.00', stock: 'Disponible', icon: '🩺' },
+        { name: 'Biometría Hemática Completa', price: '$380.00', stock: 'Lab 1', icon: '🔬' },
+        { name: 'Ultrasonido Diagnóstico', price: '$850.00', stock: 'Cita prev', icon: '🖥️' },
+        { name: 'Limpieza Dental Ultrasónica', price: '$600.00', stock: 'Disponible', icon: '🦷' }
+      ];
+      welcomeMsg = `¡Hola! 🏥 Bienvenido a ${name}. Soy tu asistente virtual. ¿Te gustaría agendar una cita médica o consultar horarios disponibles?`;
+    } else if (lowerName.includes('taller') || lowerName.includes('refaccionaria') || lowerName.includes('auto')) {
+      industryLabel = 'Taller Automotriz';
+      items = [
+        { name: 'Servicio Afinación Completa', price: '$1,800.00', stock: '3 rps', icon: '🚗' },
+        { name: 'Cambio de Aceite Sintético 4L', price: '$750.00', stock: '12 gal', icon: '🛢️' },
+        { name: 'Juego Balatas Delanteras', price: '$950.00', stock: '6 pares', icon: '🛞' },
+        { name: 'Batería Automotriz 12V 65Ah', price: '$2,200.00', stock: '4 uds', icon: '⚡' }
+      ];
+      welcomeMsg = `¡Hola! 🚗 Bienvenido a ${name}. ¿Desear solicitar una cotización de mantenimiento o revisar el estado de tu vehículo en taller?`;
+    } else {
+      industryLabel = 'Solución a la Medida';
+      items = [
+        { name: `${name} - Servicio Premium 01`, price: '$250.00', stock: 'En stock', icon: '⭐' },
+        { name: `${name} - Servicio Premium 02`, price: '$480.00', stock: 'En stock', icon: '🚀' },
+        { name: `${name} - Producto de Línea 03`, price: '$750.00', stock: 'Disponible', icon: '📦' },
+        { name: `${name} - Paquete Completo 04`, price: '$1,500.00', stock: 'Disponible', icon: '💎' }
+      ];
+      welcomeMsg = `¡Hola! 👋 Bienvenido a la plataforma oficial de ${name}. ¿En qué te podemos ayudar el día de hoy?`;
+    }
+
+    // A) UPDATE TABLET POS MOCKUP CONTENT
+    const posScreen = document.getElementById('pos-screen-content');
+    if (posScreen) {
+      posScreen.innerHTML = `
+        <div style="background:#0f172a; color:#fff; padding:16px; border-radius:14px; font-family:sans-serif; min-height: 280px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-bottom:12px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:18px;">🏪</span>
+              <div>
+                <h4 style="margin:0; font-size:15px; color:#00e5ff;">${name}</h4>
+                <span style="font-size:11px; color:#94a3b8;">Sistema de Punto de Venta & Inventario IA (${industryLabel})</span>
+              </div>
+            </div>
+            <span style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:4px 8px; border-radius:8px; font-size:11px; font-weight:bold;">● Caja Abierta</span>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:14px;">
+            ${items.map(it => `
+              <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:10px; border-radius:10px; text-align:center;">
+                <div style="font-size:22px; margin-bottom:4px;">${it.icon}</div>
+                <div style="font-size:12px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${it.name}</div>
+                <div style="font-size:13px; color:#00e5ff; font-weight:bold; margin-top:2px;">${it.price}</div>
+                <div style="font-size:10px; color:#94a3b8;">Stock: ${it.stock}</div>
+              </div>
+            `).join('')}
+          </div>
+
+          <div style="background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.2); padding:10px 14px; border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:12px; color:#e2e8f0;">Total Ticket Actual: <strong style="color:#00e5ff; font-size:14px;">$${(parseFloat(items[0].price.replace(/[^0-9.]/g,'')) + parseFloat(items[1].price.replace(/[^0-9.]/g,''))).toFixed(2)} MXN</strong></span>
+            <button style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; border:none; padding:6px 14px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer;">Cobrar Ticket 💳</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // B) UPDATE SMARTPHONE CHAT MOCKUP CONTENT
+    const tgMessages = document.getElementById('telegram-messages');
+    if (tgMessages) {
+      tgMessages.innerHTML = `
+        <div class="telegram-msg received" style="background: rgba(255,255,255,0.06); padding: 10px 14px; border-radius: 12px; margin-bottom: 8px; max-width: 85%;">
+          <div style="font-size: 11px; color: #00e5ff; font-weight: bold; margin-bottom: 3px;">Asistente IA - ${name}</div>
+          <div style="font-size: 13px; color: #fff; line-height: 1.4;">${welcomeMsg}</div>
+        </div>
+        <div class="telegram-msg sent" style="background: rgba(0,229,255,0.2); border: 1px solid rgba(0,229,255,0.4); padding: 10px 14px; border-radius: 12px; margin-bottom: 8px; max-width: 80%; margin-left: auto; text-align: right;">
+          <div style="font-size: 13px; color: #fff;">Quiero consultar los precios de ${items[0].name} y ${items[1].name}</div>
+        </div>
+        <div class="telegram-msg received" style="background: rgba(255,255,255,0.06); padding: 10px 14px; border-radius: 12px; margin-bottom: 8px; max-width: 85%;">
+          <div style="font-size: 11px; color: #00e5ff; font-weight: bold; margin-bottom: 3px;">Asistente IA - ${name}</div>
+          <div style="font-size: 13px; color: #fff; line-height: 1.4;">¡Con gusto! El precio de <strong>${items[0].name}</strong> es de <strong>${items[0].price}</strong> y <strong>${items[1].name}</strong> está a <strong>${items[1].price}</strong>. ¿Te gustaría agregarlos a tu pedido? 🛒</div>
+        </div>
+      `;
+    }
+
+    // C) UPDATE BROWSER WEB APP MOCKUP CONTENT
+    const webView = document.getElementById('web-screen-content');
+    if (webView) {
+      webView.innerHTML = `
+        <div style="background:#0a0f1d; color:#fff; padding:20px; border-radius:12px; font-family:sans-serif; text-align:center;">
+          <div style="font-size:12px; color:#00e5ff; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px;">${industryLabel} - Sitio Web Oficial</div>
+          <h2 style="font-size:22px; margin:0 0 8px 0; color:#ffffff;">${name}</h2>
+          <p style="font-size:13px; color:#94a3b8; max-width:500px; margin:0 auto 16px auto; line-height:1.4;">Plataforma inteligente con catálogo en vivo, pedidos automáticos por WhatsApp y cobros en línea para ${name}.</p>
+          <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+            <span style="background:rgba(0,229,255,0.15); border:1px solid rgba(0,229,255,0.3); color:#00e5ff; padding:8px 16px; border-radius:20px; font-size:12px; font-weight:bold;">🛒 Ver Catálogo</span>
+            <span style="background:rgba(37,211,102,0.15); border:1px solid rgba(37,211,102,0.3); color:#25d366; padding:8px 16px; border-radius:20px; font-size:12px; font-weight:bold;">💬 Pedir por WhatsApp</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Update headers and titles
     const posTitles = document.querySelectorAll('#pos-device-screen h3, #pos-screen-content h3, .pos-header-title, .software-topbar strong');
-    posTitles.forEach(title => {
-      title.textContent = `${name} - Punto de Venta IA`;
-    });
-    
-    // Update Web Browser URL & Title
+    posTitles.forEach(title => { title.textContent = `${name} - Punto de Venta IA`; });
+
     const webUrl = document.getElementById('web-browser-url');
     if (webUrl) {
       const cleanSlug = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
@@ -4049,7 +4172,6 @@ END:VCARD`;
     const webTabTitle = document.querySelector('.browser-tab span:last-child');
     if (webTabTitle) webTabTitle.textContent = `${name} | Web IA`;
 
-    // Update Smartphone header & Telegram title
     const phoneHeader = document.querySelector('#phone-screen-content .chat-user-name, #phone-header-title, .telegram-title');
     if (phoneHeader) phoneHeader.textContent = `${name} (Asistente IA)`;
 
@@ -4058,7 +4180,7 @@ END:VCARD`;
     // Show Toast
     const toast = document.createElement('div');
     toast.style.cssText = 'position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:rgba(0,229,255,0.95); color:#000; padding:12px 24px; border-radius:30px; font-weight:bold; font-size:14px; z-index:99999; box-shadow:0 10px 30px rgba(0,229,255,0.5); transition:all 0.3s; pointer-events:none;';
-    toast.textContent = `🚀 ¡Demo personalizado generado para "${name}"!`;
+    toast.textContent = `🚀 ¡Demo interactivo transformado para "${name}"!`;
     document.body.appendChild(toast);
     setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3200);
   };
@@ -4076,4 +4198,5 @@ END:VCARD`;
     }, 600);
   }
 });
+
 
