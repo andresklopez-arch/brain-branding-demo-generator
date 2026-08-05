@@ -1091,21 +1091,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 19. 12-Second Rhythm: Pure Flat White Text Swapping & Official Slogan Mirror Shine Animation
-  const randomPairs = [
-    ['EMPODERANDO MENTES', 'REPROGRAMANDO MARCAS'],
-    ['REPROGRAMANDO MARCAS', 'EMPODERANDO MENTES'],
-    ['MARCAS MENTES', 'EMPODERANDO REPROGRAMANDO'],
-    ['EMPODERANDO REPROGRAMANDO', 'MARCAS MENTES'],
-    ['MENTES EMPODERANDO', 'MARCAS REPROGRAMANDO'],
-    ['MARCAS REPROGRAMANDO', 'MENTES EMPODERANDO']
+  // 19. 12-Second Rhythm: 2-Word Random Swaps & 4-Word Official Slogan with Mirror Shine
+  const randomPairs2Words = [
+    ['EMPODERANDO', 'MENTES'],
+    ['REPROGRAMANDO', 'MARCAS'],
+    ['MARCAS', 'MENTES'],
+    ['EMPODERANDO', 'REPROGRAMANDO'],
+    ['MENTES', 'EMPODERANDO'],
+    ['MARCAS', 'REPROGRAMANDO']
   ];
 
   const headerLogoContainer = document.getElementById('header-logo-text');
   const footerLogoContainer = document.getElementById('footer-logo-text');
 
   if (headerLogoContainer || footerLogoContainer) {
-    let cycleState = 0; // 0 = Official Slogan, 1, 2, 3 = Random swaps
+    let cycleState = 0; // 0 = Official 4-Word Slogan, 1, 2, 3 = 2-Word Random swaps
     let randomIdx = 0;
 
     const triggerMirrorShine = (container) => {
@@ -1118,14 +1118,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderLogoState = () => {
       const isOfficial = (cycleState === 0);
       
-      let line1Text = 'EMPODERANDO MARCAS';
-      let line2Text = 'REPROGRAMANDO MENTES';
+      let line1Text = '';
+      let line2Text = '';
 
-      if (!isOfficial) {
-        const combo = randomPairs[randomIdx % randomPairs.length];
+      if (isOfficial) {
+        // FULL 4-WORD CORRECT SLOGAN
+        line1Text = 'EMPODERANDO MARCAS';
+        line2Text = 'REPROGRAMANDO MENTES';
+      } else {
+        // ONLY 2 RANDOM WORDS TOTAL (1 on line 1, 1 on line 2)
+        const pair = randomPairs2Words[randomIdx % randomPairs2Words.length];
         randomIdx++;
-        line1Text = combo[0];
-        line2Text = combo[1];
+        line1Text = pair[0];
+        line2Text = pair[1];
       }
 
       const applyToContainer = (container) => {
@@ -1152,7 +1157,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const runRhythm = () => {
       if (cycleState === 0) {
-        // Official slogan: Hold for 4.5 seconds + trigger Mirror Shine
+        // Official 4-Word Slogan: Hold for 4.5 seconds + trigger Mirror Shine
         triggerMirrorShine(headerLogoContainer);
         triggerMirrorShine(footerLogoContainer);
         setTimeout(() => {
@@ -1161,14 +1166,14 @@ document.addEventListener('DOMContentLoaded', () => {
           runRhythm();
         }, 4500);
       } else if (cycleState < 3) {
-        // Random swaps 1 & 2: 2.5 seconds each
+        // 2-Word Random swaps 1 & 2: 2.5 seconds each
         setTimeout(() => {
           cycleState++;
           renderLogoState();
           runRhythm();
         }, 2500);
       } else {
-        // Random swap 3: 2.5 seconds then return to Official Slogan (12s total cycle!)
+        // 2-Word Random swap 3: 2.5 seconds then return to Official 4-Word Slogan (12s total cycle!)
         setTimeout(() => {
           cycleState = 0;
           renderLogoState();
