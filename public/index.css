@@ -1397,5 +1397,27 @@ body.light-theme .cloud-bg-container {
     color: #0f172a !important;
     border: 1px solid #cbd5e1 !important;
   }
+/* FLOATING ACTION BUTTONS (WHATSAPP & TELEGRAM) */
+@keyframes fab-radar {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
 }
 
+#whatsapp-fab, #telegram-fab {
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  #whatsapp-fab {
+    bottom: 20px !important;
+    right: 18px !important;
+    width: 52px !important;
+    height: 52px !important;
+  }
+  #telegram-fab {
+    bottom: 20px !important;
+    right: 78px !important;
+    width: 52px !important;
+    height: 52px !important;
+  }
+}
