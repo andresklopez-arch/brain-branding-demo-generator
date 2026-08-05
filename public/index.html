@@ -3608,67 +3608,71 @@
       </div>
     </section>
 
-    <!-- 4B. FAQ SECTION -->
+    <!-- 4B. FAQ SECTION (COMPACT 2-COLUMN CAPSULE GRID) -->
     <section id="faq" class="testimonials" style="border-top: 1px solid var(--border-color); padding: 50px 20px 40px 20px;">
-      <div style="text-align:center; display:flex; flex-direction:column; align-items:center;">
+      <div style="text-align:center; display:flex; flex-direction:column; align-items:center; margin-bottom: 25px;">
         <span class="section-tag">Preguntas Frecuentes</span>
         <h2 class="section-title">Resolvemos tus <span>dudas técnicas</span></h2>
-        <p class="section-subtitle">
-          Aquí tienes respuestas rápidas sobre nuestra metodología de trabajo y desarrollo de prototipos.
+        <p class="section-subtitle" style="margin-bottom: 0;">
+          Respuestas rápidas sobre nuestra metodología de trabajo y desarrollo de prototipos.
         </p>
       </div>
 
-      <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px;" class="faq-list">
-        <!-- FAQ 1 -->
-        <div class="glass-card faq-item" style="padding: 24px; cursor: pointer; transition: all 0.3s ease; border-radius: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;" class="faq-question">
-            <h4 style="font-size: 16px; font-weight: 700; color: #fff;">¿Qué es un prototipo interactivo y cómo ayuda a vender?</h4>
-            <span style="font-size: 18px; color: var(--primary); font-weight: 700; transition: transform 0.3s;" class="faq-icon">+</span>
+      <div class="glass-card faq-bullet-card" style="max-width: 950px; margin: 0 auto; padding: 25px 30px; border-radius: 20px; background: rgba(6, 8, 12, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+        <div class="faq-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px 25px;">
+          
+          <!-- FAQ 1 -->
+          <div class="glass-card faq-item" style="padding: 16px 20px; cursor: pointer; transition: all 0.3s ease; border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;" class="faq-question">
+              <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin: 0;">¿Qué es un prototipo interactivo y cómo ayuda a vender?</h4>
+              <span style="font-size: 16px; color: var(--primary); font-weight: 700; transition: transform 0.3s; flex-shrink: 0;" class="faq-icon">+</span>
+            </div>
+            <div style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; margin-top: 0;" class="faq-answer">
+              <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5; padding-top: 10px; margin: 0;">
+                Es una versión visual inoperativa que imita al 98% el diseño y pantallas finales. Permite validar la idea antes de programar y sirve como herramienta de preventa.
+              </p>
+            </div>
           </div>
-          <div style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; margin-top: 0;" class="faq-answer">
-            <p style="font-size: 14.5px; color: var(--text-muted); line-height: 1.6; padding-top: 15px;">
-              Es una versión visual inoperativa de tu futura aplicación, pero que imita al 98% el diseño, pantallas y lógica que tendrá. Permite validar la idea antes de programar, sirviendo como una herramienta visual de preventa para convencer a inversores o clientes de forma sumamente ágil.
-            </p>
-          </div>
-        </div>
 
-        <!-- FAQ 2 -->
-        <div class="glass-card faq-item" style="padding: 24px; cursor: pointer; transition: all 0.3s ease; border-radius: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;" class="faq-question">
-            <h4 style="font-size: 16px; font-weight: 700; color: #fff;">¿Cuánto tiempo toma desarrollar una aplicación final?</h4>
-            <span style="font-size: 18px; color: var(--primary); font-weight: 700; transition: transform 0.3s;" class="faq-icon">+</span>
+          <!-- FAQ 2 -->
+          <div class="glass-card faq-item" style="padding: 16px 20px; cursor: pointer; transition: all 0.3s ease; border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;" class="faq-question">
+              <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin: 0;">¿Cuánto tiempo toma desarrollar una aplicación final?</h4>
+              <span style="font-size: 16px; color: var(--primary); font-weight: 700; transition: transform 0.3s; flex-shrink: 0;" class="faq-icon">+</span>
+            </div>
+            <div style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; margin-top: 0;" class="faq-answer">
+              <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5; padding-top: 10px; margin: 0;">
+                Un prototipo se genera y despliega en menos de 48 horas. El software final toma entre 4 y 8 semanas según la complejidad y módulos.
+              </p>
+            </div>
           </div>
-          <div style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; margin-top: 0;" class="faq-answer">
-            <p style="font-size: 14.5px; color: var(--text-muted); line-height: 1.6; padding-top: 15px;">
-              Un prototipo inicial se genera y despliega en menos de 48 horas. El desarrollo completo del software final en producción toma entre 4 y 8 semanas dependiendo de la complejidad y los módulos elegidos.
-            </p>
-          </div>
-        </div>
 
-        <!-- FAQ 3 -->
-        <div class="glass-card faq-item" style="padding: 24px; cursor: pointer; transition: all 0.3s ease; border-radius: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;" class="faq-question">
-            <h4 style="font-size: 16px; font-weight: 700; color: #fff;">¿El prototipo incluye código real para producción?</h4>
-            <span style="font-size: 18px; color: var(--primary); font-weight: 700; transition: transform 0.3s;" class="faq-icon">+</span>
+          <!-- FAQ 3 -->
+          <div class="glass-card faq-item" style="padding: 16px 20px; cursor: pointer; transition: all 0.3s ease; border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;" class="faq-question">
+              <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin: 0;">¿El prototipo incluye código real para producción?</h4>
+              <span style="font-size: 16px; color: var(--primary); font-weight: 700; transition: transform 0.3s; flex-shrink: 0;" class="faq-icon">+</span>
+            </div>
+            <div style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; margin-top: 0;" class="faq-answer">
+              <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5; padding-top: 10px; margin: 0;">
+                La maqueta corre sobre HTML5/CSS3 modular limpio. Su estructura sirve de base directa para acelerar el desarrollo del software real final.
+              </p>
+            </div>
           </div>
-          <div style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; margin-top: 0;" class="faq-answer">
-            <p style="font-size: 14.5px; color: var(--text-muted); line-height: 1.6; padding-top: 15px;">
-              La maqueta corre sobre HTML5 y CSS3 limpio estructurado modularmente. Aunque el prototipo maneja simulación visual interactiva, su código de maquetación sirve de base directa para acelerar el desarrollo del software real final.
-            </p>
-          </div>
-        </div>
 
-        <!-- FAQ 4 -->
-        <div class="glass-card faq-item" style="padding: 24px; cursor: pointer; transition: all 0.3s ease; border-radius: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;" class="faq-question">
-            <h4 style="font-size: 16px; font-weight: 700; color: #fff;">¿Cómo se conectan las automatizaciones de Inteligencia Artificial?</h4>
-            <span style="font-size: 18px; color: var(--primary); font-weight: 700; transition: transform 0.3s;" class="faq-icon">+</span>
+          <!-- FAQ 4 -->
+          <div class="glass-card faq-item" style="padding: 16px 20px; cursor: pointer; transition: all 0.3s ease; border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;" class="faq-question">
+              <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin: 0;">¿Cómo se conectan las automatizaciones de Inteligencia Artificial?</h4>
+              <span style="font-size: 16px; color: var(--primary); font-weight: 700; transition: transform 0.3s; flex-shrink: 0;" class="faq-icon">+</span>
+            </div>
+            <div style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; margin-top: 0;" class="faq-answer">
+              <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5; padding-top: 10px; margin: 0;">
+                Nos conectamos mediante APIs oficiales (Gemini Pro, OpenAI) entrenando al agente con tus datos para responder, catalogar y alertar automáticamente.
+              </p>
+            </div>
           </div>
-          <div style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; margin-top: 0;" class="faq-answer">
-            <p style="font-size: 14.5px; color: var(--text-muted); line-height: 1.6; padding-top: 15px;">
-              Nos conectamos de forma segura mediante APIs oficiales (Gemini Pro, OpenAI). Esto permite entrenar al asistente con tus datos comerciales para responder preguntas, catalogar leads o enviar alertas personalizadas.
-            </p>
-          </div>
+
         </div>
       </div>
     </section>
