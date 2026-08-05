@@ -1858,6 +1858,7 @@ END:VCARD`;
     let simulatorTimeout = null;
     let isSectionVisible = true;
     let isLocked = true;
+    let scenarioStartTime = Date.now();
 
     function formatTimestamp() {
       const now = new Date();
@@ -2018,13 +2019,16 @@ END:VCARD`;
       const scenario = chatScenarios[currentScenarioIdx];
       
       if (currentMessageIdx >= scenario.length) {
+        const elapsed = Date.now() - scenarioStartTime;
+        const remaining = Math.max(1000, 10000 - elapsed);
         simulatorTimeout = setTimeout(() => {
           telegramContainer.innerHTML = '';
           currentScenarioIdx = (currentScenarioIdx + 1) % chatScenarios.length;
           currentMessageIdx = 0;
+          scenarioStartTime = Date.now();
           updateActiveIcon(currentScenarioIdx);
           playNextMessage();
-        }, 2000); // 2s pause at end of scenario (total scenario duration ~5s)
+        }, remaining);
         return;
       }
 
@@ -2119,6 +2123,7 @@ END:VCARD`;
           const scenarioIdx = parseInt(scenarioVal, 10);
           currentScenarioIdx = scenarioIdx;
           currentMessageIdx = 0;
+          scenarioStartTime = Date.now();
 
           const scenario = chatScenarios[currentScenarioIdx];
           if (scenario && scenario.length > 0) {
@@ -2181,6 +2186,7 @@ END:VCARD`;
         telegramContainer.innerHTML = '';
         currentScenarioIdx = 0;
         currentMessageIdx = 0;
+        scenarioStartTime = Date.now();
         updateActiveIcon(0);
         
         const scenario = chatScenarios[0];
@@ -2239,6 +2245,7 @@ END:VCARD`;
               telegramContainer.innerHTML = '';
               currentScenarioIdx = 0;
               currentMessageIdx = 0;
+              scenarioStartTime = Date.now();
               updateActiveIcon(0);
               
               const scenario = chatScenarios[0];
