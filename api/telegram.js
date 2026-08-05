@@ -212,16 +212,85 @@ function generateHumanReply(chatId, userName, userText) {
   return getUniqueReply(chatId, fallbackReply);
 }
 
+const OWNER_PHONE = '+52 771 233 9238';
+const ADMIN_CHAT_ID = '8337803949'; // Personal Telegram Chat ID of the Owner
+
 const express = require('express');
 const app = express();
 app.use(express.json());
 
+const quickKeyboard = {
+  inline_keyboard: [
+    [
+      { text: "🏪 Negocio Físico / Local", callback_data: "opcion_1" },
+      { text: "📅 Servicios por Citas", callback_data: "opcion_2" }
+    ],
+    [
+      { text: "🌐 Ver Demos Interactivas", callback_data: "opcion_3" }
+    ]
+  ]
+};
+
+async function notifyOwner(chatId, firstName, username, userText) {
+  if (chatId.toString() === ADMIN_CHAT_ID) return; // Don't notify owner about their own messages
+
+  const alertText = `🚨 *¡NUEVO PROSPECTO CHAT E INICIÓ INTERACCIÓN!* 🚨\n\n👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n💬 *Mensaje Enviado:* "${userText}"\n🆔 *Chat ID Cliente:* \`${chatId}\`\n📱 *Notificado al Número:* ${OWNER_PHONE}\n\n⚡ *Intervención:* Si deseas intervenir directamente en la conversación, puedes responder a este Chat ID o contactar al prospecto.`;
+
+  try {
+    await callTelegram('sendMessage', {
+      chat_id: ADMIN_CHAT_ID,
+      text: alertText,
+      parse_mode: 'Markdown'
+    });
+  } catch (e) {
+    console.error('[OWNER NOTIFICATION ERROR]', e);
+  }
+
+  // Also call CallMeBot WhatsApp Notification Service if reachable
+  try {
+    const encodedMsg = encodeURIComponent(`🚨 NUEVO PROSPECTO EN TELEGRAM\nCliente: ${firstName || 'Prospecto'}\nMensaje: ${userText}\nChatId: ${chatId}`);
+    const whatsappUrl = `https://api.callmebot.com/whatsapp.php?phone=+527712339238&text=${encodedMsg}&apikey=123456`;
+    https.get(whatsappUrl, () => {}).on('error', () => {});
+  } catch (e) {
+    // Silent fail if WhatsApp key not activated
+  }
+}
+
 async function handleWebhookRequest(req, res) {
   try {
     const update = req.body || {};
+
+    // Handle Inline Button Clicks (callback_query)
+    if (req.method === 'POST' && update && update.callback_query) {
+      const cb = update.callback_query;
+      const chatId = cb.message.chat.id;
+      const data = cb.data;
+      const firstName = cb.from ? cb.from.first_name : '';
+      const username = cb.from ? cb.from.username : '';
+
+      await callTelegram('answerCallbackQuery', { callback_query_id: cb.id });
+      await notifyOwner(chatId, firstName, username, `[Clic en Botón: ${data}]`);
+
+      let textChoice = '1';
+      if (data === 'opcion_2') textChoice = '2';
+      if (data === 'opcion_3') textChoice = '3';
+
+      const reply = generateHumanReply(chatId, firstName, textChoice);
+      await callTelegram('sendMessage', {
+        chat_id: chatId,
+        text: reply,
+        parse_mode: 'Markdown',
+        reply_markup: quickKeyboard
+      });
+
+      return res.status(200).json({ ok: true });
+    }
+
+    // Handle Standard Text & Voice Messages
     if (req.method === 'POST' && update && update.message) {
       const chatId = update.message.chat.id;
       const firstName = update.message.from ? update.message.from.first_name : '';
+      const username = update.message.from ? update.message.from.username : '';
       let userText = update.message.text || '';
 
       if (update.message.voice || update.message.audio) {
@@ -230,12 +299,18 @@ async function handleWebhookRequest(req, res) {
       }
 
       if (userText) {
+        // 1. Notify Owner instantly at +52 771 233 9238 / Admin Chat ID 8337803949
+        await notifyOwner(chatId, firstName, username, userText);
+
+        // 2. Generate Intelligent Reply with Inline Buttons
         await callTelegram('sendChatAction', { chat_id: chatId, action: 'typing' });
         const reply = generateHumanReply(chatId, firstName, userText);
+
         await callTelegram('sendMessage', {
           chat_id: chatId,
           text: reply,
-          parse_mode: 'Markdown'
+          parse_mode: 'Markdown',
+          reply_markup: quickKeyboard
         });
       }
     }
