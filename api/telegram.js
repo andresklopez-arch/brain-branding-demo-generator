@@ -268,7 +268,10 @@ function getLeadTemperature(text) {
 async function notifyOwner(chatId, firstName, username, userText) {
   if (chatId.toString() === ADMIN_CHAT_ID) return; // Strictly don't notify owner about their own admin messages
 
-  const tempTag = getLeadTemperature(userText);
+  const textLower = (userText || '').toLowerCase();
+  const isCitaClick = textLower.includes('cita') || textLower.includes('agend') || textLower.includes('whatsapp') || textLower.includes('opcion_2');
+
+  const tempTag = isCitaClick ? '🔥 *[ALERTA DE CITA SOLICITADA POR WHATSAPP]*' : getLeadTemperature(userText);
   const isPaused = pausedChats[chatId] && pausedChats[chatId] > Date.now();
   const statusTag = isPaused ? '⏸️ *[MODO PAUSA ACTIVO - BOT SILENCIADO]*' : '🤖 *[RESPUESTA AUTOMÁTICA ENVIADA]*';
 
@@ -277,12 +280,14 @@ async function notifyOwner(chatId, firstName, username, userText) {
     name: firstName || 'Prospecto',
     username: username || 'Sin username',
     text: userText,
-    temp: tempTag.includes('CALIENTE') ? 'CALIENTE' : (tempTag.includes('TIBIO') ? 'TIBIO' : 'FRÍO'),
+    temp: isCitaClick ? 'CITA_URGENTE' : (tempTag.includes('CALIENTE') ? 'CALIENTE' : (tempTag.includes('TIBIO') ? 'TIBIO' : 'FRÍO')),
     timestamp: new Date().toLocaleTimeString('es-MX')
   });
   if (prospectLogs.length > 200) prospectLogs.shift();
 
-  const alertText = `🚨 *¡NUEVO MENSAJE DE PROSPECTO EN TELEGRAM!* 🚨\n\n${tempTag}\n👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n💬 *Mensaje:* "${userText}"\n🆔 *Chat ID:* \`${chatId}\`\n📱 *Notificado a:* ${OWNER_PHONE}\n${statusTag}\n\n⚙️ *Comandos:* \`/pausa ${chatId}\` | \`/reanudar ${chatId}\` | \`/exportar\``;
+  const alertHeader = isCitaClick ? '🚨 *¡PROSPECTO SOLICITÓ AGENDAR CITA EN WHATSAPP!* 🚨' : '🚨 *¡NUEVO MENSAJE DE PROSPECTO EN TELEGRAM!* 🚨';
+
+  const alertText = `${alertHeader}\n\n${tempTag}\n👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n💬 *Mensaje:* "${userText}"\n🆔 *Chat ID:* \`${chatId}\`\n📱 *Notificado a:* ${OWNER_PHONE}\n${statusTag}\n\n⚙️ *Comandos:* \`/pausa ${chatId}\` | \`/plantilla\` | \`/exportar\``;
 
   try {
     await callTelegram('sendMessage', {
@@ -377,8 +382,8 @@ async function handleWebhookRequest(req, res) {
 
         if (cmdLower === '/reporte' || cmdLower === '/resumen') {
           const uniqueProspects = new Set(prospectLogs.map(p => p.chatId)).size;
-          const calientes = prospectLogs.filter(p => p.temp === 'CALIENTE').length;
-          let reportMsg = `📊 *REPORTE DIARIO DE PROSPECTOS TELEGRAM* 📊\n📱 *Teléfono:* ${OWNER_PHONE}\n\n• *Interacciones Hoy:* ${prospectLogs.length}\n• *Prospectos Únicos:* ${uniqueProspects}\n• *🔥 Leads Calientes:* ${calientes}\n\n*Últimos Prospectos:*:\n`;
+          const calientes = prospectLogs.filter(p => p.temp === 'CALIENTE' || p.temp === 'CITA_URGENTE').length;
+          let reportMsg = `📊 *REPORTE DIARIO DE PROSPECTOS TELEGRAM* 📊\n📱 *Teléfono:* ${OWNER_PHONE}\n\n• *Interacciones Hoy:* ${prospectLogs.length}\n• *Prospectos Únicos:* ${uniqueProspects}\n• *🔥 Leads Calientes / Citas:* ${calientes}\n\n*Últimos Prospectos:*:\n`;
 
           prospectLogs.slice(-10).reverse().forEach((p, idx) => {
             reportMsg += `${idx + 1}. *${p.name}* (@${p.username}) [${p.temp}]\n   💬 "${p.text.substring(0, 35)}..." (ID: \`${p.chatId}\`)\n`;
@@ -387,6 +392,17 @@ async function handleWebhookRequest(req, res) {
           await callTelegram('sendMessage', {
             chat_id: ADMIN_CHAT_ID,
             text: reportMsg,
+            parse_mode: 'Markdown'
+          });
+          return res.status(200).json({ ok: true });
+        }
+
+        if (cmdLower === '/plantilla' || cmdLower === '/citas') {
+          const plantillaMsg = `📱 *PLANTILLAS RÁPIDAS DE RESPUESTA WHATSAPP* 📱\n\n*Plantilla 1 (Respuesta a Citas):*\n"¡Hola! 👋 Soy Andrés R de Brain Branding. Recibí tu mensaje sobre agendar una cita/demo.\n\nPlatícame: ¿qué día u horario prefieres para una llamada rápida de 10 minutos o deseas que te envíe un presupuesto personalizado?"\n\n*Plantilla 2 (Envío de Demos):*\n"¡Con gusto! Aquí puedes probar nuestras demos en vivo:\n🌐 https://brainbranding.com.mx/#asistente-ia"`;
+
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: plantillaMsg,
             parse_mode: 'Markdown'
           });
           return res.status(200).json({ ok: true });
