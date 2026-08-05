@@ -237,23 +237,35 @@ const quickKeyboard = {
   ]
 };
 
-async function notifyOwner(chatId, firstName, username, userText) {
-  if (chatId.toString() === ADMIN_CHAT_ID) return; // Don't notify owner about their own messages
+function getLeadTemperature(text) {
+  const t = text.toLowerCase();
+  if (t.includes('precio') || t.includes('costo') || t.includes('cuanto') || t.includes('cotizar') || t.includes('comprar') || t.includes('contratar') || t.includes('demostracion') || t.includes('demo') || t.includes('cita') || t.includes('pagar')) {
+    return '🔥 *LEAD CALIENTE (Alta Intención de Compra)*';
+  }
+  if (t.includes('sucursal') || t.includes('modulo') || t.includes('taller') || t.includes('hojalat') || t.includes('jardin') || t.includes('tienda') || t.includes('pos') || t.includes('opciones')) {
+    return '🟡 *LEAD TIBIO (Interés en Módulos / Giro)*';
+  }
+  return '❄️ *LEAD FRÍO (Contacto Inicial / Saludo)*';
+}
 
-  // Track prospect in daily log
+async function notifyOwner(chatId, firstName, username, userText) {
+  if (chatId.toString() === ADMIN_CHAT_ID) return; // Strictly don't notify owner about their own admin messages
+
+  const tempTag = getLeadTemperature(userText);
+  const isPaused = pausedChats[chatId] && pausedChats[chatId] > Date.now();
+  const statusTag = isPaused ? '⏸️ *[MODO PAUSA ACTIVO - BOT SILENCIADO]*' : '🤖 *[RESPUESTA AUTOMÁTICA ENVIADA]*';
+
   prospectLogs.push({
     chatId,
     name: firstName || 'Prospecto',
     username: username || 'Sin username',
     text: userText,
+    temp: tempTag.includes('CALIENTE') ? 'CALIENTE' : (tempTag.includes('TIBIO') ? 'TIBIO' : 'FRÍO'),
     timestamp: new Date().toLocaleTimeString('es-MX')
   });
-  if (prospectLogs.length > 100) prospectLogs.shift();
+  if (prospectLogs.length > 200) prospectLogs.shift();
 
-  const isPaused = pausedChats[chatId] && pausedChats[chatId] > Date.now();
-  const statusTag = isPaused ? '⏸️ *[MODO PAUSA ACTIVO]*' : '🤖 *[RESPUESTA AUTOMÁTICA ENVIADA]*';
-
-  const alertText = `🚨 *¡NUEVO MENSAJE DE PROSPECTO EN TELEGRAM!* 🚨\n\n👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n💬 *Mensaje:* "${userText}"\n🆔 *Chat ID:* \`${chatId}\`\n📱 *Notificado a:* ${OWNER_PHONE}\n${statusTag}\n\n⚙️ *Comandos de Control:* \`/pausa ${chatId}\` (Pausa 30 min) | \`/reanudar ${chatId}\``;
+  const alertText = `🚨 *¡NUEVO MENSAJE DE PROSPECTO EN TELEGRAM!* 🚨\n\n${tempTag}\n👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n💬 *Mensaje:* "${userText}"\n🆔 *Chat ID:* \`${chatId}\`\n📱 *Notificado a:* ${OWNER_PHONE}\n${statusTag}\n\n⚙️ *Comandos:* \`/pausa ${chatId}\` | \`/reanudar ${chatId}\` | \`/exportar\``;
 
   try {
     await callTelegram('sendMessage', {
@@ -310,7 +322,7 @@ async function handleWebhookRequest(req, res) {
       const username = update.message.from ? update.message.from.username : '';
       let userText = update.message.text || '';
 
-      // Owner Command Handling (Pausa, Reanudar, Reporte)
+      // STRICT ADMIN SECURITY FILTER: Only Chat ID 8337803949 can execute admin commands
       if (chatId.toString() === ADMIN_CHAT_ID) {
         const cmdLower = userText.toLowerCase().trim();
 
@@ -348,15 +360,27 @@ async function handleWebhookRequest(req, res) {
 
         if (cmdLower === '/reporte' || cmdLower === '/resumen') {
           const uniqueProspects = new Set(prospectLogs.map(p => p.chatId)).size;
-          let reportMsg = `📊 *REPORTE DIARIO DE PROSPECTOS TELEGRAM* 📊\n📱 *Teléfono:* ${OWNER_PHONE}\n\n• *Total de Interacciones Hoy:* ${prospectLogs.length}\n• *Prospectos Únicos:* ${uniqueProspects}\n\n*Últimos Prospectos Atendidos:*\n`;
+          const calientes = prospectLogs.filter(p => p.temp === 'CALIENTE').length;
+          let reportMsg = `📊 *REPORTE DIARIO DE PROSPECTOS TELEGRAM* 📊\n📱 *Teléfono:* ${OWNER_PHONE}\n\n• *Interacciones Hoy:* ${prospectLogs.length}\n• *Prospectos Únicos:* ${uniqueProspects}\n• *🔥 Leads Calientes:* ${calientes}\n\n*Últimos Prospectos:*:\n`;
 
           prospectLogs.slice(-10).reverse().forEach((p, idx) => {
-            reportMsg += `${idx + 1}. *${p.name}* (@${p.username}) - ${p.timestamp}\n   💬 "${p.text.substring(0, 40)}..." (ID: \`${p.chatId}\`)\n`;
+            reportMsg += `${idx + 1}. *${p.name}* (@${p.username}) [${p.temp}]\n   💬 "${p.text.substring(0, 35)}..." (ID: \`${p.chatId}\`)\n`;
           });
 
           await callTelegram('sendMessage', {
             chat_id: ADMIN_CHAT_ID,
             text: reportMsg,
+            parse_mode: 'Markdown'
+          });
+          return res.status(200).json({ ok: true });
+        }
+
+        if (cmdLower === '/exportar' || cmdLower === '/crm') {
+          let jsonStr = JSON.stringify(prospectLogs.slice(-20), null, 2);
+          if (jsonStr.length > 3500) jsonStr = jsonStr.substring(0, 3500) + '\n... (truncado)';
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: `📁 *BASE DE DATOS CRM REGISTRADA EN VIVO (JSON)* 📁\n\n\`\`\`json\n${jsonStr}\n\`\`\``,
             parse_mode: 'Markdown'
           });
           return res.status(200).json({ ok: true });
