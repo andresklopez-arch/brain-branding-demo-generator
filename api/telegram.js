@@ -212,12 +212,15 @@ function generateHumanReply(chatId, userName, userText) {
   return getUniqueReply(chatId, fallbackReply);
 }
 
-const OWNER_PHONE = '+52 771 233 9238';
-const ADMIN_CHAT_ID = '8337803949'; // Personal Telegram Chat ID of the Owner
-
 const express = require('express');
 const app = express();
 app.use(express.json());
+
+const OWNER_PHONE = '+52 771 233 9238';
+const ADMIN_CHAT_ID = '8337803949'; // Personal Telegram Chat ID of the Owner
+
+const pausedChats = {}; // chatId -> expiryTimestamp (30 min takeover pause)
+const prospectLogs = []; // Daily activity tracker for prospects
 
 const quickKeyboard = {
   inline_keyboard: [
@@ -227,6 +230,9 @@ const quickKeyboard = {
     ],
     [
       { text: "🌐 Ver Demos Interactivas", callback_data: "opcion_3" }
+    ],
+    [
+      { text: "📞 Hablar con Alejandro (+52 771 233 9238)", url: "https://wa.me/527712339238?text=Hola%20Alejandro,%20estoy%20viendo%20el%20bot%20de%20Telegram%20y%20me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n" }
     ]
   ]
 };
@@ -234,7 +240,20 @@ const quickKeyboard = {
 async function notifyOwner(chatId, firstName, username, userText) {
   if (chatId.toString() === ADMIN_CHAT_ID) return; // Don't notify owner about their own messages
 
-  const alertText = `🚨 *¡NUEVO PROSPECTO CHAT E INICIÓ INTERACCIÓN!* 🚨\n\n👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n💬 *Mensaje Enviado:* "${userText}"\n🆔 *Chat ID Cliente:* \`${chatId}\`\n📱 *Notificado al Número:* ${OWNER_PHONE}\n\n⚡ *Intervención:* Si deseas intervenir directamente en la conversación, puedes responder a este Chat ID o contactar al prospecto.`;
+  // Track prospect in daily log
+  prospectLogs.push({
+    chatId,
+    name: firstName || 'Prospecto',
+    username: username || 'Sin username',
+    text: userText,
+    timestamp: new Date().toLocaleTimeString('es-MX')
+  });
+  if (prospectLogs.length > 100) prospectLogs.shift();
+
+  const isPaused = pausedChats[chatId] && pausedChats[chatId] > Date.now();
+  const statusTag = isPaused ? '⏸️ *[MODO PAUSA ACTIVO]*' : '🤖 *[RESPUESTA AUTOMÁTICA ENVIADA]*';
+
+  const alertText = `🚨 *¡NUEVO MENSAJE DE PROSPECTO EN TELEGRAM!* 🚨\n\n👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n💬 *Mensaje:* "${userText}"\n🆔 *Chat ID:* \`${chatId}\`\n📱 *Notificado a:* ${OWNER_PHONE}\n${statusTag}\n\n⚙️ *Comandos de Control:* \`/pausa ${chatId}\` (Pausa 30 min) | \`/reanudar ${chatId}\``;
 
   try {
     await callTelegram('sendMessage', {
@@ -244,15 +263,6 @@ async function notifyOwner(chatId, firstName, username, userText) {
     });
   } catch (e) {
     console.error('[OWNER NOTIFICATION ERROR]', e);
-  }
-
-  // Also call CallMeBot WhatsApp Notification Service if reachable
-  try {
-    const encodedMsg = encodeURIComponent(`🚨 NUEVO PROSPECTO EN TELEGRAM\nCliente: ${firstName || 'Prospecto'}\nMensaje: ${userText}\nChatId: ${chatId}`);
-    const whatsappUrl = `https://api.callmebot.com/whatsapp.php?phone=+527712339238&text=${encodedMsg}&apikey=123456`;
-    https.get(whatsappUrl, () => {}).on('error', () => {});
-  } catch (e) {
-    // Silent fail if WhatsApp key not activated
   }
 }
 
@@ -269,6 +279,13 @@ async function handleWebhookRequest(req, res) {
       const username = cb.from ? cb.from.username : '';
 
       await callTelegram('answerCallbackQuery', { callback_query_id: cb.id });
+
+      // Check if paused
+      if (pausedChats[chatId] && pausedChats[chatId] > Date.now()) {
+        await notifyOwner(chatId, firstName, username, `[Clic en Botón: ${data} (Pausado)]`);
+        return res.status(200).json({ ok: true });
+      }
+
       await notifyOwner(chatId, firstName, username, `[Clic en Botón: ${data}]`);
 
       let textChoice = '1';
@@ -293,6 +310,60 @@ async function handleWebhookRequest(req, res) {
       const username = update.message.from ? update.message.from.username : '';
       let userText = update.message.text || '';
 
+      // Owner Command Handling (Pausa, Reanudar, Reporte)
+      if (chatId.toString() === ADMIN_CHAT_ID) {
+        const cmdLower = userText.toLowerCase().trim();
+
+        if (cmdLower.startsWith('/pausa') || cmdLower.startsWith('/intervenir')) {
+          const parts = userText.split(/\s+/);
+          const targetId = parts[1] || (prospectLogs.length > 0 ? prospectLogs[prospectLogs.length - 1].chatId : null);
+
+          if (targetId) {
+            pausedChats[targetId] = Date.now() + 30 * 60 * 1000; // 30 mins
+            await callTelegram('sendMessage', {
+              chat_id: ADMIN_CHAT_ID,
+              text: `⏸️ *Bot Pausado durante 30 minutos* para el Chat ID \`${targetId}\`.\n\nAhora puedes platicar directamente con el cliente sin intervención del bot. Usa \`/reanudar ${targetId}\` para reactivarlo.`,
+              parse_mode: 'Markdown'
+            });
+          } else {
+            await callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text: 'Sintaxis: `/pausa <chatId>`', parse_mode: 'Markdown' });
+          }
+          return res.status(200).json({ ok: true });
+        }
+
+        if (cmdLower.startsWith('/reanudar')) {
+          const parts = userText.split(/\s+/);
+          const targetId = parts[1] || (prospectLogs.length > 0 ? prospectLogs[prospectLogs.length - 1].chatId : null);
+
+          if (targetId) {
+            delete pausedChats[targetId];
+            await callTelegram('sendMessage', {
+              chat_id: ADMIN_CHAT_ID,
+              text: `▶️ *Bot Reactivado* para el Chat ID \`${targetId}\`. El bot volverá a responder automáticamente.`,
+              parse_mode: 'Markdown'
+            });
+          }
+          return res.status(200).json({ ok: true });
+        }
+
+        if (cmdLower === '/reporte' || cmdLower === '/resumen') {
+          const uniqueProspects = new Set(prospectLogs.map(p => p.chatId)).size;
+          let reportMsg = `📊 *REPORTE DIARIO DE PROSPECTOS TELEGRAM* 📊\n📱 *Teléfono:* ${OWNER_PHONE}\n\n• *Total de Interacciones Hoy:* ${prospectLogs.length}\n• *Prospectos Únicos:* ${uniqueProspects}\n\n*Últimos Prospectos Atendidos:*\n`;
+
+          prospectLogs.slice(-10).reverse().forEach((p, idx) => {
+            reportMsg += `${idx + 1}. *${p.name}* (@${p.username}) - ${p.timestamp}\n   💬 "${p.text.substring(0, 40)}..." (ID: \`${p.chatId}\`)\n`;
+          });
+
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: reportMsg,
+            parse_mode: 'Markdown'
+          });
+          return res.status(200).json({ ok: true });
+        }
+      }
+
+      // Voice message text notation
       if (update.message.voice || update.message.audio) {
         const durationSec = (update.message.voice || update.message.audio).duration || 0;
         userText = `[Nota de voz de ${durationSec}s] Hola, le envié una nota de voz de ${durationSec} segundos sobre mi negocio.`;
@@ -302,7 +373,13 @@ async function handleWebhookRequest(req, res) {
         // 1. Notify Owner instantly at +52 771 233 9238 / Admin Chat ID 8337803949
         await notifyOwner(chatId, firstName, username, userText);
 
-        // 2. Generate Intelligent Reply with Inline Buttons
+        // 2. Check if Chat ID is currently paused for human takeover
+        if (pausedChats[chatId] && pausedChats[chatId] > Date.now()) {
+          console.log(`[PAUSED] Chat ${chatId} is currently taken over by owner. Skipping auto-reply.`);
+          return res.status(200).json({ ok: true });
+        }
+
+        // 3. Generate Intelligent Reply with Inline Buttons
         await callTelegram('sendChatAction', { chat_id: chatId, action: 'typing' });
         const reply = generateHumanReply(chatId, firstName, userText);
 
