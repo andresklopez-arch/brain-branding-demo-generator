@@ -1012,18 +1012,84 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 18. Google Analytics Event for FAB Click
+  // 18. Contact Channels Modal & FAB Toggle
   const fab = document.getElementById('whatsapp-fab');
+  const contactModal = document.getElementById('contact-channels-modal');
+  const contactBackdrop = document.getElementById('contact-modal-backdrop');
+  const contactCloseBtn = document.getElementById('contact-modal-close-btn');
+  const nativeShareBtn = document.getElementById('contact-native-share-btn');
+
+  const openContactModal = () => {
+    if (contactModal) contactModal.classList.add('active');
+    if (typeof gtag === 'function') {
+      gtag('event', 'click_whatsapp_fab', {
+        event_category: 'engagement',
+        event_label: 'Contact Modal Opened'
+      });
+    }
+  };
+
+  const closeContactModal = () => {
+    if (contactModal) contactModal.classList.remove('active');
+  };
+
   if (fab) {
-    fab.addEventListener('click', () => {
-      if (typeof gtag === 'function') {
-        gtag('event', 'click_whatsapp_fab', {
-          event_category: 'engagement',
-          event_label: 'WhatsApp FAB'
-        });
+    fab.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (contactModal && contactModal.classList.contains('active')) {
+        closeContactModal();
+      } else {
+        openContactModal();
       }
     });
   }
+
+  if (contactBackdrop) contactBackdrop.addEventListener('click', closeContactModal);
+  if (contactCloseBtn) contactCloseBtn.addEventListener('click', closeContactModal);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && contactModal && contactModal.classList.contains('active')) {
+      closeContactModal();
+    }
+  });
+
+  // Handle native Web Share API
+  if (nativeShareBtn) {
+    nativeShareBtn.addEventListener('click', async () => {
+      const shareData = {
+        title: 'Brain Branding',
+        text: 'Hola Brain Branding, quiero solicitar asesoría para un proyecto a la medida.',
+        url: 'https://brainbranding.com.mx'
+      };
+
+      if (navigator.share) {
+        try {
+          await navigator.share(shareData);
+          closeContactModal();
+        } catch (err) {
+          // Fallback if share cancelled
+        }
+      } else {
+        // Fallback for desktop/unsupported: open default whatsapp
+        window.open(`https://api.whatsapp.com/send?phone=527712339238&text=${encodeURIComponent(shareData.text)}`, '_blank');
+        closeContactModal();
+      }
+    });
+  }
+
+  // Close modal when tapping any contact channel item link
+  document.querySelectorAll('.contact-channel-item[href]').forEach(link => {
+    link.addEventListener('click', () => {
+      const channel = link.getAttribute('data-channel');
+      if (typeof gtag === 'function') {
+        gtag('event', 'click_contact_channel', {
+          event_category: 'engagement',
+          event_label: channel || 'Contact Channel'
+        });
+      }
+      setTimeout(closeContactModal, 200);
+    });
+  });
 
   // 20. Scroll Spy for Icon Nav links
   const sections = document.querySelectorAll('section');
