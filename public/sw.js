@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bb-cache-v27';
+const CACHE_NAME = 'bb-cache-v28';
 const ASSETS = [
   '/',
   '/index.html',
