@@ -137,9 +137,70 @@
       0% { opacity: 0; transform: translateX(-8px); }
       100% { opacity: 1; transform: translateX(0); }
     }
+    /* NEUROMARKETING HEADER LOGO TYPOGRAPHY & COLOR HARMONY */
+    header .logo-area {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      gap: 10px;
+    }
+    header .logo-area img {
+      height: 38px !important;
+      object-fit: contain;
+      filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.45));
+      transition: filter 0.3s ease, transform 0.3s ease;
+    }
+    header .logo-area:hover img {
+      transform: scale(1.06) rotate(3deg);
+      filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.75));
+    }
     header .logo-area .logo-text {
       opacity: 0;
       animation: brand-phrase-entrance 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
+      font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif !important;
+      font-size: 13.5px !important;
+      line-height: 1.16 !important;
+      font-weight: 800 !important;
+      letter-spacing: -0.2px !important;
+      user-select: none;
+    }
+    header .logo-text .line-1 {
+      display: block;
+      color: #ffffff;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+    header .logo-text .line-2 {
+      display: block;
+      color: #f1f5f9;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+    header .logo-text .highlight-marcas {
+      background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 900;
+      filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.55));
+      transition: filter 0.3s ease;
+    }
+    header .logo-text .highlight-mentes {
+      background: linear-gradient(135deg, #00e5ff 0%, #a855f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 900;
+      filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.55));
+      transition: filter 0.3s ease;
+    }
+    header .logo-area:hover .highlight-marcas {
+      filter: drop-shadow(0 0 14px rgba(255, 215, 0, 0.9));
+    }
+    header .logo-area:hover .highlight-mentes {
+      filter: drop-shadow(0 0 14px rgba(0, 229, 255, 0.9));
+    }
+
+    body.light-theme header .logo-text .line-1,
+    body.light-theme header .logo-text .line-2 {
+      color: #0f172a !important;
+      text-shadow: none;
     }
     @keyframes theme-toggle-entrance {
       0% { opacity: 0; transform: scale(0.8) rotate(-45deg); }
@@ -2813,9 +2874,12 @@
 
   <!-- NAVIGATION HEADER -->
   <header style="justify-content: space-between !important;">
-    <a href="#inicio" class="logo-area">
+    <a href="#inicio" class="logo-area" aria-label="Brain Branding - Empoderando Marcas, Reprogramando Mentes">
       <img src="/favicon.png" alt="Logo Brain Branding" style="height: 38px; object-fit: contain; margin-right: 10px;">
-      <div class="logo-text" style="line-height: 1.2; font-size: 14.5px; font-weight: 800; color: var(--text-main) !important; letter-spacing: -0.3px;">Empoderando <span>Marcas</span><br>Reprogramando <span>Mentes</span></div>
+      <div class="logo-text">
+        <span class="line-1">Empoderando <span class="highlight-marcas">Marcas</span></span>
+        <span class="line-2">Reprogramando <span class="highlight-mentes">Mentes</span></span>
+      </div>
     </a>
     <button id="theme-toggle-btn" class="header-btn custom-tooltip" data-tooltip="Cambiar Modo" style="padding: 0; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; font-size: 15px; cursor: pointer; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.02); color: var(--text-main);">🌓</button>
     <div style="position: absolute; bottom: 0; left: 25px; right: 25px; height: 2px; background: rgba(255, 255, 255, 0.03); border-radius: 1px;">
@@ -3801,9 +3865,12 @@
   <footer>
     <div class="footer-grid">
       <div class="footer-left">
-        <a href="#inicio" class="logo-area">
-          <img src="/favicon.png" alt="Logo" style="height: 30px; object-fit: contain; margin-right: 8px;">
-          <div class="logo-text" style="font-size: 14px; line-height: 1.1;">Empoderando <span>Marcas</span><br><span style="font-size: 9px; font-weight: 500; color: var(--text-muted); -webkit-text-fill-color: initial; background: none; letter-spacing: 0.5px; display: block; margin-top: 1px;">Reprogramando Mentes</span></div>
+        <a href="#inicio" class="logo-area" aria-label="Brain Branding">
+          <img src="/favicon.png" alt="Logo" style="height: 32px; object-fit: contain; margin-right: 8px;">
+          <div class="logo-text" style="font-size: 13.5px !important;">
+            <span class="line-1">Empoderando <span class="highlight-marcas">Marcas</span></span>
+            <span class="line-2">Reprogramando <span class="highlight-mentes">Mentes</span></span>
+          </div>
         </a>
         <p>© 2026 Empoderando Marcas, Reprogramando Mentes. Todos los derechos reservados.</p>
       </div>
