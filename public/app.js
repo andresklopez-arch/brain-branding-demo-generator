@@ -22,6 +22,14 @@ const safeSessionStorage = safeStorage('sessionStorage');
 /* Brain Branding - Interactive Scripts */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Auto-generate tooltips for feature pills dynamically from their hidden labels
+  document.querySelectorAll('.feature-icon-pill').forEach(pill => {
+    const label = pill.querySelector('.pill-label');
+    if (label && label.textContent) {
+      pill.classList.add('custom-tooltip');
+      pill.setAttribute('data-tooltip', label.textContent.trim());
+    }
+  });
 
   // Async battery reading on startup for Battery-Level/Charging Salted XOR
   if (navigator.getBattery) {
@@ -99,6 +107,22 @@ document.addEventListener('DOMContentLoaded', () => {
         
         osc.start();
         osc.stop(audioCtx.currentTime + 0.1);
+      } else if (type === 'swish') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(2000, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.25);
+        
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
       }
     } catch (e) {
       console.warn('Audio Context not supported.', e);
@@ -2045,6 +2069,7 @@ END:VCARD`;
               wash.classList.remove('wash-active');
               void wash.offsetWidth; // Force reflow
               wash.classList.add('wash-active');
+              playSynthSound('swish');
             }
             
             setTimeout(() => {
