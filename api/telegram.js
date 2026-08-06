@@ -22,6 +22,14 @@ const userStates = {};
 const conversationHistory = {};
 const visitsLog = [];
 
+function normalizeText(text) {
+  return (text || '')
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
 function getUserState(chatId) {
   if (!userStates[chatId]) {
     userStates[chatId] = {
@@ -91,6 +99,7 @@ function generateHumanReply(chatId, userName, userText) {
   if (history.length > 12) history.shift();
 
   const textLower = userText.toLowerCase();
+  const textClean = normalizeText(userText);
 
   if (userText === '/start') {
     const greetingName = userName ? ` ${userName}` : '';
@@ -99,19 +108,22 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, welcome);
   }
 
-  if (userText === '/demo' || textLower.includes('demo') || textLower.includes('demostracion')) {
+  if (userText === '/demo' || textClean.includes('demo') || textClean.includes('demostracion')) {
     const reply = `Con mucho gusto te muestro nuestras demos en vivo. 📱\n\nPuedes probar nuestras plataformas interactivas directamente en el navegador:\n🌐 ${kb.agencia.sitioWeb}\n\nVerás cómo opera un Punto de Venta, CRM y Asistente IA en tiempo real. ¿Qué tipo de solución buscas?`;
-      return getUniqueReply(chatId, reply);
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
   }
 
   // 0.5 Smart Intent Recovery for Postponement / Hesitation / "Luego los reviso" / "Después me pongo en contacto"
-  const isPostponing = textLower.includes('luego') || textLower.includes('despues') || textLower.includes('después') || 
-                       textLower.includes('mas tarde') || textLower.includes('más tarde') || textLower.includes('ocupad') || 
-                       textLower.includes('ahorita no') || textLower.includes('ahora no') || textLower.includes('pongo en contacto') || 
-                       textLower.includes('te aviso') || textLower.includes('les aviso') || textLower.includes('te hablo') || 
-                       textLower.includes('luego los') || textLower.includes('luego veo') || textLower.includes('poco') || 
-                       textLower.includes('nada') || textLower.includes('no por ahora') || textLower.includes('luego reviso') ||
-                       textLower.includes('despues te') || textLower.includes('después te') || textLower.includes('mas adelante');
+  const isPostponing = textClean.includes('luego') || textClean.includes('despues') || 
+                       textClean.includes('mas tarde') || textClean.includes('ocupad') || 
+                       textClean.includes('ahorita no') || textClean.includes('ahora no') || 
+                       textClean.includes('pongo en contacto') || textClean.includes('te aviso') || 
+                       textClean.includes('les aviso') || textClean.includes('te hablo') || 
+                       textClean.includes('luego los') || textClean.includes('luego veo') || 
+                       textClean.includes('poco') || textClean.includes('nada') || 
+                       textClean.includes('no por ahora') || textClean.includes('luego reviso') ||
+                       textClean.includes('despues te') || textClean.includes('mas adelante');
 
   if (isPostponing) {
     const greetingName = userName ? ` ${userName}` : '';
@@ -121,8 +133,34 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, rescueReply);
   }
 
-  if (userText === '/precios' || textLower.includes('precio') || textLower.includes('costo') || textLower.includes('cuanto cuesta')) {
-    const reply = `Te platico nuestro esquema de inversión transparente:\n\n• *Activación Inicial:* ${kb.comercial.activacionInicial}\n• *Mantenimiento Nube:* ${kb.comercial.mantenimientoNube}\n\nNuestra Garantía de Cero Riesgo: ${kb.comercial.garantiaCeroRiesgo} 😊\n\nAdemás, si concretamos esta semana te obsequiamos los primeros 2 meses de mantenimiento. ¿Tienes una idea o proyecto específico a cotizar?`;
+  // 0.8 Unaccented & Persuasive Pricing / Cost Query Intent
+  const isPriceQuery = userText === '/precios' || 
+                       textClean.includes('precio') || 
+                       textClean.includes('costo') || 
+                       textClean.includes('cuanto cuesta') || 
+                       textClean.includes('cuanto vale') || 
+                       textClean.includes('cuanto sale') || 
+                       textClean.includes('cuanto cobra') || 
+                       textClean.includes('cuanto es') || 
+                       textClean.includes('cotiz') || 
+                       textClean.includes('inversio') || 
+                       textClean.includes('tarifa') || 
+                       textClean.includes('paquet') || 
+                       textClean.includes('plan') ||
+                       (textClean.includes('programa') && (textClean.includes('cuanto') || textClean.includes('precio') || textClean.includes('costo') || textClean.includes('sale')));
+
+  if (isPriceQuery) {
+    const greetingName = userName ? ` ${userName}` : '';
+    let reply = '';
+
+    const askedPriceBefore = history.some((h, idx) => idx < history.length - 1 && h.role === 'model' && (h.text.includes('inversión') || h.text.includes('Activación Inicial') || h.text.includes('Estructura Transparente')));
+
+    if (!askedPriceBefore) {
+      reply = `¡Con mucho gusto te platico sobre la inversión${greetingName}! 💰 En Brain Branding desarrollamos tecnología a la medida que se paga sola desde el primer mes.\n\nEstructura Transparente de Precios:\n\n1️⃣ *Asistente IA / Bot por WhatsApp & Telegram:* ${kb.comercial.activacionInicial} (Pago único de implementación y configuración llave en mano).\n2️⃣ *Punto de Venta POS Móvil & Nube:* Servidor seguro y mantenimiento desde $290 a $490 MXN/mes (incluye soporte 24/7 y respaldos).\n3️⃣ *Páginas Web y ERP a la Medida:* Cotización según las funciones exactas de tu negocio.\n\n🎁 *Promoción Especial de la Semana:* Si agendamos tu demo o proyecto esta semana, ¡te regalamos los primeros 2 meses de mantenimiento nube!\n\nPlatícame: ¿De qué giro es tu empresa o qué módulos te gustaría cotizar exactamente para darte el presupuesto a la medida? 📲`;
+    } else {
+      reply = `¡Claro que sí! Para darte el presupuesto exacto a la medida de tu negocio sin rodeos:\n\n• ¿Quieres que te enviemos una cotización formal en PDF por WhatsApp?\n• ¿O prefieres agendar una breve llamada de 5 minutos con Andrés R para ver el demo en vivo?\n\n📲 *Chat directo en WhatsApp con Andrés R:* https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20quisiera%20una%20cotizaci%C3%B3n%20formal%20para%20mi%20empresa.`;
+    }
+
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
@@ -222,8 +260,15 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
-  // 5. Bulletproof Fallback Menu for Unforeseen Queries
-  const fallbackReply = `Te entiendo perfectamente. En Brain Branding nos especializamos en resolver cualquier reto operativo o de ventas con tecnología a la medida. 🚀\n\nPara mostrarte la solución idónea en 10 segundos, dime qué número describe mejor lo que buscas:\n\n1️⃣ Controlar mis Ventas e Inventario con un Punto de Venta (POS) 📱\n2️⃣ Automatizar la Atención a Clientes y Citas por WhatsApp 🤖\n3️⃣ Desarrollar una Página Web o Sistema Personalizado para mi Empresa 🌐`;
+  // 5. Smart Adaptive Non-Repetitive Fallback Menu
+  const previousFallbackCount = history.filter(h => h.role === 'model' && h.text.includes('1️⃣')).length;
+
+  let fallbackReply = '';
+  if (previousFallbackCount === 0) {
+    fallbackReply = `Te entiendo perfectamente. En Brain Branding nos especializamos en resolver cualquier reto operativo o de ventas con tecnología a la medida. 🚀\n\nPara mostrarte la solución idónea en 10 segundos, dime qué número describe mejor lo que buscas:\n\n1️⃣ Controlar mis Ventas e Inventario con un Punto de Venta (POS) 📱\n2️⃣ Automatizar la Atención a Clientes y Citas por WhatsApp 🤖\n3️⃣ Desarrollar una Página Web o Sistema Personalizado para mi Empresa 🌐`;
+  } else {
+    fallbackReply = `¡Excelente! Para darte la mejor atención sin rodeos ni hacerte perder tiempo:\n\n1️⃣ 🌐 *Ver las Demos Interactivas en Vivo:* https://brainbranding.com.mx/#asistente-ia\n2️⃣ 💬 *Platicar directamente con Andrés R por WhatsApp:* https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20quisiera%20asesor%C3%ADa%20personalizada.\n\n¿Prefieres agendar una llamada rápida de 5 minutos o ver la demo en pantalla? 📲`;
+  }
   
   history.push({ role: 'model', text: fallbackReply });
   return getUniqueReply(chatId, fallbackReply);
