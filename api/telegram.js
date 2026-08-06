@@ -288,7 +288,7 @@ async function notifyOwner(chatId, firstName, username, userText) {
 
   const alertHeader = isCitaClick ? '🚨 *¡PROSPECTO SOLICITÓ AGENDAR CITA EN WHATSAPP!* 🚨' : '🚨 *¡NUEVO MENSAJE DE PROSPECTO EN TELEGRAM!* 🚨';
 
-  const alertText = `${alertHeader}\n\n${tempTag}\n👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n💬 *Mensaje:* "${userText}"\n🆔 *Chat ID:* \`${chatId}\`\n📱 *Notificado a:* ${OWNER_PHONE}\n${statusTag}\n\n⚙️ *Comandos:* \`/pausa ${chatId}\` | \`/plantilla\` | \`/exportar\``;
+  const alertText = `${alertHeader}\n\n${tempTag}\n👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n💬 *Mensaje:* "${userText}"\n🆔 *Chat ID:* \`${chatId}\`\n📱 *Notificado a:* ${OWNER_PHONE}\n${statusTag}\n\n⚙️ *Comandos Rápido:* \`/pausa ${chatId}\` | \`/responder ${chatId} <mensaje>\` | \`/plantilla\`\n💡 *Tip de Intervención:* Responde (*Reply*) directamente a este mensaje para platicar con el cliente.`;
 
   try {
     await callTelegram('sendMessage', {
@@ -345,9 +345,59 @@ async function handleWebhookRequest(req, res) {
       const username = update.message.from ? update.message.from.username : '';
       let userText = update.message.text || '';
 
-      // STRICT ADMIN SECURITY FILTER: Only Chat ID 8337803949 can execute admin commands
+      // STRICT ADMIN SECURITY FILTER: Only Chat ID 8337803949 can execute admin commands & intervene
       if (chatId.toString() === ADMIN_CHAT_ID) {
         const cmdLower = userText.toLowerCase().trim();
+
+        // Detect if Andrés R replied directly to a lead notification message on Telegram
+        let replyTargetId = null;
+        if (update.message.reply_to_message && update.message.reply_to_message.text) {
+          const match = update.message.reply_to_message.text.match(/Chat ID:\s*`?(\d+)`?/i) || update.message.reply_to_message.text.match(/(\d{8,12})/);
+          if (match) replyTargetId = match[1];
+        }
+
+        // Handle /responder <chatId> <mensaje> or Telegram Native Message Reply
+        if (cmdLower.startsWith('/responder') || cmdLower.startsWith('/decir') || cmdLower.startsWith('/enviar') || replyTargetId) {
+          let targetId = replyTargetId;
+          let msgToSend = userText;
+
+          if (cmdLower.startsWith('/responder') || cmdLower.startsWith('/decir') || cmdLower.startsWith('/enviar')) {
+            const parts = userText.split(/\s+/);
+            if (parts.length >= 3 && /^\d+$/.test(parts[1])) {
+              targetId = parts[1];
+              msgToSend = parts.slice(2).join(' ');
+            } else if (targetId) {
+              msgToSend = parts.slice(1).join(' ');
+            }
+          }
+
+          if (targetId && msgToSend && !msgToSend.startsWith('/')) {
+            // 1. Silencio automático del bot por 2 horas para este cliente
+            pausedChats[targetId] = Date.now() + 2 * 60 * 60 * 1000;
+
+            try {
+              // 2. Entregar el mensaje del dueño directamente al prospecto
+              await callTelegram('sendMessage', {
+                chat_id: targetId,
+                text: msgToSend
+              });
+
+              // 3. Confirmar al dueño en Telegram
+              await callTelegram('sendMessage', {
+                chat_id: ADMIN_CHAT_ID,
+                text: `👤 *MENSAJE HUMANO ENTREGADO EN VIVO* (Chat ID \`${targetId}\`):\n\n💬 "${msgToSend}"\n\n⏸️ *El bot se ha silenciado automáticamente por 2 horas* para que continúes la atención humana. Usa \`/reanudar ${targetId}\` si deseas reactivar el bot.`,
+                parse_mode: 'Markdown'
+              });
+            } catch(err) {
+              await callTelegram('sendMessage', {
+                chat_id: ADMIN_CHAT_ID,
+                text: `❌ *Error al entregar mensaje:* ${err.message}`,
+                parse_mode: 'Markdown'
+              });
+            }
+            return res.status(200).json({ ok: true });
+          }
+        }
 
         if (cmdLower.startsWith('/pausa') || cmdLower.startsWith('/intervenir')) {
           const parts = userText.split(/\s+/);
