@@ -441,14 +441,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Haptic Feedback for buttons & cards on mobile
-  const triggerHaptic = () => {
+  const triggerMobileVibration = () => {
     if (navigator.vibrate) {
       try { navigator.vibrate(15); } catch(e) {}
     }
   };
   document.addEventListener('click', (e) => {
     if (e.target.closest('button, .contact-channel-card, .feature-icon-pill, .switcher-btn, .erp-tab-btn, .btn, .faq-item')) {
-      triggerHaptic();
+      triggerMobileVibration();
     }
   });
 
@@ -456,7 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (contactForm) {
     contactForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      triggerHaptic();
+      triggerMobileVibration();
       
       // Honeypot anti-spam verification
       const honeypot = document.getElementById('contact-honeypot');

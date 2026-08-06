@@ -57,6 +57,14 @@
           });
       } catch(e) {}
     })();
+
+    // Immediate inline trigger for ?admin=1 or #admin
+    if (window.location.search.includes('admin=1') || window.location.search.includes('login=1') || window.location.hash === '#admin') {
+      window.addEventListener('load', function() {
+        const modal = document.getElementById('admin-login-modal');
+        if (modal) modal.style.display = 'flex';
+      });
+    }
   </script>
   <!-- Meta Pixel Code -->
   <script>
