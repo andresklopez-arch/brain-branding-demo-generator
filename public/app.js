@@ -4473,9 +4473,7 @@ END:VCARD`;
     if (kbEditor) kbEditor.value = savedKB;
     window.customKnowledgeBaseText = savedKB;
 
-    // Double-click event on Brain Logo to open password login modal
-    logoArea.addEventListener('dblclick', (e) => {
-      e.preventDefault();
+    const openLoginModal = () => {
       loginModal.style.display = 'flex';
       if (passInput) {
         passInput.value = '';
@@ -4483,7 +4481,105 @@ END:VCARD`;
         if (loginError) loginError.style.display = 'none';
         setTimeout(() => passInput.focus(), 150);
       }
+    };
+
+    // 1. Double-click event on Brain Logo to open password login modal
+    logoArea.addEventListener('dblclick', (e) => {
+      e.preventDefault();
+      openLoginModal();
     });
+
+    // 2. Tap counter for mobile devices (3 quick taps on logo area)
+    let logoTapCount = 0;
+    let logoTapTimer = null;
+    logoArea.addEventListener('click', (e) => {
+      logoTapCount++;
+      if (logoTapTimer) clearTimeout(logoTapTimer);
+      if (logoTapCount >= 3) {
+        logoTapCount = 0;
+        e.preventDefault();
+        openLoginModal();
+      } else {
+        logoTapTimer = setTimeout(() => { logoTapCount = 0; }, 600);
+      }
+    });
+
+    // 3. Secret link in URL hash or query: ?admin=1 or #admin
+    if (window.location.search.includes('admin=1') || window.location.search.includes('login=1') || window.location.hash === '#admin') {
+      setTimeout(openLoginModal, 300);
+    }
+
+    // Function to render Analytics Dashboard Table & KPI Badges
+    const renderAdminAnalytics = () => {
+      try {
+        const rawLogs = localStorage.getItem('brain_branding_analytics_log');
+        const visits = rawLogs ? JSON.parse(rawLogs) : [];
+
+        const totalVisitsEl = document.getElementById('stat-total-visits');
+        const topCitiesEl = document.getElementById('stat-top-cities-count');
+        const googleAdsEl = document.getElementById('stat-google-ads-pct');
+        const avgScrollEl = document.getElementById('stat-avg-scroll');
+        const tableBody = document.getElementById('admin-visits-table-body');
+
+        if (totalVisitsEl) totalVisitsEl.textContent = visits.length;
+
+        if (visits.length > 0) {
+          const citiesSet = new Set(visits.map(v => v.city).filter(Boolean));
+          if (topCitiesEl) topCitiesEl.textContent = citiesSet.size || 1;
+
+          const gAdsCount = visits.filter(v => v.source && v.source.includes('Google Ads')).length;
+          const gAdsPct = Math.round((gAdsCount / visits.length) * 100);
+          if (googleAdsEl) googleAdsEl.textContent = `${gAdsPct}%`;
+
+          const avgScroll = Math.round(visits.reduce((acc, v) => acc + (v.scroll || 0), 0) / visits.length);
+          if (avgScrollEl) avgScrollEl.textContent = `${avgScroll}%`;
+
+          if (tableBody) {
+            tableBody.innerHTML = visits.slice(-25).reverse().map(v => {
+              const clicksStr = (v.clicks && v.clicks.length > 0) ? v.clicks.join(', ') : 'Lectura general';
+              return `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 10px 8px; color: var(--text-muted);">${v.time || 'Reciente'}</td>
+                <td style="padding: 10px 8px; font-weight: 700; color: #fff;">${v.city || 'México'}, ${v.region || ''} ${v.flag || '🇲🇽'}</td>
+                <td style="padding: 10px 8px;"><span style="background: rgba(0,229,255,0.1); color: #00e5ff; padding: 2px 8px; border-radius: 6px; font-size: 11px;">${v.source || 'Directo'}</span></td>
+                <td style="padding: 10px 8px; color: #10b981; font-weight: 600;">${v.duration || 'N/A'}</td>
+                <td style="padding: 10px 8px; color: #e2e8f0; max-width: 220px; word-break: break-word;">${clicksStr}</td>
+              </tr>`;
+            }).join('');
+          }
+        } else {
+          if (topCitiesEl) topCitiesEl.textContent = '0';
+          if (googleAdsEl) googleAdsEl.textContent = '0%';
+          if (avgScrollEl) avgScrollEl.textContent = '0%';
+          if (tableBody) tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">No hay visitas registradas aún. Al recibir visitas se acumularán automáticamente aquí.</td></tr>`;
+        }
+      } catch(err) { console.error('Error rendering analytics dashboard', err); }
+    };
+
+    // Export Stats Button Handler
+    const exportBtn = document.getElementById('admin-export-stats-btn');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        const rawLogs = localStorage.getItem('brain_branding_analytics_log') || '[]';
+        const blob = new Blob([rawLogs], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `estadisticas_visitas_brain_branding_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    // Clear Stats Button Handler
+    const clearBtn = document.getElementById('admin-clear-stats-btn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (confirm('¿Deseas vaciar el historial de estadísticas guardado localmente?')) {
+          localStorage.removeItem('brain_branding_analytics_log');
+          renderAdminAnalytics();
+        }
+      });
+    }
 
     // Handle Login Form Submit
     if (loginForm) {
@@ -4498,6 +4594,7 @@ END:VCARD`;
           if (kbEditor) {
             kbEditor.value = localStorage.getItem('brain_branding_kb_features') || DEFAULT_BUSINESS_FEATURES;
           }
+          renderAdminAnalytics();
         } else {
           if (loginError) loginError.style.display = 'block';
           if (passInput) {
@@ -4688,6 +4785,28 @@ END:VCARD`;
       `🔥 *Sección Más Atractiva:* ${mostAttractive}\n\n` +
       `🖱️ *Interacciones y Clics:* \n${clicksText}\n\n` +
       `⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX')}`;
+
+    // Save to LocalStorage analytics log
+    try {
+      const rawLogs = localStorage.getItem('brain_branding_analytics_log');
+      const logs = rawLogs ? JSON.parse(rawLogs) : [];
+      logs.push({
+        time: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+        city,
+        region,
+        country,
+        flag,
+        source,
+        device,
+        isp,
+        duration: durationStr,
+        scroll: maxScroll,
+        clicks: clickedElements,
+        timestamp: new Date().toISOString()
+      });
+      if (logs.length > 100) logs.shift(); // Keep last 100 sessions
+      localStorage.setItem('brain_branding_analytics_log', JSON.stringify(logs));
+    } catch(e) {}
 
     // Send via navigator.sendBeacon or fetch
     const tgUrl = `https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage?chat_id=8337803949&text=${encodeURIComponent(textMsg)}&parse_mode=Markdown`;
