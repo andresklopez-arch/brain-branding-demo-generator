@@ -101,8 +101,24 @@ function generateHumanReply(chatId, userName, userText) {
 
   if (userText === '/demo' || textLower.includes('demo') || textLower.includes('demostracion')) {
     const reply = `Con mucho gusto te muestro nuestras demos en vivo. 📱\n\nPuedes probar nuestras plataformas interactivas directamente en el navegador:\n🌐 ${kb.agencia.sitioWeb}\n\nVerás cómo opera un Punto de Venta, CRM y Asistente IA en tiempo real. ¿Qué tipo de solución buscas?`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
+      return getUniqueReply(chatId, reply);
+  }
+
+  // 0.5 Smart Intent Recovery for Postponement / Hesitation / "Luego los reviso" / "Después me pongo en contacto"
+  const isPostponing = textLower.includes('luego') || textLower.includes('despues') || textLower.includes('después') || 
+                       textLower.includes('mas tarde') || textLower.includes('más tarde') || textLower.includes('ocupad') || 
+                       textLower.includes('ahorita no') || textLower.includes('ahora no') || textLower.includes('pongo en contacto') || 
+                       textLower.includes('te aviso') || textLower.includes('les aviso') || textLower.includes('te hablo') || 
+                       textLower.includes('luego los') || textLower.includes('luego veo') || textLower.includes('poco') || 
+                       textLower.includes('nada') || textLower.includes('no por ahora') || textLower.includes('luego reviso') ||
+                       textLower.includes('despues te') || textLower.includes('después te') || textLower.includes('mas adelante');
+
+  if (isPostponing) {
+    const greetingName = userName ? ` ${userName}` : '';
+    const rescueReply = `¡Entiendo perfectamente${greetingName}! 🙌 Sé que el tiempo es súper valioso en el día a día.\n\nPara que no tengas que buscar entre mensajes después o perder esta oportunidad, déjame apoyarte sin ningún compromiso:\n\n1️⃣ 📅 *Agendar una breve llamada de 5 minutos* con Andrés R en el día y horario que tú elijas con calma.\n2️⃣ 💬 *Enviarte una propuesta/resumen rápido por WhatsApp* para que la leas en 30 segundos cuando te desocupes.\n3️⃣ ❓ *Aclararte una duda puntual en este momento* antes de que te retires.\n\n¿Cuál de estas 3 opciones te acomoda mejor o qué día de la semana prefieres que te enviemos un recordatorio? ☕`;
+    
+    history.push({ role: 'model', text: rescueReply });
+    return getUniqueReply(chatId, rescueReply);
   }
 
   if (userText === '/precios' || textLower.includes('precio') || textLower.includes('costo') || textLower.includes('cuanto cuesta')) {
@@ -230,26 +246,53 @@ function getDynamicKeyboard(chatId, userText) {
 
   const isExplicitCallRequest = textLower.includes('hablar') || textLower.includes('llamar') || textLower.includes('llamada') || textLower.includes('telefono') || textLower.includes('teléfono') || textLower.includes('contacto') || textLower.includes('humano') || textLower.includes('asesor') || textLower.includes('persona') || textLower.includes('whatsapp') || textLower.includes('andres') || textLower.includes('andrés');
 
-  const buttons = [
-    [
+  const isPostponing = textLower.includes('luego') || textLower.includes('despues') || textLower.includes('después') || 
+                       textLower.includes('mas tarde') || textLower.includes('más tarde') || textLower.includes('ocupad') || 
+                       textLower.includes('ahorita no') || textLower.includes('ahora no') || textLower.includes('pongo en contacto') || 
+                       textLower.includes('te aviso') || textLower.includes('les aviso') || textLower.includes('te hablo') || 
+                       textLower.includes('luego los') || textLower.includes('luego veo') || textLower.includes('poco') || 
+                       textLower.includes('nada') || textLower.includes('no por ahora') || textLower.includes('luego reviso');
+
+  const buttons = [];
+
+  if (isPostponing) {
+    buttons.push([
+      { 
+        text: "📅 Agendar Llamada de 5 min (Sin Presión)", 
+        url: "https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20quisiera%20agendar%20una%20breve%20llamada%20de%205%20minutos%20cuando%20tenga%20tiempo." 
+      }
+    ]);
+    buttons.push([
+      { 
+        text: "💬 Recibir Resumen por WhatsApp", 
+        url: "https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20favor%20de%20enviarme%20el%20resumen%20ejecutivo%20de%20soluciones%20por%20este%20medio." 
+      }
+    ]);
+    buttons.push([
+      { 
+        text: "📞 Hablar con Andrés R (+52 771 233 9238)", 
+        url: "https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20estoy%20viendo%20las%20soluciones%20de%20Brain%20Branding%20y%20quiero%20platicar%20contigo" 
+      }
+    ]);
+  } else {
+    buttons.push([
       { 
         text: "📅 Servicios por Citas (WhatsApp)", 
         url: "https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20me%20interesa%20informaci%C3%B3n%20sobre%20el%20Servicio%20de%20Citas%20y%20Automatizaci%C3%B3n" 
       }
-    ],
-    [
-      { text: "🌐 Ver Demos Interactivas", callback_data: "opcion_3" }
-    ]
-  ];
-
-  // ONLY attach "Hablar con Andrés R" button if 4+ messages HAVE BEEN EXCHANGED or client EXPLICITLY requested human contact!
-  if (msgCount >= 4 || isExplicitCallRequest) {
-    buttons.push([
-      { 
-        text: "📞 Hablar con Andrés R (+52 771 233 9238)", 
-        url: "https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20estoy%20viendo%20el%20bot%20de%20Telegram%20y%20me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n" 
-      }
     ]);
+    buttons.push([
+      { text: "🌐 Ver Demos Interactivas", callback_data: "opcion_3" }
+    ]);
+
+    if (msgCount >= 4 || isExplicitCallRequest) {
+      buttons.push([
+        { 
+          text: "📞 Hablar con Andrés R (+52 771 233 9238)", 
+          url: "https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20estoy%20viendo%20el%20bot%20de%20Telegram%20y%20me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n" 
+        }
+      ]);
+    }
   }
 
   return { inline_keyboard: buttons };
