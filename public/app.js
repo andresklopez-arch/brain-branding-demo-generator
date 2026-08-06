@@ -263,10 +263,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. Dynamic typing text for the Hero
   const typingElement = document.getElementById('typing-text');
   if (typingElement) {
-    const words = Object.freeze(["Asistente Personal IA", "Punto de Venta", "Página Web"]);
+    const words = Object.freeze(["Asistente Personal IA", "Punto de Venta", "Software Personalizado", "Página Web"]);
     const descriptions = Object.freeze([
       "Implementamos tu Asistente Personal de Inteligencia Artificial que puedes controlar desde Whatsapp o Telegram para que puedas disfrutar más de las cosas que valen la pena.",
       "Controla tu negocio 24/7 desde cualquier lugar y/o dispositivo, administra tus inventarios, sucursales, facturación y cobros, todo a medida.",
+      "Desarrollamos Software Personalizado, ERP, CRM y Plataformas a la Medida para automatizar la operación exacta de tu empresa.",
       "Establece una presencia digital corporativa premium con tu Página Web, con el nombre de tu empresa en la WEB."
     ]);
     let wordIndex = 0;
@@ -318,10 +319,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Update more info button dynamic link & label
-        const targets = ["#inclusiones", "#inclusiones", "#inclusiones"];
+        const targets = ["#inclusiones", "#simulador-pos", "#simulador-web", "#simulador-web"];
         const buttonLabels = [
           "Ver ventajas de tu Asistente Personal IA",
           "Ver ventajas de tu Punto de Venta",
+          "Ver ventajas de tu Software Personalizado",
           "Ver ventajas de tu Página Web"
         ];
         const moreInfoBtn = document.getElementById('hero-more-info-btn');
@@ -339,6 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const templates = [
           "Hola! Me interesa diseñar mi Asistente Personal de IA para automatizar mis procesos.",
           "Hola! Me interesa cotizar un Sistema de Punto de Venta a la medida.",
+          "Hola! Me interesa cotizar Software Personalizado / ERP / CRM a la medida para mi empresa.",
           "Hola! Me interesa crear mi Página Web corporativa premium."
         ];
         const descField = document.getElementById('contact-desc');
