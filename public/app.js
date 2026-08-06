@@ -23,6 +23,16 @@ const safeSessionStorage = safeStorage('sessionStorage');
 window.isCustomDemoActive = false;
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Auto-adapt POS & Web simulator mock views on mobile devices
+  if (window.innerWidth < 768) {
+    setTimeout(() => {
+      const mobilePosBtn = document.querySelector('.pos-device-switcher .switcher-btn[data-device="mobile"]');
+      if (mobilePosBtn) mobilePosBtn.click();
+      const mobileWebBtn = document.querySelector('#web-device-switcher .switcher-btn[data-web-device="mobile"]');
+      if (mobileWebBtn) mobileWebBtn.click();
+    }, 200);
+  }
+
   document.querySelectorAll('.feature-icon-pill').forEach(pill => {
     pill.addEventListener('click', () => {
       pill.classList.remove('clicked');
