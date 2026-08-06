@@ -1443,3 +1443,24 @@ body.light-theme .cloud-bg-container {
   filter: drop-shadow(0 0 14px rgba(0, 229, 255, 0.5)) !important;
   text-shadow: 0 0 25px rgba(0, 229, 255, 0.35) !important;
 }
+
+/* ════════════════ UNIVERSAL MOBILE OVERFLOW PROTECTION ════════════════ */
+html, body {
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+}
+
+.smartphone-container,
+.tablet-container,
+.browser-container,
+.telegram-mockup,
+.telegram-messages-container,
+.telegram-bubble,
+.simulador-card,
+.pos-container,
+.erp-container {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+}

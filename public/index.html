@@ -1228,45 +1228,136 @@
 
 
 
-    /* SMARTPHONE RESPONSIVE ADAPTATIONS */
+    /* SMARTPHONE RESPONSIVE ADAPTATIONS & BULLETPROOF OVERFLOW FIX */
+    .asistente-ia-grid,
+    .smartphone-container,
+    .tablet-container,
+    .browser-container,
+    .telegram-mockup,
+    .telegram-messages-container,
+    .simulador-card {
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+    }
+
+    .telegram-bubble {
+      max-width: 88% !important;
+      word-wrap: break-word !important;
+      overflow-wrap: anywhere !important;
+      word-break: break-word !important;
+      box-sizing: border-box !important;
+      hyphens: auto !important;
+    }
+
+    .telegram-bubble pre,
+    .telegram-bubble code,
+    .telegram-bubble table,
+    .telegram-messages-container pre,
+    .telegram-messages-container table {
+      max-width: 100% !important;
+      overflow-x: auto !important;
+      white-space: pre-wrap !important;
+      word-break: break-all !important;
+      box-sizing: border-box !important;
+    }
+
+    .telegram-bubble img,
+    .telegram-messages-container img,
+    .smartphone-container img,
+    .tablet-container img,
+    .browser-container img,
+    svg, canvas {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+
+    @media (max-width: 768px) {
+      .asistente-ia-section {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+      }
+      .asistente-ia-grid {
+        margin-top: 20px !important;
+        padding: 0 !important;
+        width: 100% !important;
+      }
+      .smartphone-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 10px 4px 10px 4px !important;
+        border-radius: 20px !important;
+        border-width: 2px !important;
+        margin: 0 auto !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+      }
+      .tablet-container,
+      .browser-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 14px !important;
+        padding: 0 !important;
+        margin: 0 auto !important;
+      }
+      .telegram-messages-container {
+        padding: 12px 8px !important;
+      }
+      .telegram-bubble {
+        max-width: 92% !important;
+        padding: 8px 10px !important;
+        font-size: 12px !important;
+      }
+      .telegram-header {
+        padding: 10px 12px !important;
+      }
+      .telegram-user-name {
+        font-size: 13px !important;
+      }
+      .telegram-user-status {
+        font-size: 10.5px !important;
+      }
+    }
+
     @media (max-width: 480px) {
       .smartphone-container {
-        padding: 0;
-        border: none;
-        border-radius: 0;
-        box-shadow: none;
-        background: transparent;
-        max-width: 100%;
+        padding: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        max-width: 100% !important;
+        width: 100% !important;
       }
       .smartphone-notch, .smartphone-container::before, .smartphone-container::after {
-        display: none;
+        display: none !important;
       }
       .smartphone-status-bar {
-        border-top-left-radius: 0;
-        border-top-right-radius: 0;
-        padding: 4px 15px 0 15px;
+        border-top-left-radius: 0 !important;
+        border-top-right-radius: 0 !important;
+        padding: 4px 10px 0 10px !important;
       }
       .smartphone-home-bar {
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: 12px;
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        height: 12px !important;
       }
       .home-indicator {
-        width: 80px;
-        margin-bottom: 2px;
+        width: 80px !important;
+        margin-bottom: 2px !important;
       }
       .telegram-mockup {
-        height: 520px;
+        height: 520px !important;
+        width: 100% !important;
       }
       .smartphone-lockscreen {
-        top: 26px;
-        left: 0;
-        right: 0;
-        bottom: 12px;
-        border-radius: 0;
+        top: 26px !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 12px !important;
+        border-radius: 0 !important;
+        padding: 25px 12px 15px 12px !important;
       }
     }
     .telegram-header {
