@@ -1368,6 +1368,21 @@
       .faq-grid {
         grid-template-columns: 1fr !important;
       }
+      .agent-features-icons {
+        gap: 6px !important;
+        margin: 15px auto 10px auto !important;
+        padding: 0 4px !important;
+        justify-content: center !important;
+      }
+      .feature-icon-pill {
+        width: auto !important;
+        flex: 0 0 auto !important;
+      }
+      .icon-circle {
+        width: 42px !important;
+        height: 42px !important;
+        font-size: 18px !important;
+      }
     }
 
     @media (max-width: 480px) {
@@ -1411,6 +1426,16 @@
         bottom: 12px !important;
         border-radius: 0 !important;
         padding: 20px 10px 10px 10px !important;
+      }
+      .agent-features-icons {
+        gap: 4px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+      }
+      .icon-circle {
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 16px !important;
       }
     }
     .telegram-header {
@@ -1558,27 +1583,31 @@
 
     /* ICON CONTAINER */
     .agent-features-icons {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-      margin: 30px auto 10px auto;
-      max-width: 750px;
-      padding: 0 10px;
+      display: flex !important;
+      flex-wrap: wrap !important;
+      justify-content: center !important;
+      align-items: center !important;
+      gap: 10px;
+      margin: 24px auto 10px auto;
+      max-width: 100% !important;
+      width: 100% !important;
+      padding: 0 8px;
+      box-sizing: border-box !important;
     }
     .feature-icon-pill {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      justify-content: center;
+      gap: 6px;
       cursor: pointer;
-      width: 76px;
+      width: auto !important;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
     }
     .icon-circle {
-      width: 52px;
-      height: 52px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.02);
       border: 1px solid rgba(255, 255, 255, 0.08);
