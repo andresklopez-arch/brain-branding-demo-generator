@@ -20,12 +20,12 @@
     gtag('config', 'G-S95H6FBDRN');
     gtag('event', 'conversion', {'send_to': 'AW-11158652391/conversion'});
 
-    // Instant conversion alert ping to Telegram Owner Chat
-    fetch('/api/conversion-alert', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page: '/gracias.html', source: 'Google Ads' })
-    }).catch(function(e){ console.warn('Conversion alert ping error', e); });
+    // Instant direct Telegram alert ping to Andrés R (+52 771 233 9238 / Chat ID 8337803949)
+    (function() {
+      const msg = encodeURIComponent("🔥 🎯 ¡NUEVA CONVERSIÓN EN TU WEB!\n\nPágina: /gracias.html\nOrigen: Google Ads\nHora: " + new Date().toLocaleTimeString('es-MX'));
+      fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage?chat_id=8337803949&text=' + msg)
+        .catch(function(err){ console.warn('[Telegram Alert Ping Error]', err); });
+    })();
   </script>
 </head>
 <body style="background: #06080c; color: #fff; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; font-family: 'Plus Jakarta Sans', sans-serif;">

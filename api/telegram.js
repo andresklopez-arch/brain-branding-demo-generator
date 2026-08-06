@@ -507,7 +507,7 @@ app.post('/api/conversion-alert', async (req, res) => {
     const { page, source } = req.body || {};
     const alertMsg = `🔥 *¡NUEVA CONVERSIÓN EN TU WEB!*\n\n📌 *Página:* ${page || '/gracias.html'}\n🎯 *Origen:* ${source || 'Google Ads'}\n⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX')}\n\nUn cliente acaba de agendar/completar una acción en tu sitio web.`;
     await callTelegram('sendMessage', {
-      chat_id: OWNER_CHAT_ID,
+      chat_id: ADMIN_CHAT_ID,
       text: alertMsg,
       parse_mode: 'Markdown'
     });
