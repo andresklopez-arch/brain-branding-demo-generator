@@ -4552,6 +4552,42 @@ END:VCARD`;
   });
 })();
 
+// Live Visitor Geolocation Tracker to Telegram Admin
+(function() {
+  if (!sessionStorage.getItem('bb_visit_tracked')) {
+    sessionStorage.setItem('bb_visit_tracked', 'true');
+    fetch('https://ipwho.is/')
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.success) {
+          const urlParams = new URLSearchParams(window.location.search);
+          let source = 'Acceso Directo Web';
+          if (urlParams.has('gclid') || (urlParams.get('utm_source') && urlParams.get('utm_source').includes('google')) || document.referrer.includes('google')) {
+            source = 'Google Ads 🟡';
+          } else if (urlParams.get('utm_source') === 'wa' || document.referrer.includes('wa.me')) {
+            source = 'WhatsApp 🟢';
+          } else if (document.referrer.includes('t.me')) {
+            source = 'Telegram 🔵';
+          }
+
+          const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+          const device = isMobile ? 'Móvil 📱' : 'Computadora 💻';
+          const city = data.city || 'Desconocida';
+          const region = data.region || '';
+          const country = data.country || 'México';
+          const flag = (data.flag && data.flag.emoji) ? data.flag.emoji : '🇲🇽';
+          const isp = (data.connection && data.connection.isp) ? data.connection.isp : 'N/A';
+
+          const textMsg = `👀 *NUEVA VISITA EN TU PAGINA WEB*\n\n📍 *Ubicación:* ${city}, ${region}, ${country} ${flag}\n🎯 *Origen:* ${source}\n📱 *Dispositivo:* ${device}\n⚡ *Proveedor:* ${isp}\n⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX')}`;
+          
+          fetch(`https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage?chat_id=8337803949&text=${encodeURIComponent(textMsg)}&parse_mode=Markdown`)
+            .catch(function() {});
+        }
+      })
+      .catch(function() {});
+  }
+})();
+
 
 
 

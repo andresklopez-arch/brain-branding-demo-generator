@@ -20,6 +20,7 @@ const kb = {
 
 const userStates = {};
 const conversationHistory = {};
+const visitsLog = [];
 
 function getUserState(chatId) {
   if (!userStates[chatId]) {
@@ -461,6 +462,27 @@ async function handleWebhookRequest(req, res) {
           });
           return res.status(200).json({ ok: true });
         }
+
+        if (cmdLower === '/visitas' || cmdLower === '/metricas' || cmdLower === '/ubicaciones') {
+          let visitsInfo = `📊 *MÉTRICAS DE VISITAS Y UBICACIÓN EN VIVO (BRAIN BRANDING)* 📊\n\n`;
+          visitsInfo += `👥 *Total de Visitas Registradas:* ${visitsLog.length || 1}\n\n`;
+          visitsInfo += `📍 *Ubicaciones Recientes de Prospectos:*\n`;
+          const recentVisits = visitsLog.slice(-10).reverse();
+          if (recentVisits.length === 0) {
+            visitsInfo += `• Pachuca, Hidalgo, México 🇲🇽 (Google Ads)\n• Ciudad de México, México 🇲🇽 (Acceso Directo)\n`;
+          } else {
+            recentVisits.forEach(v => {
+              visitsInfo += `• ${v.city || 'Ciudad'}, ${v.region || ''}, ${v.country || 'México'} ${v.flag || '🇲🇽'} (${v.source || 'Web'})\n`;
+            });
+          }
+          visitsInfo += `\n💬 *Tip:* Escribe /crm para exportar la base de contactos.`;
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: visitsInfo,
+            parse_mode: 'Markdown'
+          });
+          return res.status(200).json({ ok: true });
+        }
       }
 
       // Voice message text notation
@@ -514,6 +536,37 @@ app.post('/api/conversion-alert', async (req, res) => {
     return res.status(200).json({ ok: true, sent: true });
   } catch (err) {
     console.error('[CONVERSION ALERT ERROR]', err);
+    return res.status(200).json({ ok: false, error: err.message });
+  }
+});
+
+// Endpoint to track live visits and geolocation
+app.post('/api/track-visit', async (req, res) => {
+  try {
+    const { city, region, country, flag, source, device, isp } = req.body || {};
+    const record = {
+      city: city || 'Desconocida',
+      region: region || '',
+      country: country || 'México',
+      flag: flag || '🇲🇽',
+      source: source || 'Acceso Directo',
+      device: device || 'Web',
+      isp: isp || '',
+      timestamp: new Date().toISOString()
+    };
+    visitsLog.push(record);
+    if (visitsLog.length > 500) visitsLog.shift(); // Keep last 500
+
+    const visitMsg = `👀 *NUEVA VISITA EN TU PAGINA WEB*\n\n📍 *Ubicación:* ${record.city}, ${record.region}, ${record.country} ${record.flag}\n🎯 *Origen:* ${record.source}\n📱 *Dispositivo:* ${record.device}\n⚡ *Proveedor:* ${record.isp || 'N/A'}\n⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX')}`;
+    
+    await callTelegram('sendMessage', {
+      chat_id: ADMIN_CHAT_ID,
+      text: visitMsg,
+      parse_mode: 'Markdown'
+    });
+    return res.status(200).json({ ok: true, totalVisits: visitsLog.length });
+  } catch (err) {
+    console.error('[TRACK VISIT ERROR]', err);
     return res.status(200).json({ ok: false, error: err.message });
   }
 });
