@@ -501,6 +501,23 @@ async function handleWebhookRequest(req, res) {
 const whatsappApp = require('./whatsapp.js');
 app.use(whatsappApp);
 
+// Endpoint to receive website conversion alerts and ping owner Telegram instantly
+app.post('/api/conversion-alert', async (req, res) => {
+  try {
+    const { page, source } = req.body || {};
+    const alertMsg = `🔥 *¡NUEVA CONVERSIÓN EN TU WEB!*\n\n📌 *Página:* ${page || '/gracias.html'}\n🎯 *Origen:* ${source || 'Google Ads'}\n⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX')}\n\nUn cliente acaba de agendar/completar una acción en tu sitio web.`;
+    await callTelegram('sendMessage', {
+      chat_id: OWNER_CHAT_ID,
+      text: alertMsg,
+      parse_mode: 'Markdown'
+    });
+    return res.status(200).json({ ok: true, sent: true });
+  } catch (err) {
+    console.error('[CONVERSION ALERT ERROR]', err);
+    return res.status(200).json({ ok: false, error: err.message });
+  }
+});
+
 app.post('*', handleWebhookRequest);
 app.get('*', (req, res) => res.json({ status: 'active', bot: '@Brainbranding_bot', service: 'Brain Branding 24/7 AI Engine (Telegram & WhatsApp)' }));
 

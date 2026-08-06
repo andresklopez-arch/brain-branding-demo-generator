@@ -425,10 +425,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // 5. Contact Form WhatsApp Redirection, Auto-Save Draft & Giro Chips Handler
+  const formFields = ['contact-name', 'contact-business', 'contact-desc', 'contact-operation'];
+  
+  // Auto-restore draft from LocalStorage on load
+  formFields.forEach(fieldId => {
+    const el = document.getElementById(fieldId);
+    if (el) {
+      const savedVal = localStorage.getItem(`draft_${fieldId}`);
+      if (savedVal) el.value = savedVal;
+      el.addEventListener('input', (e) => {
+        localStorage.setItem(`draft_${fieldId}`, e.target.value);
+      });
+    }
+  });
+
+  // Haptic Feedback for buttons & cards on mobile
+  const triggerHaptic = () => {
+    if (navigator.vibrate) {
+      try { navigator.vibrate(15); } catch(e) {}
+    }
+  };
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('button, .contact-channel-card, .feature-icon-pill, .switcher-btn, .erp-tab-btn, .btn, .faq-item')) {
+      triggerHaptic();
+    }
+  });
+
   const contactForm = document.getElementById('agency-contact-form');
   if (contactForm) {
     contactForm.addEventListener('submit', (e) => {
       e.preventDefault();
+      triggerHaptic();
       
       // Honeypot anti-spam verification
       const honeypot = document.getElementById('contact-honeypot');
@@ -449,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       const waUrl = isMobile 
-        ? `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`
+        ? `whatsapp://send?phone=${phone}&text=${encodeURIComponent(text)}`
         : `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`;
       
       // Visual feedback on button
@@ -458,7 +486,10 @@ document.addEventListener('DOMContentLoaded', () => {
       submitBtn.innerHTML = '✓ ¡Estructurando idea! Abriendo WhatsApp...';
       submitBtn.disabled = true;
       submitBtn.style.opacity = '0.7';
- 
+
+      // Clear draft storage
+      formFields.forEach(f => localStorage.removeItem(`draft_${f}`));
+
       setTimeout(() => {
         window.open(waUrl, '_blank');
         
