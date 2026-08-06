@@ -23,6 +23,58 @@
     .then(d => { if (d && d.success) geoData = d; })
     .catch(() => {});
 
+  // Instant Initial Visit Recording on Load
+  const recordInitialVisit = () => {
+    try {
+      const city = geoData ? (geoData.city || 'Ciudad de México') : 'Ciudad de México';
+      const region = geoData ? (geoData.region || 'CDMX') : 'CDMX';
+      const country = geoData ? (geoData.country || 'México') : 'México';
+      const flag = (geoData && geoData.flag && geoData.flag.emoji) ? geoData.flag.emoji : '🇲🇽';
+      const urlParams = new URLSearchParams(window.location.search);
+      let source = 'Acceso Directo Web 🌐';
+      if (urlParams.has('gclid') || (urlParams.get('utm_source') && urlParams.get('utm_source').includes('google')) || document.referrer.includes('google')) {
+        source = 'Google Ads 🟡';
+      } else if (urlParams.get('utm_source') === 'wa' || document.referrer.includes('wa.me')) {
+        source = 'WhatsApp 🟢';
+      } else if (document.referrer.includes('t.me')) {
+        source = 'Telegram 🔵';
+      }
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const device = isMobile ? 'Móvil 📱' : 'Computadora 💻';
+
+      const initialRecord = {
+        time: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+        city,
+        region,
+        country,
+        flag,
+        source,
+        device,
+        duration: 'En Navegación ⚡',
+        scroll: maxScroll || 10,
+        clicks: ['Ingreso a la web'],
+        timestamp: new Date().toISOString()
+      };
+
+      // Save to local storage
+      const rawLogs = localStorage.getItem('brain_branding_analytics_log');
+      const logs = rawLogs ? JSON.parse(rawLogs) : [];
+      logs.push(initialRecord);
+      if (logs.length > 100) logs.shift();
+      localStorage.setItem('brain_branding_analytics_log', JSON.stringify(logs));
+
+      // Post to backend database
+      fetch('/api/track-visit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(initialRecord)
+      }).catch(function(){});
+    } catch(e) {}
+  };
+
+  // Trigger initial recording 1.5 seconds after page load
+  setTimeout(recordInitialVisit, 1500);
+
   // 2. Track Scroll Depth (%)
   window.addEventListener('scroll', () => {
     const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
