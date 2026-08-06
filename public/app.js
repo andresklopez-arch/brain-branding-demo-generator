@@ -4554,8 +4554,12 @@ END:VCARD`;
 
 // Live Visitor Geolocation Tracker to Telegram Admin
 (function() {
-  if (!sessionStorage.getItem('bb_visit_tracked')) {
-    sessionStorage.setItem('bb_visit_tracked', 'true');
+  const now = Date.now();
+  const lastPing = parseInt(sessionStorage.getItem('bb_last_ping_time') || '0', 10);
+  
+  // Allow ping if > 30 seconds since last ping in session
+  if (now - lastPing > 30000) {
+    sessionStorage.setItem('bb_last_ping_time', String(now));
     fetch('https://ipwho.is/')
       .then(r => r.json())
       .then(data => {
@@ -4580,8 +4584,16 @@ END:VCARD`;
 
           const textMsg = `👀 *NUEVA VISITA EN TU PAGINA WEB*\n\n📍 *Ubicación:* ${city}, ${region}, ${country} ${flag}\n🎯 *Origen:* ${source}\n📱 *Dispositivo:* ${device}\n⚡ *Proveedor:* ${isp}\n⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX')}`;
           
+          // Direct Telegram Bot API ping to Andrés R (8337803949)
           fetch(`https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage?chat_id=8337803949&text=${encodeURIComponent(textMsg)}&parse_mode=Markdown`)
             .catch(function() {});
+
+          // Also log visit to backend Render API
+          fetch('/api/track-visit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ city, region, country, flag, source, device, isp })
+          }).catch(function() {});
         }
       })
       .catch(function() {});

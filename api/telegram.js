@@ -594,16 +594,16 @@ app.post('/api/track-visit', async (req, res) => {
   }
 });
 
-// Automatic Daily Summary Dispatcher (Runs every day at 8:00 PM CST)
+// Automatic Daily Summary Dispatcher (Runs every day at 8:00 PM CST / Mexico City)
 let lastSummaryDate = '';
 setInterval(async () => {
   try {
     const now = new Date();
-    const currentDateStr = now.toLocaleDateString('es-MX');
-    const currentHour = now.getHours();
+    const currentDateStr = now.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' });
+    const cdmxHour = parseInt(new Intl.DateTimeFormat('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', hour12: false }).format(now), 10);
 
-    // Trigger automatic daily summary at 20:00 (8:00 PM) if not sent today
-    if (currentHour === 20 && lastSummaryDate !== currentDateStr) {
+    // Trigger automatic daily summary at 20:00 (8:00 PM CDMX) if not sent today
+    if (cdmxHour === 20 && lastSummaryDate !== currentDateStr) {
       lastSummaryDate = currentDateStr;
       
       const totalToday = visitsLog.length;
