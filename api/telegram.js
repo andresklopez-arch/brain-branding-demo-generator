@@ -563,7 +563,7 @@ app.post('/api/conversion-alert', async (req, res) => {
 // Endpoint to track live visits and geolocation
 app.post('/api/track-visit', async (req, res) => {
   try {
-    const { city, region, country, flag, source, device, isp } = req.body || {};
+    const { city, region, country, flag, source, device, isp, duration, scroll, clicks } = req.body || {};
     const record = {
       city: city || 'Desconocida',
       region: region || '',
@@ -572,26 +572,25 @@ app.post('/api/track-visit', async (req, res) => {
       source: source || 'Acceso Directo',
       device: device || 'Web',
       isp: isp || '',
+      duration: duration || 'N/A',
+      scroll: scroll || 0,
+      clicks: clicks || [],
+      time: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
       timestamp: new Date().toISOString()
     };
     visitsLog.push(record);
     if (visitsLog.length > 500) visitsLog.shift(); // Keep last 500
 
-    // Only send live alert if live mode is enabled (default enabled, customizable via /modoresumen)
-    if (global.notifyLiveVisits !== false) {
-      const visitMsg = `👀 *NUEVA VISITA EN TU PAGINA WEB*\n\n📍 *Ubicación:* ${record.city}, ${record.region}, ${record.country} ${record.flag}\n🎯 *Origen:* ${record.source}\n📱 *Dispositivo:* ${record.device}\n⚡ *Proveedor:* ${record.isp || 'N/A'}\n⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX')}`;
-      
-      await callTelegram('sendMessage', {
-        chat_id: ADMIN_CHAT_ID,
-        text: visitMsg,
-        parse_mode: 'Markdown'
-      });
-    }
     return res.status(200).json({ ok: true, totalVisits: visitsLog.length });
   } catch (err) {
     console.error('[TRACK VISIT ERROR]', err);
     return res.status(200).json({ ok: false, error: err.message });
   }
+});
+
+// Endpoint to fetch central analytics database for Admin Dashboard
+app.get('/api/analytics-db', (req, res) => {
+  return res.status(200).json({ ok: true, visits: visitsLog.slice(-100) });
 });
 
 // Automatic Daily Summary Dispatcher (Runs every day at 8:00 PM CST / Mexico City)
