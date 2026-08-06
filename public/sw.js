@@ -1,11 +1,11 @@
-const CACHE_NAME = 'bb-cache-v60';
+const CACHE_NAME = 'bb-cache-v61';
 const ASSETS = [
   '/',
   '/index.html',
   '/gracias.html',
   '/confirmacion.html',
-  '/index.css?v=19.0.0',
-  '/app.js?v=19.0.0',
+  '/index.css?v=20.0.0',
+  '/app.js?v=20.0.0',
   '/js/analytics.js?v=1.0.0',
   '/assets/og-image.jpg?v=3.0.0',
   '/favicon.jpg',

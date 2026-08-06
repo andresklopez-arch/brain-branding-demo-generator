@@ -4453,39 +4453,89 @@ END:VCARD`;
 - Cero repetición de preguntas o frases previas al cliente.
 - Diagnóstico inteligente por giro (Panaderías, Mascotas, Jardinería, Salud, Talleres, Restaurantes, etc.).`;
 
-  window.addEventListener('DOMContentLoaded', () => {
-    // ════════ CONTACT CHANNELS MODAL BINDING (#whatsapp-fab) ════════
-    const whatsappFab = document.getElementById('whatsapp-fab');
+// ════════ IMMUNE DOCUMENT-LEVEL DELEGATION FOR FAB & ADMIN LOGIN ════════
+(function() {
+  const safeOpenContactModal = () => {
     const contactModal = document.getElementById('contact-channels-modal');
-    const contactBackdrop = document.getElementById('contact-modal-backdrop');
-    const contactCloseBtn = document.getElementById('contact-modal-close-btn');
-
-    const openContactModal = () => {
-      if (contactModal) {
-        contactModal.classList.add('active');
-        contactModal.style.display = 'flex';
-      }
-    };
-
-    const closeContactModal = () => {
-      if (contactModal) {
-        contactModal.classList.remove('active');
-        setTimeout(() => {
-          contactModal.style.display = 'none';
-        }, 300);
-      }
-    };
-
-    if (whatsappFab) {
-      whatsappFab.addEventListener('click', (e) => {
-        e.preventDefault();
-        openContactModal();
-      });
+    if (contactModal) {
+      contactModal.classList.add('active');
+      contactModal.style.display = 'flex';
     }
-    if (contactBackdrop) contactBackdrop.addEventListener('click', closeContactModal);
-    if (contactCloseBtn) contactCloseBtn.addEventListener('click', closeContactModal);
+  };
 
-    // ════════ ADMIN LOGIN & CONTROL PANEL ════════
+  const safeCloseContactModal = () => {
+    const contactModal = document.getElementById('contact-channels-modal');
+    if (contactModal) {
+      contactModal.classList.remove('active');
+      setTimeout(() => {
+        contactModal.style.display = 'none';
+      }, 300);
+    }
+  };
+
+  const safeOpenAdminLogin = () => {
+    const loginModal = document.getElementById('admin-login-modal');
+    const passInput = document.getElementById('admin-pass-input');
+    const loginError = document.getElementById('admin-login-error');
+    if (loginModal) {
+      loginModal.style.display = 'flex';
+      if (passInput) {
+        passInput.value = '';
+        passInput.classList.remove('shake-input');
+        if (loginError) loginError.style.display = 'none';
+        setTimeout(() => passInput.focus(), 150);
+      }
+    }
+  };
+
+  // Document Click Delegation
+  document.addEventListener('click', (e) => {
+    // 1. WhatsApp FAB Button
+    if (e.target.closest('#whatsapp-fab') || e.target.closest('.whatsapp-fab')) {
+      e.preventDefault();
+      e.stopPropagation();
+      safeOpenContactModal();
+      return;
+    }
+
+    // 2. Contact Modal Close Backdrop or Close Button
+    if (e.target.closest('#contact-modal-backdrop') || e.target.closest('#contact-modal-close-btn')) {
+      safeCloseContactModal();
+      return;
+    }
+
+    // 3. Logo / Agency Badge Click (Double or Triple click / Tap Counter)
+    const logoTarget = e.target.closest('.logo-area, #header-logo-text, .hero-agency-badge, .logo-line, .logo-text, header img, #inicio img');
+    if (logoTarget) {
+      window._logoTapCount = (window._logoTapCount || 0) + 1;
+      if (window._logoTapTimer) clearTimeout(window._logoTapTimer);
+      if (window._logoTapCount >= 2) {
+        window._logoTapCount = 0;
+        e.preventDefault();
+        safeOpenAdminLogin();
+      } else {
+        window._logoTapTimer = setTimeout(() => { window._logoTapCount = 0; }, 500);
+      }
+    }
+  });
+
+  // Document Double Click Delegation for Admin Login
+  document.addEventListener('dblclick', (e) => {
+    const logoTarget = e.target.closest('.logo-area, #header-logo-text, .hero-agency-badge, .logo-line, .logo-text, header img, #inicio img');
+    if (logoTarget) {
+      e.preventDefault();
+      safeOpenAdminLogin();
+    }
+  });
+
+  // Secret link in URL hash or query: ?admin=1 or #admin
+  if (window.location.search.includes('admin=1') || window.location.search.includes('login=1') || window.location.hash === '#admin') {
+    setTimeout(safeOpenAdminLogin, 300);
+  }
+})();
+
+  window.addEventListener('DOMContentLoaded', () => {
+    // ════════ ADMIN CONTROL PANEL SETUP ════════
     const loginModal = document.getElementById('admin-login-modal');
     const dashboardModal = document.getElementById('admin-dashboard-modal');
     const passInput = document.getElementById('admin-pass-input');
