@@ -4454,7 +4454,38 @@ END:VCARD`;
 - Diagnóstico inteligente por giro (Panaderías, Mascotas, Jardinería, Salud, Talleres, Restaurantes, etc.).`;
 
   window.addEventListener('DOMContentLoaded', () => {
-    const logoArea = document.querySelector('header .logo-area');
+    // ════════ CONTACT CHANNELS MODAL BINDING (#whatsapp-fab) ════════
+    const whatsappFab = document.getElementById('whatsapp-fab');
+    const contactModal = document.getElementById('contact-channels-modal');
+    const contactBackdrop = document.getElementById('contact-modal-backdrop');
+    const contactCloseBtn = document.getElementById('contact-modal-close-btn');
+
+    const openContactModal = () => {
+      if (contactModal) {
+        contactModal.classList.add('active');
+        contactModal.style.display = 'flex';
+      }
+    };
+
+    const closeContactModal = () => {
+      if (contactModal) {
+        contactModal.classList.remove('active');
+        setTimeout(() => {
+          contactModal.style.display = 'none';
+        }, 300);
+      }
+    };
+
+    if (whatsappFab) {
+      whatsappFab.addEventListener('click', (e) => {
+        e.preventDefault();
+        openContactModal();
+      });
+    }
+    if (contactBackdrop) contactBackdrop.addEventListener('click', closeContactModal);
+    if (contactCloseBtn) contactCloseBtn.addEventListener('click', closeContactModal);
+
+    // ════════ ADMIN LOGIN & CONTROL PANEL ════════
     const loginModal = document.getElementById('admin-login-modal');
     const dashboardModal = document.getElementById('admin-dashboard-modal');
     const passInput = document.getElementById('admin-pass-input');
@@ -4466,7 +4497,7 @@ END:VCARD`;
     const kbSaveBtn = document.getElementById('admin-kb-save-btn');
     const kbResetBtn = document.getElementById('admin-kb-reset-btn');
 
-    if (!logoArea || !loginModal || !dashboardModal) return;
+    if (!loginModal || !dashboardModal) return;
 
     // Load saved KB features from localStorage or default
     const savedKB = localStorage.getItem('brain_branding_kb_features') || DEFAULT_BUSINESS_FEATURES;
@@ -4483,28 +4514,30 @@ END:VCARD`;
       }
     };
 
-    // 1. Double-click event on Brain Logo to open password login modal
-    logoArea.addEventListener('dblclick', (e) => {
-      e.preventDefault();
-      openLoginModal();
-    });
-
-    // 2. Tap counter for mobile devices (3 quick taps on logo area)
-    let logoTapCount = 0;
-    let logoTapTimer = null;
-    logoArea.addEventListener('click', (e) => {
-      logoTapCount++;
-      if (logoTapTimer) clearTimeout(logoTapTimer);
-      if (logoTapCount >= 3) {
-        logoTapCount = 0;
+    // Attach dblclick and 3-tap events to ALL logo and badge elements
+    const logoTargets = document.querySelectorAll('header .logo-area, .logo-area, #header-logo-text, .hero-agency-badge, .logo-line, .logo-text');
+    logoTargets.forEach(target => {
+      target.addEventListener('dblclick', (e) => {
         e.preventDefault();
         openLoginModal();
-      } else {
-        logoTapTimer = setTimeout(() => { logoTapCount = 0; }, 600);
-      }
+      });
+
+      let logoTapCount = 0;
+      let logoTapTimer = null;
+      target.addEventListener('click', (e) => {
+        logoTapCount++;
+        if (logoTapTimer) clearTimeout(logoTapTimer);
+        if (logoTapCount >= 2) { // 2 or 3 clicks open modal
+          logoTapCount = 0;
+          e.preventDefault();
+          openLoginModal();
+        } else {
+          logoTapTimer = setTimeout(() => { logoTapCount = 0; }, 500);
+        }
+      });
     });
 
-    // 3. Secret link in URL hash or query: ?admin=1 or #admin
+    // Secret link in URL hash or query: ?admin=1 or #admin
     if (window.location.search.includes('admin=1') || window.location.search.includes('login=1') || window.location.hash === '#admin') {
       setTimeout(openLoginModal, 300);
     }
