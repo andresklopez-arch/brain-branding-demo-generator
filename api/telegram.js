@@ -30,6 +30,44 @@ function normalizeText(text) {
     .trim();
 }
 
+function fuzzyNormalizeText(text) {
+  if (!text) return '';
+  let str = (text || '')
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/(.)\1{2,}/g, "$1")
+    .trim();
+
+  // Spanish phonetic replacements & common bad spelling fixes
+  str = str.replace(/\bke\b/g, "que")
+           .replace(/\bki\b/g, "qui")
+           .replace(/\bk\b/g, "que")
+           .replace(/\bkuanto\b/g, "cuanto")
+           .replace(/\bkuanta\b/g, "cuanta")
+           .replace(/\bkuesta\b/g, "cuesta")
+           .replace(/\bkosto\b/g, "costo")
+           .replace(/\bpresio\b/g, "precio")
+           .replace(/\bpresios\b/g, "precios")
+           .replace(/\bsita\b/g, "cita")
+           .replace(/\bsitas\b/g, "citas")
+           .replace(/\basaer\b/g, "hacer")
+           .replace(/\bhase\b/g, "hace")
+           .replace(/\bber\b/g, "ver")
+           .replace(/\bkerer\b/g, "querer")
+           .replace(/\bkiero\b/g, "quiero")
+           .replace(/\bquro\b/g, "quiero")
+           .replace(/\bakis\b/g, "aqui")
+           .replace(/\bdemostrasion\b/g, "demostracion")
+           .replace(/\bwats\b/g, "whatsapp")
+           .replace(/\bwatsap\b/g, "whatsapp")
+           .replace(/\bwasap\b/g, "whatsapp")
+           .replace(/\btg\b/g, "telegram");
+
+  return str;
+}
+
 function getUserState(chatId) {
   if (!userStates[chatId]) {
     userStates[chatId] = {
@@ -100,6 +138,18 @@ function generateHumanReply(chatId, userName, userText) {
 
   const textLower = userText.toLowerCase();
   const textClean = normalizeText(userText);
+  const fuzzyClean = fuzzyNormalizeText(userText);
+
+  // 0.1 Offense, Swearing, Complaint & Anger De-escalation
+  const offenseWords = ['pendejo', 'pendeja', 'chinga', 'mierda', 'basura', 'chafa', 'no sirve', 'estafa', 'estafador', 'puto', 'puta', 'verga', 'madre', 'pinche', 'asco', 'inutil', 'inepto', 'fake', 'falso', 'robando', 'robo', 'porqueria', 'tonto', 'tarado', 'estupido', 'estupida', 'culero', 'malo'];
+  const isOffensive = offenseWords.some(w => textClean.includes(w) || fuzzyClean.includes(w));
+
+  if (isOffensive) {
+    const calmReply = `Lamento sinceramente si tuvimos un malentendido o si alguna respuesta del sistema automatizado no fue de tu agrado. 🙇‍♂️\n\nEn Brain Branding valoramos profundamente tu tiempo y tu atención. Para darte la mejor respuesta personalizada sin intermediarios ni bots, te pongo en contacto directo con el fundador Andrés R:\n\n📱 *WhatsApp Directo:* https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20quisiera%20comunicarme%20directamente%20contigo.\n📞 *Teléfono:* +52 771 233 9238\n\n¿En qué podemos apoyarte personalmente el día de hoy?`;
+    
+    history.push({ role: 'model', text: calmReply });
+    return getUniqueReply(chatId, calmReply);
+  }
 
   if (userText === '/start') {
     const greetingName = userName ? ` ${userName}` : '';
@@ -108,7 +158,7 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, welcome);
   }
 
-  if (userText === '/demo' || textClean.includes('demo') || textClean.includes('demostracion')) {
+  if (userText === '/demo' || textClean.includes('demo') || fuzzyClean.includes('demo') || textClean.includes('demostracion') || fuzzyClean.includes('demostracion')) {
     const reply = `Con mucho gusto te muestro nuestras demos en vivo. 📱\n\nPuedes probar nuestras plataformas interactivas directamente en el navegador:\n🌐 ${kb.agencia.sitioWeb}\n\nVerás cómo opera un Punto de Venta, CRM y Asistente IA en tiempo real. ¿Qué tipo de solución buscas?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
