@@ -4488,45 +4488,9 @@ END:VCARD`;
     }
   };
 
-  const safeOpenTelegramSmartModal = () => {
-    const modal = document.getElementById('telegram-smart-modal');
-    if (modal) modal.style.display = 'flex';
-  };
-
-  const safeCloseTelegramSmartModal = () => {
-    const modal = document.getElementById('telegram-smart-modal');
-    if (modal) modal.style.display = 'none';
-  };
-
   // Document Click Delegation
   document.addEventListener('click', (e) => {
-    // 1. Telegram FAB or Telegram Contact Button -> Open Smart Modal
-    if (e.target.closest('#telegram-fab') || e.target.closest('#contact-open-tg-smart-btn')) {
-      e.preventDefault();
-      e.stopPropagation();
-      safeCloseContactModal();
-      safeOpenTelegramSmartModal();
-      return;
-    }
-
-    // 2. Telegram Smart Modal Close Button
-    if (e.target.closest('#tg-smart-close-btn')) {
-      safeCloseTelegramSmartModal();
-      return;
-    }
-
-    // 3. Option 1: Live Web Chat on site
-    if (e.target.closest('#tg-opt-web-chat')) {
-      e.preventDefault();
-      safeCloseTelegramSmartModal();
-      const sec = document.getElementById('asistente-ia');
-      if (sec) {
-        sec.scrollIntoView({ behavior: 'smooth' });
-      }
-      return;
-    }
-
-    // 4. WhatsApp FAB Button
+    // 1. WhatsApp FAB Button
     if (e.target.closest('#whatsapp-fab') || e.target.closest('.whatsapp-fab')) {
       e.preventDefault();
       e.stopPropagation();
@@ -4534,7 +4498,7 @@ END:VCARD`;
       return;
     }
 
-    // 5. Contact Modal Close Backdrop or Close Button
+    // 2. Contact Modal Close Backdrop or Close Button
     if (e.target.closest('#contact-modal-backdrop') || e.target.closest('#contact-modal-close-btn')) {
       safeCloseContactModal();
       return;
