@@ -483,6 +483,26 @@ async function handleWebhookRequest(req, res) {
           });
           return res.status(200).json({ ok: true });
         }
+
+        if (cmdLower === '/modoresumen') {
+          global.notifyLiveVisits = false;
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: `🌙 *MODO RESUMEN AUTOMÁTICO ACTIVADO*\n\nLas alertas por cada visita individual han sido silenciadas.\nRecibirás únicamente el *Resumen Automático Diario* todas las noches a las 8:00 PM CST con el total de visitas y ciudades.\n\n💬 *Tip:* Escribe /modoenvivo para volver a activar notificaciones por cada visita.`,
+            parse_mode: 'Markdown'
+          });
+          return res.status(200).json({ ok: true });
+        }
+
+        if (cmdLower === '/modoenvivo') {
+          global.notifyLiveVisits = true;
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: `⚡ *MODO ALERTAS EN VIVO ACTIVADO*\n\nRecibirás una notificación instantánea cada vez que entre un nuevo visitante + el Resumen Automático a las 8:00 PM.`,
+            parse_mode: 'Markdown'
+          });
+          return res.status(200).json({ ok: true });
+        }
       }
 
       // Voice message text notation
@@ -557,19 +577,65 @@ app.post('/api/track-visit', async (req, res) => {
     visitsLog.push(record);
     if (visitsLog.length > 500) visitsLog.shift(); // Keep last 500
 
-    const visitMsg = `👀 *NUEVA VISITA EN TU PAGINA WEB*\n\n📍 *Ubicación:* ${record.city}, ${record.region}, ${record.country} ${record.flag}\n🎯 *Origen:* ${record.source}\n📱 *Dispositivo:* ${record.device}\n⚡ *Proveedor:* ${record.isp || 'N/A'}\n⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX')}`;
-    
-    await callTelegram('sendMessage', {
-      chat_id: ADMIN_CHAT_ID,
-      text: visitMsg,
-      parse_mode: 'Markdown'
-    });
+    // Only send live alert if live mode is enabled (default enabled, customizable via /modoresumen)
+    if (global.notifyLiveVisits !== false) {
+      const visitMsg = `👀 *NUEVA VISITA EN TU PAGINA WEB*\n\n📍 *Ubicación:* ${record.city}, ${record.region}, ${record.country} ${record.flag}\n🎯 *Origen:* ${record.source}\n📱 *Dispositivo:* ${record.device}\n⚡ *Proveedor:* ${record.isp || 'N/A'}\n⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX')}`;
+      
+      await callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: visitMsg,
+        parse_mode: 'Markdown'
+      });
+    }
     return res.status(200).json({ ok: true, totalVisits: visitsLog.length });
   } catch (err) {
     console.error('[TRACK VISIT ERROR]', err);
     return res.status(200).json({ ok: false, error: err.message });
   }
 });
+
+// Automatic Daily Summary Dispatcher (Runs every day at 8:00 PM CST)
+let lastSummaryDate = '';
+setInterval(async () => {
+  try {
+    const now = new Date();
+    const currentDateStr = now.toLocaleDateString('es-MX');
+    const currentHour = now.getHours();
+
+    // Trigger automatic daily summary at 20:00 (8:00 PM) if not sent today
+    if (currentHour === 20 && lastSummaryDate !== currentDateStr) {
+      lastSummaryDate = currentDateStr;
+      
+      const totalToday = visitsLog.length;
+      let summaryText = `🌙 *RESUMEN DIARIO AUTOMÁTICO DE VISITAS - BRAIN BRANDING* 🌙\n\n`;
+      summaryText += `📅 *Fecha:* ${currentDateStr}\n`;
+      summaryText += `👥 *Total de Visitas Hoy:* ${totalToday}\n\n`;
+      
+      if (totalToday === 0) {
+        summaryText += `📍 Sin visitas registradas el día de hoy.\n`;
+      } else {
+        summaryText += `📍 *Ubicaciones Registradas:*\n`;
+        const cityCounts = {};
+        visitsLog.forEach(v => {
+          const key = `${v.city || 'Desconocida'}, ${v.region || ''} ${v.flag || '🇲🇽'}`;
+          cityCounts[key] = (cityCounts[key] || 0) + 1;
+        });
+        Object.entries(cityCounts).forEach(([city, count]) => {
+          summaryText += `• ${city}: *${count} visitas*\n`;
+        });
+      }
+      summaryText += `\n💬 *Tip:* Escribe /modoenvivo para recibir alertas instantáneas o /modoresumen para solo resumen diario.`;
+
+      await callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: summaryText,
+        parse_mode: 'Markdown'
+      });
+    }
+  } catch (e) {
+    console.error('[DAILY SUMMARY ERROR]', e);
+  }
+}, 60000); // Check every minute
 
 app.post('*', handleWebhookRequest);
 app.get('*', (req, res) => res.json({ status: 'active', bot: '@Brainbranding_bot', service: 'Brain Branding 24/7 AI Engine (Telegram & WhatsApp)' }));
