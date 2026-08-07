@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <script>
+    // Strict HTTPS Enforcement
+    if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      window.location.href = 'https://' + window.location.hostname + window.location.pathname + window.location.search;
+    }
+  </script>
   <meta charset="UTF-8">
   <link rel="dns-prefetch" href="https://fonts.googleapis.com">
   <link rel="dns-prefetch" href="https://fonts.gstatic.com">
