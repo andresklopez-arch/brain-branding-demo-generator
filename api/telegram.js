@@ -129,12 +129,31 @@ function callTelegram(method, data) {
   });
 }
 
+// In-Memory Fast LRU Cache for Fuzzy Text Evaluation
+const fuzzyCacheMap = new Map();
+
+function generatePayToken(chatId) {
+  const ts = Date.now().toString(36);
+  const rnd = Math.floor(Math.random() * 1000).toString(36);
+  return `BB-PAY-${chatId}-${ts}-${rnd}`.toUpperCase();
+}
+
+function getDropReason(clean) {
+  if (clean.includes('caro') || clean.includes('costoso') || clean.includes('presupuesto')) return 'PRECIO_ELEVADO';
+  if (clean.includes('socio') || clean.includes('jefe') || clean.includes('equipo')) return 'APROBACION_TERCEROS';
+  if (clean.includes('excel') || clean.includes('libreta')) return 'PREFIERE_EXCEL';
+  if (clean.includes('luego') || clean.includes('despues') || clean.includes('mas tarde')) return 'POSTERGAION';
+  return 'NINGUNO';
+}
+
 function generateHumanReply(chatId, userName, userText) {
   if (!conversationHistory[chatId]) conversationHistory[chatId] = [];
   const state = getUserState(chatId);
   const history = conversationHistory[chatId];
   history.push({ role: 'user', text: userText });
   if (history.length > 12) history.shift();
+
+  state.lastDropReason = getDropReason(normalizeText(userText));
 
   const textLower = userText.toLowerCase();
   const textClean = normalizeText(userText);
