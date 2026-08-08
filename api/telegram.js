@@ -183,8 +183,10 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, rescueReply);
   }
 
-  // 0.8 Unaccented & Persuasive Pricing / Cost Query Intent
-  const isPriceQuery = userText === '/precios' || 
+  // 0.8 Unaccented & Persuasive Pricing / Cost Query Intent (Sanitized against standalone numbers)
+  const isPureNumber = /^\d+$/.test(textClean);
+  const isPriceQuery = !isPureNumber && (
+                       userText === '/precios' || 
                        textClean.includes('precio') || 
                        textClean.includes('costo') || 
                        textClean.includes('cuanto cuesta') || 
@@ -197,9 +199,10 @@ function generateHumanReply(chatId, userName, userText) {
                        textClean.includes('tarifa') || 
                        textClean.includes('paquet') || 
                        textClean.includes('plan') ||
-                       (textClean.includes('programa') && (textClean.includes('cuanto') || textClean.includes('precio') || textClean.includes('costo') || textClean.includes('sale')));
+                       (textClean.includes('programa') && (textClean.includes('cuanto') || textClean.includes('precio') || textClean.includes('costo') || textClean.includes('sale'))));
 
   if (isPriceQuery) {
+    state.askedPrice = true;
     const greetingName = userName ? ` ${userName}` : '';
     let reply = '';
 
