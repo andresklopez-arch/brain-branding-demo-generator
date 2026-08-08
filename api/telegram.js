@@ -347,6 +347,55 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
+  // 3.11 YoY IA Query
+  if (textClean.includes('yoy')) {
+    const reply = `¡Excelente pregunta! 🤖 *YoY IA* es una plataforma de software a la medida y analítica predictiva desarrollada por Brain Branding como caso de éxito empresarial para uno de nuestros clientes corporativos.\n\nDiseñamos sistemas con inteligencia artificial personalizada adaptados a la medida de cualquier empresa. ¿Te gustaría conocer cómo podemos aplicar esa misma potencia en tu negocio?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 3.12 Marketing Digital & Ads Query
+  if (textClean.includes('marketing') || textClean.includes('campana') || textClean.includes('google ads') || textClean.includes('facebook ads') || textClean.includes('meta ads')) {
+    const reply = `En Brain Branding no vendemos campañas aisladas de publicidad. 🎯\n\nNuestro enfoque es la **Arquitectura Digital de Alta Conversión**: desarrollamos la infraestructura técnica (Software a la Medida, Páginas Web Disruptivas y Asistentes IA en WhatsApp) para que cada peso que inviertas en anuncios se convierta en clientes reales y ventas cerradas 24/7.\n\n¿Buscas construir la infraestructura digital o bot de ventas para tu empresa? 🌐`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 3.13 NDA & Confidentiality Query
+  if (textClean.includes('nda') || textClean.includes('confidencial') || textClean.includes('proteger mi idea') || textClean.includes('secreto')) {
+    const reply = `¡Absolutamente! 🔒 En Brain Branding la privacidad y protección de tu negocio es prioridad #1.\n\nFirmamos un **Acuerdo de Confidencialidad (NDA)** firmado por ambas partes antes o al momento de iniciar el proyecto, garantizando la protección total de tu propiedad intelectual, modelos de negocio y datos empresariales.\n\n¿Te gustaría que te enviemos una plantilla previa del acuerdo NDA? 📄`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 3.14 Hosting, Domain & Maintenance Insurance Query
+  if (textClean.includes('hosting') || textClean.includes('dominio') || textClean.includes('servidor') || textClean.includes('mantenimiento') || textClean.includes('alojamiento')) {
+    const reply = `¡Con mucho gusto te explico nuestra infraestructura! ☁️\n\n• **Hospedaje & Dominio:** El primer año de hospedaje nube seguro y dominio (.com o .com.mx) normalmente vienen INCLUIDOS en el desarrollo.\n• **Seguro de Infraestructura & Mantenimiento:** Manejamos una cuota de mantenimiento nube ($290 a $490 MXN/mes) que actúa como un *seguro de operatividad*, garantizando servidores seguros de alta velocidad, almacenamiento ilimitado, respaldos diarios y actualizaciones continuas de por vida.\n\n¿Tienes dominio actual o te apoyamos a registrarlo desde cero? 🌐`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 3.15 Code Ownership & Database Security Query
+  if (textClean.includes('codigo fuente') || textClean.includes('propiedad') || textClean.includes('base de datos') || textClean.includes('los datos son mios')) {
+    const reply = `¡Sin duda alguna! 🔒 En Brain Branding tú eres el **dueño total del 100%** de tu plataforma, base de datos de clientes y código desarrollado.\n\nTus datos se alojan en servidores nube protegidos con cifrado SSL de 256 bits y respaldos automáticos diarios. Cero sorpresas ni restricciones.\n\n¿Requieres alguna arquitectura técnica o integración especial para tu base de datos?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 3.16 Edge Case: Current Client Technical Support
+  if (textClean.includes('ya soy cliente') || textClean.includes('fallo mi') || textClean.includes('soporte tecnico') || textClean.includes('ayuda con mi sistema')) {
+    const reply = `¡Hola! 👋 Si ya eres cliente de Brain Branding y requieres soporte técnico o asistencia para tu sistema actual, te canalizamos de inmediato con máxima prioridad al WhatsApp del equipo técnico liderado por Andrés R:\n\n📲 *Soporte Técnico Inmediato:* https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20soy%20cliente%20y%20requiero%20soporte%20t%C3%A9cnico%20para%20mi%20sistema.\n\nEn un momento te atendemos personalmente. 🛠️`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 3.17 Edge Case: Jobs / Vacancies / Resume Submission
+  if (textClean.includes('vacante') || textClean.includes('empleo') || textClean.includes('trabajo') || textClean.includes('curriculum') || textClean.includes('enviar mi cv')) {
+    const reply = `¡Agradecemos mucho tu interés en formar parte del equipo de Brain Branding! 💼\n\nPara vacantes de empleo, alianzas o envío de Currículum Vitae (CV), por favor envíanos tus datos e historial profesional al correo institucional:\n\n📩 *Correo:* andreskrebollo@gmail.com\n\nNuestro equipo de talento revisará tu perfil con mucho gusto. 🚀`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
   // 4. Uncommunicative / Short Input Smart Handling (1-3 words)
   const isShortInput = userText.trim().split(/\s+/).length <= 3;
   const genericWords = ['si', 'sí', 'ok', 'no', 'bien', 'hola', 'interesa', 'mm', 'a ver', 'saludos', 'gracias', 'grax'];
