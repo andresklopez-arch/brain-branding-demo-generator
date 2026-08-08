@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Brain Branding Demos | Fábrica de Lámparas Pedro - Motor IA</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Demo de Sistema de Gestión Inteligente con IA para la fábrica de lámparas de Pedro. Elimina cuellos de botella y reemplaza el lápiz y papel por control 100% digital.">
+  <meta name="author" content="Brain Branding AI Enterprise">
+
+  <!-- Estilos CSS Vanguardistas -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ========================================== -->
+  <!-- 1. HUB BRANDING HEADER (brainbranding.com.mx/demos) -->
+  <!-- ========================================== -->
+  <header class="hub-header" id="hubHeader">
+    <div class="hub-header-content">
+      <div class="hub-brand">
+        <div class="hub-logo-icon">🧠</div>
+        <div>
+          <h1 class="hub-title">Brain Branding Demos</h1>
+          <div class="hub-sub">brainbranding.com.mx/demos • Cliente: Pedro</div>
+        </div>
+      </div>
+
+      <div class="hub-actions">
+        <!-- Switcher Dual de Portales -->
+        <div class="role-switcher" id="roleSwitcher">
+          <button class="role-btn active" data-role="admin" onclick="App.switchRole('admin')">
+            ⚡ Admin BackOffice
+          </button>
+          <button class="role-btn" data-role="client" onclick="App.switchRole('client')">
+            🛍️ Portal Clientes
+          </button>
+        </div>
+        <button class="btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="TourGuide.start()">
+          ❓ Tour Guiado
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- 2. PIN ACCESS GATE OVERLAY (ACCESO SIMULADO) -->
+  <!-- ========================================== -->
+  <div class="pin-gate-overlay" id="pinGateOverlay">
+    <div class="glass-panel pin-gate-card">
+      <div class="pin-badge">🔐 Demostración Exclusiva</div>
+      <h2 class="pin-title">Brain Branding Demos</h2>
+      <p class="pin-desc">Bienvenido al Portal de Demos de Alta Tecnología. Por favor ingresa tu NIP de 4 dígitos enviado a Pedro para desbloquear.</p>
+      
+      <div class="pin-display">
+        <div class="pin-digit"></div>
+        <div class="pin-digit"></div>
+        <div class="pin-digit"></div>
+        <div class="pin-digit"></div>
+      </div>
+
+      <div class="pin-keypad">
+        <button class="key-btn" data-key="1">1</button>
+        <button class="key-btn" data-key="2">2</button>
+        <button class="key-btn" data-key="3">3</button>
+        <button class="key-btn" data-key="4">4</button>
+        <button class="key-btn" data-key="5">5</button>
+        <button class="key-btn" data-key="6">6</button>
+        <button class="key-btn" data-key="7">7</button>
+        <button class="key-btn" data-key="8">8</button>
+        <button class="key-btn" data-key="9">9</button>
+        <button class="key-btn" data-key="clear">C</button>
+        <button class="key-btn" data-key="0">0</button>
+        <button class="key-btn" data-key="del">⌫</button>
+      </div>
+
+      <div class="pin-hint">
+        💡 <strong>PIN de Acceso Aleatorio Generado para Pedro:</strong> <span style="font-size:16px; font-weight:800; color:#fff;">8492</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. BIENVENIDA PERSONALIZADA PEDRO MODAL -->
+  <!-- ========================================== -->
+  <div class="welcome-overlay" id="welcomeOverlay">
+    <div class="glass-panel welcome-card">
+      <div class="welcome-header-tag">
+        <span>✨ TRANSFORMA TU NEGOCIO</span>
+      </div>
+      <h2 class="welcome-title">¡Bienvenido Pedro a la Demo Interactiva de tu Sistema de Gestión con IA!</h2>
+      <p class="welcome-text">
+        Sabemos que tu fábrica de lámparas actualmente opera a <strong>papel y lápiz</strong>. Esta aplicación demuestra cómo tu nuevo software personalizado tomará el control total de tu producción, inventarios y finanzas en tiempo real.
+      </p>
+
+      <div class="features-grid">
+        <div class="feat-item">
+          <span class="feat-icon">🤖</span>
+          <div>
+            <div class="feat-title">Motor IA Predictivo</div>
+            <div class="feat-desc">Calcula tiempos exactos de entrega de pedidos basados en disponibilidad de insumos.</div>
+          </div>
+        </div>
+        <div class="feat-item">
+          <span class="feat-icon">⚠️</span>
+          <div>
+            <div class="feat-title">Adiós Cuellos de Botella</div>
+            <div class="feat-desc">Alertas automáticas en caso de desabasto o retrasos en ensamble.</div>
+          </div>
+        </div>
+        <div class="feat-item">
+          <span class="feat-icon">📦</span>
+          <div>
+            <div class="feat-title">4 Tipos de Inventarios</div>
+            <div class="feat-desc">Descuento automático de materia prima al avanzar etapas de fabricación.</div>
+          </div>
+        </div>
+        <div class="feat-item">
+          <span class="feat-icon">📲</span>
+          <div>
+            <div class="feat-title">Operativo en Celular</div>
+            <div class="feat-desc">Escaner de código de barras desde cualquier dispositivo sin hojas de papel.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px;">
+        <button class="btn-primary" onclick="App.startGuidedTour()">
+          🚀 Iniciar Recorrido Guiado para Pedro
+        </button>
+        <button class="btn-secondary" onclick="App.closeWelcomeModal()">
+          Explorar Directo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 4. CONTENIDO PRINCIPAL DE LA APP -->
+  <!-- ========================================== -->
+  <main class="app-container" style="margin-top: 16px;">
+
+    <!-- Banner Ticker de Alertas IA -->
+    <div class="ai-alert-banner" id="aiAlertBanner">
+      <div class="ai-pulse"></div>
+      <div class="ai-alert-text" id="aiAlertTicker">
+        ⚡ <strong>SISTEMA IA ACTIVO</strong>: Monitoreando estaciones de corte, ensamble y niveles de stock de componentes...
+      </div>
+      <span class="ai-alert-badge">Autoaprendizaje ON</span>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PORTAL ADMINISTRADOR (BACKOFFICE PEDRO) -->
+    <!-- ========================================== -->
+    <div id="adminPortalSection" class="active">
+
+      <!-- Pestañas de Navegación del Administrador -->
+      <nav class="nav-tabs-bar" id="adminNavTabs">
+        <button class="nav-tab active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
+          📊 Panel General
+        </button>
+        <button class="nav-tab" data-tab="inventarios" id="tab-inventarios" onclick="App.switchTab('inventarios')">
+          📦 Inventarios (4 Almacenes)
+        </button>
+        <button class="nav-tab" data-tab="procesos" id="tab-procesos" onclick="App.switchTab('procesos')">
+          ⚙️ Procesos & IA Predictor
+        </button>
+        <button class="nav-tab" data-tab="qr" id="tab-qr" onclick="App.switchTab('qr')">
+          📸 Escáner QR Celular
+        </button>
+        <button class="nav-tab" data-tab="rh" id="tab-rh" onclick="App.switchTab('rh')">
+          👥 Recursos Humanos
+        </button>
+        <button class="nav-tab" data-tab="finanzas" id="tab-finanzas" onclick="App.switchTab('finanzas')">
+          💰 Finanzas & ROI Papel
+        </button>
+      </nav>
+
+      <!-- PANELS -->
+
+      <!-- 1. PANEL DASHBOARD -->
+      <section class="section-panel active" id="panel-dashboard">
+        <!-- Tarjetas de Métricas Rápidas -->
+        <div class="stats-grid">
+          <div class="glass-panel stat-card">
+            <div class="stat-header">
+              <span class="stat-title">Lámparas Fabricadas Mes</span>
+              <div class="stat-icon" style="color:var(--accent-cyan);">💡</div>
+            </div>
+            <div class="stat-value">345 uds</div>
+            <div class="stat-trend up">▲ 18% vs mes anterior a lápiz</div>
+          </div>
+
+          <div class="glass-panel stat-card">
+            <div class="stat-header">
+              <span class="stat-title">Cuellos de Botella Resueltos</span>
+              <div class="stat-icon" style="color:var(--accent-emerald);">🛡️</div>
+            </div>
+            <div class="stat-value">12 Evitados</div>
+            <div class="stat-trend up">▲ 100% Eficiencia IA</div>
+          </div>
+
+          <div class="glass-panel stat-card">
+            <div class="stat-header">
+              <span class="stat-title">Tiempo Promedio de Entrega</span>
+              <div class="stat-icon" style="color:var(--accent-amber);">⏱️</div>
+            </div>
+            <div class="stat-value">2.4 Días</div>
+            <div class="stat-trend up">▼ Reducido a la mitad</div>
+          </div>
+
+          <div class="glass-panel stat-card">
+            <div class="stat-header">
+              <span class="stat-title">Ahorro Est. vs Papel/Lápiz</span>
+              <div class="stat-icon" style="color:var(--accent-violet);">💰</div>
+            </div>
+            <div class="stat-value">$78,000 MXN</div>
+            <div class="stat-trend up">▲ Ahorro mensual directo</div>
+          </div>
+        </div>
+
+        <div class="two-col-grid">
+          <!-- Monitor de Operaciones y Alertas -->
+          <div class="glass-panel" style="padding: 20px;">
+            <h3 style="margin-bottom: 12px; color: var(--accent-cyan); font-size:16px;">
+              🔍 Diagnóstico IA de la Operación de Pedro
+            </h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+              Análisis comparativo de cómo opera el negocio actualmente vs cómo funcionará con la app desarrollada por Brain Branding.
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+              <div style="background: rgba(255, 65, 108, 0.08); border: 1px solid rgba(255, 65, 108, 0.3); border-radius: var(--radius-sm); padding: 12px;">
+                <h4 style="color: var(--accent-rose); font-size: 13px; margin-bottom: 6px;">❌ Operación Tradicional a Lápiz</h4>
+                <ul style="font-size: 11px; color: var(--text-muted); padding-left: 14px; line-height: 1.6;">
+                  <li>Errores en conteo manual de insumos.</li>
+                  <li>Incertidumbre en fechas de entrega prometidas.</li>
+                  <li>Cuellos de botella no detectados a tiempo.</li>
+                  <li>Pérdida de hojas de papel en taller.</li>
+                </ul>
+              </div>
+
+              <div style="background: rgba(0, 242, 96, 0.08); border: 1px solid rgba(0, 242, 96, 0.3); border-radius: var(--radius-sm); padding: 12px;">
+                <h4 style="color: var(--accent-emerald); font-size: 13px; margin-bottom: 6px;">✅ Con Ecosistema IA Brain Branding</h4>
+                <ul style="font-size: 11px; color: var(--text-muted); padding-left: 14px; line-height: 1.6;">
+                  <li>Descuento automático de stock en vivo.</li>
+                  <li>Predicción exacta de entrega por algoritmo.</li>
+                  <li>Alertas proactivas de desabasto.</li>
+                  <li>Acceso desde cualquier celular 24/7.</li>
+                </ul>
+              </div>
+            </div>
+
+            <button onclick="App.switchTab('procesos')" class="btn-primary">
+              ⚡ Ir al Simulador de Producción & IA Predictiva
+            </button>
+          </div>
+
+          <!-- Asistente de Neuromarketing & Autoaprendizaje -->
+          <div class="glass-panel" style="padding: 20px;">
+            <h3 style="margin-bottom: 12px; color: var(--accent-amber); font-size:16px;">
+              🧠 Neuromarketing & Consejos IA
+            </h3>
+            
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px;">
+              <span class="badge badge-warning" style="margin-bottom:4px;">Consejo 1</span>
+              <p style="font-size: 12px; color: var(--text-main);">
+                "Las lámparas High-Bay 150W tienen alta demanda industrial. La IA recomienda armar paquetes pre-ensamblados de 10 unidades para reducir entrega a 24 hrs."
+              </p>
+            </div>
+
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); padding: 12px;">
+              <span class="badge badge-info" style="margin-bottom:4px;">Consejo 2</span>
+              <p style="font-size: 12px; color: var(--text-main);">
+                "En el Portal de Clientes, destacar la garantía de entrega predicha aumenta la conversión de cotización a venta directa en un 34%."
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. PANEL INVENTARIOS (4 ALMACENES REQUERIDOS) -->
+      <section class="section-panel" id="panel-inventarios">
+        <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2 style="font-size: 20px; color: #fff;">📦 Gestión de Almacenes e Inventarios</h2>
+            <p style="font-size: 13px; color: var(--text-muted);">
+              Supervisión de materia prima, componentes, productos comprados y lámparas terminadas.
+            </p>
+          </div>
+        </div>
+
+        <!-- 1. Insumos (Materia Prima) -->
+        <div class="glass-panel" style="padding: 16px; margin-bottom: 20px;">
+          <h3 style="color: var(--accent-cyan); font-size: 15px; margin-bottom: 10px;">
+            1. Almacén de Insumos (Materia Prima)
+          </h3>
+          <div class="custom-table-container">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Material / Insumo</th>
+                  <th>Categoría</th>
+                  <th>Stock Actual</th>
+                  <th>Estatus IA</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tblInsumos"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 2. Componentes Electrónicos -->
+        <div class="glass-panel" style="padding: 16px; margin-bottom: 20px;">
+          <h3 style="color: var(--accent-blue); font-size: 15px; margin-bottom: 10px;">
+            2. Almacén de Componentes Electrónicos (LEDs, Drivers, Cables)
+          </h3>
+          <div class="custom-table-container">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Componente</th>
+                  <th>Categoría</th>
+                  <th>Stock Actual</th>
+                  <th>Estatus IA</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tblComponentes"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 3 y 4. Productos Comprados y Fabricados -->
+        <div class="two-col-grid">
+          <div class="glass-panel" style="padding: 16px;">
+            <h3 style="color: var(--accent-amber); font-size: 15px; margin-bottom: 10px;">
+              3. Productos Comprados (Venta Directa)
+            </h3>
+            <div class="custom-table-container">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Producto</th>
+                    <th>Costo</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="tblComprados"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="glass-panel" style="padding: 16px;">
+            <h3 style="color: var(--accent-emerald); font-size: 15px; margin-bottom: 10px;">
+              4. Lámparas Fabricadas (Producto Terminado)
+            </h3>
+            <div class="custom-table-container">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Modelo Lámpara</th>
+                    <th>Stock Disponible</th>
+                    <th>Ubicación</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="tblFabricados"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. PANEL PROCESOS & IA PREDICTOR -->
+      <section class="section-panel" id="panel-procesos">
+        <div style="margin-bottom: 16px;">
+          <h2 style="font-size: 20px; color: #fff;">⚙️ Procesos de Fabricación en Tiempo Real</h2>
+          <p style="font-size: 13px; color: var(--text-muted);">
+            Avance de lotes por estaciones de trabajo. Al avanzar etapas, la IA descuenta insumos de forma automática.
+          </p>
+        </div>
+
+        <!-- Pipeline de Producción -->
+        <div class="pipeline-container" id="pipelineContainer"></div>
+
+        <!-- Calculadora Predictiva de IA -->
+        <div class="glass-panel glass-panel-glow" id="aiPredictorCard" style="padding: 20px;">
+          <h3 style="color: var(--accent-cyan); font-size: 18px; margin-bottom: 8px;">
+            🤖 Motor Predictivo de Tiempos de Entrega (Algoritmo IA)
+          </h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+            Ingresa un pedido solicitado para predecir el tiempo exacto de entrega evaluando el stock de insumos y capacidad de la fábrica de Pedro.
+          </p>
+
+          <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 12px; align-items: flex-end; margin-bottom: 16px;">
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Modelo de Lámpara Requerido</label>
+              <select class="form-select" id="predictLampSelect"></select>
+            </div>
+
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Cantidad de Unidades</label>
+              <input type="number" class="form-input" id="predictQtyInput" value="50" min="1" max="1000">
+            </div>
+
+            <button onclick="App.runPredictor()" class="btn-primary" style="height: 42px;">
+              🔮 Calcular con IA
+            </button>
+          </div>
+
+          <div id="predictResultBox">
+            <div style="font-size: 12px; color: var(--text-dim); text-align: center; padding: 12px; border: 1px dashed var(--border-glass); border-radius: var(--radius-sm);">
+              Haz clic en "Calcular con IA" para simular la predicción del sistema.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. PANEL ESCÁNER QR EN CELULAR (SUGERENCIA 1) -->
+      <section class="section-panel" id="panel-qr">
+        <div style="margin-bottom: 16px;">
+          <h2 style="font-size: 20px; color: #fff;">📸 Escáner de Código de Barras / QR para Celulares</h2>
+          <p style="font-size: 13px; color: var(--text-muted);">
+            Tus operarios en planta escanean las etiquetas de los lotes directamente con su teléfono celular sin tocar una hoja de papel.
+          </p>
+        </div>
+
+        <div class="two-col-grid">
+          <div class="glass-panel" style="padding: 20px; text-align: center;">
+            <div class="scanner-container">
+              <div class="scanner-laser"></div>
+              <div style="font-size: 40px; margin-bottom: 8px;">📷</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Cámara Táctil Celular Simulada</div>
+            </div>
+
+            <button onclick="App.simulateQRScan()" class="btn-primary">
+              ⚡ Simular Escaneo de Lote en Planta
+            </button>
+
+            <div id="qrScanResult" style="margin-top: 16px;"></div>
+          </div>
+
+          <div class="glass-panel" style="padding: 20px;">
+            <h3 style="color: var(--accent-cyan); font-size: 15px; margin-bottom: 12px;">📱 Ventajas para los Operarios</h3>
+            <ul style="font-size: 13px; color: var(--text-muted); padding-left: 16px; line-height: 1.8;">
+              <li>Cero errores de anotación a mano o lápiz borroso.</li>
+              <li>Actualización instantánea del avance de producción.</li>
+              <li>Validación de control de calidad QC con foto desde el móvil.</li>
+              <li>Notificación inmediata a Pedro en su panel de administración.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. PANEL RECURSOS HUMANOS -->
+      <section class="section-panel" id="panel-rh">
+        <div style="margin-bottom: 16px;">
+          <h2 style="font-size: 20px; color: #fff;">👥 Recursos Humanos & Productividad de Planta</h2>
+          <p style="font-size: 13px; color: var(--text-muted);">
+            Control de personal, asignación por estación de ensamble e índice de eficiencia por turno.
+          </p>
+        </div>
+
+        <div class="glass-panel" style="padding: 16px;">
+          <div class="custom-table-container">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Operario / Empleado</th>
+                  <th>Turno</th>
+                  <th>Estación Asignada</th>
+                  <th>Índice de Eficiencia</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="tblPersonnel"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. PANEL FINANZAS & ROI PAPEL VS DIGITAL (SUGERENCIA 3) -->
+      <section class="section-panel" id="panel-finanzas">
+        <div style="margin-bottom: 16px;">
+          <h2 style="font-size: 20px; color: #fff;">💰 Finanzas & Calculadora de ROI (Papel vs Digital IA)</h2>
+          <p style="font-size: 13px; color: var(--text-muted);">
+            Descubre cuánto dinero y horas de trabajo se ahorrará Pedro al digitalizar su fábrica de lámparas.
+          </p>
+        </div>
+
+        <div class="two-col-grid">
+          <!-- Calculadora Dinámica de ROI -->
+          <div class="glass-panel glass-panel-glow" style="padding: 20px;">
+            <h3 style="color: var(--accent-emerald); font-size: 16px; margin-bottom: 12px;">
+              💡 Calculadora de Ahorro para Pedro
+            </h3>
+            
+            <div class="form-group">
+              <label class="form-label">Lámparas Fabricadas por Mes: <strong id="roiLampsVal" style="color:var(--accent-cyan);">300</strong> uds</label>
+              <input type="range" id="roiLampsInput" min="50" max="1500" value="300" step="50" style="width:100%; accent-color:var(--accent-cyan);" oninput="App.runROICalculator()">
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:20px;">
+              <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-glass); padding:12px; border-radius:8px;">
+                <div style="font-size:11px; color:var(--text-muted);">Horas Pérdidas en Papel / Mes</div>
+                <div style="font-size:22px; font-weight:800; color:var(--accent-rose);" id="roiHoursSaved">75 hrs</div>
+              </div>
+
+              <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-glass); padding:12px; border-radius:8px;">
+                <div style="font-size:11px; color:var(--text-muted);">Ahorro Mensual Estimado</div>
+                <div style="font-size:22px; font-weight:800; color:var(--accent-emerald);" id="roiMoneySaved">$27,880 MXN</div>
+              </div>
+            </div>
+
+            <div style="margin-top:16px; background:rgba(0,242,96,0.1); border:1px solid var(--accent-emerald); padding:12px; border-radius:8px; text-align:center;">
+              <span style="font-size:12px; color:var(--text-muted);">Ahorro Proyectado al Año:</span>
+              <div style="font-size:26px; font-weight:800; color:#fff;" id="roiYearlySaved">$334,560 MXN</div>
+            </div>
+          </div>
+
+          <!-- Métricas Financieras de la Fábrica -->
+          <div class="glass-panel" style="padding: 20px;">
+            <h3 style="color: var(--accent-cyan); font-size: 16px; margin-bottom: 12px;">📊 Salud Financiera Actual</h3>
+            
+            <div style="margin-bottom: 16px;">
+              <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+                <span>Ingresos Mensuales:</span>
+                <strong style="color:var(--accent-emerald);">$485,000 MXN</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+                <span>Costos de Operación:</span>
+                <strong style="color:var(--accent-rose);">$220,000 MXN</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border-glass);">
+                <span>Margen Bruto de Ganancia:</span>
+                <strong style="color:var(--accent-cyan); font-size:16px;">54.6% ($265,000 MXN)</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PORTAL DE CLIENTES (VISTA CLIENTES PEDRO) -->
+    <!-- ========================================== -->
+    <div id="clientPortalSection" class="section-panel">
+      <div style="margin-bottom: 20px; text-align: center;">
+        <span class="badge badge-info" style="margin-bottom: 6px;">PORTAL PÚBLICO DE CLIENTES</span>
+        <h2 style="font-size: 26px; color: #fff;">Catálogo de Lámparas & Pre-Pedidos en Línea</h2>
+        <p style="font-size: 13px; color: var(--text-muted); max-width: 600px; margin: 0 auto;">
+          Tus clientes pueden explorar los modelos de lámparas fabricados por Pedro, realizar pre-pedidos y consultar la fecha exacta de entrega predicha por el motor de IA.
+        </p>
+      </div>
+
+      <!-- Grid de Productos -->
+      <div class="catalog-grid" id="catalogGrid"></div>
+    </div>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 5. OVERLAY DEL TOUR GUIADO -->
+  <!-- ========================================== -->
+  <div class="tour-overlay" id="tourOverlay"></div>
+  <div class="glass-panel tour-card" id="tourCard"></div>
+
+  <!-- ========================================== -->
+  <!-- 6. BARRA DE NAVEGACIÓN MÓVIL (SMARTPHONE) -->
+  <!-- ========================================== -->
+  <nav class="mobile-nav">
+    <button class="mobile-nav-item active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
+      <span class="mobile-nav-icon">📊</span>
+      <span>Inicio</span>
+    </button>
+    <button class="mobile-nav-item" data-tab="inventarios" onclick="App.switchTab('inventarios')">
+      <span class="mobile-nav-icon">📦</span>
+      <span>Stock</span>
+    </button>
+    <button class="mobile-nav-item" data-tab="procesos" onclick="App.switchTab('procesos')">
+      <span class="mobile-nav-icon">⚙️</span>
+      <span>Procesos</span>
+    </button>
+    <button class="mobile-nav-item" data-tab="qr" onclick="App.switchTab('qr')">
+      <span class="mobile-nav-icon">📸</span>
+      <span>QR</span>
+    </button>
+    <button class="mobile-nav-item" data-tab="finanzas" onclick="App.switchTab('finanzas')">
+      <span class="mobile-nav-icon">💰</span>
+      <span>ROI</span>
+    </button>
+  </nav>
+
+  <!-- Scripts JavaScript -->
+  <script src="js/data.js"></script>
+  <script src="js/ai-engine.js"></script>
+  <script src="js/tour.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
