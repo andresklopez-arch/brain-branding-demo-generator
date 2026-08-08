@@ -151,6 +151,44 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, calmReply);
   }
 
+  // Evaluador Dinámico del Nivel de Convicción del Prospecto [NADA, POCO, REGULAR, MUCHO, TOTALMENTE]
+  const evaluateConvictionLevel = (clean, fuzzy) => {
+    if (clean.includes('contratar') || clean.includes('comprar ya') || clean.includes('pasame la cuenta') || clean.includes('datos bancarios') || clean.includes('donde transfiero') || clean.includes('donde pago') || clean.includes('arrancar ya') || clean.includes('empezar ya') || clean.includes('agendar llamada de inicio')) {
+      return 'TOTALMENTE';
+    }
+    if (clean.includes('con cuanto se inicia') || clean.includes('cuanto es de anticipo') || clean.includes('propuesta formal') || clean.includes('cuando empezamos') || clean.includes('metodos de pago') || clean.includes('garantia') || clean.includes('factura') || clean.includes('mandas la propuesta') || clean.includes('hitos de avance')) {
+      return 'MUCHO';
+    }
+    if (clean.includes('se integra') || clean.includes('cuanto tarda') || clean.includes('tiempo de entrega') || clean.includes('capacitacion') || clean.includes('como funciona') || clean.includes('modulos') || clean.includes('demostracion') || clean.includes('demo') || clean.includes('base de datos') || clean.includes('nube')) {
+      return 'REGULAR';
+    }
+    if (clean.includes('caro') || clean.includes('costoso') || clean.includes('otra agencia') || clean.includes('mas barato') || clean.includes('descuento') || clean.includes('rebaja') || clean.includes('software generico') || clean.includes('compara')) {
+      return 'POCO';
+    }
+    if (clean === 'ok' || clean === 'mm' || clean.includes('luego veo') || clean.includes('sera cierto') || clean.includes('fraude') || clean.includes('fake') || clean.includes('falso') || clean.includes('quienes son')) {
+      return 'NADA';
+    }
+    return 'REGULAR';
+  };
+
+  state.conviction = evaluateConvictionLevel(textClean, fuzzyClean);
+
+  // 0.0.1 TOTALMENTE CONVENCIDO (Fase Cierre Listo)
+  if (state.conviction === 'TOTALMENTE' || textClean.includes('pasame la cuenta') || textClean.includes('datos bancarios') || textClean.includes('donde transfiero')) {
+    state.temp = 'CITA_URGENTE';
+    const reply = `¡Excelente decisión! 🚀 Vamos a trabajar para dejar tu sistema impecable.\n\nTe dejo el enlace directo a nuestra agenda para fijar la reunión de arranque con el equipo de desarrollo liderado por Andrés R, o si prefieres, te envío los datos bancarios para el anticipo del 35%:\n\n📱 *Agenda de Inicio con Andrés R:* https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20estoy%20listo%20para%20arrancar%20el%20proyecto%20y%20requiero%20los%20datos%20bancarios.\n💳 *SPEI / Transferencia:* Banco STP / BBVA (Factura Fiscal CFDI 4.0)`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 0.0.2 MUCHO CONVENCIDO (Fase Intención Alta)
+  if (textClean.includes('con cuanto se inicia') || textClean.includes('propuesta formal') || textClean.includes('cuando empezamos')) {
+    state.temp = 'CALIENTE';
+    const reply = `Podemos arrancar con el levantamiento de requerimientos esta misma semana. 📄\n\nManejamos un esquema por hitos de avance (35% anticipo y 65% restante ÚNICAMENTE a la entrega tras tu entera satisfacción) y expedimos factura fiscal.\n\nPara enviarte la propuesta formal ajustada a tu presupuesto aproximado, ¿me confirmas tu correo y nombre completo? 📩`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
   if (userText === '/start') {
     const greetingName = userName ? ` ${userName}` : '';
     const welcome = `¡Hola${greetingName}! 👋 Qué gusto saludarte.\n\nSoy Andrés R de Brain Branding. Desarrollamos Asistentes con Inteligencia Artificial, Software a la Medida y Páginas Web de alta conversión.\n\nPlatícame, ¿qué área de tu negocio o empresa te gustaría automatizar hoy?`;
