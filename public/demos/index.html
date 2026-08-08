@@ -31,10 +31,10 @@
         <!-- Switcher Dual de Portales -->
         <div class="role-switcher" id="roleSwitcher">
           <button class="role-btn active" data-role="admin" onclick="App.switchRole('admin')">
-            ⚡ Admin BackOffice
+            ⚡ Modo Administración
           </button>
           <button class="role-btn" data-role="client" onclick="App.switchRole('client')">
-            🛍️ Portal Clientes
+            🛍️ Modo Cliente
           </button>
         </div>
         <button class="btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="TourGuide.start()">
@@ -45,7 +45,33 @@
   </header>
 
   <!-- ========================================== -->
-  <!-- 2. PIN ACCESS GATE OVERLAY (ACCESO SIMULADO) -->
+  <!-- 2. MENÚ PRINCIPAL DE NAVEGACIÓN (DEBAJO DE MODO CLIENTE/ADMIN) -->
+  <!-- ========================================== -->
+  <div class="main-nav-wrapper" id="mainNavWrapper">
+    <nav class="nav-tabs-bar" id="adminNavTabs">
+      <button class="nav-tab active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
+        📊 Panel General
+      </button>
+      <button class="nav-tab" data-tab="inventarios" id="tab-inventarios" onclick="App.switchTab('inventarios')">
+        📦 Inventarios (4 Almacenes)
+      </button>
+      <button class="nav-tab" data-tab="procesos" id="tab-procesos" onclick="App.switchTab('procesos')">
+        ⚙️ Procesos & IA Predictor
+      </button>
+      <button class="nav-tab" data-tab="qr" id="tab-qr" onclick="App.switchTab('qr')">
+        📸 Escáner QR Celular
+      </button>
+      <button class="nav-tab" data-tab="rh" id="tab-rh" onclick="App.switchTab('rh')">
+        👥 Recursos Humanos
+      </button>
+      <button class="nav-tab" data-tab="finanzas" id="tab-finanzas" onclick="App.switchTab('finanzas')">
+        💰 Finanzas & ROI Papel
+      </button>
+    </nav>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. PIN ACCESS GATE OVERLAY (ACCESO SIMULADO) -->
   <!-- ========================================== -->
   <div class="pin-gate-overlay" id="pinGateOverlay">
     <div class="glass-panel pin-gate-card">
@@ -82,7 +108,7 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- 3. BIENVENIDA PERSONALIZADA PEDRO MODAL -->
+  <!-- 4. BIENVENIDA PERSONALIZADA PEDRO MODAL -->
   <!-- ========================================== -->
   <div class="welcome-overlay" id="welcomeOverlay">
     <div class="glass-panel welcome-card">
@@ -137,45 +163,14 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- 4. CONTENIDO PRINCIPAL DE LA APP -->
+  <!-- 5. CONTENIDO PRINCIPAL DE LA APP -->
   <!-- ========================================== -->
   <main class="app-container" style="margin-top: 16px;">
-
-    <!-- Banner Ticker de Alertas IA -->
-    <div class="ai-alert-banner" id="aiAlertBanner">
-      <div class="ai-pulse"></div>
-      <div class="ai-alert-text" id="aiAlertTicker">
-        ⚡ <strong>SISTEMA IA ACTIVO</strong>: Monitoreando estaciones de corte, ensamble y niveles de stock de componentes...
-      </div>
-      <span class="ai-alert-badge">Autoaprendizaje ON</span>
-    </div>
 
     <!-- ========================================== -->
     <!-- PORTAL ADMINISTRADOR (BACKOFFICE PEDRO) -->
     <!-- ========================================== -->
     <div id="adminPortalSection" class="active">
-
-      <!-- Pestañas de Navegación del Administrador -->
-      <nav class="nav-tabs-bar" id="adminNavTabs">
-        <button class="nav-tab active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
-          📊 Panel General
-        </button>
-        <button class="nav-tab" data-tab="inventarios" id="tab-inventarios" onclick="App.switchTab('inventarios')">
-          📦 Inventarios (4 Almacenes)
-        </button>
-        <button class="nav-tab" data-tab="procesos" id="tab-procesos" onclick="App.switchTab('procesos')">
-          ⚙️ Procesos & IA Predictor
-        </button>
-        <button class="nav-tab" data-tab="qr" id="tab-qr" onclick="App.switchTab('qr')">
-          📸 Escáner QR Celular
-        </button>
-        <button class="nav-tab" data-tab="rh" id="tab-rh" onclick="App.switchTab('rh')">
-          👥 Recursos Humanos
-        </button>
-        <button class="nav-tab" data-tab="finanzas" id="tab-finanzas" onclick="App.switchTab('finanzas')">
-          💰 Finanzas & ROI Papel
-        </button>
-      </nav>
 
       <!-- PANELS -->
 
@@ -553,31 +548,104 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- PORTAL DE CLIENTES (VISTA CLIENTES PEDRO) -->
+    <!-- PORTAL DE CLIENTES (100% ATENCIÓN A CLIENTES & COMPRAS) -->
     <!-- ========================================== -->
     <div id="clientPortalSection" class="section-panel">
-      <div style="margin-bottom: 20px; text-align: center;">
-        <span class="badge badge-info" style="margin-bottom: 6px;">PORTAL PÚBLICO DE CLIENTES</span>
-        <h2 style="font-size: 26px; color: #fff;">Catálogo de Lámparas & Pre-Pedidos en Línea</h2>
-        <p style="font-size: 13px; color: var(--text-muted); max-width: 600px; margin: 0 auto;">
-          Tus clientes pueden explorar los modelos de lámparas fabricados por Pedro, realizar pre-pedidos y consultar la fecha exacta de entrega predicha por el motor de IA.
+      <div style="margin-bottom: 24px; text-align: center;">
+        <span class="badge badge-info" style="margin-bottom: 8px; font-size: 12px; font-weight: 800;">🛍️ PORTAL DE ATENCIÓN A CLIENTES</span>
+        <h2 style="font-size: 28px; color: #fff;">Catálogo & Atención Inmediata a Clientes</h2>
+        <p style="font-size: 14px; color: var(--text-muted); max-width: 620px; margin: 6px auto 0 auto;">
+          Explora nuestros modelos de lámparas de alta calidad, consulta la fecha exacta de entrega calculada por nuestra IA o solicita soporte directo.
         </p>
       </div>
 
-      <!-- Grid de Productos -->
-      <div class="catalog-grid" id="catalogGrid"></div>
+      <!-- Pestañas del Portal de Clientes -->
+      <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+        <button class="nav-tab active" onclick="App.switchClientTab('catalog')">
+          💡 Catálogo & Pre-Pedidos
+        </button>
+        <button class="nav-tab" onclick="App.switchClientTab('tracking')">
+          🚚 Rastrear Mi Pedido
+        </button>
+        <button class="nav-tab" onclick="App.switchClientTab('support')">
+          💬 Soporte & Atención IA
+        </button>
+      </div>
+
+      <!-- 1. Catálogo & Pre-Pedidos -->
+      <div id="clientTab-catalog" class="client-sub-tab active">
+        <div class="catalog-grid" id="catalogGrid"></div>
+      </div>
+
+      <!-- 2. Rastrear Mi Pedido en Vivo -->
+      <div id="clientTab-tracking" class="client-sub-tab" style="display:none;">
+        <div class="glass-panel" style="padding: 24px; max-width: 650px; margin: 0 auto;">
+          <h3 style="color: var(--accent-cyan); font-size: 18px; margin-bottom: 8px;">🚚 Rastreador de Pedidos de Lámparas</h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+            Ingresa tu número de orden de compra para conocer el estatus de fabricación en vivo.
+          </p>
+
+          <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <input type="text" class="form-input" placeholder="Ej: PED-901" value="PED-901">
+            <button class="btn-primary" style="width: auto; padding: 0 20px;" onclick="alert('🔎 Pedido PED-901 encontrado:\n- Producto: 30x High-Bay 150W\n- Estado: En Producción (QC Pruebas)\n- Entrega Estimada IA: Mañana 16:00 hrs')">
+              Buscar
+            </button>
+          </div>
+
+          <div style="background: rgba(0, 242, 254, 0.06); border: 1px solid var(--accent-cyan); border-radius: var(--radius-sm); padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <strong style="color: #fff; font-size: 15px;">Pedido #PED-901 • Constructora Proyectos Lux</strong>
+              <span class="badge badge-warning">En Producción</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">30x Lámpara Industrial High-Bay 150W</p>
+            
+            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 20px; height: 10px; overflow: hidden; margin-bottom: 10px;">
+              <div style="width: 75%; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-emerald)); height: 100%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);">
+              <span>Ensamble 100%</span>
+              <span>QC Pruebas 85%</span>
+              <span>⏱️ Fecha Entrega IA: Mañana 16:00 hrs</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Asistente IA de Soporte & Atención -->
+      <div id="clientTab-support" class="client-sub-tab" style="display:none;">
+        <div class="glass-panel" style="padding: 24px; max-width: 650px; margin: 0 auto; text-align: center;">
+          <div style="font-size: 40px; margin-bottom: 8px;">💬</div>
+          <h3 style="color: var(--accent-emerald); font-size: 20px; margin-bottom: 8px;">Asistente Virtual de Atención a Clientes</h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+            ¿Tienes dudas sobre especificaciones de iluminación, modelos o garantías? Nuestro chatbot IA te atiende 24/7.
+          </p>
+
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; text-align: left; margin-bottom: 16px;">
+            <div style="background: rgba(0, 242, 254, 0.15); color: var(--accent-cyan); padding: 8px 12px; border-radius: 12px; margin-bottom: 10px; font-size: 12px; display: inline-block;">
+              🤖 Chatbot IA: Hola, ¿en qué puedo ayudarte con tu proyecto de iluminación hoy?
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <input type="text" class="form-input" placeholder="Escribe tu duda o consulta aquí..." id="clientSupportInput">
+            <button class="btn-primary" style="width: auto; padding: 0 20px;" onclick="App.simulateClientSupport()">
+              Enviar
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
   </main>
 
   <!-- ========================================== -->
-  <!-- 5. OVERLAY DEL TOUR GUIADO -->
+  <!-- 6. OVERLAY DEL TOUR GUIADO -->
   <!-- ========================================== -->
   <div class="tour-overlay" id="tourOverlay"></div>
   <div class="glass-panel tour-card" id="tourCard"></div>
 
   <!-- ========================================== -->
-  <!-- 6. BARRA DE NAVEGACIÓN MÓVIL (SMARTPHONE) -->
+  <!-- 7. BARRA DE NAVEGACIÓN MÓVIL (SMARTPHONE) -->
   <!-- ========================================== -->
   <nav class="mobile-nav">
     <button class="mobile-nav-item active" data-tab="dashboard" onclick="App.switchTab('dashboard')">

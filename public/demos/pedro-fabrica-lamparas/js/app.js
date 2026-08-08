@@ -98,16 +98,16 @@ const App = {
     const activeBtn = document.querySelector(`.role-btn[data-role="${role}"]`);
     if (activeBtn) activeBtn.classList.add("active");
 
-    const adminNav = document.getElementById("adminNavTabs");
+    const mainNav = document.getElementById("mainNavWrapper");
     const clientView = document.getElementById("clientPortalSection");
     const adminView = document.getElementById("adminPortalSection");
 
     if (role === "client") {
-      if (adminNav) adminNav.style.display = "none";
+      if (mainNav) mainNav.style.display = "none";
       if (clientView) clientView.classList.add("active");
       if (adminView) adminView.classList.remove("active");
     } else {
-      if (adminNav) adminNav.style.display = "flex";
+      if (mainNav) mainNav.style.display = "block";
       if (clientView) clientView.classList.remove("active");
       if (adminView) adminView.classList.add("active");
     }
@@ -118,7 +118,7 @@ const App = {
     const activeTab = document.querySelector(`.nav-tab[data-tab="${tabName}"]`);
     if (activeTab) activeTab.classList.add("active");
 
-    document.querySelectorAll(".section-panel").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll("#adminPortalSection .section-panel").forEach(p => p.classList.remove("active"));
     const targetPanel = document.getElementById(`panel-${tabName}`);
     if (targetPanel) targetPanel.classList.add("active");
 
@@ -126,6 +126,19 @@ const App = {
     document.querySelectorAll(".mobile-nav-item").forEach(m => m.classList.remove("active"));
     const mobItem = document.querySelector(`.mobile-nav-item[data-tab="${tabName}"]`);
     if (mobItem) mobItem.classList.add("active");
+  },
+
+  switchClientTab: function(subTab) {
+    document.querySelectorAll(".client-sub-tab").forEach(t => t.style.display = "none");
+    const target = document.getElementById(`clientTab-${subTab}`);
+    if (target) target.style.display = "block";
+  },
+
+  simulateClientSupport: function() {
+    const input = document.getElementById("clientSupportInput");
+    if (!input || !input.value.trim()) return;
+    alert(`💬 Chatbot IA de Atención a Clientes:\n\nGracias por tu consulta: "${input.value}"\n\nRespuesta IA: Todos nuestros productos cuentan con garantía de 3 años e instalación asistida. ¡Un asesor humano se pondrá en contacto contigo si lo requieres!`);
+    input.value = "";
   },
 
   renderAll: function() {
@@ -331,7 +344,6 @@ const App = {
   },
 
   renderFinances: function() {
-    // Render ROI Calculator dynamic text
     this.runROICalculator();
   },
 
