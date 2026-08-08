@@ -23,6 +23,79 @@
     .then(d => { if (d && d.success) geoData = d; })
     .catch(() => {});
 
+  // Precise Device Specifications Parser
+  const getDetailedDeviceInfo = () => {
+    const ua = navigator.userAgent || '';
+    let os = 'Desconocido';
+    let deviceType = 'Computadora 💻';
+    let browser = 'Navegador Web';
+
+    if (/iPhone/i.test(ua)) {
+      os = 'iPhone (iOS)';
+      deviceType = 'Móvil 📱';
+      const match = ua.match(/OS (\d+_\d+)/);
+      if (match) os = `iPhone (iOS ${match[1].replace('_', '.')})`;
+    } else if (/iPad/i.test(ua)) {
+      os = 'iPad (iPadOS)';
+      deviceType = 'Tablet 📟';
+    } else if (/Android/i.test(ua)) {
+      deviceType = /Mobile/i.test(ua) ? 'Móvil 📱' : 'Tablet 📟';
+      const verMatch = ua.match(/Android\s([0-9.]+)/i);
+      const ver = verMatch ? `Android ${verMatch[1]}` : 'Android';
+      
+      let model = '';
+      if (/Samsung|SM-|GT-/i.test(ua)) model = 'Samsung';
+      else if (/Xiaomi|Redmi|POCO/i.test(ua)) model = 'Xiaomi / Redmi';
+      else if (/Motorola|Moto/i.test(ua)) model = 'Motorola';
+      else if (/Huawei|HONOR/i.test(ua)) model = 'Huawei';
+      else if (/OPPO|Realme/i.test(ua)) model = 'OPPO / Realme';
+      else if (/Pixel/i.test(ua)) model = 'Google Pixel';
+
+      os = model ? `${ver} (${model})` : ver;
+    } else if (/Windows NT 10.0/i.test(ua)) {
+      os = 'Windows 10/11 PC';
+      deviceType = 'Computadora 💻';
+    } else if (/Windows NT 6.1/i.test(ua)) {
+      os = 'Windows 7 PC';
+      deviceType = 'Computadora 💻';
+    } else if (/Macintosh|Mac OS X/i.test(ua)) {
+      os = 'MacBook / Mac (macOS)';
+      deviceType = 'Computadora 💻';
+    } else if (/Linux/i.test(ua)) {
+      os = 'Linux PC';
+      deviceType = 'Computadora 💻';
+    }
+
+    if (/WhatsApp/i.test(ua)) {
+      browser = 'Navegador de WhatsApp 💬';
+    } else if (/FBAN|FBAV/i.test(ua)) {
+      browser = 'Facebook App 🔵';
+    } else if (/Instagram/i.test(ua)) {
+      browser = 'Instagram App 📸';
+    } else if (/Telegram/i.test(ua)) {
+      browser = 'Telegram App ✈️';
+    } else if (/Edg\//i.test(ua)) {
+      browser = 'Microsoft Edge 🌊';
+    } else if (/Chrome\/([0-9]+)/i.test(ua) && !/Chromium|Edg|OPR/i.test(ua)) {
+      const ver = ua.match(/Chrome\/([0-9]+)/i);
+      browser = `Chrome ${ver ? ver[1] : ''} 🌐`;
+    } else if (/Safari\/([0-9]+)/i.test(ua) && !/Chrome|Android/i.test(ua)) {
+      browser = 'Safari 🧭';
+    } else if (/Firefox\/([0-9]+)/i.test(ua)) {
+      browser = 'Firefox 🦊';
+    } else if (/SamsungBrowser\/([0-9]+)/i.test(ua)) {
+      browser = 'Samsung Internet 📱';
+    } else if (/OPR\/|Opera/i.test(ua)) {
+      browser = 'Opera 🔴';
+    }
+
+    const width = window.screen ? window.screen.width : 0;
+    const height = window.screen ? window.screen.height : 0;
+    const resolution = (width && height) ? `${width}x${height}px` : '';
+
+    return `${os} (${browser}) ${resolution ? '[' + resolution + ']' : ''} ${deviceType}`;
+  };
+
   // Instant Initial Visit Recording on Load
   const recordInitialVisit = () => {
     try {
@@ -39,8 +112,7 @@
       } else if (document.referrer.includes('t.me')) {
         source = 'Telegram 🔵';
       }
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const device = isMobile ? 'Móvil 📱' : 'Computadora 💻';
+      const device = getDetailedDeviceInfo();
 
       const initialRecord = {
         time: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
@@ -166,8 +238,7 @@
       source = 'Telegram 🔵';
     }
 
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const device = isMobile ? 'Móvil 📱' : 'Computadora 💻';
+    const device = getDetailedDeviceInfo();
     const city = geoData ? geoData.city || 'Desconocida' : 'México';
     const region = geoData ? geoData.region || '' : '';
     const country = geoData ? geoData.country || 'México' : 'México';
