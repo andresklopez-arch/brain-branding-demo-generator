@@ -669,6 +669,24 @@ async function handleWebhookRequest(req, res) {
           return res.status(200).json({ ok: true });
         }
 
+        if (cmdLower === '/seguimiento' || cmdLower === '/inactivos') {
+          const pendingLeads = prospectLogs.filter(p => p.temp === 'CALIENTE' || p.temp === 'CITA_URGENTE' || p.text.includes('precio'));
+          let followUpMsg = `📋 *REPORTE DE SEGUIMIENTO A PROSPECTOS CON ALTA INTENCIÓN* 📋\n\n`;
+          if (pendingLeads.length === 0) {
+            followUpMsg += `• No hay prospectos pendientes de seguimiento registrados en las últimas 24 horas. 👍\n`;
+          } else {
+            pendingLeads.slice(-8).reverse().forEach((p, idx) => {
+              followUpMsg += `${idx + 1}. *${p.name}* (@${p.username || 'sin_user'})\n   💬 "${p.text.substring(0, 35)}..."\n   📲 Recontactar: \`/enviarwa ${p.chatId} citas\`\n\n`;
+            });
+          }
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: followUpMsg,
+            parse_mode: 'Markdown'
+          });
+          return res.status(200).json({ ok: true });
+        }
+
         if (cmdLower === '/reporte' || cmdLower === '/resumen') {
           const whatsappLogs = require('./whatsapp.js').whatsappProspectLogs || [];
           const uniqueTg = new Set(prospectLogs.map(p => p.chatId)).size;
