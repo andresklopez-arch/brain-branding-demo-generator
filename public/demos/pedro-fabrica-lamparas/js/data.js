@@ -1,12 +1,48 @@
 /* ==========================================================================
-   DATOS INICIALES - DEMO FÁBRICA DE LÁMPARAS PEDRO (BRAIN BRANDING)
+   REGISTRO MULTI-TENANT DE DEMOS & DATOS INICIALES - BRAIN BRANDING DEMOS
+   Cada cliente tiene su NIP de 5 dígitos único para su propia demo efímera (90 días)
    ========================================================================== */
+
+const demoRegistry = {
+  // NIP de Pedro (Fábrica de Lámparas)
+  "84927": {
+    clientId: "pedro-lamparas",
+    clientName: "Pedro",
+    businessName: "Fábrica de Lámparas Pedro",
+    createdDate: "2026-08-08",
+    expirationDays: 90,
+    welcomeTitle: "¡Bienvenido Pedro a la Demo Interactiva de tu Fábrica de Lámparas con IA!",
+    welcomeText: "Sabemos que tu fábrica de lámparas opera a papel y lápiz. Esta aplicación demuestra cómo tu nuevo software personalizado tomará el control total de producción, inventarios y finanzas en tiempo real."
+  },
+
+  // NIP de María (Demo Boutique & Retail)
+  "73194": {
+    clientId: "maria-retail",
+    clientName: "María",
+    businessName: "Boutique & Retail María",
+    createdDate: "2026-08-08",
+    expirationDays: 90,
+    welcomeTitle: "¡Bienvenida María a tu Demo de Gestión de Tienda & Moda con IA!",
+    welcomeText: "Control inteligente de existencias, código de barras y catálogo digital de prendas."
+  },
+
+  // NIP de Carlos (Demo Distribuidora Logística)
+  "91823": {
+    clientId: "carlos-logistica",
+    clientName: "Carlos",
+    businessName: "Distribuidora Logística Carlos",
+    createdDate: "2026-08-08",
+    expirationDays: 90,
+    welcomeTitle: "¡Bienvenido Carlos a tu Demo de Logística 4.0 con IA!",
+    welcomeText: "Supervisión de flotillas, rutas óptimas y rastreo de envíos en tiempo real."
+  }
+};
 
 const initialData = {
   clientName: "Pedro",
   passcode: "84927", // PIN privado de 5 dígitos para Pedro
-  createdDate: "2026-08-08", // Fecha de creación de la demo
-  expirationDays: 90, // Demo efímera de 90 días de vigencia
+  createdDate: "2026-08-08",
+  expirationDays: 90,
   
   // Catálogo de Lámparas Fabricadas
   lamps: [

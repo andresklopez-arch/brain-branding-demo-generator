@@ -1,5 +1,5 @@
 /* ==========================================================================
-   LÓGICA PRINCIPAL DE LA APLICACIÓN - DEMO PEDRO (BRAIN BRANDING)
+   LÓGICA PRINCIPAL DE LA APLICACIÓN - DEMO MULTI-TENANT (BRAIN BRANDING)
    ========================================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -9,6 +9,8 @@ document.addEventListener("DOMContentLoaded", () => {
 const App = {
   currentRole: "admin", // "admin" or "client"
   enteredPin: "",
+  failedAttempts: 0,
+  lockUntil: 0,
 
   init: function() {
     this.bindEvents();
@@ -17,7 +19,15 @@ const App = {
   },
 
   checkSession: function() {
-    // Verificación de expiración efímera de 90 días
+    // Check if system is locked due to 3 failed attempts
+    const savedLock = localStorage.getItem("pedro_demo_lock_time");
+    if (savedLock && parseInt(savedLock) > Date.now()) {
+      this.lockUntil = parseInt(savedLock);
+      this.showLockScreen();
+      return;
+    }
+
+    // Check 90 days ephemeral expiration
     const created = new Date(initialData.createdDate || "2026-08-08");
     const now = new Date();
     const diffDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
@@ -41,7 +51,7 @@ const App = {
     }
 
     const savedPin = localStorage.getItem("pedro_demo_authenticated_5digit");
-    if (savedPin === "true") {
+    if (savedPin) {
       const pinGate = document.getElementById("pinGateOverlay");
       if (pinGate) pinGate.style.display = "none";
       this.showWelcomeModal();
@@ -52,6 +62,11 @@ const App = {
     // PIN Keypad buttons
     document.querySelectorAll(".key-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
+        if (Date.now() < this.lockUntil) {
+          alert("🔒 El sistema está temporalmente bloqueado por seguridad. Espera un momento.");
+          return;
+        }
+
         const val = e.target.dataset.key;
         if (val === "del") {
           this.enteredPin = this.enteredPin.slice(0, -1);
@@ -86,18 +101,39 @@ const App = {
     });
 
     if (this.enteredPin.length === 5) {
-      if (this.enteredPin === initialData.passcode) {
-        localStorage.setItem("pedro_demo_authenticated_5digit", "true");
+      const tenant = demoRegistry[this.enteredPin];
+      if (tenant) {
+        // Successful multi-tenant match!
+        this.failedAttempts = 0;
+        localStorage.setItem("pedro_demo_authenticated_5digit", tenant.clientId);
+        
+        // Update personalized modal title for this tenant
+        const welcomeTitle = document.querySelector(".welcome-title");
+        const welcomeText = document.querySelector(".welcome-text");
+        if (welcomeTitle) welcomeTitle.textContent = tenant.welcomeTitle;
+        if (welcomeText) welcomeText.textContent = tenant.welcomeText;
+
         setTimeout(() => {
           document.getElementById("pinGateOverlay").style.display = "none";
           this.showWelcomeModal();
         }, 300);
       } else {
-        alert("⚠️ NIP Incorrecto. Revisa el código de 5 dígitos proporcionado por tu ejecutivo.");
+        this.failedAttempts++;
+        if (this.failedAttempts >= 3) {
+          this.lockUntil = Date.now() + 5 * 60 * 1000; // 5 minute lock
+          localStorage.setItem("pedro_demo_lock_time", this.lockUntil.toString());
+          this.showLockScreen();
+        } else {
+          alert(`⚠️ NIP Incorrecto (${this.failedAttempts}/3 intentos). Revisa el NIP de 5 dígitos proporcionado por tu ejecutivo.`);
+        }
         this.enteredPin = "";
         this.updatePinDisplay();
       }
     }
+  },
+
+  showLockScreen: function() {
+    alert("🔒 Seguridad Activada: 3 intentos fallidos de NIP. El acceso a los demos se ha congelado temporalmente por 5 minutos.");
   },
 
   showWelcomeModal: function() {
