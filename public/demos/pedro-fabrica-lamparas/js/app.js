@@ -20,6 +20,7 @@ const App = {
   },
 
   checkSession: function() {
+    // 1. Verificar bloqueo por intentos fallidos
     const savedLock = localStorage.getItem("pedro_demo_lock_time");
     if (savedLock && parseInt(savedLock) > Date.now()) {
       this.lockUntil = parseInt(savedLock);
@@ -27,6 +28,7 @@ const App = {
       return;
     }
 
+    // 2. Verificar expiración efímera de 90 días
     const created = new Date(initialData.createdDate || "2026-08-08");
     const now = new Date();
     const diffDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
@@ -49,11 +51,11 @@ const App = {
       return;
     }
 
-    const savedPin = localStorage.getItem("pedro_demo_authenticated_5digit");
-    if (savedPin) {
-      const pinGate = document.getElementById("pinGateOverlay");
-      if (pinGate) pinGate.style.display = "none";
-      this.showWelcomeModal();
+    // SIEMPRE EXIGIR EL NIP DE 5 DÍGITOS AL ENTRAR AL HUB DE DEMOS
+    // Esto asegura que cada persona ingrese su NIP y sea redirigida a su propia demo.
+    const pinGate = document.getElementById("pinGateOverlay");
+    if (pinGate) {
+      pinGate.style.display = "flex";
     }
   },
 
@@ -101,12 +103,15 @@ const App = {
       const tenant = demoRegistry[this.enteredPin];
       if (tenant) {
         this.failedAttempts = 0;
-        localStorage.setItem("pedro_demo_authenticated_5digit", tenant.clientId);
         
+        // Actualizar título y texto personalizado para el cliente de esta demo
         const welcomeTitle = document.querySelector(".welcome-title");
         const welcomeText = document.querySelector(".welcome-text");
+        const hubSub = document.querySelector(".hub-sub");
+
         if (welcomeTitle) welcomeTitle.textContent = tenant.welcomeTitle;
         if (welcomeText) welcomeText.textContent = tenant.welcomeText;
+        if (hubSub) hubSub.textContent = `brainbranding.com.mx/demos • CLIENTE: ${tenant.clientName.toUpperCase()}`;
 
         setTimeout(() => {
           document.getElementById("pinGateOverlay").style.display = "none";
@@ -153,17 +158,34 @@ const App = {
     if (activeBtn) activeBtn.classList.add("active");
 
     const mainNav = document.getElementById("mainNavWrapper");
+    const mobileNav = document.querySelector(".mobile-nav");
     const clientView = document.getElementById("clientPortalSection");
     const adminView = document.getElementById("adminPortalSection");
 
     if (role === "client") {
+      // MODO CLIENTE: Ocultar 100% BackOffice, menú superior y navegación móvil del Administrador
       if (mainNav) mainNav.style.display = "none";
-      if (clientView) clientView.classList.add("active");
-      if (adminView) adminView.classList.remove("active");
+      if (mobileNav) mobileNav.style.display = "none";
+      if (adminView) {
+        adminView.style.display = "none";
+        adminView.classList.remove("active");
+      }
+      if (clientView) {
+        clientView.style.display = "block";
+        clientView.classList.add("active");
+      }
     } else {
+      // MODO ADMINISTRACIÓN: Mostrar BackOffice completo y herramientas de Pedro
       if (mainNav) mainNav.style.display = "block";
-      if (clientView) clientView.classList.remove("active");
-      if (adminView) adminView.classList.add("active");
+      if (mobileNav) mobileNav.style.display = "flex";
+      if (clientView) {
+        clientView.style.display = "none";
+        clientView.classList.remove("active");
+      }
+      if (adminView) {
+        adminView.style.display = "block";
+        adminView.classList.add("active");
+      }
     }
   },
 
@@ -185,17 +207,27 @@ const App = {
     document.querySelectorAll(".client-sub-tab").forEach(t => t.style.display = "none");
     const target = document.getElementById(`clientTab-${subTab}`);
     if (target) target.style.display = "block";
+
+    // Actualizar clase activa en pestañas del portal de clientes
+    document.querySelectorAll(".client-nav-btn").forEach(btn => btn.classList.remove("active"));
+    const activeBtn = document.querySelector(`.client-nav-btn[data-client-tab="${subTab}"]`);
+    if (activeBtn) activeBtn.classList.add("active");
   },
 
   filterClientSector: function(sector) {
     this.activeSector = sector;
+
+    document.querySelectorAll(".sector-btn").forEach(btn => btn.classList.remove("active"));
+    const activeBtn = document.querySelector(`.sector-btn[data-sector="${sector}"]`);
+    if (activeBtn) activeBtn.classList.add("active");
+
     this.renderCatalog();
   },
 
   simulateClientSupport: function() {
     const input = document.getElementById("clientSupportInput");
     if (!input || !input.value.trim()) return;
-    alert(`💬 Chatbot Ejecutivo de Ventas & Licitaciones:\n\nHemos recibido tu solicitud para: "${input.value}"\n\nRespuesta IA: Contamos con catálogo certificado para Hogar, Empresa y Gobierno. Un ejecutivo comercial te enviará la propuesta formal.`);
+    alert(`💬 Chatbot Ejecutivo de Ventas & Licitaciones:\n\nHemos recibido tu consulta comercial: "${input.value}"\n\nRespuesta IA: Contamos con catálogo certificado para Hogar, Empresa y Gobierno. Un ejecutivo comercial se comunicará contigo de inmediato.`);
     input.value = "";
   },
 
