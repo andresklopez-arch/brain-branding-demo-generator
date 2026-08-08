@@ -423,9 +423,9 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
-  // 3.16 Edge Case: Current Client Technical Support
-  if (textClean.includes('ya soy cliente') || textClean.includes('fallo mi') || textClean.includes('soporte tecnico') || textClean.includes('ayuda con mi sistema')) {
-    const reply = `¡Hola! 👋 Si ya eres cliente de Brain Branding y requieres soporte técnico o asistencia para tu sistema actual, te canalizamos de inmediato con máxima prioridad al WhatsApp del equipo técnico liderado por Andrés R:\n\n📲 *Soporte Técnico Inmediato:* https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20soy%20cliente%20y%20requiero%20soporte%20t%C3%A9cnico%20para%20mi%20sistema.\n\nEn un momento te atendemos personalmente. 🛠️`;
+  // 3.16 Edge Case: Current Client Technical Support & SLA Policy
+  if (textClean.includes('ya soy cliente') || textClean.includes('fallo mi') || textClean.includes('soporte tecnico') || textClean.includes('ayuda con mi sistema') || textClean.includes('sla') || textClean.includes('cuanto tardan en responder en soporte')) {
+    const reply = `¡Hola! 👋 En soporte técnico y mantenimiento atendemos cada reporte con la mayor agilidad posible según la gravedad del caso. 🛠️\n\n⚠️ *Nota:* No garantizamos un tiempo fijo de respuesta ya que este depende del diagnóstico técnico y de la situación específica de cada incidencia.\n\nPara canalizar tu caso de inmediato con el equipo técnico liderado por Andrés R:\n📲 *Soporte Técnico Directo:* https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20requiero%20asistencia%20t%C3%A9cnica%20para%20mi%20sistema.`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
