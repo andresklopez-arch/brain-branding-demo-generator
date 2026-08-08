@@ -545,6 +545,9 @@ function getLeadTemperature(text) {
 async function notifyOwner(chatId, firstName, username, userText) {
   if (chatId.toString() === ADMIN_CHAT_ID) return; // Strictly don't notify owner about their own admin messages
 
+  const state = userStates[chatId] || {};
+  const convictionTag = state.conviction ? `🎯 *CONVICCIÓN:* ${state.conviction}` : '🎯 *CONVICCIÓN:* REGULAR';
+
   const textLower = (userText || '').toLowerCase();
   const isCitaClick = textLower.includes('cita') || textLower.includes('agend') || textLower.includes('whatsapp') || textLower.includes('opcion_2');
 
@@ -557,6 +560,7 @@ async function notifyOwner(chatId, firstName, username, userText) {
     name: firstName || 'Prospecto',
     username: username || 'Sin username',
     text: userText,
+    conviction: state.conviction || 'REGULAR',
     temp: isCitaClick ? 'CITA_URGENTE' : (tempTag.includes('CALIENTE') ? 'CALIENTE' : (tempTag.includes('TIBIO') ? 'TIBIO' : 'FRÍO')),
     timestamp: new Date().toLocaleTimeString('es-MX')
   });
@@ -564,7 +568,7 @@ async function notifyOwner(chatId, firstName, username, userText) {
 
   const alertHeader = isCitaClick ? '🚨 *¡PROSPECTO SOLICITÓ AGENDAR CITA EN WHATSAPP!* 🚨' : '🚨 *¡NUEVO MENSAJE DE PROSPECTO EN TELEGRAM!* 🚨';
 
-  const alertText = `${alertHeader}\n\n${tempTag}\n👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n💬 *Mensaje:* "${userText}"\n🆔 *Chat ID:* \`${chatId}\`\n📱 *Notificado a:* ${OWNER_PHONE}\n${statusTag}\n\n⚙️ *Comandos Rápido:* \`/pausa ${chatId}\` | \`/responder ${chatId} <mensaje>\` | \`/plantilla\`\n💡 *Tip de Intervención:* Responde (*Reply*) directamente a este mensaje para platicar con el cliente.`;
+  const alertText = `${alertHeader}\n\n${tempTag}\n${convictionTag}\n👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n💬 *Mensaje:* "${userText}"\n🆔 *Chat ID:* \`${chatId}\`\n📱 *Notificado a:* ${OWNER_PHONE}\n${statusTag}\n\n⚙️ *Comandos Rápido:* \`/pausa ${chatId}\` | \`/responder ${chatId} <mensaje>\` | \`/plantilla\`\n💡 *Tip de Intervención:* Responde (*Reply*) directamente a este mensaje para platicar con el cliente.`;
 
   try {
     await callTelegram('sendMessage', {
