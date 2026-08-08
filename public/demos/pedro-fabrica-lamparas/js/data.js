@@ -1,6 +1,5 @@
 /* ==========================================================================
    REGISTRO MULTI-TENANT DE DEMOS & DATOS INICIALES - BRAIN BRANDING DEMOS
-   Cada cliente tiene su NIP de 5 dígitos único para su propia demo efímera (90 días)
    ========================================================================== */
 
 const demoRegistry = {
@@ -44,17 +43,18 @@ const initialData = {
   createdDate: "2026-08-08",
   expirationDays: 90,
   
-  // Catálogo de Lámparas Fabricadas
+  // Catálogo Profesional de Lámparas (Hogar, Empresa y Gobierno)
   lamps: [
     {
       id: "LAMP-101",
       name: "Lámpara Industrial High-Bay 150W",
-      category: "Industrial High-Bay",
+      category: "Industrial & Naves",
+      targetSector: "🏛️ Gobierno & 🏢 Empresa",
       price: 2450,
       cost: 1100,
       stock: 42,
       power: "150W LED 18,000 LM",
-      specs: "Cuerpo Aluminio Extruido IP66, Driver MeanWell",
+      specs: "Cuerpo Aluminio Extruido IP66, Driver MeanWell. Ideal para almacenes, naves industriales y gobierno.",
       img: "img/lamp_highbay.jpg",
       insumosNeeded: [
         { name: "Chips LED SMD 5050", qty: 30 },
@@ -65,12 +65,13 @@ const initialData = {
     {
       id: "LAMP-102",
       name: "Candelabro Luxury Titanium Ring",
-      category: "Decorativo Lujo",
+      category: "Residencial & Lujo",
+      targetSector: "🏠 Hogar & 🏢 Empresa",
       price: 6800,
       cost: 2900,
       stock: 15,
       power: "85W Dimerizable Warm",
-      specs: "Titanio Cepillado, Cristal K9, Control WiFi/App",
+      specs: "Titanio Cepillado, Cristal K9, Control WiFi/App. Iluminación elegante para residencias de lujo y hoteles.",
       img: "img/lamp_candelabro.jpg",
       insumosNeeded: [
         { name: "Anillos Titanio 60cm", qty: 3 },
@@ -81,12 +82,13 @@ const initialData = {
     {
       id: "LAMP-103",
       name: "Reflector Arquitectónico RGBW 100W",
-      category: "Exteriores",
+      category: "Alumbrado Público & Monumentos",
+      targetSector: "🏛️ Gobierno & 🏢 Empresa",
       price: 3200,
       cost: 1450,
       stock: 28,
       power: "100W RGBW Ultra Bright",
-      specs: "Vidrio Templado 5mm, DMX512 / Control Remoto",
+      specs: "Vidrio Templado 5mm, DMX512. Iluminación de fachadas, plazas públicas y proyectos gubernamentales.",
       img: "img/lamp_reflector.jpg",
       insumosNeeded: [
         { name: "Módulo LED RGBW 100W", qty: 1 },

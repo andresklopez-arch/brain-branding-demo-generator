@@ -34,7 +34,7 @@
             ⚡ Modo Administración
           </button>
           <button class="role-btn" data-role="client" onclick="App.switchRole('client')">
-            🛍️ Modo Cliente
+            🛍️ Modo Compras Cliente
           </button>
         </div>
         <button class="btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="TourGuide.start()">
@@ -45,27 +45,33 @@
   </header>
 
   <!-- ========================================== -->
-  <!-- 2. MENÚ PRINCIPAL DE NAVEGACIÓN (DEBAJO DE MODO CLIENTE/ADMIN) -->
+  <!-- 2. MENÚ PRINCIPAL COMPACTO (6 BOTONES VISIBLES 100% EN CELULAR) -->
   <!-- ========================================== -->
   <div class="main-nav-wrapper" id="mainNavWrapper">
     <nav class="nav-tabs-bar" id="adminNavTabs">
       <button class="nav-tab active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
-        📊 Panel General
+        <span class="nav-tab-icon">📊</span>
+        <span class="nav-tab-label">Panel</span>
       </button>
       <button class="nav-tab" data-tab="inventarios" id="tab-inventarios" onclick="App.switchTab('inventarios')">
-        📦 Inventarios (4 Almacenes)
+        <span class="nav-tab-icon">📦</span>
+        <span class="nav-tab-label">Stock</span>
       </button>
       <button class="nav-tab" data-tab="procesos" id="tab-procesos" onclick="App.switchTab('procesos')">
-        ⚙️ Procesos & IA Predictor
+        <span class="nav-tab-icon">⚙️</span>
+        <span class="nav-tab-label">Procesos</span>
       </button>
       <button class="nav-tab" data-tab="qr" id="tab-qr" onclick="App.switchTab('qr')">
-        📸 Escáner QR Celular
+        <span class="nav-tab-icon">📸</span>
+        <span class="nav-tab-label">Escáner</span>
       </button>
       <button class="nav-tab" data-tab="rh" id="tab-rh" onclick="App.switchTab('rh')">
-        👥 Recursos Humanos
+        <span class="nav-tab-icon">👥</span>
+        <span class="nav-tab-label">Personal</span>
       </button>
       <button class="nav-tab" data-tab="finanzas" id="tab-finanzas" onclick="App.switchTab('finanzas')">
-        💰 Finanzas & ROI Papel
+        <span class="nav-tab-icon">💰</span>
+        <span class="nav-tab-label">Finanzas</span>
       </button>
     </nav>
   </div>
@@ -546,27 +552,43 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- PORTAL DE CLIENTES (100% ATENCIÓN A CLIENTES & COMPRAS) -->
+    <!-- PORTAL DE CLIENTES (100% PORTAL DE COMPRAS PROFESIONAL HOGAR, EMPRESA Y GOBIERNO) -->
     <!-- ========================================== -->
     <div id="clientPortalSection" class="section-panel">
       <div style="margin-bottom: 24px; text-align: center;">
-        <span class="badge badge-info" style="margin-bottom: 8px; font-size: 12px; font-weight: 800;">🛍️ PORTAL DE ATENCIÓN A CLIENTES</span>
-        <h2 style="font-size: 28px; color: #fff;">Catálogo & Atención Inmediata a Clientes</h2>
-        <p style="font-size: 14px; color: var(--text-muted); max-width: 620px; margin: 6px auto 0 auto;">
-          Explora nuestros modelos de lámparas de alta calidad, consulta la fecha exacta de entrega calculada por nuestra IA o solicita soporte directo.
+        <span class="badge badge-info" style="margin-bottom: 8px; font-size: 12px; font-weight: 800; padding: 4px 12px;">🛍️ PORTAL PROFESIONAL DE COMPRAS & LICITACIONES</span>
+        <h2 style="font-size: 26px; color: #fff;">Iluminación LED de Última Generación</h2>
+        <p style="font-size: 13px; color: var(--text-muted); max-width: 640px; margin: 6px auto 0 auto;">
+          Soluciones de iluminación especializada para <strong>Hogar, Empresa y Gobierno</strong>. Selecciona tu sector para cotizaciones profesionales en tiempo real.
         </p>
       </div>
 
-      <!-- Pestañas del Portal de Clientes -->
+      <!-- Sectores de Venta (Hogar, Empresa, Gobierno) -->
+      <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <button class="nav-tab active" onclick="App.filterClientSector('all')">
+          🌐 Todos los Sectores
+        </button>
+        <button class="nav-tab" onclick="App.filterClientSector('hogar')">
+          🏠 Hogar & Residencial
+        </button>
+        <button class="nav-tab" onclick="App.filterClientSector('empresa')">
+          🏢 Empresa & Naves
+        </button>
+        <button class="nav-tab" onclick="App.filterClientSector('gobierno')">
+          🏛️ Gobierno & Licitaciones
+        </button>
+      </div>
+
+      <!-- Sub-pestañas de Compras -->
       <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
         <button class="nav-tab active" onclick="App.switchClientTab('catalog')">
-          💡 Catálogo & Pre-Pedidos
+          💡 Catálogo de Productos
         </button>
         <button class="nav-tab" onclick="App.switchClientTab('tracking')">
-          🚚 Rastrear Mi Pedido
+          🚚 Rastrear Pedido de Compras
         </button>
         <button class="nav-tab" onclick="App.switchClientTab('support')">
-          💬 Soporte & Atención IA
+          💬 Atenciòn a Clientes & Licitaciones
         </button>
       </div>
 
@@ -585,14 +607,14 @@
 
           <div style="display: flex; gap: 10px; margin-bottom: 20px;">
             <input type="text" class="form-input" placeholder="Ej: PED-901" value="PED-901">
-            <button class="btn-primary" style="width: auto; padding: 0 20px;" onclick="alert('🔎 Pedido PED-901 encontrado:\n- Producto: 30x High-Bay 150W\n- Estado: En Producción (QC Pruebas)\n- Entrega Estimada IA: Mañana 16:00 hrs')">
-              Buscar
+            <button class="btn-primary" style="width: auto; padding: 0 20px;" onclick="alert('🔎 Pedido PED-901 encontrado:\n- Producto: 30x High-Bay 150W\n- Sector: 🏢 Empresa / Naves\n- Estado: En Producción (QC Pruebas)\n- Entrega Estimada IA: Mañana 16:00 hrs')">
+              Buscar Orden
             </button>
           </div>
 
           <div style="background: rgba(0, 242, 254, 0.06); border: 1px solid var(--accent-cyan); border-radius: var(--radius-sm); padding: 16px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <strong style="color: #fff; font-size: 15px;">Pedido #PED-901 • Constructora Proyectos Lux</strong>
+              <strong style="color: #fff; font-size: 15px;">Pedido #PED-901 • Sector Empresarial / Gobierno</strong>
               <span class="badge badge-warning">En Producción</span>
             </div>
             <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">30x Lámpara Industrial High-Bay 150W</p>
@@ -609,25 +631,25 @@
         </div>
       </div>
 
-      <!-- 3. Asistente IA de Soporte & Atención -->
+      <!-- 3. Asistente IA de Soporte & Licitaciones -->
       <div id="clientTab-support" class="client-sub-tab" style="display:none;">
         <div class="glass-panel" style="padding: 24px; max-width: 650px; margin: 0 auto; text-align: center;">
           <div style="font-size: 40px; margin-bottom: 8px;">💬</div>
-          <h3 style="color: var(--accent-emerald); font-size: 20px; margin-bottom: 8px;">Asistente Virtual de Atención a Clientes</h3>
+          <h3 style="color: var(--accent-emerald); font-size: 20px; margin-bottom: 8px;">Módulo de Atención a Clientes & Licitaciones</h3>
           <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
-            ¿Tienes dudas sobre especificaciones de iluminación, modelos o garantías? Nuestro chatbot IA te atiende 24/7.
+            Cotización ejecutiva para proyectos de <strong>Hogar, Empresa y Gobierno</strong>. Solicita soporte técnico o pliegos de licitación.
           </p>
 
           <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; text-align: left; margin-bottom: 16px;">
             <div style="background: rgba(0, 242, 254, 0.15); color: var(--accent-cyan); padding: 8px 12px; border-radius: 12px; margin-bottom: 10px; font-size: 12px; display: inline-block;">
-              🤖 Chatbot IA: Hola, ¿en qué puedo ayudarte con tu proyecto de iluminación hoy?
+              🤖 Chatbot Ejecutivo: Hola, ¿requieres cotización comercial para Hogar, Empresa o pliego de Licitación Gubernamental?
             </div>
           </div>
 
           <div style="display: flex; gap: 10px;">
-            <input type="text" class="form-input" placeholder="Escribe tu duda o consulta aquí..." id="clientSupportInput">
+            <input type="text" class="form-input" placeholder="Escribe tu consulta comercial aquí..." id="clientSupportInput">
             <button class="btn-primary" style="width: auto; padding: 0 20px;" onclick="App.simulateClientSupport()">
-              Enviar
+              Enviar Consulta
             </button>
           </div>
         </div>

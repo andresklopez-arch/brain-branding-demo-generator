@@ -11,6 +11,7 @@ const App = {
   enteredPin: "",
   failedAttempts: 0,
   lockUntil: 0,
+  activeSector: "all",
 
   init: function() {
     this.bindEvents();
@@ -19,7 +20,6 @@ const App = {
   },
 
   checkSession: function() {
-    // Check if system is locked due to 3 failed attempts
     const savedLock = localStorage.getItem("pedro_demo_lock_time");
     if (savedLock && parseInt(savedLock) > Date.now()) {
       this.lockUntil = parseInt(savedLock);
@@ -27,7 +27,6 @@ const App = {
       return;
     }
 
-    // Check 90 days ephemeral expiration
     const created = new Date(initialData.createdDate || "2026-08-08");
     const now = new Date();
     const diffDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
@@ -59,7 +58,6 @@ const App = {
   },
 
   bindEvents: function() {
-    // PIN Keypad buttons
     document.querySelectorAll(".key-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
         if (Date.now() < this.lockUntil) {
@@ -79,7 +77,6 @@ const App = {
       });
     });
 
-    // Role Switcher Buttons
     document.querySelectorAll(".role-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
         const role = e.currentTarget.dataset.role;
@@ -103,11 +100,9 @@ const App = {
     if (this.enteredPin.length === 5) {
       const tenant = demoRegistry[this.enteredPin];
       if (tenant) {
-        // Successful multi-tenant match!
         this.failedAttempts = 0;
         localStorage.setItem("pedro_demo_authenticated_5digit", tenant.clientId);
         
-        // Update personalized modal title for this tenant
         const welcomeTitle = document.querySelector(".welcome-title");
         const welcomeText = document.querySelector(".welcome-text");
         if (welcomeTitle) welcomeTitle.textContent = tenant.welcomeTitle;
@@ -120,7 +115,7 @@ const App = {
       } else {
         this.failedAttempts++;
         if (this.failedAttempts >= 3) {
-          this.lockUntil = Date.now() + 5 * 60 * 1000; // 5 minute lock
+          this.lockUntil = Date.now() + 5 * 60 * 1000;
           localStorage.setItem("pedro_demo_lock_time", this.lockUntil.toString());
           this.showLockScreen();
         } else {
@@ -181,7 +176,6 @@ const App = {
     const targetPanel = document.getElementById(`panel-${tabName}`);
     if (targetPanel) targetPanel.classList.add("active");
 
-    // Sync mobile bottom nav
     document.querySelectorAll(".mobile-nav-item").forEach(m => m.classList.remove("active"));
     const mobItem = document.querySelector(`.mobile-nav-item[data-tab="${tabName}"]`);
     if (mobItem) mobItem.classList.add("active");
@@ -193,10 +187,15 @@ const App = {
     if (target) target.style.display = "block";
   },
 
+  filterClientSector: function(sector) {
+    this.activeSector = sector;
+    this.renderCatalog();
+  },
+
   simulateClientSupport: function() {
     const input = document.getElementById("clientSupportInput");
     if (!input || !input.value.trim()) return;
-    alert(`💬 Chatbot IA de Atención a Clientes:\n\nGracias por tu consulta: "${input.value}"\n\nRespuesta IA: Todos nuestros productos cuentan con garantía de 3 años e instalación asistida. ¡Un asesor humano se pondrá en contacto contigo si lo requieres!`);
+    alert(`💬 Chatbot Ejecutivo de Ventas & Licitaciones:\n\nHemos recibido tu solicitud para: "${input.value}"\n\nRespuesta IA: Contamos con catálogo certificado para Hogar, Empresa y Gobierno. Un ejecutivo comercial te enviará la propuesta formal.`);
     input.value = "";
   },
 
@@ -212,7 +211,16 @@ const App = {
     const container = document.getElementById("catalogGrid");
     if (!container) return;
 
-    container.innerHTML = initialData.lamps.map(lamp => `
+    let filteredLamps = initialData.lamps;
+    if (this.activeSector === "hogar") {
+      filteredLamps = initialData.lamps.filter(l => l.targetSector.includes("Hogar"));
+    } else if (this.activeSector === "empresa") {
+      filteredLamps = initialData.lamps.filter(l => l.targetSector.includes("Empresa"));
+    } else if (this.activeSector === "gobierno") {
+      filteredLamps = initialData.lamps.filter(l => l.targetSector.includes("Gobierno"));
+    }
+
+    container.innerHTML = filteredLamps.map(lamp => `
       <div class="glass-panel product-card">
         <div class="product-img-wrapper">
           <img src="${lamp.img}" alt="${lamp.name}" class="product-img" onerror="this.src='https://via.placeholder.com/400x300/12182b/00f2fe?text=L%C3%A1mpara+LED'">
@@ -222,22 +230,22 @@ const App = {
           <div>
             <h3 class="product-name">${lamp.name}</h3>
             <p class="product-specs">${lamp.specs}</p>
-            <span class="badge badge-info" style="margin-bottom:8px;">⚡ Capacidad: ${lamp.power}</span>
+            <span class="badge badge-warning" style="margin-bottom:8px;">🎯 Sector: ${lamp.targetSector}</span>
+            <span class="badge badge-info" style="margin-bottom:8px; display:block;">⚡ Potencia: ${lamp.power}</span>
           </div>
           <div class="product-price-row">
             <div>
-              <span style="font-size:10px; color:var(--text-muted); display:block;">PRECIO AL PUBLICO</span>
+              <span style="font-size:10px; color:var(--text-muted); display:block;">PRECIO COTIZACION</span>
               <span class="product-price">$${lamp.price.toLocaleString()} MXN</span>
             </div>
             <button onclick="App.openPreOrderModal('${lamp.id}')" class="btn-secondary" style="font-size:11px;">
-              🛍️ Pre-Pedir
+              🛍️ Cotizar / Pedir
             </button>
           </div>
         </div>
       </div>
     `).join("");
 
-    // Populate Select in AI Predictor Form
     const predictorSelect = document.getElementById("predictLampSelect");
     if (predictorSelect) {
       predictorSelect.innerHTML = initialData.lamps.map(l => `
@@ -247,7 +255,6 @@ const App = {
   },
 
   renderInventories: function() {
-    // 1. Insumos (Materia Prima)
     const insumosContainer = document.getElementById("tblInsumos");
     if (insumosContainer) {
       insumosContainer.innerHTML = initialData.inventories.insumos.map(i => `
@@ -269,7 +276,6 @@ const App = {
       `).join("");
     }
 
-    // 2. Componentes
     const componentesContainer = document.getElementById("tblComponentes");
     if (componentesContainer) {
       componentesContainer.innerHTML = initialData.inventories.componentes.map(c => `
@@ -291,7 +297,6 @@ const App = {
       `).join("");
     }
 
-    // 3. Productos Comprados para Venta Directa
     const compradosContainer = document.getElementById("tblComprados");
     if (compradosContainer) {
       compradosContainer.innerHTML = initialData.inventories.comprados.map(p => `
@@ -306,7 +311,6 @@ const App = {
       `).join("");
     }
 
-    // 4. Lámparas Fabricadas
     const fabricadosContainer = document.getElementById("tblFabricados");
     if (fabricadosContainer) {
       fabricadosContainer.innerHTML = initialData.inventories.fabricados.map(f => `
@@ -367,7 +371,6 @@ const App = {
     if (currentIdx < initialData.stages.length - 1) {
       batch.stage = initialData.stages[currentIdx + 1];
       
-      // Auto-descontar componentes del inventario para simular consumo real
       const comp1 = initialData.inventories.componentes[0];
       if (comp1 && comp1.stock >= 50) comp1.stock -= 50;
 
@@ -468,10 +471,10 @@ const App = {
     const lamp = initialData.lamps.find(l => l.id === lampId);
     if (!lamp) return;
 
-    const qty = prompt(`🛍️ Pre-Pedido de ${lamp.name}\n\nIngresa la cantidad de lámparas que deseas cotizar:`, "25");
+    const qty = prompt(`🛍️ Cotización / Pedido Profesional (${lamp.targetSector})\n\nProducto: ${lamp.name}\nIngresa la cantidad de unidades deseadas:`, "25");
     if (qty) {
       const pred = AIEngine.predictDeliveryTime(lampId, qty);
-      alert(`🎉 Pre-Pedido Generado Exitosamente para Pedro!\n\nProducto: ${lamp.name}\nCantidad: ${qty} unidades\nTiempo Estimado de Entrega por IA: ${pred.timeString}\n\nEstatus: Enviado al administrador.`);
+      alert(`🎉 Cotización Profesional Generada para Pedro!\n\nProducto: ${lamp.name}\nSector Target: ${lamp.targetSector}\nCantidad: ${qty} unidades\nTiempo Estimado de Fabricación por IA: ${pred.timeString}\n\nEstatus: Registrado en el sistema comercial.`);
     }
   }
 };
