@@ -299,6 +299,54 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
+  // 3.5 Real Estate & Property Giro
+  if (textClean.includes('inmobiliari') || textClean.includes('bienes raices') || textClean.includes('propiedad') || textClean.includes('terreno') || textClean.includes('casa') || textClean.includes('departamento')) {
+    state.giro = 'Inmobiliaria & Bienes Raíces';
+    const demoUrl = kb.generadorDemos.getUrlDemo('Bienes Raíces & Inmobiliaria');
+    const reply = `¡Excelente sector! 🏢 En Bienes Raíces el reto principal es responderle al prospecto en menos de 2 minutos antes de que busque otra opción.\n\nNuestra solución para Inmobiliarias incluye:\n• *Asistente IA en WhatsApp:* Muestra fichas de propiedades, fotos, precios y ubicación automáticamente.\n• *Filtro Inteligente de Compradores:* Califica presupuesto y forma de pago (contado/crédito) antes de agendar la visita.\n• *Agendamiento de Recorridos:* Agenda la cita con el asesor en su calendario en tiempo real.\n\n🌐 *Ver Demo Inmobiliaria:*\n${demoUrl}\n\nPlatícame: ¿Cuántas propiedades manejan en inventario o cuántos asesores son en el equipo?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 3.6 Medical & Dental Clinics Giro
+  if (textClean.includes('clinic') || textClean.includes('medic') || textClean.includes('doctor') || textClean.includes('denti') || textClean.includes('odontol') || textClean.includes('pacient')) {
+    state.giro = 'Clínicas & Consultorios Médicos';
+    const demoUrl = kb.generadorDemos.getUrlDemo('Clínica & Consultorio Médico');
+    const reply = `¡Gran sector! 🏥 Para Clínicas y Consultorios, las soluciones de mayor impacto son:\n\n• *Asistente IA para Citas por WhatsApp:* Agenda pacientes 24/7 sin saturar a la recepcionista.\n• *Recordatorios 24h Antes:* Reduce ausentismos en un 45% enviando confirmaciones de 1 clic.\n• *Expediente Clínico Digital:* Registro de consultas, historial y firma en pantalla.\n\n🌐 *Ver Demo para Clínicas:*\n${demoUrl}\n\nPlatícame: ¿Atienden un solo consultorio o tienen varios especialistas?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 3.7 Schools & Academies Giro
+  if (textClean.includes('escuel') || textClean.includes('colegi') || textClean.includes('alumn') || textClean.includes('curso') || textClean.includes('clase') || textClean.includes('colegiat')) {
+    state.giro = 'Escuelas, Academias & Colegios';
+    const demoUrl = kb.generadorDemos.getUrlDemo('Escuela & Colegio');
+    const reply = `¡Excelente sector! 🎓 Para Escuelas y Academias, automatizamos la operación con:\n\n• *Avisos de Colegiaturas por WhatsApp:* Recordatorios automáticos que reducen la cartera vencida en 60%.\n• *Asistente de Informes e Inscripciones:* Atiende solicitudes de aspirantes e inscripciones 24/7.\n• *Asistencia Digital por QR:* Registro de entrada de alumnos y notificación al tutor.\n\n🌐 *Ver Demo para Escuelas:*\n${demoUrl}\n\nPlatícame: ¿Qué tipo de cursos o niveles educativos imparten?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 3.8 Objection: Price / Budget ("está caro", "no me alcanza", "presupuesto corto")
+  if (textClean.includes('caro') || textClean.includes('costoso') || textClean.includes('presupuesto corto') || textClean.includes('no me alcanza') || textClean.includes('rebaja') || textClean.includes('descuento')) {
+    const reply = `Te entiendo perfectamente. 🤝 En Brain Branding cuidamos tu presupuesto al 100%:\n\n1️⃣ *Garantía de Cero Riesgo:* Solo pagas el 35% de anticipo para arrancar. El 65% restante se liquida ÚNICAMENTE cuando veas tu sistema terminado a tu entera satisfacción.\n2️⃣ *Retorno de Inversión (ROI):* Nuestras soluciones están diseñadas para pagarse solas en las primeras 4 semanas al evitar ventas perdidas e insumos mal registrados.\n3️⃣ *Plan Flexible por Fases:* Podemos empezar con el módulo más urgente y escalar después.\n\n¿Te gustaría que diseñemos un plan inicial ajustado a tu presupuesto actual? 📲`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 3.9 Objection: Partner / Boss ("hablar con mi socio", "equipo", "jefe")
+  if (textClean.includes('socio') || textClean.includes('esposa') || textClean.includes('esposo') || textClean.includes('equipo') || textClean.includes('jefe') || textClean.includes('mostrarlo')) {
+    const reply = `¡Excelente punto! 📄 Es súper importante que todo el equipo o tus socios vean el beneficio antes de tomar la decisión.\n\nCon mucho gusto te envío una *Propuesta Ejecutiva en PDF de 1 Página* con el ROI y los beneficios resumidos para que se la compartas por WhatsApp, o bien podemos coordinar una videollamada corta de 10 minutos para mostrárselos en vivo.\n\n¿A qué correo o número de WhatsApp te envío la propuesta resumida? 📩`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 3.10 Objection: Using Excel / Paper ("uso excel", "libreta", "cuaderno")
+  if (textClean.includes('excel') || textClean.includes('libreta') || textClean.includes('cuaderno') || textClean.includes('papel') || textClean.includes('hoja')) {
+    const reply = `Excel y la libreta son útiles para empezar, pero suelen causar desvelos al buscar un dato o descuadres de dinero al no estar sincronizados con tu celular. 📊\n\nNosotros nos encargamos de *migrar toda tu base de datos actual de Excel o libreta* a tu nueva plataforma con IA sin costo extra y sin perder un solo cliente.\n\n¿Te gustaría ver cómo se verían tus archivos actuales convertidos en un sistema moderno? 🌐`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
   // 4. Uncommunicative / Short Input Smart Handling (1-3 words)
   const isShortInput = userText.trim().split(/\s+/).length <= 3;
   const genericWords = ['si', 'sí', 'ok', 'no', 'bien', 'hola', 'interesa', 'mm', 'a ver', 'saludos', 'gracias', 'grax'];
