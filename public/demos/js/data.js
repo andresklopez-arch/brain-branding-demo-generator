@@ -4,7 +4,9 @@
 
 const initialData = {
   clientName: "Pedro",
-  passcode: "8492",
+  passcode: "84927", // PIN privado de 5 dígitos para Pedro
+  createdDate: "2026-08-08", // Fecha de creación de la demo
+  expirationDays: 90, // Demo efímera de 90 días de vigencia
   
   // Catálogo de Lámparas Fabricadas
   lamps: [

@@ -17,7 +17,30 @@ const App = {
   },
 
   checkSession: function() {
-    const savedPin = localStorage.getItem("pedro_demo_authenticated");
+    // Verificación de expiración efímera de 90 días
+    const created = new Date(initialData.createdDate || "2026-08-08");
+    const now = new Date();
+    const diffDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+
+    if (diffDays > initialData.expirationDays) {
+      document.body.innerHTML = `
+        <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; background:#070913; color:#fff; text-align:center; padding:20px; font-family:sans-serif;">
+          <div style="max-width:420px; background:rgba(18, 24, 43, 0.85); border:1px solid rgba(255, 65, 108, 0.3); border-radius:20px; padding:32px;">
+            <div style="font-size:48px; margin-bottom:12px;">⌛</div>
+            <h2 style="color:#ff416c; margin-bottom:8px;">404 - Demo Expirada</h2>
+            <p style="font-size:13px; color:#94a3b8; margin-bottom:20px;">
+              Esta demostración efímera ha cumplido su periodo límite de vida útil de 90 días y se ha autolimpiado de forma segura del servidor.
+            </p>
+            <a href="https://brainbranding.com.mx" style="display:inline-block; background:#00f2fe; color:#000; font-weight:800; text-decoration:none; padding:12px 24px; border-radius:12px;">
+              Contactar Soporte Brain Branding
+            </a>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const savedPin = localStorage.getItem("pedro_demo_authenticated_5digit");
     if (savedPin === "true") {
       const pinGate = document.getElementById("pinGateOverlay");
       if (pinGate) pinGate.style.display = "none";
@@ -34,7 +57,7 @@ const App = {
           this.enteredPin = this.enteredPin.slice(0, -1);
         } else if (val === "clear") {
           this.enteredPin = "";
-        } else if (this.enteredPin.length < 4) {
+        } else if (this.enteredPin.length < 5) {
           this.enteredPin += val;
         }
         this.updatePinDisplay();
@@ -62,15 +85,15 @@ const App = {
       }
     });
 
-    if (this.enteredPin.length === 4) {
+    if (this.enteredPin.length === 5) {
       if (this.enteredPin === initialData.passcode) {
-        localStorage.setItem("pedro_demo_authenticated", "true");
+        localStorage.setItem("pedro_demo_authenticated_5digit", "true");
         setTimeout(() => {
           document.getElementById("pinGateOverlay").style.display = "none";
           this.showWelcomeModal();
         }, 300);
       } else {
-        alert("⚠️ PIN Incorrecto. Utiliza el PIN de demo: " + initialData.passcode);
+        alert("⚠️ NIP Incorrecto. Revisa el código de 5 dígitos proporcionado por tu ejecutivo.");
         this.enteredPin = "";
         this.updatePinDisplay();
       }
