@@ -14,7 +14,7 @@ const kb = {
     garantiaCeroRiesgo: "Garantía de Satisfacción por contrato y entregables por fases con visto bueno previo."
   },
   generadorDemos: {
-    getUrlDemo: (negocio) => `https://brainbranding.com.mx/?negocio=${encodeURIComponent(negocio)}`
+    getUrlDemo: (negocio) => `https://brainbranding.com.mx/demos`
   }
 };
 
@@ -40,7 +40,6 @@ function fuzzyNormalizeText(text) {
     .replace(/(.)\1{2,}/g, "$1")
     .trim();
 
-  // Spanish phonetic replacements & common bad spelling fixes
   str = str.replace(/\bke\b/g, "que")
            .replace(/\bki\b/g, "qui")
            .replace(/\bk\b/g, "que")
@@ -96,7 +95,7 @@ function getUniqueReply(chatId, candidateReply, fallbackOptions = []) {
     }
   }
 
-  const dynamicVariation = `${candidateReply}\n\n*Nota:* Además, si gustas podemos agendar una llamada rápida de 10 minutos para mostrarte la plataforma en vivo. 📲`;
+  const dynamicVariation = `${candidateReply}\n\nSi gustas, también podemos agendar una breve llamada de 5 a 10 minutos para revisar los detalles con calma. ☕`;
   sent.add(dynamicVariation.trim());
   return dynamicVariation;
 }
@@ -129,15 +128,6 @@ function callTelegram(method, data) {
   });
 }
 
-// In-Memory Fast LRU Cache for Fuzzy Text Evaluation
-const fuzzyCacheMap = new Map();
-
-function generatePayToken(chatId) {
-  const ts = Date.now().toString(36);
-  const rnd = Math.floor(Math.random() * 1000).toString(36);
-  return `BB-PAY-${chatId}-${ts}-${rnd}`.toUpperCase();
-}
-
 function getDropReason(clean) {
   if (clean.includes('caro') || clean.includes('costoso') || clean.includes('presupuesto')) return 'PRECIO_ELEVADO';
   if (clean.includes('socio') || clean.includes('jefe') || clean.includes('equipo')) return 'APROBACION_TERCEROS';
@@ -151,7 +141,7 @@ function generateHumanReply(chatId, userName, userText) {
   const state = getUserState(chatId);
   const history = conversationHistory[chatId];
   history.push({ role: 'user', text: userText });
-  if (history.length > 12) history.shift();
+  if (history.length > 20) history.shift();
 
   state.lastDropReason = getDropReason(normalizeText(userText));
 
@@ -159,88 +149,83 @@ function generateHumanReply(chatId, userName, userText) {
   const textClean = normalizeText(userText);
   const fuzzyClean = fuzzyNormalizeText(userText);
 
-  // 0.1 Offense, Swearing, Complaint & Anger De-escalation
+  // 0.1 Manejo de groserías y quejas
   const offenseWords = ['pendejo', 'pendeja', 'chinga', 'mierda', 'basura', 'chafa', 'no sirve', 'estafa', 'estafador', 'puto', 'puta', 'verga', 'madre', 'pinche', 'asco', 'inutil', 'inepto', 'fake', 'falso', 'robando', 'robo', 'porqueria', 'tonto', 'tarado', 'estupido', 'estupida', 'culero', 'malo'];
   const isOffensive = offenseWords.some(w => textClean.includes(w) || fuzzyClean.includes(w));
 
   if (isOffensive) {
-    const calmReply = `Lamento sinceramente si tuvimos un malentendido o si alguna respuesta del sistema automatizado no fue de tu agrado. 🙇‍♂️\n\nEn Brain Branding valoramos profundamente tu tiempo y tu atención. Para darte la mejor respuesta personalizada sin intermediarios ni bots, te pongo en contacto directo con el fundador Andrés R:\n\n📱 *WhatsApp Directo:* https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20quisiera%20comunicarme%20directamente%20contigo.\n📞 *Teléfono:* +52 771 233 9238\n\n¿En qué podemos apoyarte personalmente el día de hoy?`;
-    
+    const calmReply = `Lamento mucho si hubo algún malentendido. En Brain Branding nos tomamos muy en serio la atención a cada cliente.\n\nTe dejo mi contacto directo para atenderte personalmente sin rodeos:\n\n📱 WhatsApp Directo: https://wa.me/527712339238\n📞 Teléfono: +52 771 233 9238\n\n¿En qué te puedo apoyar directamente el día de hoy?`;
     history.push({ role: 'model', text: calmReply });
     return getUniqueReply(chatId, calmReply);
   }
 
-  // Evaluador Dinámico del Nivel de Convicción del Prospecto [NADA, POCO, REGULAR, MUCHO, TOTALMENTE]
+  // Evaluador de convicción
   const evaluateConvictionLevel = (clean, fuzzy) => {
-    if (clean.includes('contratar') || clean.includes('comprar ya') || clean.includes('pasame la cuenta') || clean.includes('datos bancarios') || clean.includes('donde transfiero') || clean.includes('donde pago') || clean.includes('arrancar ya') || clean.includes('empezar ya') || clean.includes('agendar llamada de inicio')) {
+    if (clean.includes('contratar') || clean.includes('comprar ya') || clean.includes('pasame la cuenta') || clean.includes('datos bancarios') || clean.includes('donde transfiero') || clean.includes('donde pago') || clean.includes('arrancar ya') || clean.includes('empezar ya')) {
       return 'TOTALMENTE';
     }
-    if (clean.includes('con cuanto se inicia') || clean.includes('cuanto es de anticipo') || clean.includes('propuesta formal') || clean.includes('cuando empezamos') || clean.includes('metodos de pago') || clean.includes('garantia') || clean.includes('factura') || clean.includes('mandas la propuesta') || clean.includes('hitos de avance')) {
+    if (clean.includes('con cuanto se inicia') || clean.includes('cuanto es de anticipo') || clean.includes('propuesta formal') || clean.includes('cuando empezamos') || clean.includes('metodos de pago') || clean.includes('garantia') || clean.includes('factura')) {
       return 'MUCHO';
     }
-    if (clean.includes('se integra') || clean.includes('cuanto tarda') || clean.includes('tiempo de entrega') || clean.includes('capacitacion') || clean.includes('como funciona') || clean.includes('modulos') || clean.includes('demostracion') || clean.includes('demo') || clean.includes('base de datos') || clean.includes('nube')) {
+    if (clean.includes('se integra') || clean.includes('cuanto tarda') || clean.includes('tiempo de entrega') || clean.includes('como funciona') || clean.includes('modulos') || clean.includes('demostracion') || clean.includes('demo')) {
       return 'REGULAR';
     }
-    if (clean.includes('caro') || clean.includes('costoso') || clean.includes('otra agencia') || clean.includes('mas barato') || clean.includes('descuento') || clean.includes('rebaja') || clean.includes('software generico') || clean.includes('compara')) {
+    if (clean.includes('caro') || clean.includes('costoso') || clean.includes('otra agencia') || clean.includes('mas barato')) {
       return 'POCO';
-    }
-    if (clean === 'ok' || clean === 'mm' || clean.includes('luego veo') || clean.includes('sera cierto') || clean.includes('fraude') || clean.includes('fake') || clean.includes('falso') || clean.includes('quienes son')) {
-      return 'NADA';
     }
     return 'REGULAR';
   };
 
   state.conviction = evaluateConvictionLevel(textClean, fuzzyClean);
 
-  // 0.0.1 TOTALMENTE CONVENCIDO (Fase Cierre Listo)
-  if (state.conviction === 'TOTALMENTE' || textClean.includes('pasame la cuenta') || textClean.includes('datos bancarios') || textClean.includes('donde transfiero')) {
-    state.temp = 'CITA_URGENTE';
-    const reply = `¡Excelente decisión! 🚀 Vamos a trabajar para dejar tu sistema impecable.\n\nTe dejo el enlace directo a nuestra agenda para fijar la reunión de arranque con el equipo de desarrollo liderado por Andrés R, o si prefieres, te envío los datos bancarios para el anticipo del 35%:\n\n📱 *Agenda de Inicio con Andrés R:* https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20estoy%20listo%20para%20arrancar%20el%20proyecto%20y%20requiero%20los%20datos%20bancarios.\n💳 *SPEI / Transferencia:* Banco STP / BBVA (Factura Fiscal CFDI 4.0)`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  // 0.0.2 MUCHO CONVENCIDO (Fase Intención Alta)
-  if (textClean.includes('con cuanto se inicia') || textClean.includes('propuesta formal') || textClean.includes('cuando empezamos')) {
-    state.temp = 'CALIENTE';
-    const reply = `Podemos arrancar con el levantamiento de requerimientos esta misma semana. 📄\n\nManejamos un esquema por hitos de avance (35% anticipo y 65% restante ÚNICAMENTE a la entrega tras tu entera satisfacción) y expedimos factura fiscal.\n\nPara enviarte la propuesta formal ajustada a tu presupuesto aproximado, ¿me confirmas tu correo y nombre completo? 📩`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
+  // 0.2 Inicio de conversación (/start)
   if (userText === '/start') {
     const greetingName = userName ? ` ${userName}` : '';
-    const welcome = `¡Hola${greetingName}! 👋 Qué gusto saludarte.\n\nSoy Andrés R de Brain Branding. Desarrollamos Asistentes con Inteligencia Artificial, Software a la Medida y Páginas Web de alta conversión.\n\nPlatícame, ¿qué área de tu negocio o empresa te gustaría automatizar hoy?`;
+    const welcome = `¡Hola${greetingName}! Qué gusto saludarte. 👋 Soy Andrés R de Brain Branding.\n\nDesarrollamos soluciones de software a la medida, asistentes conversacionales con Inteligencia Artificial y aplicaciones de alta conversión para empresas y negocios locales.\n\nPlatícame, ¿qué proyecto o área de tu empresa te gustaría automatizar o mejorar hoy?`;
     history.push({ role: 'model', text: welcome });
     return getUniqueReply(chatId, welcome);
   }
 
-  if (userText === '/demo' || textClean.includes('demo') || fuzzyClean.includes('demo') || textClean.includes('demostracion') || fuzzyClean.includes('demostracion')) {
-    const reply = `Con mucho gusto te muestro nuestras demos en vivo. 📱\n\nPuedes probar nuestras plataformas interactivas directamente en el navegador:\n🌐 ${kb.agencia.sitioWeb}\n\nVerás cómo opera un Punto de Venta, CRM y Asistente IA en tiempo real. ¿Qué tipo de solución buscas?`;
+  // 0.3 Solicitud de Demos
+  if (userText === '/demo' || textClean.includes('demo') || fuzzyClean.includes('demo') || textClean.includes('demostracion') || fuzzyClean.includes('demostracion') || textClean.includes('ejemplo')) {
+    const reply = `Con mucho gusto te comparto nuestras demostraciones interactivas en vivo. 📱\n\nPuedes probar cómo funcionan nuestros desarrollos directamente en tu navegador desde tu celular o computadora:\n🌐 https://brainbranding.com.mx/demos\n\nAllí encontrarás simuladores de Punto de Venta (POS), Asistentes de Citas por IA y ERPs de gestión.\n\n¿De qué giro es tu negocio para sugerirte la demo más alineada a lo que buscas?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  // 0.5 Smart Intent Recovery for Postponement / Hesitation / "Luego los reviso" / "Después me pongo en contacto"
+  // 0.4 Fase Cierre Listo
+  if (state.conviction === 'TOTALMENTE' || textClean.includes('pasame la cuenta') || textClean.includes('datos bancarios') || textClean.includes('donde transfiero')) {
+    state.temp = 'CITA_URGENTE';
+    const reply = `¡Excelente decisión! Vamos a dejar tu sistema funcionando exactamente como lo necesitas.\n\nTe comparto los datos para coordinar la reunión de arranque o enviarte la información bancaria para el anticipo inicial (35%):\n\n📱 Contacto directo para arranque: https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20estoy%20listo%20para%20arrancar%20el%20proyecto.\n\n¿Prefieres que te llamemos hoy mismo o a qué hora te queda mejor?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 0.5 Intención Alta
+  if (textClean.includes('con cuanto se inicia') || textClean.includes('propuesta formal') || textClean.includes('cuando empezamos')) {
+    state.temp = 'CALIENTE';
+    const reply = `Podemos iniciar con la fase de diseño y levantamiento esta misma semana. 📄\n\nTrabajamos por fases claras (35% de anticipo y 65% restante únicamente a la entrega tras tu entera conformidad) y emitimos factura fiscal CFDI 4.0.\n\nPara preparar tu propuesta personalizada, ¿me compartes el nombre de tu empresa y tu correo?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 0.6 Manejo de titubeo o postergación
   const isPostponing = textClean.includes('luego') || textClean.includes('despues') || 
                        textClean.includes('mas tarde') || textClean.includes('ocupad') || 
                        textClean.includes('ahorita no') || textClean.includes('ahora no') || 
                        textClean.includes('pongo en contacto') || textClean.includes('te aviso') || 
                        textClean.includes('les aviso') || textClean.includes('te hablo') || 
                        textClean.includes('luego los') || textClean.includes('luego veo') || 
-                       textClean.includes('poco') || textClean.includes('nada') || 
-                       textClean.includes('no por ahora') || textClean.includes('luego reviso') ||
-                       textClean.includes('despues te') || textClean.includes('mas adelante');
+                       textClean.includes('luego reviso');
 
   if (isPostponing) {
     const greetingName = userName ? ` ${userName}` : '';
-    const rescueReply = `¡Entiendo perfectamente${greetingName}! 🙌 Sé que el tiempo es súper valioso en el día a día.\n\nPara que no tengas que buscar entre mensajes después o perder esta oportunidad, déjame apoyarte sin ningún compromiso:\n\n1️⃣ 📅 *Agendar una breve llamada de 5 minutos* con Andrés R en el día y horario que tú elijas con calma.\n2️⃣ 💬 *Enviarte una propuesta/resumen rápido por WhatsApp* para que la leas en 30 segundos cuando te desocupes.\n3️⃣ ❓ *Aclararte una duda puntual en este momento* antes de que te retires.\n\n¿Cuál de estas 3 opciones te acomoda mejor o qué día de la semana prefieres que te enviemos un recordatorio? ☕`;
-    
+    const rescueReply = `Entiendo perfectamente${greetingName}, sé que en el día a día el tiempo vuela. 🙌\n\nSin ningún compromiso, cuando tengas un par de minutos libres podemos coordinar una breve llamada de 5 minutos o te puedo enviar una propuesta rápida por WhatsApp para que la revises con calma.\n\nQuedo a la orden cuando te desocupes. ¡Que tengas un excelente día! ☕`;
     history.push({ role: 'model', text: rescueReply });
     return getUniqueReply(chatId, rescueReply);
   }
 
-  // 0.8 Unaccented & Persuasive Pricing / Cost Query Intent (Sanitized against standalone numbers)
+  // 0.7 Consultas de precios
   const isPureNumber = /^\d+$/.test(textClean);
   const isPriceQuery = !isPureNumber && (
                        userText === '/precios' || 
@@ -255,230 +240,102 @@ function generateHumanReply(chatId, userName, userText) {
                        textClean.includes('inversio') || 
                        textClean.includes('tarifa') || 
                        textClean.includes('paquet') || 
-                       textClean.includes('plan') ||
-                       (textClean.includes('programa') && (textClean.includes('cuanto') || textClean.includes('precio') || textClean.includes('costo') || textClean.includes('sale'))));
+                       textClean.includes('plan'));
 
   if (isPriceQuery) {
     state.askedPrice = true;
     const greetingName = userName ? ` ${userName}` : '';
-    let reply = '';
-
-    const askedPriceBefore = history.some((h, idx) => idx < history.length - 1 && h.role === 'model' && (h.text.includes('inversión') || h.text.includes('Activación Inicial') || h.text.includes('Estructura Transparente')));
-
-    if (!askedPriceBefore) {
-      reply = `¡Con mucho gusto te platico sobre la inversión aproximada${greetingName}! 💰 En Brain Branding desarrollamos tecnología a la medida que se paga sola desde el primer mes.\n\nEstructura Transparente de Precios (Montos Aproximados de Referencia):\n\n1️⃣ *Asistente IA / Bot por WhatsApp & Telegram:* Aproximado desde $4,500 MXN (pago único de implementación y configuración llave en mano).\n2️⃣ *Punto de Venta POS Móvil & Nube:* Servidor seguro y mantenimiento estimado de $290 a $490 MXN/mes (incluye soporte 24/7 y respaldos).\n3️⃣ *Páginas Web y ERP a la Medida:* Cotización estimada según las funciones exactas de tu negocio.\n\n⚠️ *Nota:* Todos los montos compartidos son precios aproximados de referencia; la cotización exacta y final se brinda al momento de definir los módulos y cerrar el trato.\n\n🎁 *Promoción Especial:* Si agendamos esta semana, ¡te regalamos los primeros 2 meses de mantenimiento nube!\n\nPlatícame: ¿De qué giro es tu empresa para darte el presupuesto estimado a la medida? 📲`;
-    } else {
-      reply = `¡Claro que sí! Como los precios mostrados son aproximados de referencia, el presupuesto exacto y final se brinda al momento de cerrar el trato según tus requerimientos exactos:\n\n• ¿Quieres que te enviemos una cotización formal en PDF por WhatsApp?\n• ¿O prefieres agendar una breve llamada de 5 minutos con Andrés R para ver el demo en vivo?\n\n📲 *Chat directo en WhatsApp con Andrés R:* https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20quisiera%20una%20cotizaci%C3%B3n%20formal%20para%20mi%20empresa.`;
-    }
+    let reply = `Te platico con gusto sobre los presupuestos de referencia${greetingName}. 💰 En Brain Branding desarrollamos tecnología a la medida enfocada en generar retorno de inversión rápido.\n\nPor ejemplo:\n• **Asistente IA / Bot para WhatsApp & Telegram:** Implementación desde $4,500 MXN (pago único de desarrollo e integración).\n• **Puntos de Venta (POS) y ERPs:** Servidor seguro y mantenimiento en la nube desde $290 a $490 MXN al mes (incluye soporte 24/7 y respaldos automáticos).\n• **Desarrollos Web y Sistemas Especiales:** Se cotizan según las funciones exactas requeridas.\n\nPlatícame un poco más sobre lo que necesita tu negocio para darte un estimado más preciso a la medida. ☕`;
 
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  // 1. Numeric Choice Evaluator (1, 2, 3)
-  if (textLower === '1' || textLower === '1.' || textLower === '1.-' || textLower.includes('opcion 1') || textLower.includes('opción 1')) {
-    const reply = `¡Excelente elección! 🏪 Para negocios locales y comercios (talleres, tiendas, restaurantes, panaderías, etc.), la solución estrella es nuestro **Brain POS Móvil & Asistente IA**:\n\n• Registro rápido de ventas en 3 segundos desde celular o tablet.\n• Control automático de inventario, stock e insumos.\n• Emisión de tickets digitales y avisos a clientes por WhatsApp.\n\n🌐 *Probar Demo en Vivo:*\nhttps://brainbranding.com.mx/#simulador-pos\n\nPlatícame: ¿De qué giro exacto es tu negocio local o cuántos productos o notas manejan al día?`;
+  // 0.8 Giros Específicos de Negocio (Taller, Restaurantes, Clínicas, etc.)
+  if (textClean.includes('hojalat') || textClean.includes('carroc') || textClean.includes('pintur') || textClean.includes('taller') || textClean.includes('mecanic') || textClean.includes('auto') || textClean.includes('vehic')) {
+    state.giro = 'Taller Automotriz & Hojalatería';
+    const reply = `¡Excelente giro! Para talleres mecánicos, de hojalatería y pintura desarrollamos soluciones muy prácticas:\n\n• **Recepción de Vehículos en Celular:** Capturas la orden con fotos de abolladuras y detalles desde el celular, generando la hoja de servicio al instante.\n• **Avisos Automáticos por WhatsApp:** El sistema notifica al cliente el avance de su vehículo (hojalatería, pintura o listo para entrega) sin que tengas que enviar mensajes a mano.\n• **Control de Presupuestos y Anticipos:** Manejo de reparaciones, refacciones y corte de caja.\n\nPuedes ver una demostración en vivo de este tipo de sistemas en:\n🌐 https://brainbranding.com.mx/demos\n\nCuéntame: ¿cómo llevan actualmente el control de las órdenes de servicio en tu taller?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  if (textLower === '2' || textLower === '2.' || textLower === '2.-' || textLower.includes('opcion 2') || textLower.includes('opción 2')) {
-    const reply = `¡Extraordinaria opción! 📅 Para profesionales y servicios por cita o cotización (jardinería, consultorías, salud, hojalatería, talleres, etc.):\n\n• **Asistente IA 24/7:** Tus clientes agendan y cotizan por WhatsApp/Telegram sin quitarte tiempo.\n• **Cotizador PDF Express:** Envías presupuestos profesionales en 10 segundos desde tu celular.\n• **Recordatorios Automáticos:** Cero cancelaciones de último momento.\n\n🌐 *Probar Demo de Citas:*\nhttps://brainbranding.com.mx/#asistente-ia\n\nPlatícame: ¿Qué servicio ofrece tu empresa o cómo agendan actualmente tus clientes?`;
+  if (textClean.includes('jardin') || textClean.includes('poda') || textClean.includes('plant') || textClean.includes('paisaj')) {
+    state.giro = 'Jardinería & Mantenimiento';
+    const reply = `¡Buenísimo! Para servicios de jardinería y mantenimiento de áreas verdes, las herramientas que más ayudan a ordenar el trabajo son:\n\n• **Agendamiento Inteligente de Visitas:** Tus clientes solicitan cotización por WhatsApp y el asistente organiza tus fechas en el calendario.\n• **Cotizador Expres:** Envías presupuestos en PDF profesionales en menos de 1 minuto desde el celular.\n• **Catálogo Digital de Proyectos:** Galería visual para mostrar tus trabajos previos a clientes potenciales.\n\nPlatícame, ¿cuántos servicios o visitas atienden aproximadamente a la semana?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  if (textLower === '3' || textLower === '3.' || textLower === '3.-' || textLower.includes('opcion 3') || textLower.includes('opción 3')) {
-    const reply = `¡Con mucho gusto! Aquí tienes el acceso directo a nuestras 3 Demostraciones Interactivas en Vivo en la web: 🌐\n\n1. 📱 *Punto de Venta POS:* https://brainbranding.com.mx/#simulador-pos\n2. 🤖 *Asistente IA de Citas & Pedidos:* https://brainbranding.com.mx/#asistente-ia\n3. 💻 *Catálogo Web & ERP:* https://brainbranding.com.mx/#simulador-web\n\nVerás el funcionamiento en tiempo real con el nombre de tu marca. ¿Cuál de estas 3 demos te llama más la atención?`;
+  if (textClean.includes('cita') || textClean.includes('agend') || textClean.includes('horari') || textClean.includes('reserv')) {
+    state.dolor = 'Agendamiento de citas';
+    const reply = `Entiendo perfecto. Cuando trabajas por citas, contestar mensajes manuales quita muchísimo tiempo y a veces se pierden clientes por tardar en responder.\n\nCon un Asistente IA personalizado:\n1. El cliente consulta disponibilidad y agenda 24/7 por WhatsApp o Telegram.\n2. Se sincroniza con tu agenda en tiempo real.\n3. Envía recordatorios automáticos para evitar cancelaciones de última hora.\n\n¿Te gustaría ver un ejemplo de cómo agendaría un cliente en tu caso?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  // 2. Location & FAQ Triggers
-  if (textLower.includes('donde estan') || textLower.includes('dónde están') || textLower.includes('ubicacion') || textLower.includes('ubicación') || textLower.includes('oficina') || textLower.includes('donde se ubican')) {
-    const reply = `Operamos de forma 100% digital e implementamos proyectos en todo México y Latinoamérica 🇲🇽🌎.\n\nNuestras oficinas centrales de desarrollo están en Pachuca, Hidalgo, y brindamos soporte en la nube 24/7. Todas las demostraciones e implementaciones se realizan en línea sin necesidad de que salgas de tu negocio.\n\n¿Te gustaría ver una demostración en vivo o agendar una llamada rápida?`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  if (textLower.includes('factura') || textLower.includes('facturan') || textLower.includes('cfdi') || textLower.includes('sat') || textLower.includes('impuestos')) {
-    const reply = `¡Sí, por supuesto! 📜 Todos nuestros proyectos de software, desarrollo y mantenimiento son 100% deducibles de impuestos y te emitimos factura fiscal CFDI 4.0 al instante.\n\n¿Requieres facturar la inversión a nombre de tu empresa o como persona física?`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  if (textLower.includes('cuanto tardan') || textLower.includes('cuánto tardan') || textLower.includes('tiempo de entrega') || textLower.includes('cuanto tiempo') || textLower.includes('tardanza')) {
-    const reply = `Nuestros tiempos de entrega son los más rápidos del mercado gracias a nuestros módulos pre-diseñados:\n\n⚡ *Asistentes IA y Bots:* En 24 a 48 horas operando en tu WhatsApp.\n📱 *Puntos de Venta (POS):* Entrega inmediata en 24 horas.\n🌐 *Software y Webs a la Medida:* De 3 a 7 días hábiles.\n\n¿Para qué fecha te gustaría tener tu sistema funcionando?`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  // 3. Business Triggers (Automotive, Services, Retail, Medical, Hospitality)
-  if (textLower.includes('hojalat') || textLower.includes('carroc') || textLower.includes('pintur') || textLower.includes('taller') || textLower.includes('mecanic') || textLower.includes('enderezad') || textLower.includes('auto') || textLower.includes('vehic')) {
-    state.giro = 'Taller de Hojalatería, Pintura & Mecánica Automotriz';
-    const demoUrl = kb.generadorDemos.getUrlDemo('Taller Automotriz & Hojalatería');
-    const reply = `¡Excelente giro! 🚗 Para un Taller de Hojalatería, Pintura y Mecánica, las soluciones que más aceleran la operación son:\n\n• *Gestor Móvil de Órdenes de Servicio:* Registras el ingreso del auto con fotos de abolladuras/detalles, inventario de piezas y envías la cotización al cliente por WhatsApp en 10 segundos.\n• *Avisos Automáticos de Estatus por WhatsApp/Telegram:* El bot notifica al cliente cuando su auto pase a preparación, pintura o esté listo para entrega ("Tu auto ya está listo para recolección 🚗✨").\n• *Control de Refacciones y Anticipos:* Registro de señas cobradas y pagos finales con corte de caja diario.\n\n🌐 *Ver Demo en Vivo:*\n${demoUrl}\n\nPlatícame: ¿Cómo le dan seguimiento a los autos que entran al taller o cómo envían sus presupuestos actualmente?`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  if (textLower.includes('cuales') || textLower.includes('cuáles') || textLower.includes('que hay') || textLower.includes('qué hay') || textLower.includes('que modulos') || textLower.includes('qué módulos') || textLower.includes('opciones') || textLower.includes('que tienen') || textLower.includes('que ofrecen') || textLower.includes('en que me puede ayudar') || textLower.includes('en qué me puede ayudar') || textLower.includes('como me puedes ayudar')) {
-    const reply = `¡Con mucho gusto te muestro cómo te podemos impulsar! 🚀\n\nNuestras 4 Soluciones Principales a la Medida son:\n\n1. 🤖 *Asistente IA 24/7 (WhatsApp & Telegram):* Atiende clientes, responde dudas de tus servicios, agenda citas y toma pedidos automáticamente 24/7.\n2. 🚗 *Gestor de Órdenes & Servicios a la Medida:* Control de trabajos, recepción de vehículos/equipos con fotos, estatus de avance y presupuestos en PDF.\n3. 📱 *Punto de Venta (POS) Móvil y Nube:* Cobro rápido desde celular o tablet, tickets digitales, inventarios y corte de caja.\n4. 🌐 *Página Web y Catálogo Interactivo:* Presentación profesional con testimonios y demostraciones visuales de tu negocio.\n\n¿Cuál de estas opciones te llama más la atención o quisieras probar en una demostración gratuita?`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  if (textLower.includes('jardin') || textLower.includes('paisaj') || textLower.includes('poda') || textLower.includes('plant') || textLower.includes('fumig')) {
-    state.giro = 'Jardinería & Mantenimiento de Áreas Verdes';
-    const demoUrl = kb.generadorDemos.getUrlDemo('Jardinería & Paisajismo');
-    const reply = `¡Excelente giro! 🌿 Para servicios de jardinería, paisajismo y mantenimiento, las mejores soluciones que implementamos son:\n\n• *Asistente IA para Agendar Citas:* Tus clientes solicitan visitas o cotizaciones por WhatsApp/Telegram y el bot organiza tu agenda automáticamente.\n• *Cotizador Móvil Rápido:* Envías presupuestos profesionales en PDF desde tu celular en 10 segundos.\n• *Catálogo Web de Trabajos:* Galería interactiva con tus proyectos realizados para transmitir máxima confianza.\n\n🌐 *Ver Demo para Jardinería:*\n${demoUrl}\n\nPlatícame: ¿Cómo agendan las citas o cotizan los servicios con tus clientes actualmente?`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  if (textLower.includes('cita') || textLower.includes('agend') || textLower.includes('horari') || textLower.includes('reserv')) {
-    state.dolor = 'Agendamiento y gestión de citas';
-    const reply = `¡Justo lo que automatizamos a la perfección! 📅 Cuando operas por citas, atender mensajes a mano quita tiempo valioso y provoca cancelaciones de último momento.\n\nCon nuestro **Asistente IA de Citas por WhatsApp/Telegram**:\n1. El cliente consulta tus horarios disponibles 24/7.\n2. El bot agenda la cita en tu calendario automáticamente.\n3. Envía un recordatorio 24 horas antes para confirmar la asistencia.\n\n¿Te gustaría probar una demo en vivo de cómo tus clientes agendarían su cita por WhatsApp?`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  if (textLower.includes('aliment') || textLower.includes('perr') || textLower.includes('gat') || textLower.includes('mascot') || textLower.includes('croquet') || textLower.includes('veterin')) {
-    state.giro = 'Venta de Alimentos para Mascotas / Pet Shop';
-    const demoUrl = kb.generadorDemos.getUrlDemo('Venta de Alimentos para Mascotas');
-    const reply = `¡Excelente giro! 🐾 Para venta de alimentos y artículos para mascotas, los retos principales son controlar inventario por bulto/kilo y agilizar el cobro en mostrador.\n\nNuestras soluciones clave son:\n• *POS con Integración de Báscula:* Pesa y calcula el precio por kilo al instante.\n• *Control de Inventario de Bultos:* Descuento automático de kilos del costal al vender a granel.\n• *Asistente IA por WhatsApp:* Atiende pedidos a domicilio y envía ubicación.\n\n🌐 *Ver Demo para Alimento de Mascotas:*\n${demoUrl}\n\nPlatícame: ¿Cómo registran el pesaje o las ventas en mostrador actualmente?`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  if (textLower.includes('panader') || textLower.includes('pan') || textLower.includes('pastel') || textLower.includes('reposter')) {
+  if (textClean.includes('panader') || textClean.includes('pan') || textClean.includes('pastel') || textClean.includes('reposter')) {
     state.giro = 'Panadería & Pastelería';
-    const demoUrl = kb.generadorDemos.getUrlDemo('Panadería & Pastelería');
-    const reply = `¡Qué excelente giro! 🍞 Para panaderías y reposterías, las soluciones con mayor impacto son:\n\n• *Punto de Venta (POS) Táctil:* Registro rápido de pan dulce/blanco, corte de caja y control de inventario de insumos (harina, huevo, azúcar).\n• *Asistente IA por WhatsApp:* Toma pedidos de pasteles sobre diseño o encargos de pan mayoreo 24/7.\n• *Página Web Catálogo:* Folleto digital interactivo para mostrar tus especialidades.\n\n🌐 *Ver Demo en Vivo para Panadería:*\n${demoUrl}\n\nPlatícame: ¿Tienes una sola sucursal o varias? ¿O cuántos clientes/pedidos atienden al día aprox?`;
+    const reply = `¡Qué gran giro! Para panaderías y reposterías implementamos sistemas muy ágiles:\n\n• Punto de Venta táctil para cobro en segundos y control de inventario de materia prima (harina, azúcares, insumos).\n• Asistente IA para tomar encargos de pasteles sobre diseño o pedidos al mayoreo por WhatsApp 24/7.\n• Catálogo digital de especialidades.\n\n¿Tienes una sucursal o varias ubicaciones?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  // 3.5 Real Estate & Property Giro
-  if (textClean.includes('inmobiliari') || textClean.includes('bienes raices') || textClean.includes('propiedad') || textClean.includes('terreno') || textClean.includes('casa') || textClean.includes('departamento')) {
+  if (textClean.includes('inmobiliari') || textClean.includes('bienes raices') || textClean.includes('propiedad') || textClean.includes('casa') || textClean.includes('terreno')) {
     state.giro = 'Inmobiliaria & Bienes Raíces';
-    const demoUrl = kb.generadorDemos.getUrlDemo('Bienes Raíces & Inmobiliaria');
-    const reply = `¡Excelente sector! 🏢 En Bienes Raíces el reto principal es responderle al prospecto en menos de 2 minutos antes de que busque otra opción.\n\nNuestra solución para Inmobiliarias incluye:\n• *Asistente IA en WhatsApp:* Muestra fichas de propiedades, fotos, precios y ubicación automáticamente.\n• *Filtro Inteligente de Compradores:* Califica presupuesto y forma de pago (contado/crédito) antes de agendar la visita.\n• *Agendamiento de Recorridos:* Agenda la cita con el asesor en su calendario en tiempo real.\n\n🌐 *Ver Demo Inmobiliaria:*\n${demoUrl}\n\nPlatícame: ¿Cuántas propiedades manejan en inventario o cuántos asesores son en el equipo?`;
+    const reply = `En bienes raíces el secreto está en responderle al interesado en los primeros minutos. Con nuestro asistente en WhatsApp:\n\n• Muestra fichas de propiedades, fotos, precios y ubicaciones automáticamente.\n• Filtra presupuesto e intención del comprador antes de agendar la visita.\n• Agenda el recorrido directamente en la agenda de tu asesor.\n\n¿Cuántos asesores o propiedades manejan actualmente?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  // 3.6 Medical & Dental Clinics Giro
-  if (textClean.includes('clinic') || textClean.includes('medic') || textClean.includes('doctor') || textClean.includes('denti') || textClean.includes('odontol') || textClean.includes('pacient')) {
-    state.giro = 'Clínicas & Consultorios Médicos';
-    const demoUrl = kb.generadorDemos.getUrlDemo('Clínica & Consultorio Médico');
-    const reply = `¡Gran sector! 🏥 Para Clínicas y Consultorios, las soluciones de mayor impacto son:\n\n• *Asistente IA para Citas por WhatsApp:* Agenda pacientes 24/7 sin saturar a la recepcionista.\n• *Recordatorios 24h Antes:* Reduce ausentismos en un 45% enviando confirmaciones de 1 clic.\n• *Expediente Clínico Digital:* Registro de consultas, historial y firma en pantalla.\n\n🌐 *Ver Demo para Clínicas:*\n${demoUrl}\n\nPlatícame: ¿Atienden un solo consultorio o tienen varios especialistas?`;
+  if (textClean.includes('clinic') || textClean.includes('medic') || textClean.includes('doctor') || textClean.includes('denti') || textClean.includes('pacient')) {
+    state.giro = 'Clínica & Consultorio Médico';
+    const reply = `Para consultorios y clínicas médicas, el asistente IA permite:\n\n• Agendar pacientes 24/7 por WhatsApp sin saturar recepción.\n• Enviar recordatorios automáticos 24 horas antes para reducir ausentismos.\n• Llevar expediente y ficha de seguimiento de cada paciente.\n\n¿Tienen un consultorio individual o coordinan varios especialistas?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  // 3.7 Schools & Academies Giro
-  if (textClean.includes('escuel') || textClean.includes('colegi') || textClean.includes('alumn') || textClean.includes('curso') || textClean.includes('clase') || textClean.includes('colegiat')) {
-    state.giro = 'Escuelas, Academias & Colegios';
-    const demoUrl = kb.generadorDemos.getUrlDemo('Escuela & Colegio');
-    const reply = `¡Excelente sector! 🎓 Para Escuelas y Academias, automatizamos la operación con:\n\n• *Avisos de Colegiaturas por WhatsApp:* Recordatorios automáticos que reducen la cartera vencida en 60%.\n• *Asistente de Informes e Inscripciones:* Atiende solicitudes de aspirantes e inscripciones 24/7.\n• *Asistencia Digital por QR:* Registro de entrada de alumnos y notificación al tutor.\n\n🌐 *Ver Demo para Escuelas:*\n${demoUrl}\n\nPlatícame: ¿Qué tipo de cursos o niveles educativos imparten?`;
+  if (textClean.includes('escuel') || textClean.includes('colegi') || textClean.includes('curso') || textClean.includes('alumn')) {
+    state.giro = 'Escuela / Instituto';
+    const reply = `Para escuelas y academias automatizamos la atención a aspirantes, dudas de colegiaturas y avisos a padres de familia por WhatsApp.\n\n¿Qué tipo de cursos o niveles educativos ofrecen?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  // 3.8 Objection: Price / Budget ("está caro", "no me alcanza", "presupuesto corto")
-  if (textClean.includes('caro') || textClean.includes('costoso') || textClean.includes('presupuesto corto') || textClean.includes('no me alcanza') || textClean.includes('rebaja') || textClean.includes('descuento')) {
-    const reply = `Te entiendo perfectamente. 🤝 En Brain Branding cuidamos tu presupuesto al 100%:\n\n1️⃣ *Garantía de Cero Riesgo:* Solo pagas el 35% de anticipo para arrancar. El 65% restante se liquida ÚNICAMENTE cuando veas tu sistema terminado a tu entera satisfacción.\n2️⃣ *Retorno de Inversión (ROI):* Nuestras soluciones están diseñadas para pagarse solas en las primeras 4 semanas al evitar ventas perdidas e insumos mal registrados.\n3️⃣ *Plan Flexible por Fases:* Podemos empezar con el módulo más urgente y escalar después.\n\n¿Te gustaría que diseñemos un plan inicial ajustado a tu presupuesto actual? 📲`;
+  // 0.9 Consultas frecuentes (Ubicación, Facturación, Garantías, Tiempos)
+  if (textClean.includes('donde estan') || textClean.includes('ubicacion') || textClean.includes('oficina')) {
+    const reply = `Nuestras oficinas de desarrollo se encuentran en Pachuca, Hidalgo, y brindamos servicio e implementación digital a clientes en todo México y Latinoamérica 🇲🇽🌎.\n\nTodo el desarrollo y las demostraciones se realizan en línea para tu mayor comodidad. ¿Te gustaría agendar una breve videollamada para conocernos?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  // 3.9 Objection: Partner / Boss ("hablar con mi socio", "equipo", "jefe")
-  if (textClean.includes('socio') || textClean.includes('esposa') || textClean.includes('esposo') || textClean.includes('equipo') || textClean.includes('jefe') || textClean.includes('mostrarlo')) {
-    const reply = `¡Excelente punto! 📄 Es súper importante que todo el equipo o tus socios vean el beneficio antes de tomar la decisión.\n\nCon mucho gusto te envío una *Propuesta Ejecutiva en PDF de 1 Página* con el ROI y los beneficios resumidos para que se la compartas por WhatsApp, o bien podemos coordinar una videollamada corta de 10 minutos para mostrárselos en vivo.\n\n¿A qué correo o número de WhatsApp te envío la propuesta resumida? 📩`;
+  if (textClean.includes('factura') || textClean.includes('cfdi') || textClean.includes('sat')) {
+    const reply = `Así es, por supuesto. 📜 Todos nuestros desarrollos y servicios son 100% deducibles y emitimos factura fiscal CFDI 4.0.\n\n¿Requieres facturar a nombre de persona física o moral?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  // 3.10 Objection: Using Excel / Paper ("uso excel", "libreta", "cuaderno")
-  if (textClean.includes('excel') || textClean.includes('libreta') || textClean.includes('cuaderno') || textClean.includes('papel') || textClean.includes('hoja')) {
-    const reply = `Excel y la libreta son útiles para empezar, pero suelen causar desvelos al buscar un dato o descuadres de dinero al no estar sincronizados con tu celular. 📊\n\nNosotros nos encargamos de *migrar toda tu base de datos actual de Excel o libreta* a tu nueva plataforma con IA sin costo extra y sin perder un solo cliente.\n\n¿Te gustaría ver cómo se verían tus archivos actuales convertidos en un sistema moderno? 🌐`;
+  if (textClean.includes('cuanto tardan') || textClean.includes('tiempo de entrega')) {
+    const reply = `Nuestros tiempos de entrega son muy ágiles:\n\n• **Asistentes IA y Bots:** De 24 a 48 horas operando en tu WhatsApp.\n• **Puntos de Venta (POS):** 24 horas.\n• **Software y Desarrollos a la Medida:** De 3 a 7 días hábiles.\n\n¿Para qué fecha te gustaría tener tu proyecto listo?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  // 3.11 YoY IA Query
-  if (textClean.includes('yoy')) {
-    const reply = `¡Excelente pregunta! 🤖 *YoY IA* es una plataforma de software a la medida y analítica predictiva desarrollada por Brain Branding como caso de éxito empresarial para uno de nuestros clientes corporativos.\n\nDiseñamos sistemas con inteligencia artificial personalizada adaptados a la medida de cualquier empresa. ¿Te gustaría conocer cómo podemos aplicar esa misma potencia en tu negocio?`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  // 3.12 Marketing Digital & Ads Query
-  if (textClean.includes('marketing') || textClean.includes('campana') || textClean.includes('google ads') || textClean.includes('facebook ads') || textClean.includes('meta ads')) {
-    const reply = `En Brain Branding no vendemos campañas aisladas de publicidad. 🎯\n\nNuestro enfoque es la **Arquitectura Digital de Alta Conversión**: desarrollamos la infraestructura técnica (Software a la Medida, Páginas Web Disruptivas y Asistentes IA en WhatsApp) para que cada peso que inviertas en anuncios se convierta en clientes reales y ventas cerradas 24/7.\n\n¿Buscas construir la infraestructura digital o bot de ventas para tu empresa? 🌐`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  // 3.13 NDA & Confidentiality Query
-  if (textClean.includes('nda') || textClean.includes('confidencial') || textClean.includes('proteger mi idea') || textClean.includes('secreto')) {
-    const reply = `¡Absolutamente! 🔒 En Brain Branding la privacidad y protección de tu negocio es prioridad #1.\n\nFirmamos un **Acuerdo de Confidencialidad (NDA)** firmado por ambas partes antes o al momento de iniciar el proyecto, garantizando la protección total de tu propiedad intelectual, modelos de negocio y datos empresariales.\n\n¿Te gustaría que te enviemos una plantilla previa del acuerdo NDA? 📄`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  // 3.14 Hosting, Domain & Maintenance Insurance Query
-  if (textClean.includes('hosting') || textClean.includes('dominio') || textClean.includes('servidor') || textClean.includes('mantenimiento') || textClean.includes('alojamiento')) {
-    const reply = `¡Con mucho gusto te explico nuestra infraestructura! ☁️\n\n• **Hospedaje & Dominio:** El primer año de hospedaje nube seguro y dominio (.com o .com.mx) normalmente vienen INCLUIDOS en el desarrollo.\n• **Seguro de Infraestructura & Mantenimiento:** Manejamos una cuota de mantenimiento nube ($290 a $490 MXN/mes) que actúa como un *seguro de operatividad*, garantizando servidores seguros de alta velocidad, almacenamiento ilimitado, respaldos diarios y actualizaciones continuas de por vida.\n\n¿Tienes dominio actual o te apoyamos a registrarlo desde cero? 🌐`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  // 3.15 Code Ownership & Database Security Query
-  if (textClean.includes('codigo fuente') || textClean.includes('propiedad') || textClean.includes('base de datos') || textClean.includes('los datos son mios')) {
-    const reply = `¡Sin duda alguna! 🔒 En Brain Branding tú eres el **dueño total del 100%** de tu plataforma, base de datos de clientes y código desarrollado.\n\nTus datos se alojan en servidores nube protegidos con cifrado SSL de 256 bits y respaldos automáticos diarios. Cero sorpresas ni restricciones.\n\n¿Requieres alguna arquitectura técnica o integración especial para tu base de datos?`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  // 3.16 Edge Case: Current Client Technical Support & SLA Policy
-  if (textClean.includes('ya soy cliente') || textClean.includes('fallo mi') || textClean.includes('soporte tecnico') || textClean.includes('ayuda con mi sistema') || textClean.includes('sla') || textClean.includes('cuanto tardan en responder en soporte')) {
-    const reply = `¡Hola! 👋 En soporte técnico y mantenimiento atendemos cada reporte con la mayor agilidad posible según la gravedad del caso. 🛠️\n\n⚠️ *Nota:* No garantizamos un tiempo fijo de respuesta ya que este depende del diagnóstico técnico y de la situación específica de cada incidencia.\n\nPara canalizar tu caso de inmediato con el equipo técnico liderado por Andrés R:\n📲 *Soporte Técnico Directo:* https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20requiero%20asistencia%20t%C3%A9cnica%20para%20mi%20sistema.`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  // 3.17 Edge Case: Jobs / Vacancies / Resume Submission
-  if (textClean.includes('vacante') || textClean.includes('empleo') || textClean.includes('trabajo') || textClean.includes('curriculum') || textClean.includes('enviar mi cv')) {
-    const reply = `¡Agradecemos mucho tu interés en formar parte del equipo de Brain Branding! 💼\n\nPara vacantes de empleo, alianzas o envío de Currículum Vitae (CV), por favor envíanos tus datos e historial profesional al correo institucional:\n\n📩 *Correo:* andreskrebollo@gmail.com\n\nNuestro equipo de talento revisará tu perfil con mucho gusto. 🚀`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
-  // 4. Uncommunicative / Short Input Smart Handling (1-3 words)
+  // 1.0 Manejo natural de entradas cortas o genéricas ("hola", "ok", "bien", "saludos")
   const isShortInput = userText.trim().split(/\s+/).length <= 3;
-  const genericWords = ['si', 'sí', 'ok', 'no', 'bien', 'hola', 'interesa', 'mm', 'a ver', 'saludos', 'gracias', 'grax'];
+  const genericWords = ['si', 'sí', 'ok', 'no', 'bien', 'hola', 'interesa', 'mm', 'a ver', 'saludos', 'gracias', 'grax', 'buenas', 'buenos dias', 'buenas tardes'];
   const isGeneric = genericWords.some(w => textLower === w || textLower === w + '.');
 
   if (isShortInput && isGeneric) {
-    const reply = `¡Perfecto! Para darte la información exacta sin hacerte perder tiempo, responde únicamente con el número 1, 2 o 3: 💡\n\n1️⃣ Tengo un Negocio Físico / Local (taller, tienda, restaurante, panadería, etc.)\n2️⃣ Ofrezco Servicios por Cita o Cotización (jardinería, consultoría, salud, etc.)\n3️⃣ Quiero ver las Demostraciones Interactivas en Vivo 🌐`;
+    const greetingName = userName ? ` ${userName}` : '';
+    const reply = `¡Con mucho gusto${greetingName}! Platícame un poquito sobre tu negocio o qué proyecto tienes en mente para orientarte de la mejor manera. ☕`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  // 5. Smart Adaptive Non-Repetitive Fallback Menu
-  const previousFallbackCount = history.filter(h => h.role === 'model' && h.text.includes('1️⃣')).length;
-
-  let fallbackReply = '';
-  if (previousFallbackCount === 0) {
-    fallbackReply = `Te entiendo perfectamente. En Brain Branding nos especializamos en resolver cualquier reto operativo o de ventas con tecnología a la medida. 🚀\n\nPara mostrarte la solución idónea en 10 segundos, dime qué número describe mejor lo que buscas:\n\n1️⃣ Controlar mis Ventas e Inventario con un Punto de Venta (POS) 📱\n2️⃣ Automatizar la Atención a Clientes y Citas por WhatsApp 🤖\n3️⃣ Desarrollar una Página Web o Sistema Personalizado para mi Empresa 🌐`;
-  } else {
-    fallbackReply = `¡Excelente! Para darte la mejor atención sin rodeos ni hacerte perder tiempo:\n\n1️⃣ 🌐 *Ver las Demos Interactivas en Vivo:* https://brainbranding.com.mx/#asistente-ia\n2️⃣ 💬 *Platicar directamente con Andrés R por WhatsApp:* https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20quisiera%20asesor%C3%ADa%20personalizada.\n\n¿Prefieres agendar una llamada rápida de 5 minutos o ver la demo en pantalla? 📲`;
-  }
-  
-  history.push({ role: 'model', text: fallbackReply });
-  return getUniqueReply(chatId, fallbackReply);
+  // 1.1 Respuesta fluida de seguimiento conversacional
+  const reply = `Entiendo perfectamente lo que buscas. En Brain Branding nos especializamos en construir tecnología limpia y funcional adaptada a la manera exacta en que trabajas.\n\nSi gustas, platícame más sobre tu proceso actual o dime si prefieres revisar las demostraciones en vivo en la web: https://brainbranding.com.mx/demos 🌐`;
+  history.push({ role: 'model', text: reply });
+  return getUniqueReply(chatId, reply);
 }
 
 const express = require('express');
@@ -486,68 +343,15 @@ const app = express();
 app.use(express.json());
 
 const OWNER_PHONE = '+52 771 233 9238';
-const ADMIN_CHAT_ID = '8337803949'; // Personal Telegram Chat ID of the Owner
+const ADMIN_CHAT_ID = '8337803949';
 
-const pausedChats = {}; // chatId -> expiryTimestamp (30 min takeover pause)
-const prospectLogs = []; // Daily activity tracker for prospects
+const pausedChats = {};
+const prospectLogs = [];
 
 function getDynamicKeyboard(chatId, userText) {
-  const history = conversationHistory[chatId] || [];
-  const msgCount = history.length;
-  const textLower = (userText || '').toLowerCase();
-
-  const isExplicitCallRequest = textLower.includes('hablar') || textLower.includes('llamar') || textLower.includes('llamada') || textLower.includes('telefono') || textLower.includes('teléfono') || textLower.includes('contacto') || textLower.includes('humano') || textLower.includes('asesor') || textLower.includes('persona') || textLower.includes('whatsapp') || textLower.includes('andres') || textLower.includes('andrés');
-
-  const isPostponing = textLower.includes('luego') || textLower.includes('despues') || textLower.includes('después') || 
-                       textLower.includes('mas tarde') || textLower.includes('más tarde') || textLower.includes('ocupad') || 
-                       textLower.includes('ahorita no') || textLower.includes('ahora no') || textLower.includes('pongo en contacto') || 
-                       textLower.includes('te aviso') || textLower.includes('les aviso') || textLower.includes('te hablo') || 
-                       textLower.includes('luego los') || textLower.includes('luego veo') || textLower.includes('poco') || 
-                       textLower.includes('nada') || textLower.includes('no por ahora') || textLower.includes('luego reviso');
-
-  const buttons = [];
-
-  if (isPostponing) {
-    buttons.push([
-      { 
-        text: "📅 Agendar Llamada de 5 min (Sin Presión)", 
-        url: "https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20quisiera%20agendar%20una%20breve%20llamada%20de%205%20minutos%20cuando%20tenga%20tiempo." 
-      }
-    ]);
-    buttons.push([
-      { 
-        text: "💬 Recibir Resumen por WhatsApp", 
-        url: "https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20favor%20de%20enviarme%20el%20resumen%20ejecutivo%20de%20soluciones%20por%20este%20medio." 
-      }
-    ]);
-    buttons.push([
-      { 
-        text: "📞 Hablar con Andrés R (+52 771 233 9238)", 
-        url: "https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20estoy%20viendo%20las%20soluciones%20de%20Brain%20Branding%20y%20quiero%20platicar%20contigo" 
-      }
-    ]);
-  } else {
-    buttons.push([
-      { 
-        text: "📅 Servicios por Citas (WhatsApp)", 
-        url: "https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20me%20interesa%20informaci%C3%B3n%20sobre%20el%20Servicio%20de%20Citas%20y%20Automatizaci%C3%B3n" 
-      }
-    ]);
-    buttons.push([
-      { text: "🌐 Ver Demos Interactivas", callback_data: "opcion_3" }
-    ]);
-
-    if (msgCount >= 4 || isExplicitCallRequest) {
-      buttons.push([
-        { 
-          text: "📞 Hablar con Andrés R (+52 771 233 9238)", 
-          url: "https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20estoy%20viendo%20el%20bot%20de%20Telegram%20y%20me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n" 
-        }
-      ]);
-    }
-  }
-
-  return { inline_keyboard: buttons };
+  // POR EXPERIENCIA 100% HUMANA: NO ADJUNTAR BOTONES EN CADA MENSAJE
+  // Retornamos undefined para que la conversación sea limpia como con un consultor real
+  return undefined;
 }
 
 function getLeadTemperature(text) {
@@ -562,13 +366,13 @@ function getLeadTemperature(text) {
 }
 
 async function notifyOwner(chatId, firstName, username, userText) {
-  if (chatId.toString() === ADMIN_CHAT_ID) return; // Strictly don't notify owner about their own admin messages
+  if (chatId.toString() === ADMIN_CHAT_ID) return;
 
   const state = userStates[chatId] || {};
   const convictionTag = state.conviction ? `🎯 *CONVICCIÓN:* ${state.conviction}` : '🎯 *CONVICCIÓN:* REGULAR';
 
   const textLower = (userText || '').toLowerCase();
-  const isCitaClick = textLower.includes('cita') || textLower.includes('agend') || textLower.includes('whatsapp') || textLower.includes('opcion_2');
+  const isCitaClick = textLower.includes('cita') || textLower.includes('agend') || textLower.includes('whatsapp');
 
   const tempTag = isCitaClick ? '🔥 *[ALERTA DE CITA SOLICITADA POR WHATSAPP]*' : getLeadTemperature(userText);
   const isPaused = pausedChats[chatId] && pausedChats[chatId] > Date.now();
@@ -614,7 +418,6 @@ async function handleWebhookRequest(req, res) {
 
       await callTelegram('answerCallbackQuery', { callback_query_id: cb.id });
 
-      // Check if paused
       if (pausedChats[chatId] && pausedChats[chatId] > Date.now()) {
         await notifyOwner(chatId, firstName, username, `[Clic en Botón: ${data} (Pausado)]`);
         return res.status(200).json({ ok: true });
@@ -622,16 +425,11 @@ async function handleWebhookRequest(req, res) {
 
       await notifyOwner(chatId, firstName, username, `[Clic en Botón: ${data}]`);
 
-      let textChoice = '1';
-      if (data === 'opcion_2') textChoice = '2';
-      if (data === 'opcion_3') textChoice = '3';
-
-      const reply = generateHumanReply(chatId, firstName, textChoice);
+      const reply = generateHumanReply(chatId, firstName, "demos");
       await callTelegram('sendMessage', {
         chat_id: chatId,
         text: reply,
-        parse_mode: 'Markdown',
-        reply_markup: getDynamicKeyboard(chatId, textChoice)
+        parse_mode: 'Markdown'
       });
 
       return res.status(200).json({ ok: true });
@@ -648,14 +446,12 @@ async function handleWebhookRequest(req, res) {
       if (chatId.toString() === ADMIN_CHAT_ID) {
         const cmdLower = userText.toLowerCase().trim();
 
-        // Detect if Andrés R replied directly to a lead notification message on Telegram
         let replyTargetId = null;
         if (update.message.reply_to_message && update.message.reply_to_message.text) {
           const match = update.message.reply_to_message.text.match(/Chat ID:\s*`?(\d+)`?/i) || update.message.reply_to_message.text.match(/(\d{8,12})/);
           if (match) replyTargetId = match[1];
         }
 
-        // Handle /responder <chatId> <mensaje> or Telegram Native Message Reply
         if (cmdLower.startsWith('/responder') || cmdLower.startsWith('/decir') || cmdLower.startsWith('/enviar') || replyTargetId) {
           let targetId = replyTargetId;
           let msgToSend = userText;
@@ -671,17 +467,14 @@ async function handleWebhookRequest(req, res) {
           }
 
           if (targetId && msgToSend && !msgToSend.startsWith('/')) {
-            // 1. Silencio automático del bot por 2 horas para este cliente
             pausedChats[targetId] = Date.now() + 2 * 60 * 60 * 1000;
 
             try {
-              // 2. Entregar el mensaje del dueño directamente al prospecto
               await callTelegram('sendMessage', {
                 chat_id: targetId,
                 text: msgToSend
               });
 
-              // 3. Confirmar al dueño en Telegram
               await callTelegram('sendMessage', {
                 chat_id: ADMIN_CHAT_ID,
                 text: `👤 *MENSAJE HUMANO ENTREGADO EN VIVO* (Chat ID \`${targetId}\`):\n\n💬 "${msgToSend}"\n\n⏸️ *El bot se ha silenciado automáticamente por 2 horas* para que continúes la atención humana. Usa \`/reanudar ${targetId}\` si deseas reactivar el bot.`,
@@ -703,7 +496,7 @@ async function handleWebhookRequest(req, res) {
           const targetId = parts[1] || (prospectLogs.length > 0 ? prospectLogs[prospectLogs.length - 1].chatId : null);
 
           if (targetId) {
-            pausedChats[targetId] = Date.now() + 30 * 60 * 1000; // 30 mins
+            pausedChats[targetId] = Date.now() + 30 * 60 * 1000;
             await callTelegram('sendMessage', {
               chat_id: ADMIN_CHAT_ID,
               text: `⏸️ *Bot Pausado durante 30 minutos* para el Chat ID \`${targetId}\`.\n\nAhora puedes platicar directamente con el cliente sin intervención del bot. Usa \`/reanudar ${targetId}\` para reactivarlo.`,
@@ -776,7 +569,7 @@ async function handleWebhookRequest(req, res) {
         }
 
         if (cmdLower === '/plantilla' || cmdLower === '/citas') {
-          const plantillaMsg = `📱 *PLANTILLAS RÁPIDAS DE RESPUESTA WHATSAPP* 📱\n\n*Plantilla 1 (Respuesta a Citas):*\n"¡Hola! 👋 Soy Andrés R de Brain Branding. Recibí tu mensaje sobre agendar una cita/demo.\n\nPlatícame: ¿qué día u horario prefieres para una llamada rápida de 10 minutos o deseas que te envíe un presupuesto personalizado?"\n\n*Plantilla 2 (Envío de Demos):*\n"¡Con gusto! Aquí puedes probar nuestras demos en vivo:\n🌐 https://brainbranding.com.mx/#asistente-ia"\n\n⚡ *Envío Automático Directo:* Usa \`/enviarwa <teléfono> citas\` para enviarla en 1 clic.`;
+          const plantillaMsg = `📱 *PLANTILLAS RÁPIDAS DE RESPUESTA WHATSAPP* 📱\n\n*Plantilla 1 (Respuesta a Citas):*\n"¡Hola! 👋 Soy Andrés R de Brain Branding. Recibí tu mensaje sobre agendar una cita/demo.\n\nPlatícame: ¿qué día u horario prefieres para una llamada rápida de 10 minutos o deseas que te envíe un presupuesto personalizado?"\n\n*Plantilla 2 (Envío de Demos):*\n"¡Con gusto! Aquí puedes probar nuestras demos en vivo:\n🌐 https://brainbranding.com.mx/demos"\n\n⚡ *Envío Automático Directo:* Usa \`/enviarwa <teléfono> citas\` para enviarla en 1 clic.`;
 
           await callTelegram('sendMessage', {
             chat_id: ADMIN_CHAT_ID,
@@ -806,7 +599,7 @@ async function handleWebhookRequest(req, res) {
           if (!typeOrMsg || typeOrMsg === 'citas') {
             finalMsg = "¡Hola! 👋 Soy Andrés R de Brain Branding. Recibí tu mensaje sobre agendar una cita/demo.\n\nPlatícame: ¿qué día u horario prefieres para una llamada rápida de 10 minutos o deseas que te envíe un presupuesto personalizado?";
           } else if (typeOrMsg === 'demos') {
-            finalMsg = "¡Con gusto! Aquí puedes probar nuestras demos en vivo:\n🌐 https://brainbranding.com.mx/#asistente-ia";
+            finalMsg = "¡Con gusto! Aquí puedes probar nuestras demos en vivo:\n🌐 https://brainbranding.com.mx/demos";
           }
 
           if (sendWa) sendWa(targetPhone, finalMsg);
@@ -872,31 +665,26 @@ async function handleWebhookRequest(req, res) {
         }
       }
 
-      // Voice message text notation
       if (update.message.voice || update.message.audio) {
         const durationSec = (update.message.voice || update.message.audio).duration || 0;
         userText = `[Nota de voz de ${durationSec}s] Hola, le envié una nota de voz de ${durationSec} segundos sobre mi negocio.`;
       }
 
       if (userText) {
-        // 1. Notify Owner instantly at +52 771 233 9238 / Admin Chat ID 8337803949
         await notifyOwner(chatId, firstName, username, userText);
 
-        // 2. Check if Chat ID is currently paused for human takeover
         if (pausedChats[chatId] && pausedChats[chatId] > Date.now()) {
           console.log(`[PAUSED] Chat ${chatId} is currently taken over by owner. Skipping auto-reply.`);
           return res.status(200).json({ ok: true });
         }
 
-        // 3. Generate Intelligent Reply with Dynamic Inline Buttons
         await callTelegram('sendChatAction', { chat_id: chatId, action: 'typing' });
         const reply = generateHumanReply(chatId, firstName, userText);
 
         await callTelegram('sendMessage', {
           chat_id: chatId,
           text: reply,
-          parse_mode: 'Markdown',
-          reply_markup: getDynamicKeyboard(chatId, userText)
+          parse_mode: 'Markdown'
         });
       }
     }
@@ -910,7 +698,6 @@ async function handleWebhookRequest(req, res) {
 const whatsappApp = require('./whatsapp.js');
 app.use(whatsappApp);
 
-// Endpoint to receive website conversion alerts and ping owner Telegram instantly
 app.post('/api/conversion-alert', async (req, res) => {
   try {
     const { page, source } = req.body || {};
@@ -927,7 +714,6 @@ app.post('/api/conversion-alert', async (req, res) => {
   }
 });
 
-// Endpoint to track live visits and geolocation
 app.post('/api/track-visit', async (req, res) => {
   try {
     const { city, region, country, flag, source, device, isp, duration, scroll, clicks } = req.body || {};
@@ -946,7 +732,7 @@ app.post('/api/track-visit', async (req, res) => {
       timestamp: new Date().toISOString()
     };
     visitsLog.push(record);
-    if (visitsLog.length > 500) visitsLog.shift(); // Keep last 500
+    if (visitsLog.length > 500) visitsLog.shift();
 
     return res.status(200).json({ ok: true, totalVisits: visitsLog.length });
   } catch (err) {
@@ -955,12 +741,10 @@ app.post('/api/track-visit', async (req, res) => {
   }
 });
 
-// Endpoint to fetch central analytics database for Admin Dashboard
 app.get('/api/analytics-db', (req, res) => {
   return res.status(200).json({ ok: true, visits: visitsLog.slice(-100) });
 });
 
-// Automatic Daily Summary Dispatcher (Runs every day at 8:00 PM CST / Mexico City)
 let lastSummaryDate = '';
 setInterval(async () => {
   try {
@@ -968,7 +752,6 @@ setInterval(async () => {
     const currentDateStr = now.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' });
     const cdmxHour = parseInt(new Intl.DateTimeFormat('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', hour12: false }).format(now), 10);
 
-    // Trigger automatic daily summary at 20:00 (8:00 PM CDMX) if not sent today
     if (cdmxHour === 20 && lastSummaryDate !== currentDateStr) {
       lastSummaryDate = currentDateStr;
       
@@ -1001,7 +784,7 @@ setInterval(async () => {
   } catch (e) {
     console.error('[DAILY SUMMARY ERROR]', e);
   }
-}, 60000); // Check every minute
+}, 60000);
 
 app.post('*', handleWebhookRequest);
 app.get('*', (req, res) => res.json({ status: 'active', bot: '@Brainbranding_bot', service: 'Brain Branding 24/7 AI Engine (Telegram & WhatsApp)' }));
