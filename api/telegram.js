@@ -506,7 +506,8 @@ async function notifyOwner(chatId, firstName, username, userText) {
     giro: state.giro || 'No especificado',
     conviction: state.conviction || 'REGULAR',
     temp: isCitaClick ? 'CITA_URGENTE' : (tempTag.includes('CALIENTE') ? 'CALIENTE' : (tempTag.includes('TIBIO') ? 'TIBIO' : 'FRÍO')),
-    timestamp: new Date().toLocaleTimeString('es-MX')
+    timestamp: new Date().toLocaleTimeString('es-MX'),
+    lastActiveMs: Date.now()
   });
   if (prospectLogs.length > 200) prospectLogs.shift();
 
@@ -880,16 +881,62 @@ function antiBruteForceGuard(req, res, next) {
   next();
 }
 
-// Geofencing Protection Middleware (Restricts High-Risk Countries)
-const HIGH_RISK_COUNTRIES = ['RU', 'CN', 'KP', 'IR', 'BY'];
+// Enhanced Geofencing & Anti-Botnet Security WAF Guard
+const HIGH_RISK_COUNTRIES = ['RU', 'CN', 'KP', 'IR', 'BY', 'UA', 'RO', 'VN', 'PK', 'IN', 'ID', 'NG'];
 app.use((req, res, next) => {
-  const country = (req.headers['cf-ipcountry'] || req.headers['x-country-code'] || '').toUpperCase();
+  const country = (req.headers['cf-ipcountry'] || req.headers['x-country-code'] || req.headers['x-geo-country'] || '').toUpperCase();
   if (country && HIGH_RISK_COUNTRIES.includes(country)) {
-    console.warn(`[GEOFENCING BLOCKED] Request from restricted country: ${country}`);
-    return res.status(403).json({ ok: false, error: '🚨 ACCESO BLOQUEADO POR GEOFENCING DE SEGURIDAD INTERNACIONAL.' });
+    console.warn(`[GEOFENCING WAF BLOCKED] Request from restricted region: ${country} IP: ${req.headers['x-forwarded-for'] || req.socket.remoteAddress}`);
+    return res.status(403).json({ ok: false, error: '🚨 ACCESO RESTRINGIDO POR CORTAFUEGOS DE SEGURIDAD GEOFENCING WAF.' });
   }
   next();
 });
+
+// Automated Inactive Lead Follow-Up Engine (Suggestion 1)
+const followedUpLeads = new Set();
+
+async function checkInactiveLeadsFollowup() {
+  const now = Date.now();
+  const MIN_INACTIVE = 18 * 60 * 60 * 1000; // 18 Hours
+  const MAX_INACTIVE = 48 * 60 * 60 * 1000; // 48 Hours
+
+  for (const log of prospectLogs) {
+    if (log.temp === 'CALIENTE' || log.temp === 'CITA_URGENTE' || log.temp === 'TIBIO') {
+      const key = `${log.chatId}:${log.timestamp}`;
+      if (followedUpLeads.has(key)) continue;
+
+      const elapsed = now - (log.lastActiveMs || now);
+      if (elapsed >= MIN_INACTIVE && elapsed <= MAX_INACTIVE) {
+        followedUpLeads.add(key);
+        const hoursAgo = Math.round(elapsed / (1000 * 60 * 60));
+        
+        const followMsg = `🔔 *RECORDATORIO DE SEGUIMIENTO A PROSPECTO (${hoursAgo}H INACTIVO)* 🔔\n\n` +
+          `👤 *Cliente:* ${log.name} (${log.username ? '@' + log.username : 'Sin Username'})\n` +
+          `🔥 *Clasificación:* ${log.temp}\n` +
+          `🏢 *Giro:* ${log.giro || 'General'}\n` +
+          `💬 *Último Mensaje:* "${log.text}"\n` +
+          `🆔 *Chat ID:* \`${log.chatId}\`\n\n` +
+          `💡 *Acción Recomendada:* Responde en 1 clic para retomar el contacto:\n\`/responder ${log.chatId} ¡Hola ${log.name}! ¿Pudiste revisar la propuesta de Brain Branding? ☕\``;
+
+        try {
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: followMsg,
+            parse_mode: 'Markdown'
+          });
+          console.log(`[FOLLOWUP] Reminder dispatched for lead ${log.chatId}`);
+        } catch (e) {
+          console.error('[FOLLOWUP ERROR]', e.message);
+        }
+      }
+    }
+  }
+}
+
+// Run Follow-Up Engine Check every 2 hours
+setInterval(() => {
+  checkInactiveLeadsFollowup();
+}, 2 * 60 * 60 * 1000);
 
 // HMAC SHA-256 Master Key Secret Generator
 const HMAC_SECRET = process.env.HMAC_SECRET || 'BRAIN_BRANDING_MASTER_SAAS_HMAC_KEY_2026_SECRET';
