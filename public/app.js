@@ -4974,7 +4974,7 @@ END:VCARD`;
 
     const list = getContracts();
     if (list.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 18px; color: var(--text-muted);">No hay contratos generados aún. Completa el formulario para emitir el primero.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 18px; color: var(--text-muted);">No hay contratos generados aún. Completa el formulario para emitir el primero.</td></tr>`;
       return;
     }
 
@@ -4983,6 +4983,10 @@ END:VCARD`;
         ? `<span style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.3);">✅ Aceptado</span>`
         : `<span style="background: rgba(234, 179, 8, 0.15); color: #eab308; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; border: 1px solid rgba(234, 179, 8, 0.3);">🟡 Pendiente</span>`;
 
+      const appStatusBtn = c.appStatus === 'OFFLINE'
+        ? `<button type="button" onclick="toggleAppGovernance('${c.code}', 'ONLINE')" title="Clic para poner EN LÍNEA" style="padding: 3px 8px; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.5); border-radius: 12px; color: #ef4444; font-size: 11px; font-weight: 800; cursor: pointer;">🔴 Fuera de Línea</button>`
+        : `<button type="button" onclick="toggleAppGovernance('${c.code}', 'OFFLINE')" title="Clic para poner FUERA DE LÍNEA" style="padding: 3px 8px; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5); border-radius: 12px; color: #10b981; font-size: 11px; font-weight: 800; cursor: pointer;">🟢 En Línea</button>`;
+
       return `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
         <td style="padding: 10px 8px; font-family: monospace; font-weight: 800; color: #a855f7;">${c.code}</td>
         <td style="padding: 10px 8px; font-weight: 700; color: #fff;">${c.clientName}</td>
@@ -4990,12 +4994,35 @@ END:VCARD`;
         <td style="padding: 10px 8px; color: #cbd5e1;">$${Number(c.initialPrice).toLocaleString('es-MX')} MXN</td>
         <td style="padding: 10px 8px; color: #a855f7;">$${Number(c.monthlyPrice).toLocaleString('es-MX')} MXN/mes</td>
         <td style="padding: 10px 8px;">${statusBadge}</td>
+        <td style="padding: 10px 8px;">${appStatusBtn}</td>
         <td style="padding: 10px 8px; text-align: right;">
           <button type="button" onclick="openContractViewer('${c.code}')" style="padding: 4px 9px; background: rgba(0,229,255,0.12); border: 1px solid rgba(0,229,255,0.3); border-radius: 6px; color: #00e5ff; font-size: 11px; font-weight: 700; cursor: pointer; margin-right: 4px;">Ver 👁️</button>
           <button type="button" onclick="copyContractLink('${c.code}')" style="padding: 4px 9px; background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.3); border-radius: 6px; color: #a855f7; font-size: 11px; font-weight: 700; cursor: pointer;">Copiar Link 🔗</button>
         </td>
       </tr>`;
     }).join('');
+  };
+
+  window.toggleAppGovernance = async (code, targetStatus) => {
+    const list = getContracts();
+    const contract = list.find(c => c.code === code);
+    if (contract) {
+      contract.appStatus = targetStatus;
+      saveContractLocally(contract);
+      renderAdminContractsList();
+    }
+
+    // Sync to backend remote governance endpoint
+    try {
+      await fetch(`/api/contracts/${code}/toggle-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: targetStatus })
+      });
+    } catch(e) {}
+
+    const statusLabel = targetStatus === 'OFFLINE' ? '🔴 FUERA DE LÍNEA (SUSPENDIDA)' : '🟢 EN LÍNEA (ACTIVA)';
+    alert(`⚡ [GOBIERNO REMOTE SAAS]\n\nLa aplicación "${contract ? contract.appName : code}" ha sido puesta ${statusLabel}.\n\nSe envió notificación inmediata a Telegram.`);
   };
 
   window.openContractViewer = async (code) => {

@@ -916,6 +916,7 @@ app.post('/api/contracts', (req, res) => {
       initialPrice: parseFloat(initialPrice) || 4500,
       monthlyPrice: parseFloat(monthlyPrice) || 290,
       status: 'PENDIENTE',
+      appStatus: 'ONLINE', // 'ONLINE' or 'OFFLINE'
       createdAt: new Date().toISOString(),
       acceptedAt: null,
       sha256Seal,
@@ -1002,6 +1003,61 @@ app.post('/api/contracts/:code/accept', (req, res) => {
   }).catch(() => {});
 
   return res.status(200).json({ ok: true, contract });
+});
+
+// Toggle App Online / Offline Remote Governance Endpoint
+app.post('/api/contracts/:code/toggle-status', (req, res) => {
+  const code = (req.params.code || '').trim();
+  const contract = contractsDB[code];
+  if (!contract) {
+    return res.status(404).json({ ok: false, error: 'Contrato no encontrado' });
+  }
+
+  const newStatus = (req.body && req.body.status) 
+    ? req.body.status 
+    : (contract.appStatus === 'OFFLINE' ? 'ONLINE' : 'OFFLINE');
+
+  contract.appStatus = newStatus;
+  console.log(`[APP STATUS GOVERNANCE] Code: ${code} (${contract.appName}) toggled to ${newStatus}`);
+
+  const statusMsg = newStatus === 'ONLINE'
+    ? `🟢 *APP REACTIVADA Y EN LÍNEA EN VIVO* 🟢\n\n` +
+      `🔢 *Folio 6D:* \`${code}\`\n` +
+      `👤 *Cliente:* ${contract.clientName}\n` +
+      `📱 *App:* ${contract.appName}\n` +
+      `⚡ *Estado:* **EN LÍNEA (ONLINE)**\n` +
+      `🚀 *Acceso:* El cliente y sus usuarios tienen acceso total habilitado.`
+    : `🔴 *APP SUSPENDIDA / FUERA DE LÍNEA REMOTAMENTE* 🔴\n\n` +
+      `🔢 *Folio 6D:* \`${code}\`\n` +
+      `👤 *Cliente:* ${contract.clientName}\n` +
+      `📱 *App:* ${contract.appName}\n` +
+      `⛔ *Estado:* **FUERA DE LÍNEA (OFFLINE)**\n` +
+      `🛑 *Acceso:* La aplicación mostrará pantalla de suspensión por mantenimiento o falta de pago.`;
+
+  callTelegram('sendMessage', {
+    chat_id: ADMIN_CHAT_ID,
+    text: statusMsg,
+    parse_mode: 'Markdown'
+  }).catch(() => {});
+
+  return res.status(200).json({ ok: true, appStatus: contract.appStatus, contract });
+});
+
+// Public App Status Query for Remote ALR SaaS Governance
+app.get('/api/contracts/:code/app-status', (req, res) => {
+  const code = (req.params.code || '').trim();
+  const contract = contractsDB[code];
+  if (!contract) {
+    return res.status(200).json({ ok: true, appStatus: 'ONLINE', message: 'Contrato no encontrado, modo por defecto activo' });
+  }
+  return res.status(200).json({
+    ok: true,
+    code: contract.code,
+    appName: contract.appName,
+    clientName: contract.clientName,
+    appStatus: contract.appStatus || 'ONLINE',
+    contractStatus: contract.status
+  });
 });
 
 app.get('/api/contracts-list', (req, res) => {
