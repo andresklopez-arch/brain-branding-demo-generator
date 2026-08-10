@@ -2,12 +2,69 @@
  * BRAIN BRANDING GEMINI AI ENGINE HELPER
  * Multi-model fallback engine (gemini-2.0-flash, gemini-2.5-flash, gemini-1.5-flash)
  * Integrated with Telegram & WhatsApp 24/7 Bots
+ * Includes Security Prompt Injection Guard & Persistent History
  */
 
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
+
+// Auto-load .env or config if present locally
+function getApiKey() {
+  let key = process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_KEY || process.env.GEMINI_KEY;
+  if (key) return key;
+
+  try {
+    const envPath = path.join(__dirname, '../.env');
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf8');
+      const match = content.match(/GEMINI_API_KEY\s*=\s*(.*)/i);
+      if (match && match[1]) return match[1].trim();
+    }
+  } catch (e) {}
+
+  return null;
+}
+
+function sanitizeUserPrompt(text) {
+  if (!text) return '';
+  let clean = text.toString().trim();
+
+  // Security Guard against Prompt Injection & System Override Attacks
+  const injectionPatterns = [
+    /ignore\s+(all\s+)?(previous\s+)?instructions/i,
+    /olvida\s+(todas\s+)?(las\s+)?instrucciones/i,
+    /disregard\s+above/i,
+    /system\s+prompt/i,
+    /reveal\s+your\s+instructions/i,
+    /revela\s+tus\s+instrucciones/i,
+    /dan\s+mode/i,
+    /jailbreak/i,
+    /act\s+as\s+an\s+unfiltered/i,
+    /modo\s+desarrollador/i
+  ];
+
+  for (const pattern of injectionPatterns) {
+    if (pattern.test(clean)) {
+      console.warn(`[SECURITY ALERT] Prompt injection blocked: "${clean.substring(0, 50)}..."`);
+      return "SECURITY_INJECTION_DETECTED";
+    }
+  }
+
+  if (clean.length > 1500) {
+    clean = clean.substring(0, 1500);
+  }
+
+  return clean;
+}
 
 async function getGeminiReply(userText, userName, contextId, history = [], customInstruction = '') {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_KEY || process.env.GEMINI_KEY;
+  const sanitized = sanitizeUserPrompt(userText);
+  if (sanitized === "SECURITY_INJECTION_DETECTED") {
+    return "En Brain Branding estamos para apoyarte con soluciones de Software e Inteligencia Artificial para tu empresa. ¿En qué proyecto o proceso de tu negocio te podemos orientar hoy? ☕";
+  }
+
+  const apiKey = getApiKey();
   if (!apiKey) {
     console.log('[GEMINI] No GEMINI_API_KEY found in environment variables. Using rule-based fallback.');
     return null;
@@ -42,7 +99,7 @@ REGLAS OBLIGATORIAS:
     systemInstruction: { parts: [{ text: systemInstruction }] },
     contents: [
       ...geminiHistory,
-      { role: 'user', parts: [{ text: userText }] }
+      { role: 'user', parts: [{ text: sanitized }] }
     ],
     generationConfig: {
       temperature: 0.7,
@@ -109,4 +166,4 @@ REGLAS OBLIGATORIAS:
   return null;
 }
 
-module.exports = { getGeminiReply };
+module.exports = { getGeminiReply, sanitizeUserPrompt };

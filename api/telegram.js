@@ -4,6 +4,7 @@ const https = require('https');
 const path = require('path');
 const fs = require('fs');
 const { getGeminiReply } = require('./geminiHelper.js');
+const { getHistory, addTurn } = require('./historyStore.js');
 
 const app = express();
 app.use(express.json());
@@ -811,10 +812,14 @@ async function handleWebhookRequest(req, res) {
 
         await callTelegram('sendChatAction', { chat_id: chatId, action: 'typing' });
         
-        let reply = await getGeminiReply(userText, firstName, chatId, conversationHistory[chatId] || []);
+        const history = getHistory(chatId);
+        let reply = await getGeminiReply(userText, firstName, chatId, history);
         if (!reply) {
           reply = generateHumanReply(chatId, firstName, userText);
         }
+
+        addTurn(chatId, 'user', userText);
+        addTurn(chatId, 'model', reply);
 
         reply = sanitizeReply(reply);
 
