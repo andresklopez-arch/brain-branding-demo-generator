@@ -5192,6 +5192,14 @@ END:VCARD`;
     alert(`⚡ [GOBIERNO REMOTE SAAS]\n\nLa aplicación "${contract ? contract.appName : code}" ha sido puesta ${statusLabel}.\n\nSe envió notificación inmediata a Telegram.`);
   };
 
+  window.handleContractPrint = () => {
+    if (!window.currentViewerContract || window.currentViewerContract.status !== 'ACEPTADO') {
+      alert('⚠️ DESCARGA BLOQUEADA:\n\nPara poder descargar o imprimir tu contrato en formato PDF, primero debes firmarlo digitalmente aceptando los Términos y Condiciones en la parte inferior.');
+      return;
+    }
+    window.print();
+  };
+
   window.openContractViewer = async (code) => {
     let contract = getContracts().find(c => c.code === String(code).trim());
 
@@ -5210,6 +5218,8 @@ END:VCARD`;
       alert(`⚠️ No se encontró ningún contrato registrado con el folio 6D: ${code}`);
       return;
     }
+
+    window.currentViewerContract = contract;
 
     // Populate Viewer Modal
     const folioEl = document.getElementById('contract-view-folio');
@@ -5274,6 +5284,8 @@ END:VCARD`;
     // Signature Status
     const statusEl = document.getElementById('contract-view-status');
     const acceptBtn = document.getElementById('contract-accept-btn');
+    const printBtn = document.getElementById('contract-print-btn');
+    const recommendBanner = document.getElementById('contract-download-recommendation');
 
     // Handwritten Signature Preview Display
     const sigCanvasSection = document.getElementById('contract-canvas-section');
@@ -5286,6 +5298,12 @@ END:VCARD`;
         statusEl.style.color = '#10b981';
       }
       if (acceptBtn) acceptBtn.style.display = 'none';
+      if (printBtn) {
+        printBtn.style.opacity = '1';
+        printBtn.style.cursor = 'pointer';
+        printBtn.title = 'Clic para imprimir o descargar PDF';
+      }
+      if (recommendBanner) recommendBanner.style.display = 'block';
       
       const titleEl = document.getElementById('signature-status-title');
       if (titleEl) titleEl.textContent = 'Firma Digital Registrada';
@@ -5313,6 +5331,12 @@ END:VCARD`;
         statusEl.style.color = '#eab308';
       }
       if (acceptBtn) acceptBtn.style.display = 'flex';
+      if (printBtn) {
+        printBtn.style.opacity = '0.5';
+        printBtn.style.cursor = 'not-allowed';
+        printBtn.title = '🔒 Debes firmar y aceptar el contrato para habilitar la descarga en PDF';
+      }
+      if (recommendBanner) recommendBanner.style.display = 'none';
       
       const titleEl = document.getElementById('signature-status-title');
       if (titleEl) titleEl.textContent = 'Pendiente de Aceptación Digital';
@@ -5331,6 +5355,7 @@ END:VCARD`;
       }
       if (sigPreviewContainer) sigPreviewContainer.style.display = 'none';
     }
+
 
     const lawfulCheckContainer = document.getElementById('contract-lawful-use-container');
     const lawfulCheck = document.getElementById('contract-lawful-checkbox');
@@ -5397,7 +5422,7 @@ END:VCARD`;
     }
 
     openContractViewer(code);
-    alert(`🎉 ¡Felicidades! Has firmado y aceptado digitalmente el Contrato SaaS (Folio: ${code}).\n\nPuedes hacer clic en "Imprimir / Guardar PDF" para respaldar tu copia oficial.`);
+    alert(`🎉 ¡Felicidades! Has firmado y aceptado digitalmente el Contrato SaaS (Folio: ${code}).\n\n💡 RECOMENDACIÓN IMPORTANTE:\nTe recomendamos ampliamente hacer clic en "🖨️ Imprimir / Guardar PDF" para descargar una copia oficial de tu contrato y guardarla en un lugar seguro para tus registros.`);
   };
 
   window.copyContractLink = (code) => {

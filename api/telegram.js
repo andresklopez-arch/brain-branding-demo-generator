@@ -836,7 +836,7 @@ app.get('/api/code-integrity', (req, res) => {
     ok: true,
     status: 'MALWARE_FREE_CERTIFIED',
     declaration: 'Software 100% limpio, ético y libre de malware o vulnerabilidades intencionadas',
-    developer: 'Andrés López Rebollo - Brain Branding',
+    developer: 'LCI. Andrés López Rebollo - Brain Branding',
     integritySeal: hash,
     verifiedAt: new Date().toISOString()
   });
