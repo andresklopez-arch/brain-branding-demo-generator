@@ -5075,12 +5075,62 @@ END:VCARD`;
 })();
 
 /* ════════════════ SAAS CONTRACTS MANAGEMENT & VIEWER ENGINE ════════════════ */
-(function() {
+  const DEFAULT_SEED_CONTRACTS = [
+    {
+      code: '839201',
+      clientName: 'Juan Pérez',
+      appName: 'JuanP',
+      date: '2026-08-10',
+      initialPrice: 5000,
+      monthlyPrice: 500,
+      status: 'ACEPTADO',
+      acceptedAt: '10/8/2026, 12:43:26 p.m.',
+      appStatus: 'ONLINE',
+      createdAt: '2026-08-10T12:40:00.000Z',
+      signatureData: {
+        signatureName: 'Juan Pérez',
+        sha256Seal: '000000011DF605BC840219C08D7A65B2',
+        timestamp: '2026-08-10T12:43:26.000Z'
+      }
+    },
+    {
+      code: '741258',
+      clientName: 'Empresa S.A. de C.V.',
+      appName: 'Sistema POS Taller Don Pepe',
+      date: '2026-08-10',
+      initialPrice: 4500,
+      monthlyPrice: 290,
+      status: 'PENDIENTE',
+      acceptedAt: null,
+      appStatus: 'ONLINE',
+      createdAt: '2026-08-10T11:00:00.000Z',
+      signatureData: null
+    }
+  ];
+
   const getContracts = () => {
     try {
       const raw = localStorage.getItem('brain_branding_contracts');
-      return raw ? JSON.parse(raw) : [];
-    } catch(e) { return []; }
+      let list = raw ? JSON.parse(raw) : null;
+      if (!Array.isArray(list) || list.length === 0) {
+        const backupRaw = localStorage.getItem('brain_branding_contracts_backup');
+        list = backupRaw ? JSON.parse(backupRaw) : null;
+      }
+      if (!Array.isArray(list) || list.length === 0) {
+        list = [...DEFAULT_SEED_CONTRACTS];
+        localStorage.setItem('brain_branding_contracts', JSON.stringify(list));
+        localStorage.setItem('brain_branding_contracts_backup', JSON.stringify(list));
+      } else {
+        DEFAULT_SEED_CONTRACTS.forEach(seed => {
+          if (!list.some(c => c.code === seed.code)) {
+            list.push(seed);
+          }
+        });
+      }
+      return list;
+    } catch(e) {
+      return [...DEFAULT_SEED_CONTRACTS];
+    }
   };
 
   const saveContractLocally = (contract) => {
@@ -5089,6 +5139,7 @@ END:VCARD`;
     if (idx >= 0) list[idx] = contract;
     else list.push(contract);
     localStorage.setItem('brain_branding_contracts', JSON.stringify(list));
+    localStorage.setItem('brain_branding_contracts_backup', JSON.stringify(list));
   };
 
   const drawContractsTable = (list) => {
