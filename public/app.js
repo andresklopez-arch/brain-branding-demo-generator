@@ -4496,7 +4496,7 @@ END:VCARD`;
     }
   };
 
-  const safeOpenAdminLogin = () => {
+  window.safeOpenAdminLogin = () => {
     const loginModal = document.getElementById('admin-login-modal');
     const passInput = document.getElementById('admin-pass-input');
     const loginError = document.getElementById('admin-login-error');
@@ -4511,7 +4511,12 @@ END:VCARD`;
     }
   };
 
-  // Document Click Delegation
+  const BRAIN_TARGET_SELECTOR = '#demos-fab, #demos-fab *, .logo-area, .logo-area *, #header-logo-text, .hero-agency-badge, .logo-line, .logo-text, header img, #inicio img, img[src*="favicon"], img[src*="logo"]';
+
+  let globalBrainTapCount = 0;
+  let globalBrainTapTimer = null;
+
+  // Document Capture Phase Click Handler (2-tap / 2-click opens admin login, 1-click on demos-fab still works)
   document.addEventListener('click', (e) => {
     // 1. WhatsApp FAB Button
     if (e.target.closest('#whatsapp-fab') || e.target.closest('.whatsapp-fab')) {
@@ -4527,33 +4532,38 @@ END:VCARD`;
       return;
     }
 
-    // 3. Logo / Agency Badge Click (Double or Triple click / Tap Counter)
-    const logoTarget = e.target.closest('.logo-area, #header-logo-text, .hero-agency-badge, .logo-line, .logo-text, header img, #inicio img');
-    if (logoTarget) {
-      window._logoTapCount = (window._logoTapCount || 0) + 1;
-      if (window._logoTapTimer) clearTimeout(window._logoTapTimer);
-      if (window._logoTapCount >= 2) {
-        window._logoTapCount = 0;
+    // 3. Brain Logo / DEMOS FAB Double Click / Double Tap Trigger
+    const brainTarget = e.target.closest(BRAIN_TARGET_SELECTOR);
+    if (brainTarget) {
+      globalBrainTapCount++;
+      if (globalBrainTapTimer) clearTimeout(globalBrainTapTimer);
+
+      if (globalBrainTapCount >= 2) {
+        globalBrainTapCount = 0;
         e.preventDefault();
-        safeOpenAdminLogin();
+        e.stopPropagation();
+        window.safeOpenAdminLogin();
       } else {
-        window._logoTapTimer = setTimeout(() => { window._logoTapCount = 0; }, 500);
+        globalBrainTapTimer = setTimeout(() => {
+          globalBrainTapCount = 0;
+        }, 450);
       }
     }
-  });
+  }, true);
 
-  // Document Double Click Delegation for Admin Login
+  // Document Capture Phase Double Click Handler for Admin Login
   document.addEventListener('dblclick', (e) => {
-    const logoTarget = e.target.closest('.logo-area, #header-logo-text, .hero-agency-badge, .logo-line, .logo-text, header img, #inicio img');
-    if (logoTarget) {
+    const brainTarget = e.target.closest(BRAIN_TARGET_SELECTOR);
+    if (brainTarget) {
       e.preventDefault();
-      safeOpenAdminLogin();
+      e.stopPropagation();
+      window.safeOpenAdminLogin();
     }
-  });
+  }, true);
 
   // Secret link in URL hash or query: ?admin=1 or #admin
   if (window.location.search.includes('admin=1') || window.location.search.includes('login=1') || window.location.hash === '#admin') {
-    setTimeout(safeOpenAdminLogin, 300);
+    setTimeout(window.safeOpenAdminLogin, 300);
   }
 })();
 
