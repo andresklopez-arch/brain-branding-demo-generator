@@ -623,22 +623,11 @@ async function handleWebhookRequest(req, res) {
           return res.status(200).json({ ok: true });
         }
 
-        if (cmdLower === '/visitas' || cmdLower === '/metricas' || cmdLower === '/ubicaciones') {
-          let visitsInfo = `📊 *MÉTRICAS DE VISITAS Y UBICACIÓN EN VIVO (BRAIN BRANDING)* 📊\n\n`;
-          visitsInfo += `👥 *Total de Visitas Registradas:* ${visitsLog.length || 1}\n\n`;
-          visitsInfo += `📍 *Ubicaciones Recientes de Prospectos:*\n`;
-          const recentVisits = visitsLog.slice(-10).reverse();
-          if (recentVisits.length === 0) {
-            visitsInfo += `• Pachuca, Hidalgo, México 🇲🇽 (Google Ads)\n• Ciudad de México, México 🇲🇽 (Acceso Directo)\n`;
-          } else {
-            recentVisits.forEach(v => {
-              visitsInfo += `• ${v.city || 'Ciudad'}, ${v.region || ''}, ${v.country || 'México'} ${v.flag || '🇲🇽'} (${v.source || 'Web'})\n`;
-            });
-          }
-          visitsInfo += `\n💬 *Tip:* Escribe /crm para exportar la base de contactos.`;
+        if (cmdLower === '/visitas' || cmdLower === '/metricas' || cmdLower === '/resumen8am' || cmdLower === '/reporte_visitas') {
+          const reportText = buildDetailedAnalytics8AMReport(visitsLog);
           await callTelegram('sendMessage', {
             chat_id: ADMIN_CHAT_ID,
-            text: visitsInfo,
+            text: reportText,
             parse_mode: 'Markdown'
           });
           return res.status(200).json({ ok: true });
@@ -714,6 +703,99 @@ app.post('/api/conversion-alert', async (req, res) => {
   }
 });
 
+function buildDetailedAnalytics8AMReport(visits) {
+  const total = visits.length;
+  const nowStr = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', year: 'numeric', month: 'long', day: 'numeric' });
+
+  if (total === 0) {
+    return `☀️ *RESUMEN DIARIO DE VISITAS WEB (8:00 AM)* ☀️\n📅 *Fecha:* ${nowStr}\n\n📍 Sin visitas registradas en las últimas 24 horas.`;
+  }
+
+  const osCounts = {};
+  const browserCounts = {};
+  const locationCounts = {};
+  const sourceCounts = {};
+  const resCounts = {};
+
+  visits.forEach(v => {
+    const rawDev = v.device || 'Desconocido';
+    
+    // OS Breakdown
+    let osKey = 'Computadora 💻';
+    if (rawDev.includes('iPhone') || rawDev.includes('iOS')) osKey = 'iPhone (iOS) 📱';
+    else if (rawDev.includes('Android')) osKey = 'Android Móvil 📱';
+    else if (rawDev.includes('iPad')) osKey = 'iPad (iPadOS) 📟';
+    else if (rawDev.includes('Windows')) osKey = 'Windows PC 💻';
+    else if (rawDev.includes('MacBook') || rawDev.includes('macOS')) osKey = 'Mac (macOS) 💻';
+    else if (rawDev.includes('Linux')) osKey = 'Linux PC 💻';
+    osCounts[osKey] = (osCounts[osKey] || 0) + 1;
+
+    // Browser Breakdown
+    let browserKey = 'Chrome 🌐';
+    if (rawDev.includes('WhatsApp')) browserKey = 'WhatsApp In-App 💬';
+    else if (rawDev.includes('Safari')) browserKey = 'Safari 🧭';
+    else if (rawDev.includes('Facebook')) browserKey = 'Facebook App 🔵';
+    else if (rawDev.includes('Instagram')) browserKey = 'Instagram App 📸';
+    else if (rawDev.includes('Edge')) browserKey = 'Microsoft Edge 🌊';
+    else if (rawDev.includes('Firefox')) browserKey = 'Firefox 🦊';
+    else if (rawDev.includes('Opera')) browserKey = 'Opera 🔴';
+    browserCounts[browserKey] = (browserCounts[browserKey] || 0) + 1;
+
+    // Location Breakdown
+    let locKey = `${v.city || 'Pachuca'}, ${v.region || 'Hidalgo'} ${v.flag || '🇲🇽'}`;
+    locationCounts[locKey] = (locationCounts[locKey] || 0) + 1;
+
+    // Source Breakdown
+    let srcKey = v.source || 'Acceso Directo Web 🌐';
+    sourceCounts[srcKey] = (sourceCounts[srcKey] || 0) + 1;
+
+    // Screen Resolution Breakdown
+    const resMatch = rawDev.match(/\[([0-9xpx]+)\]/);
+    if (resMatch) {
+      resCounts[resMatch[1]] = (resCounts[resMatch[1]] || 0) + 1;
+    }
+  });
+
+  const getPercent = (count) => ((count / total) * 100).toFixed(1);
+
+  let report = `☀️ *RESUMEN DIARIO DE VISITAS WEB (8:00 AM)* ☀️\n`;
+  report += `📅 *Fecha:* ${nowStr}\n`;
+  report += `📊 *Total de Visitas Registradas:* *${total}*\n\n`;
+
+  report += `📱 *DISPOSITIVOS Y SISTEMAS OPERATIVOS:*\n`;
+  Object.entries(osCounts).sort((a, b) => b[1] - a[1]).forEach(([dev, count]) => {
+    report += `• ${dev}: *${count}* (${getPercent(count)}%)\n`;
+  });
+  report += `\n`;
+
+  report += `🌐 *NAVEGADORES WEB:*\n`;
+  Object.entries(browserCounts).sort((a, b) => b[1] - a[1]).forEach(([b, count]) => {
+    report += `• ${b}: *${count}* (${getPercent(count)}%)\n`;
+  });
+  report += `\n`;
+
+  report += `📍 *UBICACIÓN DE VISITANTES (CIUDADES):*\n`;
+  Object.entries(locationCounts).sort((a, b) => b[1] - a[1]).forEach(([loc, count]) => {
+    report += `• ${loc}: *${count} visitas* (${getPercent(count)}%)\n`;
+  });
+  report += `\n`;
+
+  report += `🎯 *FUENTES DE TRÁFICO / CANALES:*\n`;
+  Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]).forEach(([src, count]) => {
+    report += `• ${src}: *${count}* (${getPercent(count)}%)\n`;
+  });
+
+  if (Object.keys(resCounts).length > 0) {
+    report += `\n🖥️ *RESOLUCIONES Y PANTALLAS:*\n`;
+    Object.entries(resCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).forEach(([res, count]) => {
+      report += `• ${res}: *${count}* (${getPercent(count)}%)\n`;
+    });
+  }
+
+  report += `\n💬 *Tip:* Escribe /resumen8am o /visitas en cualquier momento para generar este reporte consolidado.`;
+  return report;
+}
+
 app.post('/api/track-visit', async (req, res) => {
   try {
     const { city, region, country, flag, source, device, isp, duration, scroll, clicks } = req.body || {};
@@ -722,7 +804,7 @@ app.post('/api/track-visit', async (req, res) => {
       region: region || '',
       country: country || 'México',
       flag: flag || '🇲🇽',
-      source: source || 'Acceso Directo',
+      source: source || 'Acceso Directo Web 🌐',
       device: device || 'Web',
       isp: isp || '',
       duration: duration || 'N/A',
@@ -752,37 +834,20 @@ setInterval(async () => {
     const currentDateStr = now.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' });
     const cdmxHour = parseInt(new Intl.DateTimeFormat('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', hour12: false }).format(now), 10);
 
-    if (cdmxHour === 20 && lastSummaryDate !== currentDateStr) {
+    // Fires at 8:00 AM CDMX time ONCE per day
+    if (cdmxHour === 8 && lastSummaryDate !== currentDateStr) {
       lastSummaryDate = currentDateStr;
       
-      const totalToday = visitsLog.length;
-      let summaryText = `🌙 *RESUMEN DIARIO AUTOMÁTICO DE VISITAS - BRAIN BRANDING* 🌙\n\n`;
-      summaryText += `📅 *Fecha:* ${currentDateStr}\n`;
-      summaryText += `👥 *Total de Visitas Hoy:* ${totalToday}\n\n`;
-      
-      if (totalToday === 0) {
-        summaryText += `📍 Sin visitas registradas el día de hoy.\n`;
-      } else {
-        summaryText += `📍 *Ubicaciones Registradas:*\n`;
-        const cityCounts = {};
-        visitsLog.forEach(v => {
-          const key = `${v.city || 'Desconocida'}, ${v.region || ''} ${v.flag || '🇲🇽'}`;
-          cityCounts[key] = (cityCounts[key] || 0) + 1;
-        });
-        Object.entries(cityCounts).forEach(([city, count]) => {
-          summaryText += `• ${city}: *${count} visitas*\n`;
-        });
-      }
-      summaryText += `\n💬 *Tip:* Escribe /modoenvivo para recibir alertas instantáneas o /modoresumen para solo resumen diario.`;
+      const reportText = buildDetailedAnalytics8AMReport(visitsLog);
 
       await callTelegram('sendMessage', {
         chat_id: ADMIN_CHAT_ID,
-        text: summaryText,
+        text: reportText,
         parse_mode: 'Markdown'
       });
     }
   } catch (e) {
-    console.error('[DAILY SUMMARY ERROR]', e);
+    console.error('[8AM DAILY SUMMARY ERROR]', e);
   }
 }, 60000);
 
