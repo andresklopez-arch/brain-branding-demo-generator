@@ -60,6 +60,26 @@ const App = {
   },
 
   bindEvents: function() {
+    // Physical Keyboard Listener (0-9, Backspace, Delete, Escape)
+    document.addEventListener("keydown", (e) => {
+      const pinGate = document.getElementById("pinGateOverlay");
+      if (!pinGate || pinGate.style.display === "none") return;
+      if (Date.now() < this.lockUntil) return;
+
+      if (e.key >= "0" && e.key <= "9") {
+        if (this.enteredPin.length < 6) {
+          this.enteredPin += e.key;
+          this.updatePinDisplay();
+        }
+      } else if (e.key === "Backspace") {
+        this.enteredPin = this.enteredPin.slice(0, -1);
+        this.updatePinDisplay();
+      } else if (e.key === "Escape" || e.key === "Delete") {
+        this.enteredPin = "";
+        this.updatePinDisplay();
+      }
+    });
+
     document.querySelectorAll(".key-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
         if (Date.now() < this.lockUntil) {
@@ -67,7 +87,7 @@ const App = {
           return;
         }
 
-        const val = e.target.dataset.key;
+        const val = e.currentTarget.dataset.key;
         if (val === "del") {
           this.enteredPin = this.enteredPin.slice(0, -1);
         } else if (val === "clear") {
@@ -98,6 +118,24 @@ const App = {
         d.classList.remove("filled");
       }
     });
+
+    // Real-time status badge feedback
+    const badge = document.getElementById("pinStatusBadge");
+    if (badge) {
+      if (this.enteredPin.length === 0) {
+        badge.textContent = "⌨️ Ingresa tus dígitos (Teclado táctil o físico)";
+        badge.style.color = "#00f2fe";
+      } else if (this.enteredPin.length < 5) {
+        badge.textContent = `✍️ Tecleando código (${this.enteredPin.length}/6 dígitos)...`;
+        badge.style.color = "#a855f7";
+      } else if (this.enteredPin.length === 5) {
+        badge.textContent = "🔍 Detectando NIP de Demo Personalizada (5D)...";
+        badge.style.color = "#10b981";
+      } else if (this.enteredPin.length === 6) {
+        badge.textContent = "📜 Consultando Contrato Digital SaaS (6D)...";
+        badge.style.color = "#00f2fe";
+      }
+    }
 
     if (this.enteredPin.length === 5) {
       const tenant = typeof demoRegistry !== 'undefined' ? demoRegistry[this.enteredPin] : null;

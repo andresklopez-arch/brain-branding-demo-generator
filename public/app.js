@@ -5246,6 +5246,31 @@ END:VCARD`;
     const clausePayDay = document.getElementById('clause-pay-day');
     if (clausePayDay) clausePayDay.textContent = payDayNum;
 
+    // Calculate 6% annual increase and next year date
+    const monthlyNum = parseFloat(contract.monthlyPrice) || 290;
+    const nextYearMonthlyNum = (monthlyNum * 1.06).toFixed(2);
+    const nextYearPriceFormatted = `$${Number(nextYearMonthlyNum).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN/mes`;
+    
+    let nextYearDateStr = '10 de agosto de 2027';
+    try {
+      let dObj = new Date();
+      if (contract.date) {
+        const parts = String(contract.date).split('-');
+        if (parts.length === 3) dObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      } else if (contract.createdAt) {
+        dObj = new Date(contract.createdAt);
+      }
+      dObj.setFullYear(dObj.getFullYear() + 1);
+      const monthsEs = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+      nextYearDateStr = `${dObj.getDate()} de ${monthsEs[dObj.getMonth()]} de ${dObj.getFullYear()}`;
+    } catch(e) {}
+
+    const clauseNextYearDate = document.getElementById('clause-next-year-date');
+    if (clauseNextYearDate) clauseNextYearDate.textContent = nextYearDateStr;
+
+    const clauseNextYearPrice = document.getElementById('clause-next-year-price');
+    if (clauseNextYearPrice) clauseNextYearPrice.textContent = nextYearPriceFormatted;
+
     // Signature Status
     const statusEl = document.getElementById('contract-view-status');
     const acceptBtn = document.getElementById('contract-accept-btn');
