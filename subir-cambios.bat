@@ -21,11 +21,19 @@ git remote get-url origin >nul 2>&1
 if errorlevel 1 goto noremote
 echo [INFO] Subiendo cambios a GitHub (git push)...
 git push origin main
-goto end
+goto firebase
 
 :noremote
 echo [WARNING] No hay repositorio remoto origin configurado.
-echo [INFO] Para conectar GitHub, ejecuta: git remote add origin https://github.com/TU_USUARIO/TU_REPOSITORIO.git
+
+:firebase
+echo [INFO] Desplegando frontend a Firebase Hosting...
+firebase deploy --only hosting
+if errorlevel 1 (
+    echo [WARNING] Firebase deploy falló o no está autenticado. Ejecuta: firebase login
+) else (
+    echo [SUCCESS] Firebase Hosting actualizado en vivo.
+)
 
 :end
 echo [SUCCESS] Cambios locales confirmados en Git.
