@@ -1,11 +1,24 @@
 const express = require('express');
 const crypto = require('crypto');
 const https = require('https');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
 
-// HTTP Anti-Intrusion & Anti-Caching Security Headers Middleware
+// Serve static web app files directly with anti-caching headers
+app.use(express.static(path.join(__dirname, '../public'), {
+  maxAge: 0,
+  etag: false,
+  lastModified: false,
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+}));
+
+// HTTP Anti-Intrusion & Security Headers Middleware
 app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -1171,7 +1184,10 @@ app.get('/api/contracts-list', (req, res) => {
 });
 
 app.post('*', handleWebhookRequest);
-app.get('*', (req, res) => res.json({ status: 'active', bot: '@Brainbranding_bot', service: 'Brain Branding 24/7 AI Engine (Telegram & WhatsApp)' }));
+app.get('*', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
