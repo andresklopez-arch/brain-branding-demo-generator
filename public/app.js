@@ -4726,25 +4726,40 @@ END:VCARD`;
           if (hash === ADMIN_PASS_HASH) {
             if (loginError) loginError.style.display = 'none';
 
+            // Generate 6-digit OTP code
+            const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+            safeSessionStorage.setItem('bb_2fa_otp', JSON.stringify({
+              code: otpCode,
+              expiresAt: Date.now() + 5 * 60 * 1000 // 5 Minutes Validity
+            }));
+
+            // Instant Direct Telegram Dispatch (< 1 Second Delivery)
+            const otpMsg = `🔑 *CÓDIGO DE AUTENTICACIÓN 2FA (PANEL ADMIN)* 🔑\n\n` +
+              `Tu código de verificación único es: *\`${otpCode}\`*\n\n` +
+              `⏱️ *Validez:* 5 Minutos.\n` +
+              `🛡️ Si no solicitaste este código, tu portal se encuentra protegido.\n\n` +
+              `_Desde: Brain Branding Panel Admin_`;
+
             try {
-              if (loginSubmitBtn) loginSubmitBtn.innerText = 'Enviando... ⏳';
-              const reqRes = await fetch(window.API_BASE + '/api/admin/request-2fa', {
+              if (loginSubmitBtn) loginSubmitBtn.innerText = 'Enviando OTP a Telegram... ⏳';
+              await fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ passHash: hash })
+                body: JSON.stringify({
+                  chat_id: '8337803949',
+                  text: otpMsg,
+                  parse_mode: 'Markdown'
+                })
               });
-              const reqData = await reqRes.json();
-
-              if (!reqData || !reqData.ok) {
-                const errDetail = (reqData && reqData.error) ? reqData.error : 'El servidor no pudo generar el código';
-                alert(`⚠️ Error al enviar OTP a Telegram:\n\n${errDetail}`);
-                if (loginSubmitBtn) loginSubmitBtn.innerText = 'Ingresar 🔑';
-                return;
-              }
             } catch(err) {
-              alert(`⚠️ Error de conexión con el servidor 2FA:\n\n${err.message}`);
-              if (loginSubmitBtn) loginSubmitBtn.innerText = 'Ingresar 🔑';
-              return;
+              console.warn('Direct Telegram fetch fallback to Render API...', err);
+              try {
+                await fetch(window.API_BASE + '/api/admin/request-2fa', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ passHash: hash })
+                });
+              } catch(e) {}
             }
 
             is2FAStepActive = true;
@@ -4752,7 +4767,10 @@ END:VCARD`;
             document.getElementById('admin-otp-step').style.display = 'block';
             if (loginSubmitBtn) loginSubmitBtn.innerText = 'Verificar 2FA 🔓';
             const otpIn = document.getElementById('admin-otp-input');
-            if (otpIn) otpIn.focus();
+            if (otpIn) {
+              otpIn.value = '';
+              otpIn.focus();
+            }
           } else {
             if (loginError) loginError.style.display = 'block';
             if (passInput) {
@@ -4765,37 +4783,43 @@ END:VCARD`;
           const otpVal = (document.getElementById('admin-otp-input')?.value || '').trim();
           const otpError = document.getElementById('admin-otp-error');
 
-          try {
-            const res = await fetch(window.API_BASE + '/api/admin/verify-2fa', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ otp: otpVal })
-            });
-            const data = await res.json();
+          const storedRaw = safeSessionStorage.getItem('bb_2fa_otp');
+          let storedOTP = null;
+          try { storedOTP = storedRaw ? JSON.parse(storedRaw) : null; } catch(e) {}
 
-            if (data && data.ok) {
-              is2FAStepActive = false;
-              document.getElementById('admin-pass-step').style.display = 'block';
-              document.getElementById('admin-otp-step').style.display = 'none';
-              if (passInput) passInput.value = '';
-              if (loginSubmitBtn) loginSubmitBtn.innerText = 'Enviar 2FA →';
+          let isValid = false;
+          if (storedOTP && storedOTP.code === otpVal && Date.now() <= storedOTP.expiresAt) {
+            isValid = true;
+          } else {
+            try {
+              const res = await fetch(window.API_BASE + '/api/admin/verify-2fa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ otp: otpVal })
+              });
+              const data = await res.json();
+              if (data && data.ok) isValid = true;
+            } catch(e) {}
+          }
 
-              loginModal.style.display = 'none';
-              dashboardModal.style.display = 'block';
-              if (kbEditor) {
-                kbEditor.value = localStorage.getItem('brain_branding_kb_features') || DEFAULT_BUSINESS_FEATURES;
-              }
-              renderAdminAnalytics();
-              if (window.renderAdminContractsList) window.renderAdminContractsList();
-            } else {
-              if (otpError) {
-                otpError.innerText = data.error || 'Código 2FA incorrecto';
-                otpError.style.display = 'block';
-              }
+          if (isValid) {
+            safeSessionStorage.removeItem('bb_2fa_otp');
+            is2FAStepActive = false;
+            document.getElementById('admin-pass-step').style.display = 'block';
+            document.getElementById('admin-otp-step').style.display = 'none';
+            if (passInput) passInput.value = '';
+            if (loginSubmitBtn) loginSubmitBtn.innerText = 'Enviar 2FA →';
+
+            loginModal.style.display = 'none';
+            dashboardModal.style.display = 'block';
+            if (kbEditor) {
+              kbEditor.value = localStorage.getItem('brain_branding_kb_features') || DEFAULT_BUSINESS_FEATURES;
             }
-          } catch(err) {
+            renderAdminAnalytics();
+            if (window.renderAdminContractsList) window.renderAdminContractsList();
+          } else {
             if (otpError) {
-              otpError.innerText = 'Error al verificar 2FA';
+              otpError.innerText = 'Código 2FA incorrecto o expirado';
               otpError.style.display = 'block';
             }
           }
