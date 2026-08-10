@@ -744,6 +744,38 @@ async function handleWebhookRequest(req, res) {
           return res.status(200).json({ ok: true });
         }
 
+        if (cmdLower.startsWith('/plantilla')) {
+          const args = userText.substring(10).trim();
+          let pitch = '';
+          if (args) {
+            await callTelegram('sendChatAction', { chat_id: ADMIN_CHAT_ID, action: 'typing' });
+            const prompt = `Genera una plantilla de propuesta comercial/respuesta rápida altamente persuasiva, humana y profesional para un prospecto del giro "${args}". En el mensaje explica las soluciones de Asistente IA 24/7 y POS/ERP en la Nube de Brain Branding. Firmado por Andrés R.`;
+            pitch = await getGeminiReply(prompt, 'Admin', 'template_gen', [], 'Responde ÚNICAMENTE con la plantilla comercial lista para copiar.');
+          }
+          if (!pitch) {
+            pitch = `📱 *PLANTILLAS RÁPIDAS DE RESPUESTA WHATSAPP* 📱\n\n*Plantilla 1 (Respuesta a Citas):*\n"¡Hola! 👋 Soy Andrés R de Brain Branding. Recibí tu mensaje sobre agendar una cita/demo.\n\nPlatícame: ¿qué día u horario prefieres para una llamada rápida de 10 minutos o deseas que te envíe un presupuesto personalizado?"\n\n*Plantilla 2 (Envío de Demos):*\n"¡Con gusto! Aquí puedes probar nuestras demos en vivo:\n🌐 https://brainbranding.com.mx/demos"\n\n💡 *Tip:* Escribe \`/plantilla restaurante\` o \`/plantilla taller\` para generar una plantilla personalizada con IA para cualquier giro.`;
+          }
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: pitch,
+            parse_mode: 'Markdown'
+          });
+          return res.status(200).json({ ok: true });
+        }
+
+        if (cmdLower === '/exportarcsv' || cmdLower === '/csv') {
+          let csv = 'Nombre,Username,ChatID,Clasificacion,Giro,Fecha\n';
+          prospectLogs.forEach(p => {
+            csv += `"${p.name}","${p.username}","${p.chatId}","${p.temp}","${p.giro || ''}","${p.timestamp}"\n`;
+          });
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: `📊 *EXPORTACIÓN DE PROSPECTOS CSV* 📊\n\n\`\`\`csv\n${csv.substring(0, 3500)}\n\`\`\``,
+            parse_mode: 'Markdown'
+          });
+          return res.status(200).json({ ok: true });
+        }
+
         if (cmdLower === '/exportar' || cmdLower === '/crm') {
           let jsonStr = JSON.stringify(prospectLogs.slice(-20), null, 2);
           if (jsonStr.length > 3500) jsonStr = jsonStr.substring(0, 3500) + '\n... (truncado)';
@@ -881,6 +913,19 @@ function antiBruteForceGuard(req, res, next) {
   next();
 }
 
+// Anti-Scanner & Vulnerability Botnet WAF Blocker (Suggestion 2)
+const SUSPICIOUS_AG_PATTERNS = [/sqlmap/i, /nikto/i, /nmap/i, /zgrab/i, /censys/i, /masscan/i, /gobuster/i, /dirbuster/i, /w3af/i, /acunetix/i];
+app.use((req, res, next) => {
+  const ua = req.headers['user-agent'] || '';
+  for (const pattern of SUSPICIOUS_AG_PATTERNS) {
+    if (pattern.test(ua)) {
+      console.warn(`[SCANNER WAF BLOCKED] Suspicious User-Agent detected: ${ua} IP: ${req.headers['x-forwarded-for'] || req.socket.remoteAddress}`);
+      return res.status(403).json({ ok: false, error: '🚨 ACCESO DENEGADO POR CORTAFUEGOS DE SEGURIDAD ANTIMALWARE WAF.' });
+    }
+  }
+  next();
+});
+
 // Enhanced Geofencing & Anti-Botnet Security WAF Guard
 const HIGH_RISK_COUNTRIES = ['RU', 'CN', 'KP', 'IR', 'BY', 'UA', 'RO', 'VN', 'PK', 'IN', 'ID', 'NG'];
 app.use((req, res, next) => {
@@ -967,6 +1012,21 @@ app.get('/api/telegram/setup-webhook', async (req, res) => {
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message });
   }
+});
+
+// Endpoint: Downloadable CSV Export of Prospects
+app.get('/api/admin/export-prospects', (req, res) => {
+  const format = (req.query.format || 'json').toLowerCase();
+  if (format === 'csv') {
+    let csv = 'Nombre,Username,ChatID,Clasificacion,Giro,Fecha\n';
+    prospectLogs.forEach(p => {
+      csv += `"${p.name}","${p.username}","${p.chatId}","${p.temp}","${p.giro || ''}","${p.timestamp}"\n`;
+    });
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="prospectos_brain_branding.csv"');
+    return res.status(200).send(csv);
+  }
+  return res.status(200).json({ ok: true, prospects: prospectLogs });
 });
 
 // Endpoint: Retrieve Gemini AI Performance Telemetry & Metrics
