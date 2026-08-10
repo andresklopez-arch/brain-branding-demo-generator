@@ -5191,6 +5191,17 @@ END:VCARD`;
     const clauseMonthly = document.getElementById('clause-monthly-price');
     if (clauseMonthly) clauseMonthly.textContent = `$${Number(contract.monthlyPrice).toLocaleString('es-MX')} MXN/mes`;
 
+    // Calculate recurring payment day of month matching contract sign date
+    let payDayNum = '10';
+    if (contract.date) {
+      const parts = String(contract.date).split('-');
+      if (parts.length === 3) payDayNum = String(parseInt(parts[2], 10));
+    } else if (contract.createdAt) {
+      payDayNum = String(new Date(contract.createdAt).getDate());
+    }
+    const clausePayDay = document.getElementById('clause-pay-day');
+    if (clausePayDay) clausePayDay.textContent = payDayNum;
+
     // Signature Status
     const statusEl = document.getElementById('contract-view-status');
     const acceptBtn = document.getElementById('contract-accept-btn');
