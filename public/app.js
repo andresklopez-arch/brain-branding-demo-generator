@@ -4742,6 +4742,23 @@ END:VCARD`;
       });
     }
 
+    // Purge Cache and Force Reload Handler
+    const purgeCacheBtn = document.getElementById('admin-purge-cache-btn');
+    if (purgeCacheBtn) {
+      purgeCacheBtn.addEventListener('click', async () => {
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (let r of regs) await r.unregister();
+        }
+        alert('🧹 ¡Caché y Service Workers del navegador purgados con éxito! Recargando servidor en vivo (v30.0.0)...');
+        window.location.reload(true);
+      });
+    }
+
     // Save edited business features
     if (kbSaveBtn) {
       kbSaveBtn.addEventListener('click', () => {

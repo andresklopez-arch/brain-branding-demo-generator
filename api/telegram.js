@@ -1,4 +1,22 @@
+const express = require('express');
+const crypto = require('crypto');
 const https = require('https');
+
+const app = express();
+app.use(express.json());
+
+// HTTP Anti-Intrusion & Anti-Caching Security Headers Middleware
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  next();
+});
 
 const TELEGRAM_TOKEN = '8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M';
 
@@ -337,10 +355,6 @@ function generateHumanReply(chatId, userName, userText) {
   history.push({ role: 'model', text: reply });
   return getUniqueReply(chatId, reply);
 }
-
-const express = require('express');
-const app = express();
-app.use(express.json());
 
 const OWNER_PHONE = '+52 771 233 9238';
 const ADMIN_CHAT_ID = '8337803949';
@@ -681,8 +695,27 @@ async function handleWebhookRequest(req, res) {
   } catch (err) {
     console.error('[WEBHOOK ERROR]', err);
     res.status(200).json({ ok: true, error: err.message });
-  }
 }
+}
+
+// Anti-Brute Force & IP Security Guard State
+const failedLoginAttempts = {};
+
+function antiBruteForceGuard(req, res, next) {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+  const record = failedLoginAttempts[ip];
+
+  if (record && record.bannedUntil && Date.now() < record.bannedUntil) {
+    const remainingMins = Math.ceil((record.bannedUntil - Date.now()) / 60000);
+    return res.status(429).json({
+      ok: false,
+      error: `🚨 ACCESO BLOQUEADO POR SEGURIDAD. IP suspendida por intentos no autorizados. Reintenta en ${remainingMins} min.`
+    });
+  }
+  next();
+}
+
+app.use(antiBruteForceGuard);
 
 const whatsappApp = require('./whatsapp.js');
 app.use(whatsappApp);
