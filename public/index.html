@@ -302,6 +302,98 @@
       return false;
     };
 
+    window.handleContractFormSubmit = async function(e) {
+      if (e) {
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+      }
+
+      const clientNameInput = document.getElementById('contract-client-name');
+      const appNameInput = document.getElementById('contract-app-name');
+      const dateInput = document.getElementById('contract-date');
+      const initialPriceInput = document.getElementById('contract-initial-price');
+      const monthlyPriceInput = document.getElementById('contract-monthly-price');
+
+      const clientName = clientNameInput ? clientNameInput.value.trim() : '';
+      const appName = appNameInput ? appNameInput.value.trim() : '';
+      const date = (dateInput && dateInput.value) ? dateInput.value : new Date().toISOString().split('T')[0];
+      const initialPrice = parseFloat(initialPriceInput ? initialPriceInput.value : 3500) || 3500;
+      const monthlyPrice = parseFloat(monthlyPriceInput ? monthlyPriceInput.value : 250) || 250;
+
+      if (!clientName || !appName) {
+        alert('⚠️ Por favor completa el Nombre del Contratante y el Nombre de la App/Software.');
+        return false;
+      }
+
+      let code;
+      const getList = function() {
+        try {
+          const raw = localStorage.getItem('brain_branding_contracts');
+          return raw ? JSON.parse(raw) : [];
+        } catch(err) { return []; }
+      };
+      const existing = getList();
+
+      do {
+        code = Math.floor(100000 + Math.random() * 900000).toString();
+      } while (existing.some(function(c) { return c.code === code; }));
+
+      const contract = {
+        code: code,
+        clientName: clientName,
+        appName: appName,
+        date: date,
+        initialPrice: initialPrice,
+        monthlyPrice: monthlyPrice,
+        status: 'PENDIENTE',
+        appStatus: 'ONLINE',
+        createdAt: new Date().toISOString(),
+        acceptedAt: null,
+        signatureData: null
+      };
+
+      existing.push(contract);
+      localStorage.setItem('brain_branding_contracts', JSON.stringify(existing));
+      localStorage.setItem('brain_branding_contracts_backup', JSON.stringify(existing));
+
+      if (window.renderAdminContractsList) window.renderAdminContractsList();
+
+      // Post contract to backend API
+      try {
+        fetch((window.API_BASE || '') + '/api/contracts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(contract)
+        }).catch(function() {});
+      } catch(err) {}
+
+      // Send Telegram notification to L.C.I. Andrés R
+      try {
+        fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: '8337803949',
+            text: '📜 *NUEVO CONTRATO DIGITAL EMITIDO (6 DÍGITOS)* 📜\n\n' +
+              '• *Folio 6D:* `' + code + '`\n' +
+              '• *Cliente:* ' + clientName + '\n' +
+              '• *Software:* ' + appName + '\n' +
+              '• *Desarrollo:* $' + initialPrice + ' MXN\n' +
+              '• *Mensualidad:* $' + monthlyPrice + ' MXN/mes\n\n' +
+              '_Emitido por: L.C.I. Andrés López Rebollo_',
+            parse_mode: 'Markdown'
+          })
+        }).catch(function() {});
+      } catch(err) {}
+
+      if (clientNameInput) clientNameInput.value = '';
+      if (appNameInput) appNameInput.value = '';
+
+      alert('📜 ¡CONTRATO DIGITAL SAAS GENERADO CON ÉXITO!\n\n• Folio de 6 Dígitos: ' + code + '\n• Cliente: ' + clientName + '\n• App: ' + appName + '\n\nEl cliente puede consultar y firmar su contrato introduciendo el código ' + code + ' en la web.');
+
+      return false;
+    };
+
     window._logoClicks = 0;
     window._logoTimer = null;
     window.handleBrainClick = function(e) {
@@ -4672,7 +4764,7 @@
         </p>
 
         <!-- New Contract Form -->
-        <form id="admin-contract-form" onsubmit="return false;" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; background: #090c15; border: 1px solid rgba(255,255,255,0.08); padding: 18px; border-radius: 14px; margin-bottom: 20px;">
+        <form id="admin-contract-form" onsubmit="if(window.handleContractFormSubmit) { window.handleContractFormSubmit(event); } return false;" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; background: #090c15; border: 1px solid rgba(255,255,255,0.08); padding: 18px; border-radius: 14px; margin-bottom: 20px;">
           <div>
             <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 5px;">Nombre Completo del Contratante *</label>
             <input type="text" id="contract-client-name" placeholder="Ej: Juan Pérez / Empresa S.A." required style="width: 100%; padding: 10px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff; font-size: 13px; outline: none; box-sizing: border-box;">
@@ -4699,7 +4791,7 @@
           </div>
 
           <div style="display: flex; align-items: flex-end;">
-            <button type="submit" id="admin-create-contract-btn" style="width: 100%; padding: 11px; background: linear-gradient(135deg, #a855f7, #6366f1); border: none; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4); display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <button type="submit" id="admin-create-contract-btn" onclick="if(window.handleContractFormSubmit) { window.handleContractFormSubmit(event); }" style="width: 100%; padding: 11px; background: linear-gradient(135deg, #a855f7, #6366f1); border: none; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4); display: flex; align-items: center; justify-content: center; gap: 6px;">
               <span>⚡</span> Generar Contrato (6 Dígitos)
             </button>
           </div>
