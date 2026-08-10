@@ -72,7 +72,7 @@ const App = {
           this.enteredPin = this.enteredPin.slice(0, -1);
         } else if (val === "clear") {
           this.enteredPin = "";
-        } else if (this.enteredPin.length < 5) {
+        } else if (this.enteredPin.length < 6) {
           this.enteredPin += val;
         }
         this.updatePinDisplay();
@@ -100,11 +100,10 @@ const App = {
     });
 
     if (this.enteredPin.length === 5) {
-      const tenant = demoRegistry[this.enteredPin];
+      const tenant = typeof demoRegistry !== 'undefined' ? demoRegistry[this.enteredPin] : null;
       if (tenant) {
         this.failedAttempts = 0;
         
-        // Actualizar título y texto personalizado para el cliente de esta demo
         const welcomeTitle = document.querySelector(".welcome-title");
         const welcomeText = document.querySelector(".welcome-text");
         const hubSub = document.querySelector(".hub-sub");
@@ -116,20 +115,39 @@ const App = {
         setTimeout(() => {
           document.getElementById("pinGateOverlay").style.display = "none";
           this.showWelcomeModal();
-        }, 300);
-      } else {
-        this.failedAttempts++;
-        if (this.failedAttempts >= 3) {
-          this.lockUntil = Date.now() + 5 * 60 * 1000;
-          localStorage.setItem("pedro_demo_lock_time", this.lockUntil.toString());
-          this.showLockScreen();
-        } else {
-          alert(`⚠️ NIP Incorrecto (${this.failedAttempts}/3 intentos). Revisa el NIP de 5 dígitos proporcionado por tu ejecutivo.`);
-        }
-        this.enteredPin = "";
-        this.updatePinDisplay();
+        }, 200);
       }
+    } else if (this.enteredPin.length === 6) {
+      const code = this.enteredPin;
+      const apiBase = window.API_BASE || 'https://brain-branding-demo-generator.onrender.com';
+      
+      fetch(`${apiBase}/api/contracts/${code}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.ok && data.contract) {
+            this.failedAttempts = 0;
+            window.location.href = `https://brainbranding.com.mx/?contrato=${code}`;
+          } else {
+            this.handleInvalidPin(code);
+          }
+        })
+        .catch(() => {
+          window.location.href = `https://brainbranding.com.mx/?contrato=${code}`;
+        });
     }
+  },
+
+  handleInvalidPin: function(code) {
+    this.failedAttempts++;
+    if (this.failedAttempts >= 3) {
+      this.lockUntil = Date.now() + 5 * 60 * 1000;
+      localStorage.setItem("pedro_demo_lock_time", this.lockUntil.toString());
+      this.showLockScreen();
+    } else {
+      alert(`⚠️ Código No Encontrado (${this.failedAttempts}/3 intentos).\n\n• NIP Demo Personalizada: 5 dígitos\n• Folio Contrato SaaS: 6 dígitos`);
+    }
+    this.enteredPin = "";
+    this.updatePinDisplay();
   },
 
   showLockScreen: function() {
