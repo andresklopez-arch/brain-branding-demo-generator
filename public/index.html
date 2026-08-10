@@ -38,6 +38,60 @@
       return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
     };
 
+    window._failedOtpCount = 0;
+    window._lockoutUntil = 0;
+
+    window.startOTPTimer = function() {
+      if (window._otpInterval) clearInterval(window._otpInterval);
+      const timerEl = document.getElementById('otp-timer-text');
+
+      window._otpInterval = setInterval(function() {
+        const remainingMs = (window._otpExpiresAt || 0) - Date.now();
+        if (remainingMs <= 0) {
+          clearInterval(window._otpInterval);
+          if (timerEl) timerEl.innerText = 'Expirado ⚠️';
+          const otpError = document.getElementById('admin-otp-error');
+          if (otpError) {
+            otpError.innerText = 'El código 2FA ha expirado. Reenvía uno nuevo.';
+            otpError.style.display = 'block';
+          }
+        } else {
+          const totalSec = Math.floor(remainingMs / 1000);
+          const mins = Math.floor(totalSec / 60).toString().padStart(2, '0');
+          const secs = (totalSec % 60).toString().padStart(2, '0');
+          if (timerEl) timerEl.innerText = mins + ':' + secs;
+        }
+      }, 1000);
+    };
+
+    window.resendTelegramOTP = function() {
+      if (Date.now() < window._lockoutUntil) {
+        alert('⛔ Acceso bloqueado temporalmente por demasiados intentos fallidos.');
+        return;
+      }
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      window._generatedOTP = otpCode;
+      window._otpExpiresAt = Date.now() + 10 * 60 * 1000;
+      window.startOTPTimer();
+
+      const otpMsg = `🔑 *CÓDIGO DE AUTENTICACIÓN 2FA (RETRANSMISIÓN)* 🔑\n\n` +
+        `Tu nuevo código de verificación único de 6 dígitos es: *\`${otpCode}\`*\n\n` +
+        `⏱️ *Validez:* 10 Minutos.\n` +
+        `_Solicitado por: L.C.I. Andrés López Rebollo_`;
+
+      fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: '8337803949',
+          text: otpMsg,
+          parse_mode: 'Markdown'
+        })
+      }).catch(function() {});
+
+      alert('📲 Nuevo código 2FA enviado a tu Telegram.');
+    };
+
     // Immediate inline Admin Login opener & submit handler (Full 2FA Telegram OTP)
     window.safeOpenAdminLogin = function() {
       const modal = document.getElementById('admin-login-modal');
@@ -76,10 +130,19 @@
       const otpError = document.getElementById('admin-otp-error');
       const loginModal = document.getElementById('admin-login-modal');
       const dashboardModal = document.getElementById('admin-dashboard-modal');
-      const kbEditor = document.getElementById('admin-kb-editor');
 
       const passVal = (passIn ? passIn.value : '').trim();
       const otpVal = (otpIn ? otpIn.value : '').trim();
+
+      // Check lockout status
+      if (Date.now() < window._lockoutUntil) {
+        const minsLeft = Math.ceil((window._lockoutUntil - Date.now()) / 60000);
+        if (otpError) {
+          otpError.innerText = `⛔ Acceso bloqueado por 3 intentos fallidos. Reintenta en ${minsLeft} min.`;
+          otpError.style.display = 'block';
+        }
+        return false;
+      }
 
       if (!window._is2FAActive) {
         // STEP 1: CHECK MASTER PASSWORD
@@ -92,6 +155,7 @@
           const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
           window._generatedOTP = otpCode;
           window._otpExpiresAt = Date.now() + 10 * 60 * 1000;
+          window.startOTPTimer();
 
           // Immediate Non-blocking UI Transition to Step 2
           window._is2FAActive = true;
@@ -139,6 +203,8 @@
           if (otpError) otpError.style.display = 'none';
           window._is2FAActive = false;
           window._generatedOTP = null;
+          window._failedOtpCount = 0;
+          if (window._otpInterval) clearInterval(window._otpInterval);
 
           if (loginModal) loginModal.style.display = 'none';
           if (dashboardModal) dashboardModal.style.display = 'block';
@@ -157,10 +223,34 @@
             })
           }).catch(function() {});
         } else {
-          if (otpError) {
-            otpError.innerText = 'Código 2FA incorrecto o expirado';
-            otpError.style.display = 'block';
+          window._failedOtpCount = (window._failedOtpCount || 0) + 1;
+
+          if (window._failedOtpCount >= 3) {
+            window._lockoutUntil = Date.now() + 15 * 60 * 1000;
+            window._failedOtpCount = 0;
+
+            fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: '8337803949',
+                text: '🚨 *ALERTA DE SEGURIDAD 2FA — BLOQUEO TEMPORAL DE 15 MIN* 🚨\n\nSe han registrado 3 intentos fallidos consecutivos de código 2FA. El acceso se ha bloqueado por 15 minutos.',
+                parse_mode: 'Markdown'
+              })
+            }).catch(function() {});
+
+            if (otpError) {
+              otpError.innerText = '🚨 3 intentos fallidos. Acceso bloqueado por 15 minutos por seguridad.';
+              otpError.style.display = 'block';
+            }
+          } else {
+            const left = 3 - window._failedOtpCount;
+            if (otpError) {
+              otpError.innerText = `Código 2FA incorrecto. Te quedan ${left} intento(s).`;
+              otpError.style.display = 'block';
+            }
           }
+
           if (otpIn) {
             otpIn.classList.add('shake-input');
             setTimeout(function() { otpIn.classList.remove('shake-input'); }, 450);
@@ -4363,6 +4453,10 @@
         <div id="admin-otp-step" style="display: none;">
           <div style="font-size: 12px; color: #10b981; font-weight: 700; margin-bottom: 8px;">🔑 Código 2FA enviado a Telegram de Andrés R</div>
           <input type="text" id="admin-otp-input" placeholder="123456" maxlength="6" onkeydown="if(event.key==='Enter'||event.keyCode===13){ event.preventDefault(); if(window.handleAdminLoginSubmit) window.handleAdminLoginSubmit(event); }" style="width: 100%; padding: 14px 18px; border-radius: 12px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.4); color: #10b981; font-size: 20px; font-weight: 800; text-align: center; letter-spacing: 6px; outline: none; box-sizing: border-box;">
+          <div id="admin-otp-countdown" style="font-size: 11px; color: var(--text-muted); margin-top: 6px; font-weight: 600;">⏱️ El código expira en: <span id="otp-timer-text" style="color: #00e5ff; font-family: monospace;">10:00</span></div>
+          <div style="margin-top: 6px;">
+            <button type="button" id="resend-otp-btn" onclick="if(window.resendTelegramOTP) window.resendTelegramOTP();" style="background: none; border: none; color: #00e5ff; font-size: 11px; font-weight: 700; cursor: pointer; text-decoration: underline;">📲 ¿No recibiste el código? Reenviar OTP a Telegram</button>
+          </div>
           <div id="admin-otp-error" style="color: #ef4444; font-size: 12px; font-weight: 600; margin-top: 8px; display: none;">Código 2FA incorrecto o expirado</div>
         </div>
 
