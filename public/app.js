@@ -4449,7 +4449,7 @@ END:VCARD`;
   }
 
   // Pre-filled Master Knowledge Base Text
-  const DEFAULT_BUSINESS_FEATURES = `# BRAIN BRANDING — REGLAS Y CARACTERÍSTICAS DEL NEGOCIO (KNOWLEDGE BASE)
+  window.DEFAULT_BUSINESS_FEATURES = `# BRAIN BRANDING — REGLAS Y CARACTERÍSTICAS DEL NEGOCIO (KNOWLEDGE BASE)
 
 ## 🏢 1. INFORMACIÓN CORPORATIVA
 - Nombre: Brain Branding
@@ -4475,6 +4475,7 @@ END:VCARD`;
 - Nunca hacer listas aburridas ni usar lenguaje robótico.
 - Cero repetición de preguntas o frases previas al cliente.
 - Diagnóstico inteligente por giro (Panaderías, Mascotas, Jardinería, Salud, Talleres, Restaurantes, etc.).`;
+  const DEFAULT_BUSINESS_FEATURES = window.DEFAULT_BUSINESS_FEATURES;
 
 // ════════ IMMUNE DOCUMENT-LEVEL DELEGATION FOR FAB & ADMIN LOGIN ════════
 (function() {

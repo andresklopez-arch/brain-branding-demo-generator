@@ -32,6 +32,39 @@
     }
 
 
+    window.DEFAULT_BUSINESS_FEATURES = `# BRAIN BRANDING — REGLAS Y CARACTERÍSTICAS DEL NEGOCIO (KNOWLEDGE BASE)
+
+## 🏢 1. INFORMACIÓN CORPORATIVA
+- Nombre: Brain Branding
+- Eslogan: "Empoderando Marcas, Reprogramando Mentes"
+- Metodología: Arquitectura Digital e Inteligencia Artificial inspirada en Juanpe Navarro (Tribu Divisual - España).
+- Sitio Web Oficial: https://brainbranding.com.mx
+- WhatsApp Oficial: +52 771 233 9238 (https://wa.me/527712339238)
+- Telegram Bot: @Brainbranding_bot
+
+## 🚀 2. NUESTROS 3 PILARES CORE
+1. Asistentes Personales con IA (24/7): Agentes cognitivos autónomos en WhatsApp/Telegram que atienden prospectos, agendan citas, transcriben audios y filtran ventas.
+2. Software a la Medida con Motor IA (POS / ERP / CRM): Plataformas 100% móviles sin rentas por terminal, inventarios predictivos, báscula integrada y arqueos de caja con firma digital.
+3. Páginas Web de Alta Conversión: Diseño disruptivo futurista (glassmorphism, micro-animaciones) con score 98+ en Google Lighthouse y velocidad de carga instantánea.
+
+## 💼 3. ESQUEMA COMERCIAL Y GARANTÍA CERO RIESGO
+- Activación Inicial: Cuota plana de desarrollo e implementación a la medida.
+- Mantenimiento Nube: 10% mensual para servidor resiliente, respaldos diarios automáticos, actualizaciones y soporte técnico 24/7.
+- Garantía Cero Riesgo: Garantía de Satisfacción por contrato y entregables por fases con visto bueno previo.
+- Bono Acción Rápida: Primeros 2 meses de mantenimiento en la nube 100% GRATIS al contratar esta semana.
+
+## 🎯 4. REGLAS PARA BOTS Y ASESORÍA CONSULTIVA
+- Tono conversacional 100% humano, profesional, empático y directo al retorno de inversión (ROI).
+- Nunca hacer listas aburridas ni usar lenguaje robótico.
+- Cero repetición de preguntas o frases previas al cliente.
+- Diagnóstico inteligente por giro (Panaderías, Mascotas, Jardinería, Salud, Talleres, Restaurantes, etc.).`;
+
+    // Ensure default KB is saved in localStorage if empty
+    if (!localStorage.getItem('brain_branding_kb_features')) {
+      localStorage.setItem('brain_branding_kb_features', window.DEFAULT_BUSINESS_FEATURES);
+    }
+    window.customKnowledgeBaseText = localStorage.getItem('brain_branding_kb_features') || window.DEFAULT_BUSINESS_FEATURES;
+
     window.sha256Hex = async function(str) {
       const buffer = new TextEncoder().encode(str);
       const digest = await crypto.subtle.digest('SHA-256', buffer);
@@ -208,6 +241,14 @@
 
           if (loginModal) loginModal.style.display = 'none';
           if (dashboardModal) dashboardModal.style.display = 'block';
+
+          // POPULATE BUSINESS FEATURES TEXTAREA IN DASHBOARD
+          const kbEditor = document.getElementById('admin-kb-editor');
+          if (kbEditor) {
+            const currentKB = localStorage.getItem('brain_branding_kb_features') || window.DEFAULT_BUSINESS_FEATURES;
+            kbEditor.value = currentKB;
+            window.customKnowledgeBaseText = currentKB;
+          }
 
           if (window.renderAdminAnalytics) window.renderAdminAnalytics();
           if (window.renderAdminContractsList) window.renderAdminContractsList();
