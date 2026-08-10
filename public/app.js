@@ -5091,12 +5091,11 @@ END:VCARD`;
     localStorage.setItem('brain_branding_contracts', JSON.stringify(list));
   };
 
-  window.renderAdminContractsList = () => {
+  const drawContractsTable = (list) => {
     const tbody = document.getElementById('admin-contracts-table-body');
     if (!tbody) return;
 
-    const list = getContracts();
-    if (list.length === 0) {
+    if (!list || list.length === 0) {
       tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 18px; color: var(--text-muted);">No hay contratos generados aún. Completa el formulario para emitir el primero.</td></tr>`;
       return;
     }
@@ -5125,6 +5124,51 @@ END:VCARD`;
       </tr>`;
     }).join('');
   };
+
+  let isFetchingContracts = false;
+  window.renderAdminContractsList = async () => {
+    // 1. Immediate local render
+    const localList = getContracts();
+    drawContractsTable(localList);
+
+    // 2. Dual Sync with central server database (prevents disappearing contracts)
+    if (isFetchingContracts) return;
+    isFetchingContracts = true;
+
+    try {
+      const res = await fetch(`${window.API_BASE}/api/contracts-list`);
+      const data = await res.json();
+      if (data && data.ok && Array.isArray(data.contracts)) {
+        const remoteList = data.contracts;
+        const currentMap = new Map();
+
+        // Put local first
+        localList.forEach(c => currentMap.set(c.code, c));
+        // Merge remote contracts
+        remoteList.forEach(rc => {
+          const lc = currentMap.get(rc.code);
+          if (!lc) {
+            currentMap.set(rc.code, rc);
+          } else {
+            if (rc.status === 'ACEPTADO') lc.status = 'ACEPTADO';
+            if (rc.acceptedAt) lc.acceptedAt = rc.acceptedAt;
+            if (rc.signatureData) lc.signatureData = rc.signatureData;
+            if (rc.appStatus) lc.appStatus = rc.appStatus;
+            currentMap.set(rc.code, { ...rc, ...lc });
+          }
+        });
+
+        const mergedList = Array.from(currentMap.values());
+        localStorage.setItem('brain_branding_contracts', JSON.stringify(mergedList));
+        drawContractsTable(mergedList);
+      }
+    } catch(e) {
+      console.warn('[CONTRACTS SYNC WARNING]', e);
+    } finally {
+      isFetchingContracts = false;
+    }
+  };
+
 
   window.toggleAppGovernance = async (code, targetStatus) => {
     const list = getContracts();

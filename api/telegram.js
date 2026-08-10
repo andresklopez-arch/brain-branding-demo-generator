@@ -1087,8 +1087,35 @@ setInterval(async () => {
   }
 }, 60000);
 
-// Permanent SaaS Contracts Database & Endpoints
+// Permanent SaaS Contracts Database (Disk-backed JSON Persistence)
+const DATA_DIR = path.join(__dirname, '../data');
+const CONTRACTS_FILE = path.join(DATA_DIR, 'contracts.json');
 const contractsDB = {};
+
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+  if (fs.existsSync(CONTRACTS_FILE)) {
+    const rawData = fs.readFileSync(CONTRACTS_FILE, 'utf8');
+    const parsed = JSON.parse(rawData);
+    Object.assign(contractsDB, parsed);
+    console.log(`[CONTRACTS DB LOADED] Loaded ${Object.keys(contractsDB).length} permanent contracts from disk.`);
+  }
+} catch(e) {
+  console.error('[CONTRACTS DB LOAD ERROR]', e);
+}
+
+function saveContractsToDisk() {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(CONTRACTS_FILE, JSON.stringify(contractsDB, null, 2), 'utf8');
+  } catch(e) {
+    console.error('[CONTRACTS DB SAVE ERROR]', e);
+  }
+}
 
 app.post('/api/contracts', (req, res) => {
   try {
@@ -1123,6 +1150,7 @@ app.post('/api/contracts', (req, res) => {
     };
 
     contractsDB[code] = contract;
+    saveContractsToDisk();
     console.log(`[CONTRACT CREATED] Code: ${code} for ${clientName}`);
 
     // Send instant Telegram notification to Andrés R
@@ -1182,6 +1210,7 @@ app.post('/api/contracts/:code/accept', (req, res) => {
     timestamp: new Date().toISOString()
   };
 
+  saveContractsToDisk();
   console.log(`[CONTRACT ACCEPTED] Code: ${code} by ${contract.clientName}`);
 
   // Send instant Telegram notification to Andrés R
@@ -1217,6 +1246,7 @@ app.post('/api/contracts/:code/toggle-status', (req, res) => {
     : (contract.appStatus === 'OFFLINE' ? 'ONLINE' : 'OFFLINE');
 
   contract.appStatus = newStatus;
+  saveContractsToDisk();
   console.log(`[APP STATUS GOVERNANCE] Code: ${code} (${contract.appName}) toggled to ${newStatus}`);
 
   const statusMsg = newStatus === 'ONLINE'
