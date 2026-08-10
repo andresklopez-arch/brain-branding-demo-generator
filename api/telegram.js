@@ -913,6 +913,25 @@ function antiBruteForceGuard(req, res, next) {
   next();
 }
 
+// Admin IP Whitelist Security Middleware for Sensitive Routes (Suggestion 2)
+function adminIpWhitelistGuard(req, res, next) {
+  const whitelistEnv = process.env.ADMIN_WHITELIST_IPS;
+  if (!whitelistEnv) return next(); // If not set, fallback to 2FA OTP security
+
+  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+  const allowedIps = whitelistEnv.split(',').map(ip => ip.trim());
+
+  const isAllowed = allowedIps.some(ip => clientIp.includes(ip) || clientIp === '127.0.0.1' || clientIp === '::1');
+  if (!isAllowed) {
+    console.warn(`[ADMIN WHITELIST BLOCKED] Unauthorized IP access attempt to ${req.path} from IP: ${clientIp}`);
+    return res.status(403).json({
+      ok: false,
+      error: '🚨 ACCESO BLOQUEADO. Tu dirección IP no se encuentra registrada en la lista blanca de administración.'
+    });
+  }
+  next();
+}
+
 // Honeypot Trap Security Middleware against Automated Scanners & Vulnerability Probes
 const HONEYPOT_ROUTES = [
   '/wp-login.php', '/wp-admin', '/.env', '/admin.php', '/phpmyadmin',
@@ -1065,6 +1084,74 @@ setInterval(() => {
   }
 }, 60 * 1000);
 
+// Sunday 8:00 PM Weekly Executive Conversion Report (Suggestion 3)
+async function sendWeeklyAnalyticsReport8PM() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  const hotLeads = prospectLogs.filter(p => p.temp === 'CALIENTE' || p.temp === 'CITA_URGENTE');
+  const warmLeads = prospectLogs.filter(p => p.temp === 'TIBIO');
+  const coldLeads = prospectLogs.filter(p => p.temp === 'FRÍO');
+
+  const totalLeads = prospectLogs.length || 1;
+  const conversionRate = Math.round((hotLeads.length / totalLeads) * 100);
+
+  const girosMap = {};
+  prospectLogs.forEach(p => {
+    if (p.giro && p.giro !== 'No especificado') {
+      girosMap[p.giro] = (girosMap[p.giro] || 0) + 1;
+    }
+  });
+
+  const topGiros = Object.entries(girosMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([g, c]) => `• ${g}: ${c} prospectos`)
+    .join('\n') || '• General / Consultoría Comercial';
+
+  const weeklyMsg = `📈 *INFORME COMPARATIVO SEMANAL DE CONVERSIÓN Y DESEMPEÑO (DOMINGOS 8:00 PM)* 📈\n` +
+    `📅 *Semana Finalizada:* ${dateStr}\n\n` +
+    `📊 *MÉTRICAS DE RENDIMIENTO DE VENTAS:*\n` +
+    `🔥 *Leads Calientes / Citas Solicitadas:* ${hotLeads.length}\n` +
+    `🟡 *Leads Tibios (Interés Medio):* ${warmLeads.length}\n` +
+    `❄️ *Leads Fríos (Consultas Iniciales):* ${coldLeads.length}\n` +
+    `🎯 *Tasa de Conversión a Cita:* ${conversionRate}%\n` +
+    `💬 *Total Mensajes Gestionados:* ${prospectLogs.length}\n\n` +
+    `🏬 *INDUSTRIAS / GIROS MÁS SOLICITADOS:*\n${topGiros}\n\n` +
+    `🤖 *TELEMETRÍA MOTOR GEMINI AI:*\n` +
+    `⚡ *Modelo Principal:* ${geminiMetrics.lastUsedModel || 'gemini-2.0-flash'}\n` +
+    `⏱️ *Latencia Promedio:* ${geminiMetrics.averageLatencyMs || 0}ms\n` +
+    `✅ *Atenciones Exitosas por IA:* ${geminiMetrics.successfulCalls}\n` +
+    `⚡ *Respuestas en Caché (0ms):* ${geminiMetrics.cacheHits}\n` +
+    `🛡️ *Ataques Neutralizados:* ${geminiMetrics.blockedInjections}\n\n` +
+    `🚀 _Brain Branding 2026 — Empoderando Marcas, Reprogramando Mentes._`;
+
+  try {
+    await callTelegram('sendMessage', {
+      chat_id: ADMIN_CHAT_ID,
+      text: weeklyMsg,
+      parse_mode: 'Markdown'
+    });
+    console.log('[WEEKLY REPORT] Sunday 8:00 PM Report dispatched successfully.');
+  } catch (e) {
+    console.error('[WEEKLY REPORT ERROR]', e.message);
+  }
+}
+
+// Sunday 8:00 PM Cron Timer Check
+let lastWeeklyReportWeek = '';
+setInterval(() => {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 = Sunday
+  const currentHour = now.getHours();
+  const weekKey = `${now.getFullYear()}-W${Math.ceil(now.getDate() / 7)}`;
+
+  if (dayOfWeek === 0 && currentHour === 20 && lastWeeklyReportWeek !== weekKey) {
+    lastWeeklyReportWeek = weekKey;
+    sendWeeklyAnalyticsReport8PM();
+  }
+}, 60 * 1000);
+
 // HMAC SHA-256 Master Key Secret Generator
 const HMAC_SECRET = process.env.HMAC_SECRET || 'BRAIN_BRANDING_MASTER_SAAS_HMAC_KEY_2026_SECRET';
 function generateHmacSeal(dataStr) {
@@ -1097,7 +1184,7 @@ app.get('/api/telegram/setup-webhook', async (req, res) => {
 });
 
 // Endpoint: Downloadable CSV Export of Prospects
-app.get('/api/admin/export-prospects', (req, res) => {
+app.get('/api/admin/export-prospects', adminIpWhitelistGuard, (req, res) => {
   const format = (req.query.format || 'json').toLowerCase();
   if (format === 'csv') {
     let csv = 'Nombre,Username,ChatID,Clasificacion,Giro,Fecha\n';
