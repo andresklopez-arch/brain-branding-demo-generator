@@ -289,90 +289,93 @@ document.addEventListener('DOMContentLoaded', () => {
     let isDeleting = false;
     
     function type() {
-      if (document.hidden) {
+      try {
+        if (document.hidden) {
+          setTimeout(type, 1000);
+          return;
+        }
+        const currentWord = words[wordIndex];
+        if (isDeleting) {
+          typingElement.textContent = currentWord.substring(0, Math.max(0, charIndex - 1));
+          charIndex = Math.max(0, charIndex - 1);
+          typingElement.classList.add('deleting');
+        } else {
+          typingElement.textContent = currentWord.substring(0, Math.min(currentWord.length, charIndex + 1));
+          charIndex = Math.min(currentWord.length, charIndex + 1);
+          typingElement.classList.remove('deleting');
+        }
+        
+        let typeSpeed = isDeleting ? 40 : 80;
+        
+        if (!isDeleting && charIndex === currentWord.length) {
+          typeSpeed = 2200; // Pause at end of word
+          isDeleting = true;
+          typingElement.classList.add('finished');
+        } else if (isDeleting && charIndex === 0) {
+          isDeleting = false;
+          wordIndex = (wordIndex + 1) % words.length;
+          typeSpeed = 500; // Pause before typing next word
+          typingElement.classList.remove('finished');
+          
+          try {
+            // Dynamic word transition fade logic
+            typingElement.classList.add('word-fade');
+            setTimeout(() => {
+              typingElement.classList.remove('word-fade');
+            }, 150);
+            
+            // Update description dynamically with opacity transition & slide
+            const descElement = document.querySelector('.hero-desc');
+            if (descElement) {
+              descElement.classList.add('fade-out');
+              setTimeout(() => {
+                descElement.textContent = descriptions[wordIndex];
+                descElement.classList.remove('fade-out');
+              }, 250);
+            }
+            
+            const targets = ["#inclusiones", "#simulador-pos", "#simulador-web", "#simulador-web"];
+            const buttonLabels = [
+              "Ver ventajas de tu Asistente Personal IA",
+              "Ver ventajas de tu Punto de Venta",
+              "Ver ventajas de tu Software Personalizado",
+              "Ver ventajas de tu Página Web"
+            ];
+            const moreInfoBtn = document.getElementById('hero-more-info-btn');
+            const moreInfoText = document.getElementById('more-info-text');
+            if (moreInfoBtn && moreInfoText) {
+              moreInfoBtn.style.opacity = '0';
+              setTimeout(() => {
+                moreInfoBtn.setAttribute('href', targets[wordIndex]);
+                moreInfoText.textContent = buttonLabels[wordIndex];
+                moreInfoBtn.style.opacity = '1';
+              }, 250);
+            }
+            
+            const templates = [
+              "Hola! Me interesa diseñar mi Asistente Personal de IA para automatizar mis procesos.",
+              "Hola! Me interesa cotizar un Sistema de Punto de Venta a la medida.",
+              "Hola! Me interesa cotizar Software Personalizado / ERP / CRM a la medida para mi empresa.",
+              "Hola! Me interesa crear mi Página Web corporativa premium."
+            ];
+            const descField = document.getElementById('contact-desc');
+            if (descField) {
+              const currentVal = descField.value.trim();
+              const isTemplate = currentVal === "" || templates.includes(currentVal);
+              if (isTemplate) {
+                descField.value = templates[wordIndex];
+              }
+            }
+          } catch(e) {}
+        }
+        
+        setTimeout(type, typeSpeed);
+      } catch(err) {
         setTimeout(type, 1000);
-        return;
       }
-      const currentWord = words[wordIndex];
-      if (isDeleting) {
-        typingElement.textContent = currentWord.substring(0, charIndex - 1);
-        charIndex--;
-        typingElement.classList.add('deleting');
-      } else {
-        typingElement.textContent = currentWord.substring(0, charIndex + 1);
-        charIndex++;
-        typingElement.classList.remove('deleting');
-      }
-      
-      let typeSpeed = isDeleting ? 40 : 80;
-      
-      if (!isDeleting && charIndex === currentWord.length) {
-        typeSpeed = 2000; // Pause at end of word
-        isDeleting = true;
-        typingElement.classList.add('finished');
-      } else if (isDeleting && charIndex === 0) {
-        isDeleting = false;
-        wordIndex = (wordIndex + 1) % words.length;
-        typeSpeed = 500; // Pause before typing next word
-        typingElement.classList.remove('finished');
-        
-        // Dynamic word transition fade logic
-        typingElement.classList.add('word-fade');
-        setTimeout(() => {
-          typingElement.classList.remove('word-fade');
-        }, 150);
-        
-        // Update description dynamically with opacity transition & slide
-        const descElement = document.querySelector('.hero-desc');
-        if (descElement) {
-          descElement.classList.add('fade-out');
-          setTimeout(() => {
-            descElement.textContent = descriptions[wordIndex];
-            descElement.classList.remove('fade-out');
-          }, 250);
-        }
-        
-        // Update more info button dynamic link & label
-        const targets = ["#inclusiones", "#simulador-pos", "#simulador-web", "#simulador-web"];
-        const buttonLabels = [
-          "Ver ventajas de tu Asistente Personal IA",
-          "Ver ventajas de tu Punto de Venta",
-          "Ver ventajas de tu Software Personalizado",
-          "Ver ventajas de tu Página Web"
-        ];
-        const moreInfoBtn = document.getElementById('hero-more-info-btn');
-        const moreInfoText = document.getElementById('more-info-text');
-        if (moreInfoBtn && moreInfoText) {
-          moreInfoBtn.style.opacity = '0';
-          setTimeout(() => {
-            moreInfoBtn.setAttribute('href', targets[wordIndex]);
-            moreInfoText.textContent = buttonLabels[wordIndex];
-            moreInfoBtn.style.opacity = '1';
-          }, 250);
-        }
-        
-        // Update contact form message input dynamically if empty or template
-        const templates = [
-          "Hola! Me interesa diseñar mi Asistente Personal de IA para automatizar mis procesos.",
-          "Hola! Me interesa cotizar un Sistema de Punto de Venta a la medida.",
-          "Hola! Me interesa cotizar Software Personalizado / ERP / CRM a la medida para mi empresa.",
-          "Hola! Me interesa crear mi Página Web corporativa premium."
-        ];
-        const descField = document.getElementById('contact-desc');
-        if (descField) {
-          const currentVal = descField.value.trim();
-          const isTemplate = currentVal === "" || templates.includes(currentVal);
-          if (isTemplate) {
-            descField.value = templates[wordIndex];
-            descField.dispatchEvent(new Event('input'));
-          }
-        }
-      }
-      
-      setTimeout(type, typeSpeed);
     }
     
-    setTimeout(type, 1000);
+    setTimeout(type, 500);
   }
 
   // 4. Showcase Demo Simulation (Interactive count animation)
