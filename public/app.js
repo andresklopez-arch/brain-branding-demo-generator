@@ -1,3 +1,8 @@
+// Global Backend API Target for Firebase Hosting -> Render Proxy
+window.API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? ''
+  : 'https://brain-branding-demo-generator.onrender.com';
+
 // Force Service Worker & Browser Cache Update to ensure latest feature release (v30.0.0)
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(registrations => {
@@ -4660,7 +4665,7 @@ END:VCARD`;
         updateUI(visits);
 
         // Fetch central server database from Render API
-        fetch('/api/analytics-db')
+        fetch(window.API_BASE + '/api/analytics-db')
           .then(r => r.json())
           .then(data => {
             if (data && data.ok && Array.isArray(data.visits) && data.visits.length > 0) {
@@ -4723,12 +4728,24 @@ END:VCARD`;
 
             try {
               if (loginSubmitBtn) loginSubmitBtn.innerText = 'Enviando... ⏳';
-              await fetch('/api/admin/request-2fa', {
+              const reqRes = await fetch(window.API_BASE + '/api/admin/request-2fa', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ passHash: hash })
               });
-            } catch(e) {}
+              const reqData = await reqRes.json();
+
+              if (!reqData || !reqData.ok) {
+                const errDetail = (reqData && reqData.error) ? reqData.error : 'El servidor no pudo generar el código';
+                alert(`⚠️ Error al enviar OTP a Telegram:\n\n${errDetail}`);
+                if (loginSubmitBtn) loginSubmitBtn.innerText = 'Ingresar 🔑';
+                return;
+              }
+            } catch(err) {
+              alert(`⚠️ Error de conexión con el servidor 2FA:\n\n${err.message}`);
+              if (loginSubmitBtn) loginSubmitBtn.innerText = 'Ingresar 🔑';
+              return;
+            }
 
             is2FAStepActive = true;
             document.getElementById('admin-pass-step').style.display = 'none';
@@ -4749,7 +4766,7 @@ END:VCARD`;
           const otpError = document.getElementById('admin-otp-error');
 
           try {
-            const res = await fetch('/api/admin/verify-2fa', {
+            const res = await fetch(window.API_BASE + '/api/admin/verify-2fa', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ otp: otpVal })
@@ -5008,7 +5025,7 @@ END:VCARD`;
 
     // Visit tracking is saved locally and sent ONLY to the backend server
     // for the consolidated 8:00 AM Daily Summary Report (no individual Telegram alerts).
-    fetch('/api/track-visit', {
+    fetch(window.API_BASE + '/api/track-visit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ city, region, country, flag, source, device, isp, duration: durationStr, scroll: maxScroll, clicks: clickedElements })
@@ -5096,7 +5113,7 @@ END:VCARD`;
 
     // Sync to backend remote governance endpoint
     try {
-      await fetch(`/api/contracts/${code}/toggle-status`, {
+      await fetch(`${window.API_BASE}/api/contracts/${code}/toggle-status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: targetStatus })
@@ -5112,7 +5129,7 @@ END:VCARD`;
 
     if (!contract) {
       try {
-        const res = await fetch(`/api/contracts/${code}`);
+        const res = await fetch(`${window.API_BASE}/api/contracts/${code}`);
         const data = await res.json();
         if (data && data.ok && data.contract) {
           contract = data.contract;
@@ -5241,7 +5258,7 @@ END:VCARD`;
     saveContractLocally(contract);
     if (window.renderAdminContractsList) window.renderAdminContractsList();
 
-    fetch(`/api/contracts/${code}/accept`, {
+    fetch(`${window.API_BASE}/api/contracts/${code}/accept`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ signatureName: contract.clientName, signatureImage })
@@ -5313,7 +5330,7 @@ END:VCARD`;
         saveContractLocally(contract);
         if (window.renderAdminContractsList) window.renderAdminContractsList();
 
-        fetch('/api/contracts', {
+        fetch(window.API_BASE + '/api/contracts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(contract)

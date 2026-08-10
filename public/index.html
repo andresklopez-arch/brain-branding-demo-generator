@@ -31,38 +31,6 @@
       }).catch(function() {});
     }
 
-    // Instant Guaranteed Telegram Visit Notification to Andrés R (8337803949)
-    (function() {
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        let source = 'Acceso Directo Web 🌐';
-        if (urlParams.has('gclid') || (urlParams.get('utm_source') && urlParams.get('utm_source').includes('google')) || document.referrer.includes('google')) {
-          source = 'Google Ads 🟡';
-        } else if (urlParams.get('utm_source') === 'wa' || document.referrer.includes('wa.me')) {
-          source = 'WhatsApp 🟢';
-        } else if (document.referrer.includes('t.me')) {
-          source = 'Telegram 🔵';
-        }
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const device = isMobile ? 'Móvil 📱' : 'Computadora 💻';
-        const page = window.location.pathname || '/';
-
-        const sendNotification = function(locText) {
-          const textMsg = `👀 *NUEVA VISITA EN TU PAGINA WEB*\n\n📍 *Ubicación:* ${locText}\n📄 *Página:* ${page}\n🎯 *Origen:* ${source}\n📱 *Dispositivo:* ${device}\n⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX')}`;
-          fetch(`https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage?chat_id=8337803949&text=${encodeURIComponent(textMsg)}&parse_mode=Markdown`).catch(function(){});
-        };
-
-        fetch('https://ipwho.is/')
-          .then(function(r){ return r.json(); })
-          .then(function(d){
-            const loc = (d && d.success) ? `${d.city || ''}, ${d.region || ''}, ${d.country || 'México'} ${(d.flag && d.flag.emoji) ? d.flag.emoji : '🇲🇽'}` : 'México 🇲🇽';
-            sendNotification(loc);
-          })
-          .catch(function(){
-            sendNotification('México 🇲🇽 (Detectado)');
-          });
-      } catch(e) {}
-    })();
 
     // Immediate inline trigger for ?admin=1 or #admin
     if (window.location.search.includes('admin=1') || window.location.search.includes('login=1') || window.location.hash === '#admin') {

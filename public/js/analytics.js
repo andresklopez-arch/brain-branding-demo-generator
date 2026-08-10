@@ -136,7 +136,7 @@
       localStorage.setItem('brain_branding_analytics_log', JSON.stringify(logs));
 
       // Post to backend database
-      fetch('/api/track-visit', {
+      fetch((window.API_BASE || 'https://brain-branding-demo-generator.onrender.com') + '/api/track-visit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(initialRecord)
@@ -292,7 +292,7 @@
     } catch(e) {}
 
     // Send payload to Central Server Database (Render)
-    fetch('/api/track-visit', {
+    fetch((window.API_BASE || 'https://brain-branding-demo-generator.onrender.com') + '/api/track-visit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ city, region, country, flag, source, device, isp, duration: durationStr, scroll: maxScroll, clicks: clickedElements })
