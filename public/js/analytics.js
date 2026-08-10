@@ -266,13 +266,8 @@
       `🖱️ *Interacciones y Clics:* \n${clicksText}\n\n` +
       `⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX')}`;
 
-    // Dispatch via Telegram Direct Bot API
-    const tgUrl = `https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage?chat_id=8337803949&text=${encodeURIComponent(textMsg)}&parse_mode=Markdown`;
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(tgUrl);
-    } else {
-      fetch(tgUrl).catch(function(){});
-    }
+    // Visit tracking is saved locally and sent ONLY to the central server database
+    // for the consolidated 8:00 AM Daily Summary Report (no individual Telegram alerts).
 
     // Save to LocalStorage analytics log
     try {
