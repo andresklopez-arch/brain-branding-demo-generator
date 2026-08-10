@@ -4583,7 +4583,7 @@
       </div>
 
       <!-- Digital Signature Status Box -->
-      <div id="contract-signature-box" style="background: rgba(16, 185, 129, 0.08); border: 1px dashed rgba(16, 185, 129, 0.4); border-radius: 16px; padding: 16px; margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div id="contract-signature-box" style="background: rgba(16, 185, 129, 0.08); border: 1px dashed rgba(16, 185, 129, 0.4); border-radius: 16px; padding: 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 10px;">
           <div style="font-size: 26px;">✍️</div>
           <div>
@@ -4595,6 +4595,19 @@
         <div id="signature-details" style="font-size: 11px; color: #94a3b8; text-align: right;">
           <div>Firmado por: <strong id="sig-user-name" style="color: #fff;">--</strong></div>
           <div>Fecha: <span id="sig-timestamp">--</span></div>
+        </div>
+      </div>
+
+      <!-- Official Cryptographic SHA-256 Seal Banner (Visible in document & PDF print) -->
+      <div id="contract-sha256-seal-box" style="margin-bottom: 25px; padding: 14px 18px; background: rgba(6, 8, 12, 0.85); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 14px; text-align: center;">
+        <div style="font-size: 10px; color: #94a3b8; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px;">
+          🛡️ SELLO VINCULANTE DIGITAL DE SEGURIDAD CRIPTOGRÁFICA SHA-256
+        </div>
+        <div id="contract-sha256-hash-value" style="font-family: monospace; font-size: 12.5px; font-weight: 800; color: #00e5ff; letter-spacing: 1.5px; word-break: break-all;">
+          E3A8F921B40219C08D7A65B2091E4410
+        </div>
+        <div id="contract-sha256-legal-legend" style="font-size: 10.5px; color: #cbd5e1; margin-top: 4px; font-weight: 600;">
+          Documento firmado electrónicamente con validez legal vinculante por LCI. Andrés López Rebollo y <strong id="sha256-client-name" style="color: #fff;">[EL CLIENTE]</strong>
         </div>
       </div>
 
