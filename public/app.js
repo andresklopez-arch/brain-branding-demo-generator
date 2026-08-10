@@ -2246,7 +2246,7 @@ END:VCARD`;
     }
 
     function playNextMessage() {
-      if (!isSectionVisible || isLocked || window.isCustomDemoActive) return;
+      if (window.isCustomDemoActive) return;
 
       const scenario = chatScenarios[currentScenarioIdx];
       
@@ -2315,28 +2315,11 @@ END:VCARD`;
       pill.addEventListener('click', () => {
         if (isPillTransitioning) return;
         
-        // Auto-unlock lockscreen if locked
-        if (isLocked) {
-          isLocked = false;
-          const ls = document.getElementById('smartphone-lockscreen');
-          if (ls) {
-            ls.classList.add('unlocked');
-          }
-          const container = document.querySelector('.smartphone-container');
-          if (container) {
-            container.classList.add('unlocked-mockup');
-          }
-          
-          // Trigger avatar boot animation
-          const avatarCont = document.getElementById('telegram-avatar-container');
-          if (avatarCont) {
-            avatarCont.classList.remove('activated');
-            void avatarCont.offsetWidth;
-            avatarCont.classList.add('activated');
-          }
-          playSynthSound('unlock');
-          triggerDoubleHaptic();
-        }
+        isLocked = false;
+        const ls = document.getElementById('smartphone-lockscreen');
+        if (ls) ls.classList.add('unlocked');
+        const container = document.querySelector('.smartphone-container');
+        if (container) container.classList.add('unlocked-mockup');
         
         const featureKey = pill.getAttribute('data-feature');
         const scenarioVal = pill.getAttribute('data-scenario');
@@ -2391,46 +2374,18 @@ END:VCARD`;
       });
     });
 
-    // Smartphone Lockscreen Logic
-    const lockscreen = document.getElementById('smartphone-lockscreen');
-    const lockTime = document.getElementById('lockscreen-time');
-    const lockDate = document.getElementById('lockscreen-date');
-
-    if (lockTime && lockDate) {
-      const updateLockClock = () => {
-        const now = new Date();
-        lockTime.textContent = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-        const options = { weekday: 'long', day: 'numeric', month: 'long' };
-        lockDate.textContent = now.toLocaleDateString('es-ES', options);
-      };
-      updateLockClock();
-      setInterval(updateLockClock, 60000);
-    }
-
-    const unlockPhone = () => {
-      if (!isLocked) return;
+    const startSmartphoneChatSimulation = () => {
       isLocked = false;
-      if (lockscreen) {
-        lockscreen.classList.add('unlocked');
-      }
+      const ls = document.getElementById('smartphone-lockscreen');
+      if (ls) ls.classList.add('unlocked');
       const container = document.querySelector('.smartphone-container');
-      if (container) {
-        container.classList.add('unlocked-mockup');
-      }
-      const avatarCont = document.getElementById('telegram-avatar-container');
-      if (avatarCont) {
-        avatarCont.classList.remove('activated');
-        void avatarCont.offsetWidth;
-        avatarCont.classList.add('activated');
-      }
-      playSynthSound('unlock');
-      triggerDoubleHaptic();
+      if (container) container.classList.add('unlocked-mockup');
 
       if (simulatorTimeout) {
         clearTimeout(simulatorTimeout);
       }
       removeTypingIndicator();
-      telegramContainer.innerHTML = '';
+      if (telegramContainer) telegramContainer.innerHTML = '';
       currentScenarioIdx = 0;
       currentMessageIdx = 0;
       scenarioStartTime = Date.now();
@@ -2440,47 +2395,16 @@ END:VCARD`;
       if (scenario && scenario.length > 0) {
         const firstMsg = scenario[0];
         currentMessageIdx = 1;
+        showTypingIndicator();
         simulatorTimeout = setTimeout(() => {
-          showTypingIndicator();
-          simulatorTimeout = setTimeout(() => {
-            removeTypingIndicator();
-            renderMessage(firstMsg.sender, firstMsg);
-            playNextMessage();
-          }, 800);
-        }, 200);
+          removeTypingIndicator();
+          renderMessage(firstMsg.sender, firstMsg);
+          playNextMessage();
+        }, 800);
       }
     };
 
-    if (lockscreen) {
-      lockscreen.addEventListener('click', unlockPhone);
-    }
-    const phoneContainerEl = document.querySelector('.smartphone-container');
-    if (phoneContainerEl) {
-      phoneContainerEl.addEventListener('click', unlockPhone);
-    }
-
-    // Auto-unlock 800ms after load fallback
-    setTimeout(unlockPhone, 800);
-
-    if (typeof IntersectionObserver !== 'undefined') {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            isSectionVisible = true;
-            if (isLocked) {
-              unlockPhone();
-            }
-          }
-        });
-      }, { threshold: 0.01 });
-
-      const targetSection = document.getElementById('asistente-ia');
-      if (targetSection) {
-        observer.observe(targetSection);
-      }
-    } else {
-      unlockPhone();
-    }
+    startSmartphoneChatSimulation();
 
     const phoneContainer = document.querySelector('.smartphone-container');
     if (phoneContainer) {
