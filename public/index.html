@@ -32,13 +32,52 @@
     }
 
 
+    // Immediate inline Admin Login opener
+    window.safeOpenAdminLogin = function() {
+      const modal = document.getElementById('admin-login-modal');
+      const input = document.getElementById('admin-pass-input');
+      const err = document.getElementById('admin-login-error');
+      if (modal) {
+        modal.style.display = 'flex';
+        if (input) {
+          input.value = '';
+          if (err) err.style.display = 'none';
+          setTimeout(function() { input.focus(); }, 150);
+        }
+      }
+    };
+
+    window._logoClicks = 0;
+    window._logoTimer = null;
+    window.handleBrainClick = function(e) {
+      window._logoClicks++;
+      if (window._logoTimer) clearTimeout(window._logoTimer);
+      if (window._logoClicks >= 2) {
+        window._logoClicks = 0;
+        if (e) {
+          e.preventDefault();
+          if (e.stopPropagation) e.stopPropagation();
+        }
+        window.safeOpenAdminLogin();
+        return false;
+      } else {
+        window._logoTimer = setTimeout(function() {
+          window._logoClicks = 0;
+        }, 450);
+      }
+    };
+
     // Immediate inline trigger for ?admin=1 or #admin
     if (window.location.search.includes('admin=1') || window.location.search.includes('login=1') || window.location.hash === '#admin') {
       window.addEventListener('load', function() {
-        const modal = document.getElementById('admin-login-modal');
-        if (modal) modal.style.display = 'flex';
+        window.safeOpenAdminLogin();
       });
     }
+    window.addEventListener('hashchange', function() {
+      if (window.location.hash === '#admin' || window.location.hash === '#login') {
+        window.safeOpenAdminLogin();
+      }
+    });
   </script>
   <!-- Meta Pixel Code -->
   <script>
@@ -3153,7 +3192,7 @@
 
   <!-- NAVIGATION HEADER -->
   <header style="justify-content: space-between !important;">
-    <a href="#inicio" class="logo-area" aria-label="Brain Branding - Empoderando Marcas, Reprogramando Mentes">
+    <a href="#inicio" class="logo-area" aria-label="Brain Branding - Empoderando Marcas, Reprogramando Mentes" onclick="return window.handleBrainClick(event)" ondblclick="event.preventDefault(); event.stopPropagation(); window.safeOpenAdminLogin(); return false;">
       <img src="/favicon.png" alt="Logo Brain Branding" style="height: 38px; object-fit: contain;">
       <div class="logo-text neuro-swap-container" id="header-logo-text">
         <div class="logo-line logo-line-1">EMPODERANDO MARCAS</div>
@@ -4074,7 +4113,7 @@
   </a>
 
   <!-- FLOATING DEMOS BUTTON -->
-  <a href="/demos/" id="demos-fab" class="custom-tooltip" data-tooltip="🚀 Portal de Demos con IA (Pruebas Interactivas)" aria-label="Portal de Demos de Inteligencia Artificial" style="position: fixed; bottom: 30px; right: 180px; width: 60px; height: 60px; background: linear-gradient(135deg, #00f2fe, #7f00ff); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 10px 25px rgba(0, 242, 254, 0.4); z-index: 998; text-decoration: none; cursor: pointer; transition: transform 0.3s; will-change: transform;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+  <a href="/demos/" id="demos-fab" class="custom-tooltip" data-tooltip="🚀 Portal de Demos con IA (Pruebas Interactivas)" aria-label="Portal de Demos de Inteligencia Artificial" onclick="return window.handleBrainClick(event)" ondblclick="event.preventDefault(); event.stopPropagation(); window.safeOpenAdminLogin(); return false;" style="position: fixed; bottom: 30px; right: 180px; width: 60px; height: 60px; background: linear-gradient(135deg, #00f2fe, #7f00ff); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 10px 25px rgba(0, 242, 254, 0.4); z-index: 998; text-decoration: none; cursor: pointer; transition: transform 0.3s; will-change: transform;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
     <span>🧠</span>
     <span style="position: absolute; top: -4px; right: -4px; background: #00f260; color: #000; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 10px; text-transform: uppercase; box-shadow: 0 2px 6px rgba(0,242,96,0.5);">DEMOS</span>
     <span style="position: absolute; inset: -4px; border-radius: 50%; border: 2px solid #00f2fe; animation: fab-radar 2s infinite; opacity: 0; pointer-events: none;"></span>

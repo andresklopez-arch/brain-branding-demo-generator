@@ -4561,6 +4561,21 @@ END:VCARD`;
     }
   }, true);
 
+  // Universal Keyboard Shortcut Trigger: Ctrl+Shift+A or Alt+A
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') || (e.altKey && e.key.toLowerCase() === 'a')) {
+      e.preventDefault();
+      window.safeOpenAdminLogin();
+    }
+  });
+
+  // URL Hash/Query change listener for #admin or ?admin=1
+  window.addEventListener('hashchange', () => {
+    if (window.location.hash === '#admin' || window.location.hash === '#login') {
+      window.safeOpenAdminLogin();
+    }
+  });
+
   // Secret link in URL hash or query: ?admin=1 or #admin
   if (window.location.search.includes('admin=1') || window.location.search.includes('login=1') || window.location.hash === '#admin') {
     setTimeout(window.safeOpenAdminLogin, 300);
