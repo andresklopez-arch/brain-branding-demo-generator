@@ -415,6 +415,31 @@ const ADMIN_CHAT_ID = '8337803949';
 
 const pausedChats = {};
 const prospectLogs = [];
+const userRateLimits = {};
+
+function checkUserRateLimit(chatId) {
+  if (chatId && chatId.toString() === ADMIN_CHAT_ID) return { allowed: true };
+
+  const now = Date.now();
+  if (!userRateLimits[chatId]) {
+    userRateLimits[chatId] = { count: 1, resetTime: now + 60000 };
+    return { allowed: true };
+  }
+
+  const record = userRateLimits[chatId];
+  if (now > record.resetTime) {
+    record.count = 1;
+    record.resetTime = now + 60000;
+    return { allowed: true };
+  }
+
+  record.count += 1;
+  if (record.count > 10) {
+    return { allowed: false, remainingSec: Math.ceil((record.resetTime - now) / 1000) };
+  }
+
+  return { allowed: true };
+}
 
 function getDynamicKeyboard(chatId, userText) {
   // POR EXPERIENCIA 100% HUMANA: NO ADJUNTAR BOTONES EN CADA MENSAJE
@@ -730,6 +755,27 @@ async function handleWebhookRequest(req, res) {
       }
 
       if (userText) {
+        const rateCheck = checkUserRateLimit(chatId);
+        if (!rateCheck.allowed) {
+          console.warn(`[ANTI-SPAM BLOCK] Chat ID ${chatId} exceeded 10 msg/min.`);
+          await callTelegram('sendMessage', {
+            chat_id: chatId,
+            text: `⚠️ *Límite de frecuencia:* Has enviado más de 10 mensajes seguidos en menos de un minuto.\n\nPara brindarte una mejor atención sin saturar el chat, te invitamos a platicar directamente con un asesor por WhatsApp: https://wa.me/527712339238`,
+            parse_mode: 'Markdown',
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: '💬 Hablar con un Asesor por WhatsApp',
+                    url: 'https://wa.me/527712339238?text=Hola,%20quisiera%20hablar%20con%20un%20asesor%20de%20Brain%20Branding'
+                  }
+                ]
+              ]
+            }
+          });
+          return res.status(200).json({ ok: true, spamBlocked: true });
+        }
+
         await notifyOwner(chatId, firstName, username, userText);
 
         if (pausedChats[chatId] && pausedChats[chatId] > Date.now()) {

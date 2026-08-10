@@ -1,10 +1,10 @@
-const CACHE_NAME = 'bb-cache-v75.0.0-force-update';
+const CACHE_NAME = 'bb-cache-v76.0.0-force-update';
 const ASSETS = [
   '/',
-  '/index.html?v=75.0.0',
-  '/index.css?v=75.0.0',
-  '/app.js?v=75.0.0',
-  '/js/analytics.js?v=75.0.0',
+  '/index.html?v=76.0.0',
+  '/index.css?v=76.0.0',
+  '/app.js?v=76.0.0',
+  '/js/analytics.js?v=76.0.0',
   '/favicon.png'
 ];
 
