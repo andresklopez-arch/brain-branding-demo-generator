@@ -4738,116 +4738,122 @@ END:VCARD`;
     // Handle 2FA Login Form Submit (Password + Telegram OTP)
     let is2FAStepActive = false;
 
-    if (loginForm) {
-      loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const loginSubmitBtn = document.getElementById('admin-login-submit');
+    window.handleAdminLoginSubmit = async (e) => {
+      if (e) {
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+      }
+      const loginSubmitBtn = document.getElementById('admin-login-submit');
 
-        if (!is2FAStepActive) {
-          // Step 1: Check Password & Request OTP to Telegram
-          const inputVal = (passInput ? passInput.value : '').trim();
-          const hash = await sha256Hex(inputVal);
+      if (!is2FAStepActive) {
+        // Step 1: Check Password & Request OTP to Telegram
+        const inputVal = (passInput ? passInput.value : '').trim();
+        const hash = await sha256Hex(inputVal);
 
-          if (hash === ADMIN_PASS_HASH || inputVal === '56932396' || inputVal === '56932396!') {
-            if (loginError) loginError.style.display = 'none';
+        if (hash === ADMIN_PASS_HASH || inputVal === '56932396' || inputVal === '56932396!') {
+          if (loginError) loginError.style.display = 'none';
 
-            // Generate 6-digit OTP code
-            const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-            safeSessionStorage.setItem('bb_2fa_otp', JSON.stringify({
-              code: otpCode,
-              expiresAt: Date.now() + 10 * 60 * 1000 // 10 Minutes Validity
-            }));
+          // Generate 6-digit OTP code
+          const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+          safeSessionStorage.setItem('bb_2fa_otp', JSON.stringify({
+            code: otpCode,
+            expiresAt: Date.now() + 10 * 60 * 1000 // 10 Minutes Validity
+          }));
 
-            // IMMEDIATELY SWITCH UI TO STEP 2 (No UI Freeze!)
-            is2FAStepActive = true;
-            document.getElementById('admin-pass-step').style.display = 'none';
-            document.getElementById('admin-otp-step').style.display = 'block';
-            if (loginSubmitBtn) loginSubmitBtn.innerText = 'Verificar 2FA 🔓';
-            const otpIn = document.getElementById('admin-otp-input');
-            if (otpIn) {
-              otpIn.value = '';
-              otpIn.focus();
-            }
+          // IMMEDIATELY SWITCH UI TO STEP 2 (No UI Freeze!)
+          is2FAStepActive = true;
+          document.getElementById('admin-pass-step').style.display = 'none';
+          document.getElementById('admin-otp-step').style.display = 'block';
+          if (loginSubmitBtn) loginSubmitBtn.innerText = 'Verificar 2FA 🔓';
+          const otpIn = document.getElementById('admin-otp-input');
+          if (otpIn) {
+            otpIn.value = '';
+            otpIn.focus();
+          }
 
-            // Dispatch Telegram OTP asynchronously in background (non-blocking)
-            const otpMsg = `🔑 *CÓDIGO DE AUTENTICACIÓN 2FA (PANEL ADMIN)* 🔑\n\n` +
-              `Tu código de verificación único es: *\`${otpCode}\`*\n\n` +
-              `⏱️ *Validez:* 10 Minutos.\n` +
-              `🛡️ Si no solicitaste este código, tu portal se encuentra protegido.\n\n` +
-              `_Desde: Brain Branding Panel Admin_`;
+          // Dispatch Telegram OTP asynchronously in background (non-blocking)
+          const otpMsg = `🔑 *CÓDIGO DE AUTENTICACIÓN 2FA (PANEL ADMIN)* 🔑\n\n` +
+            `Tu código de verificación único es: *\`${otpCode}\`*\n\n` +
+            `⏱️ *Validez:* 10 Minutos.\n` +
+            `🛡️ Si no solicitaste este código, tu portal se encuentra protegido.\n\n` +
+            `_Desde: Brain Branding Panel Admin_`;
 
-            fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage', {
+          fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: '8337803949',
+              text: otpMsg,
+              parse_mode: 'Markdown'
+            })
+          }).catch(() => {
+            fetch(window.API_BASE + '/api/admin/request-2fa', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                chat_id: '8337803949',
-                text: otpMsg,
-                parse_mode: 'Markdown'
-              })
-            }).catch(() => {
-              fetch(window.API_BASE + '/api/admin/request-2fa', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ passHash: hash })
-              }).catch(() => {});
-            });
+              body: JSON.stringify({ passHash: hash })
+            }).catch(() => {});
+          });
 
-          } else {
-            if (loginError) loginError.style.display = 'block';
-            if (passInput) {
-              passInput.classList.add('shake-input');
-              setTimeout(() => passInput.classList.remove('shake-input'), 450);
-            }
-          }
         } else {
-          // Step 2: Verify Telegram OTP Code
-          const otpVal = (document.getElementById('admin-otp-input')?.value || '').trim();
-          const otpError = document.getElementById('admin-otp-error');
-
-          const storedRaw = safeSessionStorage.getItem('bb_2fa_otp');
-          let storedOTP = null;
-          try { storedOTP = storedRaw ? JSON.parse(storedRaw) : null; } catch(e) {}
-
-          let isValid = false;
-          // Check generated OTP, Master Backup OTP (569323, 999888), or Master Password re-entry
-          if ((storedOTP && storedOTP.code === otpVal && Date.now() <= storedOTP.expiresAt) ||
-              otpVal === '569323' || otpVal === '999888' || otpVal === '56932396') {
-            isValid = true;
-          } else {
-            try {
-              const res = await fetch(window.API_BASE + '/api/admin/verify-2fa', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ otp: otpVal })
-              });
-              const data = await res.json();
-              if (data && data.ok) isValid = true;
-            } catch(e) {}
-          }
-
-          if (isValid) {
-            safeSessionStorage.removeItem('bb_2fa_otp');
-            is2FAStepActive = false;
-            document.getElementById('admin-pass-step').style.display = 'block';
-            document.getElementById('admin-otp-step').style.display = 'none';
-            if (passInput) passInput.value = '';
-            if (loginSubmitBtn) loginSubmitBtn.innerText = 'Enviar 2FA →';
-
-            loginModal.style.display = 'none';
-            dashboardModal.style.display = 'block';
-            if (kbEditor) {
-              kbEditor.value = localStorage.getItem('brain_branding_kb_features') || DEFAULT_BUSINESS_FEATURES;
-            }
-            renderAdminAnalytics();
-            if (window.renderAdminContractsList) window.renderAdminContractsList();
-          } else {
-            if (otpError) {
-              otpError.innerText = 'Código 2FA incorrecto o expirado';
-              otpError.style.display = 'block';
-            }
+          if (loginError) loginError.style.display = 'block';
+          if (passInput) {
+            passInput.classList.add('shake-input');
+            setTimeout(() => passInput.classList.remove('shake-input'), 450);
           }
         }
-      });
+      } else {
+        // Step 2: Verify Telegram OTP Code
+        const otpVal = (document.getElementById('admin-otp-input')?.value || '').trim();
+        const otpError = document.getElementById('admin-otp-error');
+
+        const storedRaw = safeSessionStorage.getItem('bb_2fa_otp');
+        let storedOTP = null;
+        try { storedOTP = storedRaw ? JSON.parse(storedRaw) : null; } catch(e) {}
+
+        let isValid = false;
+        // Check generated OTP, Master Backup OTP (569323, 999888), or Master Password re-entry
+        if ((storedOTP && storedOTP.code === otpVal && Date.now() <= storedOTP.expiresAt) ||
+            otpVal === '569323' || otpVal === '999888' || otpVal === '56932396') {
+          isValid = true;
+        } else {
+          try {
+            const res = await fetch(window.API_BASE + '/api/admin/verify-2fa', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ otp: otpVal })
+            });
+            const data = await res.json();
+            if (data && data.ok) isValid = true;
+          } catch(e) {}
+        }
+
+        if (isValid) {
+          safeSessionStorage.removeItem('bb_2fa_otp');
+          is2FAStepActive = false;
+          document.getElementById('admin-pass-step').style.display = 'block';
+          document.getElementById('admin-otp-step').style.display = 'none';
+          if (passInput) passInput.value = '';
+          if (loginSubmitBtn) loginSubmitBtn.innerText = 'Enviar 2FA →';
+
+          loginModal.style.display = 'none';
+          dashboardModal.style.display = 'block';
+          if (kbEditor) {
+            kbEditor.value = localStorage.getItem('brain_branding_kb_features') || DEFAULT_BUSINESS_FEATURES;
+          }
+          renderAdminAnalytics();
+          if (window.renderAdminContractsList) window.renderAdminContractsList();
+        } else {
+          if (otpError) {
+            otpError.innerText = 'Código 2FA incorrecto o expirado';
+            otpError.style.display = 'block';
+          }
+        }
+      }
+      return false;
+    };
+
+    if (loginForm) {
+      loginForm.addEventListener('submit', window.handleAdminLoginSubmit);
     }
 
     if (loginCancel) {
