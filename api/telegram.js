@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
-const { getGeminiReply, geminiMetrics } = require('./geminiHelper.js');
+const { getGeminiReply, geminiMetrics, setSecurityAlertCallback } = require('./geminiHelper.js');
 const { getHistory, addTurn } = require('./historyStore.js');
 
 const app = express();
@@ -919,6 +919,25 @@ app.get('/api/admin/gemini-metrics', (req, res) => {
     ok: true,
     metrics: geminiMetrics
   });
+});
+
+// Configure automatic security alerts for repeated prompt injection attacks
+setSecurityAlertCallback(async (contextId, snippet, count) => {
+  try {
+    const alertMsg = `🚨 *¡ALERTA DE CIBERSEGURIDAD (INYECCIÓN REPETIDA)!* 🚨\n\n` +
+      `👤 *ID/Chat:* \`${contextId}\`\n` +
+      `⚠️ *Ataques Detectados:* ${count} intentos consecutivos.\n` +
+      `💬 *Muestra de Prompt:* "${snippet}..."\n\n` +
+      `🛡️ El escudo de seguridad de Brain Branding ha neutralizado y bloqueado estas peticiones.`;
+
+    await callTelegram('sendMessage', {
+      chat_id: ADMIN_CHAT_ID,
+      text: alertMsg,
+      parse_mode: 'Markdown'
+    });
+  } catch (e) {
+    console.error('[SECURITY CALLBACK ERROR]', e.message);
+  }
 });
 
 // Health check — confirms OTP routes are alive on Render

@@ -20,6 +20,13 @@ const geminiMetrics = {
   recentLogs: []
 };
 
+const injectionTracker = {};
+let onSecurityAlertCallback = null;
+
+function setSecurityAlertCallback(cb) {
+  onSecurityAlertCallback = cb;
+}
+
 function recordLog(entry) {
   geminiMetrics.recentLogs.push({
     ...entry,
@@ -47,7 +54,7 @@ function getApiKey() {
   return null;
 }
 
-function sanitizeUserPrompt(text) {
+function sanitizeUserPrompt(text, contextId = 'unknown') {
   if (!text) return '';
   let clean = text.toString().trim();
 
@@ -67,9 +74,16 @@ function sanitizeUserPrompt(text) {
 
   for (const pattern of injectionPatterns) {
     if (pattern.test(clean)) {
-      console.warn(`[SECURITY ALERT] Prompt injection blocked: "${clean.substring(0, 50)}..."`);
+      console.warn(`[SECURITY ALERT] Prompt injection blocked for ${contextId}: "${clean.substring(0, 50)}..."`);
       geminiMetrics.blockedInjections++;
-      recordLog({ status: 'BLOCKED', reason: 'PROMPT_INJECTION', snippet: clean.substring(0, 40) });
+      recordLog({ status: 'BLOCKED', reason: 'PROMPT_INJECTION', snippet: clean.substring(0, 40), contextId });
+
+      // Track repeated attack attempts
+      injectionTracker[contextId] = (injectionTracker[contextId] || 0) + 1;
+      if (injectionTracker[contextId] >= 2 && typeof onSecurityAlertCallback === 'function') {
+        onSecurityAlertCallback(contextId, clean.substring(0, 100), injectionTracker[contextId]);
+      }
+
       return "SECURITY_INJECTION_DETECTED";
     }
   }
@@ -81,8 +95,26 @@ function sanitizeUserPrompt(text) {
   return clean;
 }
 
+// Exponential Backoff Retry Utility for Outbound HTTP
+async function withRetry(fn, maxRetries = 3, initialDelay = 500) {
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    try {
+      const res = await fn();
+      if (res) return res;
+    } catch (e) {
+      console.warn(`[RETRY WARN] Attempt ${attempt + 1}/${maxRetries} failed:`, e.message);
+    }
+    attempt++;
+    if (attempt < maxRetries) {
+      await new Promise(r => setTimeout(r, initialDelay * Math.pow(2, attempt - 1)));
+    }
+  }
+  return null;
+}
+
 async function getGeminiReply(userText, userName, contextId, history = [], customInstruction = '') {
-  const sanitized = sanitizeUserPrompt(userText);
+  const sanitized = sanitizeUserPrompt(userText, contextId);
   if (sanitized === "SECURITY_INJECTION_DETECTED") {
     return "En Brain Branding estamos para apoyarte con soluciones de Software e Inteligencia Artificial para tu empresa. ¿En qué proyecto o proceso de tu negocio te podemos orientar hoy? ☕";
   }
@@ -137,57 +169,59 @@ REGLAS OBLIGATORIAS:
 
   for (const model of modelsToTry) {
     try {
-      const reply = await new Promise((resolve) => {
-        const req = https.request({
-          hostname: 'generativelanguage.googleapis.com',
-          port: 443,
-          path: `/v1beta/models/${model}:generateContent?key=${apiKey}`,
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(payload)
-          }
-        }, (res) => {
-          let data = '';
-          res.on('data', chunk => data += chunk);
-          res.on('end', () => {
-            if (res.statusCode >= 200 && res.statusCode < 300) {
-              try {
-                const json = JSON.parse(data);
-                const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (text && text.trim()) {
-                  const latency = Date.now() - startTime;
-                  geminiMetrics.successfulCalls++;
-                  geminiMetrics.totalLatencyMs += latency;
-                  geminiMetrics.averageLatencyMs = Math.round(geminiMetrics.totalLatencyMs / geminiMetrics.successfulCalls);
-                  geminiMetrics.lastUsedModel = model;
-                  recordLog({ status: 'OK', model, latencyMs: latency, contextId });
-                  console.log(`[GEMINI SUCCESS] Model ${model} responded in ${latency}ms for context ${contextId}`);
-                  return resolve(text.trim());
-                }
-              } catch (e) {
-                console.error(`[GEMINI PARSE ERROR] Model ${model}:`, e.message);
-              }
-            } else {
-              console.warn(`[GEMINI WARN] Model ${model} returned HTTP ${res.statusCode}`);
+      const reply = await withRetry(async () => {
+        return new Promise((resolve) => {
+          const req = https.request({
+            hostname: 'generativelanguage.googleapis.com',
+            port: 443,
+            path: `/v1beta/models/${model}:generateContent?key=${apiKey}`,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(payload)
             }
+          }, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+              if (res.statusCode >= 200 && res.statusCode < 300) {
+                try {
+                  const json = JSON.parse(data);
+                  const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+                  if (text && text.trim()) {
+                    const latency = Date.now() - startTime;
+                    geminiMetrics.successfulCalls++;
+                    geminiMetrics.totalLatencyMs += latency;
+                    geminiMetrics.averageLatencyMs = Math.round(geminiMetrics.totalLatencyMs / geminiMetrics.successfulCalls);
+                    geminiMetrics.lastUsedModel = model;
+                    recordLog({ status: 'OK', model, latencyMs: latency, contextId });
+                    console.log(`[GEMINI SUCCESS] Model ${model} responded in ${latency}ms for context ${contextId}`);
+                    return resolve(text.trim());
+                  }
+                } catch (e) {
+                  console.error(`[GEMINI PARSE ERROR] Model ${model}:`, e.message);
+                }
+              } else {
+                console.warn(`[GEMINI WARN] Model ${model} returned HTTP ${res.statusCode}`);
+              }
+              resolve(null);
+            });
+          });
+
+          req.on('error', (err) => {
+            console.warn(`[GEMINI REQ ERROR] Model ${model}:`, err.message);
             resolve(null);
           });
-        });
 
-        req.on('error', (err) => {
-          console.warn(`[GEMINI REQ ERROR] Model ${model}:`, err.message);
-          resolve(null);
-        });
+          req.setTimeout(8000, () => {
+            req.destroy();
+            resolve(null);
+          });
 
-        req.setTimeout(8000, () => {
-          req.destroy();
-          resolve(null);
+          req.write(payload);
+          req.end();
         });
-
-        req.write(payload);
-        req.end();
-      });
+      }, 2, 300);
 
       if (reply) return reply;
     } catch (err) {
@@ -200,4 +234,10 @@ REGLAS OBLIGATORIAS:
   return null;
 }
 
-module.exports = { getGeminiReply, sanitizeUserPrompt, geminiMetrics };
+module.exports = {
+  getGeminiReply,
+  sanitizeUserPrompt,
+  geminiMetrics,
+  setSecurityAlertCallback,
+  withRetry
+};
