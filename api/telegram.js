@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
-const { getGeminiReply, geminiMetrics, setSecurityAlertCallback } = require('./geminiHelper.js');
+const { getGeminiReply, geminiMetrics, setSecurityAlertCallback, generateLeadBriefing } = require('./geminiHelper.js');
 const { getHistory, addTurn } = require('./historyStore.js');
 
 const app = express();
@@ -513,7 +513,16 @@ async function notifyOwner(chatId, firstName, username, userText) {
   const alertHeader = isCitaClick ? '🚨 *¡PROSPECTO SOLICITÓ AGENDAR CITA EN WHATSAPP!* 🚨' : '🚨 *¡NUEVO MENSAJE DE PROSPECTO EN TELEGRAM!* 🚨';
   const giroTag = state.giro ? `🏢 *Giro / Industria:* ${state.giro}\n` : '';
 
-  const alertText = `${alertHeader}\n\n${tempTag}\n${convictionTag}\n${giroTag}👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n💬 *Mensaje:* "${userText}"\n🆔 *Chat ID:* \`${chatId}\`\n📱 *Notificado a:* ${OWNER_PHONE}\n${statusTag}\n\n⚙️ *Comandos Rápido:* \`/pausa ${chatId}\` | \`/responder ${chatId} <mensaje>\` | \`/plantilla\`\n💡 *Tip de Intervención:* Responde (*Reply*) directamente a este mensaje para platicar con el cliente.`;
+  let briefingTag = '';
+  if (isCitaClick || tempTag.includes('CALIENTE')) {
+    try {
+      const history = getHistory(chatId);
+      const brief = await generateLeadBriefing(history);
+      if (brief) briefingTag = `📋 *Resumen Ejecutivo IA:* ${brief}\n\n`;
+    } catch (e) {}
+  }
+
+  const alertText = `${alertHeader}\n\n${tempTag}\n${convictionTag}\n${giroTag}${briefingTag}👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n💬 *Mensaje:* "${userText}"\n🆔 *Chat ID:* \`${chatId}\`\n📱 *Notificado a:* ${OWNER_PHONE}\n${statusTag}\n\n⚙️ *Comandos Rápido:* \`/pausa ${chatId}\` | \`/responder ${chatId} <mensaje>\` | \`/plantilla\`\n💡 *Tip de Intervención:* Responde (*Reply*) directamente a este mensaje para platicar con el cliente.`;
 
   try {
     await callTelegram('sendMessage', {
@@ -921,14 +930,20 @@ app.get('/api/admin/gemini-metrics', (req, res) => {
   });
 });
 
-// Configure automatic security alerts for repeated prompt injection attacks
+// Configure automatic security alerts for repeated prompt injection attacks & Auto IP-Ban
 setSecurityAlertCallback(async (contextId, snippet, count) => {
   try {
-    const alertMsg = `🚨 *¡ALERTA DE CIBERSEGURIDAD (INYECCIÓN REPETIDA)!* 🚨\n\n` +
-      `👤 *ID/Chat:* \`${contextId}\`\n` +
-      `⚠️ *Ataques Detectados:* ${count} intentos consecutivos.\n` +
+    // Automatically ban attacking ID/IP for 24 hours
+    failedLoginAttempts[contextId] = {
+      count: 10,
+      bannedUntil: Date.now() + 24 * 60 * 60 * 1000
+    };
+
+    const alertMsg = `🚨 *¡ALERTA DE CIBERSEGURIDAD (IP BLOQUEADA 24H)!* 🚨\n\n` +
+      `👤 *ID/IP Atacante:* \`${contextId}\`\n` +
+      `⚠️ *Ataques Detectados:* ${count} intentos de inyección de prompt.\n` +
       `💬 *Muestra de Prompt:* "${snippet}..."\n\n` +
-      `🛡️ El escudo de seguridad de Brain Branding ha neutralizado y bloqueado estas peticiones.`;
+      `🛡️ *Acción:* La IP/ID ha sido **suspendida por 24 horas** del cortafuegos de Brain Branding.`;
 
     await callTelegram('sendMessage', {
       chat_id: ADMIN_CHAT_ID,

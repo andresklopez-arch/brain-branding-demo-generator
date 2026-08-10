@@ -2,7 +2,7 @@
  * BRAIN BRANDING GEMINI AI ENGINE HELPER
  * Multi-model fallback engine (gemini-2.0-flash, gemini-2.5-flash, gemini-1.5-flash)
  * Integrated with Telegram & WhatsApp 24/7 Bots
- * Includes Security Prompt Injection Guard, Telemetry & Performance Metrics
+ * Includes Security Prompt Injection Guard, Telemetry, Cache & Executive Summarizer
  */
 
 const https = require('https');
@@ -14,11 +14,15 @@ const geminiMetrics = {
   successfulCalls: 0,
   failedCalls: 0,
   blockedInjections: 0,
+  cacheHits: 0,
   averageLatencyMs: 0,
   totalLatencyMs: 0,
   lastUsedModel: null,
   recentLogs: []
 };
+
+const frequencyCache = new Map();
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour TTL
 
 const injectionTracker = {};
 let onSecurityAlertCallback = null;
@@ -80,7 +84,7 @@ function sanitizeUserPrompt(text, contextId = 'unknown') {
 
       // Track repeated attack attempts
       injectionTracker[contextId] = (injectionTracker[contextId] || 0) + 1;
-      if (injectionTracker[contextId] >= 2 && typeof onSecurityAlertCallback === 'function') {
+      if (typeof onSecurityAlertCallback === 'function') {
         onSecurityAlertCallback(contextId, clean.substring(0, 100), injectionTracker[contextId]);
       }
 
@@ -117,6 +121,17 @@ async function getGeminiReply(userText, userName, contextId, history = [], custo
   const sanitized = sanitizeUserPrompt(userText, contextId);
   if (sanitized === "SECURITY_INJECTION_DETECTED") {
     return "En Brain Branding estamos para apoyarte con soluciones de Software e Inteligencia Artificial para tu empresa. ¿En qué proyecto o proceso de tu negocio te podemos orientar hoy? ☕";
+  }
+
+  // Check In-Memory Frequency Cache for simple single turn queries
+  const cacheKey = `${userName || ''}:${sanitized.toLowerCase()}`;
+  if (!history || history.length <= 1) {
+    const cached = frequencyCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+      geminiMetrics.cacheHits++;
+      recordLog({ status: 'CACHE_HIT', contextId, snippet: sanitized.substring(0, 30) });
+      return cached.reply;
+    }
   }
 
   const apiKey = getApiKey();
@@ -196,6 +211,11 @@ REGLAS OBLIGATORIAS:
                     geminiMetrics.lastUsedModel = model;
                     recordLog({ status: 'OK', model, latencyMs: latency, contextId });
                     console.log(`[GEMINI SUCCESS] Model ${model} responded in ${latency}ms for context ${contextId}`);
+                    
+                    // Save to frequency cache for single turn queries
+                    if (!history || history.length <= 1) {
+                      frequencyCache.set(cacheKey, { reply: text.trim(), timestamp: Date.now() });
+                    }
                     return resolve(text.trim());
                   }
                 } catch (e) {
@@ -234,10 +254,22 @@ REGLAS OBLIGATORIAS:
   return null;
 }
 
+// Generate 2-line Executive Summary (Lead Briefing) for Owner Notifications
+async function generateLeadBriefing(history = []) {
+  if (!Array.isArray(history) || history.length === 0) return "Cliente consultó información comercial general.";
+  
+  const conversationText = history.map(h => `${h.role}: ${h.text}`).join('\n');
+  const prompt = `Analiza la siguiente conversación entre un prospecto y nuestro bot de Brain Branding y genera un resumen ejecutivo súper corto de MÁXIMO 2 LÍNEAS en español marcando el giro del negocio y su intención principal de compra.\n\nConversación:\n${conversationText}`;
+
+  const summary = await getGeminiReply(prompt, 'Admin', 'briefing_gen', [], 'Responde ÚNICAMENTE con las 2 líneas de resumen ejecutivo sin rodeos.');
+  return summary || "Prospecto interesado en soluciones tecnológicas de Brain Branding.";
+}
+
 module.exports = {
   getGeminiReply,
   sanitizeUserPrompt,
   geminiMetrics,
   setSecurityAlertCallback,
-  withRetry
+  withRetry,
+  generateLeadBriefing
 };
