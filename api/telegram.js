@@ -806,6 +806,29 @@ app.post('/api/admin/verify-2fa', (req, res) => {
 const whatsappApp = require('./whatsapp.js');
 app.use(whatsappApp);
 
+// Deploy Notification Endpoint — called by subir-cambios.bat after successful deploy
+app.post('/api/deploy-notify', async (req, res) => {
+  try {
+    const { version, firebase, backend, timestamp, commit } = req.body || {};
+    const deployMsg = `🚀 *BRAIN BRANDING AUTO-DEPLOY COMPLETADO* 🚀\n\n` +
+      `📦 *Versión:* v${version || '30.0.0'}\n` +
+      `🌐 *Firebase Hosting:* ${firebase === 'ok' ? '✅ Actualizado' : '❌ Falló'}\n` +
+      `⚙️ *Backend Render:* ${backend === 'ok' ? '✅ GitHub Push OK' : '⚠️ Sin cambios'}\n` +
+      (commit ? `🔖 *Commit:* \`${commit}\`\n` : '') +
+      `⏰ *Hora:* ${timestamp || new Date().toLocaleTimeString('es-MX')}\n\n` +
+      `🔗 https://brainbranding.com.mx ya está actualizado.`;
+
+    await callTelegram('sendMessage', {
+      chat_id: ADMIN_CHAT_ID,
+      text: deployMsg,
+      parse_mode: 'Markdown'
+    });
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 app.post('/api/conversion-alert', async (req, res) => {
   try {
     const { page, source } = req.body || {};
