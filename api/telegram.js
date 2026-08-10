@@ -466,6 +466,16 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
+  // 0.89 Detección Dinámica de Giros Poco Comunes o No Listados (Investigación Operativa)
+  const unknownGiroMatch = textLower.match(/(?:tengo|somos|mi negocio es|mi empresa es|tengo una|tengo un|nos dedicamos a|giro de|trabajo en|local de|fabricante de|empacadora de|beneficio de|laboratorio de)\s+([a-záéíóúñ\s]{3,35})/i);
+  if (unknownGiroMatch && unknownGiroMatch[1] && !state.giro) {
+    const rawGiro = unknownGiroMatch[1].trim();
+    state.giro = rawGiro.charAt(0).toUpperCase() + rawGiro.slice(1);
+    const reply = `¡Excelente giro! Para negocios y empresas del sector **${state.giro}** desarrollamos tecnología limpia y ágil a la medida de tu operación:\n\n• **Punto de Venta (POS) y Control Operativo:** Cobro en segundos desde celular o tablet con control de inventarios y stock.\n• **Asistente IA 24/7 para WhatsApp y Telegram:** Atención de consultas, catálogos digitales y agendamiento automático sin saturar tu teléfono.\n• **Software y Plataforma Web a la Medida:** Desarrollada exactamente para la forma en que trabaja tu empresa.\n\nPara proponerte la solución más precisa: ¿cuántos colaboradores trabajan en tu negocio de **${state.giro}** o cuál es el proceso que más tiempo les quita en el día a día? ☕\n\n📱 *Si gustas, compárteme tu número de WhatsApp a 10 dígitos y te contactamos personalmente para enviarte una propuesta formal.*`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
   // 1.0 Manejo natural de entradas cortas o genéricas ("hola", "ok", "bien", "saludos")
   const isShortInput = userText.trim().split(/\s+/).length <= 3;
   const genericWords = ['si', 'sí', 'ok', 'no', 'bien', 'hola', 'interesa', 'mm', 'a ver', 'saludos', 'gracias', 'grax', 'buenas', 'buenos dias', 'buenas tardes'];
@@ -473,13 +483,13 @@ function generateHumanReply(chatId, userName, userText) {
 
   if (isShortInput && isGeneric) {
     const greetingName = userName ? ` ${userName}` : '';
-    const reply = `¡Con mucho gusto${greetingName}! Platícame un poquito sobre tu negocio o qué proyecto tienes en mente para orientarte de la mejor manera. ☕`;
+    const reply = `¡Con mucho gusto${greetingName}! Platícame un poquito sobre tu negocio o qué proyecto tienes en mente para orientarte de la mejor manera. ☕\n\n📱 *O si prefieres, compárteme tu teléfono a 10 dígitos y un asesor te contactará directamente por WhatsApp.*`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
   // 1.1 Respuesta fluida de seguimiento conversacional
-  const reply = `Entiendo perfectamente lo que buscas. En Brain Branding nos especializamos en construir tecnología limpia y funcional adaptada a la manera exacta en que trabajas.\n\nPlatícame un poco más sobre tu proceso actual: ¿cuántas personas colaboran en tu equipo o qué volumen de atenciones gestionan al día? ☕`;
+  const reply = `Entiendo perfectamente lo que buscas. En Brain Branding nos especializamos en construir tecnología limpia y funcional adaptada a la manera exacta en que trabajas.\n\nPlatícame un poco más sobre tu proceso actual: ¿cuántas personas colaboran en tu equipo o qué volumen de atenciones gestionan al día? ☕\n\n📱 *Si gustas, déjame tu WhatsApp a 10 dígitos y te enviamos la propuesta por mensaje.*`;
   history.push({ role: 'model', text: reply });
   return getUniqueReply(chatId, reply);
 }
@@ -565,6 +575,40 @@ async function notifyOwner(chatId, firstName, username, userText) {
 
   const textLower = (userText || '').toLowerCase();
   const isCitaClick = textLower.includes('cita') || textLower.includes('agend') || textLower.includes('whatsapp');
+
+  // Instant Phone Number Extraction Alert to Admin & Owner WhatsApp 7712339238
+  const phoneMatch = userText.match(/(?:\+?52\s*)?(?:\(?\d{2,3}\)?[\s.-]*)?\d{3,4}[\s.-]*\d{4}\b/g);
+  if (phoneMatch && phoneMatch.length > 0) {
+    const rawPhone = phoneMatch[0].replace(/\D/g, '');
+    if (rawPhone.length >= 10) {
+      const cleanPhone = rawPhone.length === 10 ? `52${rawPhone}` : rawPhone;
+      state.phone = cleanPhone;
+      
+      const phoneUrgentMsg = `🚨 *¡TELÉFONO DE PROSPECTO CAPTURADO!* 🚨\n\n` +
+        `👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n` +
+        `📞 *Teléfono Detectado:* \`+${cleanPhone}\`\n` +
+        `🏢 *Giro:* ${state.giro || 'No especificado'}\n` +
+        `💬 *Mensaje:* "${userText}"\n` +
+        `🆔 *Chat ID:* \`${chatId}\`\n\n` +
+        `📲 *Llamar / WhatsApp Directo:* https://wa.me/${cleanPhone}\n\n` +
+        `⚡ *Respuesta directa:* \`/responder ${chatId} ¡Hola! Te marco en 2 minutos.\``;
+
+      try {
+        await callTelegram('sendMessage', {
+          chat_id: ADMIN_CHAT_ID,
+          text: phoneUrgentMsg,
+          parse_mode: 'Markdown'
+        });
+      } catch (e) {}
+
+      try {
+        const sendWa = require('./whatsapp.js').sendWhatsappMessage;
+        if (sendWa) {
+          sendWa('527712339238', `🚨 NUEVO PROSPECTO REGISTRADO:\nNombre: ${firstName || 'Prospecto'}\nTeléfono: +${cleanPhone}\nGiro: ${state.giro || 'General'}\nMensaje: ${userText}`);
+        }
+      } catch (e) {}
+    }
+  }
 
   const tempTag = isCitaClick ? '🔥 *[ALERTA DE CITA SOLICITADA POR WHATSAPP]*' : getLeadTemperature(userText);
   const isPaused = pausedChats[chatId] && pausedChats[chatId] > Date.now();
