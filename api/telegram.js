@@ -827,6 +827,9 @@ app.get('/api/analytics-db', (req, res) => {
   return res.status(200).json({ ok: true, visits: visitsLog.slice(-100) });
 });
 
+// Local Blockchain Chain Hash State
+let lastBlockchainHash = "GENESIS_BRAIN_BRANDING_BLOCK_SAAS_2026";
+
 let lastSummaryDate = '';
 setInterval(async () => {
   try {
@@ -838,16 +841,50 @@ setInterval(async () => {
     if (cdmxHour === 8 && lastSummaryDate !== currentDateStr) {
       lastSummaryDate = currentDateStr;
       
+      // 1. Visit Analytics Report
       const reportText = buildDetailedAnalytics8AMReport(visitsLog);
-
       await callTelegram('sendMessage', {
         chat_id: ADMIN_CHAT_ID,
         text: reportText,
         parse_mode: 'Markdown'
       });
+
+      // 2. Daily Billing Reminders for Contracts 3 Days Prior to Due Date
+      const currentDay = now.getDate();
+      const activeContracts = Object.values(contractsDB).filter(c => c.status === 'ACEPTADO');
+
+      for (const contract of activeContracts) {
+        let dueDay = 15;
+        if (contract.date) {
+          const parts = contract.date.split('-');
+          if (parts.length === 3) dueDay = parseInt(parts[2], 10) || 15;
+        }
+
+        const daysRemaining = dueDay - currentDay;
+        if (daysRemaining >= 0 && daysRemaining <= 3) {
+          const waMessage = `Hola ${contract.clientName}, te recordamos amablemente la cuota mensual de tu app ${contract.appName} ($${contract.monthlyPrice} MXN). Folio: ${contract.code}. ¡Gracias por confiar en Brain Branding!`;
+          const waLink = `https://wa.me/527712339238?text=${encodeURIComponent(waMessage)}`;
+
+          let billingMsg = `🚨 *ALERTA DIARIA DE COBRO DE MANTENIMIENTO SAAS* 🚨\n\n` +
+            `⏱️ *Estado:* Faltan *${daysRemaining === 0 ? '0 días (HOY)' : daysRemaining + ' días'}* para el vencimiento.\n` +
+            `🔢 *Folio 6D:* \`${contract.code}\`\n` +
+            `👤 *Cliente:* ${contract.clientName}\n` +
+            `📱 *App:* ${contract.appName}\n` +
+            `💳 *Mensualidad Nube:* $${contract.monthlyPrice.toLocaleString('es-MX')} MXN/mes\n` +
+            `📅 *Día de Cobro:* ${dueDay} de este mes\n` +
+            `📞 *Gestión del Dueño (Andrés R):* \`+52 771 233 9238\`\n\n` +
+            `💬 *Haz clic para enviar recordatorio por WhatsApp:* \n[Enviar Mensaje a ${contract.clientName}](${waLink})`;
+
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: billingMsg,
+            parse_mode: 'Markdown'
+          });
+        }
+      }
     }
   } catch (e) {
-    console.error('[8AM DAILY SUMMARY ERROR]', e);
+    console.error('[8AM DAILY SUMMARY & BILLING ERROR]', e);
   }
 }, 60000);
 

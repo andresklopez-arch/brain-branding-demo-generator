@@ -5045,14 +5045,18 @@ END:VCARD`;
     const statusEl = document.getElementById('contract-view-status');
     const acceptBtn = document.getElementById('contract-accept-btn');
 
+    // Handwritten Signature Preview Display
+    const sigCanvasSection = document.getElementById('contract-canvas-section');
+    const sigPreviewContainer = document.getElementById('handwritten-sig-preview-container');
+    const sigPreviewImg = document.getElementById('handwritten-sig-img');
+
     if (contract.status === 'ACEPTADO') {
       if (statusEl) {
         statusEl.innerHTML = '✅ FIRMADO Y ACEPTADO DIGITALMENTE';
         statusEl.style.color = '#10b981';
       }
-      if (acceptBtn) {
-        acceptBtn.style.display = 'none';
-      }
+      if (acceptBtn) acceptBtn.style.display = 'none';
+      
       const titleEl = document.getElementById('signature-status-title');
       if (titleEl) titleEl.textContent = 'Firma Digital Registrada';
       const descEl = document.getElementById('signature-status-desc');
@@ -5061,22 +5065,42 @@ END:VCARD`;
       if (sigUser) sigUser.textContent = contract.signatureData ? contract.signatureData.signatureName : contract.clientName;
       const sigTs = document.getElementById('sig-timestamp');
       if (sigTs) sigTs.textContent = contract.acceptedAt || 'Registrado';
+
+      if (sigCanvasSection) {
+        const canvasContainer = sigCanvasSection.querySelector('div[style*="touch-action"]');
+        if (canvasContainer) canvasContainer.style.display = 'none';
+        const clearBtn = document.getElementById('clear-sig-btn');
+        if (clearBtn) clearBtn.style.display = 'none';
+      }
+
+      if (contract.signatureData && contract.signatureData.signatureImage && sigPreviewImg && sigPreviewContainer) {
+        sigPreviewImg.src = contract.signatureData.signatureImage;
+        sigPreviewContainer.style.display = 'block';
+      }
     } else {
       if (statusEl) {
         statusEl.innerHTML = '🟡 PENDIENTE DE FIRMA DEL CLIENTE';
         statusEl.style.color = '#eab308';
       }
-      if (acceptBtn) {
-        acceptBtn.style.display = 'flex';
-      }
+      if (acceptBtn) acceptBtn.style.display = 'flex';
+      
       const titleEl = document.getElementById('signature-status-title');
       if (titleEl) titleEl.textContent = 'Pendiente de Aceptación Digital';
       const descEl = document.getElementById('signature-status-desc');
-      if (descEl) descEl.textContent = 'Presiona "Aceptar Términos y Condiciones" para firmar el contrato';
+      if (descEl) descEl.textContent = 'Dibuja tu firma abajo y presiona "Aceptar Términos y Condiciones"';
       const sigUser = document.getElementById('sig-user-name');
       if (sigUser) sigUser.textContent = 'Sin Firma Registrada';
       const sigTs = document.getElementById('sig-timestamp');
       if (sigTs) sigTs.textContent = 'Pendiente';
+
+      if (sigCanvasSection) {
+        const canvasContainer = sigCanvasSection.querySelector('div[style*="touch-action"]');
+        if (canvasContainer) canvasContainer.style.display = 'block';
+        const clearBtn = document.getElementById('clear-sig-btn');
+        if (clearBtn) clearBtn.style.display = 'block';
+      }
+      if (sigPreviewContainer) sigPreviewContainer.style.display = 'none';
+      if (window.resetSignatureCanvas) window.resetSignatureCanvas();
     }
 
     if (acceptBtn) {
@@ -5091,10 +5115,17 @@ END:VCARD`;
     let contract = getContracts().find(c => c.code === String(code).trim());
     if (!contract) return;
 
+    let signatureImage = null;
+    const canvas = document.getElementById('contract-sig-canvas');
+    if (canvas && window.hasUserDrawnOnCanvas) {
+      signatureImage = canvas.toDataURL('image/png');
+    }
+
     contract.status = 'ACEPTADO';
     contract.acceptedAt = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
     contract.signatureData = {
       signatureName: contract.clientName,
+      signatureImage,
       timestamp: new Date().toISOString()
     };
 
@@ -5104,7 +5135,7 @@ END:VCARD`;
     fetch(`/api/contracts/${code}/accept`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ signatureName: contract.clientName })
+      body: JSON.stringify({ signatureName: contract.clientName, signatureImage })
     }).catch(() => {});
 
     if (typeof confetti === 'function') {
@@ -5112,7 +5143,7 @@ END:VCARD`;
     }
 
     openContractViewer(code);
-    alert(`🎉 ¡Felicidades! Has aceptado digitalmente los términos y condiciones del Contrato SaaS (Folio: ${code}).\n\nPuedes hacer clic en "Imprimir / Guardar PDF" para respaldar tu copia oficial.`);
+    alert(`🎉 ¡Felicidades! Has firmado y aceptado digitalmente el Contrato SaaS (Folio: ${code}).\n\nPuedes hacer clic en "Imprimir / Guardar PDF" para respaldar tu copia oficial.`);
   };
 
   window.copyContractLink = (code) => {
@@ -5184,6 +5215,84 @@ END:VCARD`;
 
         alert(`📜 ¡CONTRATO DIGITAL SAAS GENERADO CON ÉXITO!\n\n• Folio de 6 Dígitos: ${code}\n• Cliente: ${clientName}\n• App: ${appName}\n\nEl cliente puede ingresar el código ${code} en el buscador de la web para firmar e imprimir su contrato.`);
       });
+    }
+
+    // Setup Canvas Drawing Engine for Signature Pad
+    const canvas = document.getElementById('contract-sig-canvas');
+    const clearBtn = document.getElementById('clear-sig-btn');
+    const placeholderText = document.getElementById('sig-placeholder-text');
+
+    window.hasUserDrawnOnCanvas = false;
+
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      let isDrawing = false;
+
+      const resizeCanvas = () => {
+        const rect = canvas.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          canvas.width = rect.width;
+          canvas.height = rect.height;
+          ctx.strokeStyle = '#00e5ff';
+          ctx.lineWidth = 2.5;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+        }
+      };
+
+      setTimeout(resizeCanvas, 300);
+      window.addEventListener('resize', resizeCanvas);
+
+      window.resetSignatureCanvas = () => {
+        resizeCanvas();
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        window.hasUserDrawnOnCanvas = false;
+        if (placeholderText) placeholderText.style.display = 'flex';
+      };
+
+      if (clearBtn) {
+        clearBtn.addEventListener('click', window.resetSignatureCanvas);
+      }
+
+      const getPos = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+          x: clientX - rect.left,
+          y: clientY - rect.top
+        };
+      };
+
+      const startDrawing = (e) => {
+        isDrawing = true;
+        window.hasUserDrawnOnCanvas = true;
+        if (placeholderText) placeholderText.style.display = 'none';
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+      };
+
+      const draw = (e) => {
+        if (!isDrawing) return;
+        if (e.cancelable) e.preventDefault();
+        const pos = getPos(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+      };
+
+      const stopDrawing = () => {
+        isDrawing = false;
+      };
+
+      canvas.addEventListener('mousedown', startDrawing);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', stopDrawing);
+      canvas.addEventListener('mouseleave', stopDrawing);
+
+      canvas.addEventListener('touchstart', startDrawing, { passive: false });
+      canvas.addEventListener('touchmove', draw, { passive: false });
+      canvas.addEventListener('touchend', stopDrawing);
     }
 
     if (closeViewBtn) {
