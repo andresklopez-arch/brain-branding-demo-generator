@@ -293,7 +293,36 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
-  // 0.8 Giros Específicos de Negocio (Taller, Restaurantes, Clínicas, etc.)
+  // 0.15 Manejo de Notas de Voz / Audios
+  if (userText.includes('[Nota de voz') || textClean.includes('nota de voz') || textClean.includes('audio')) {
+    const greetingName = userName ? ` ${userName}` : '';
+    const voiceReply = `¡Hola${greetingName}! 👋 Escuché atentamente tu mensaje de voz. Qué gusto saludarte, ¿cómo estás?\n\nEn Brain Branding nos especializamos en construir tecnología limpia y ágil a la medida: Asistentes de IA para WhatsApp/Telegram, Puntos de Venta (POS) en la nube y Páginas Web o Software personalizado.\n\nPlatícame un poquito más sobre tu negocio o qué proceso te gustaría automatizar primero para darte la orientación idónea. ☕`;
+    history.push({ role: 'model', text: voiceReply });
+    return getUniqueReply(chatId, voiceReply);
+  }
+
+  // 0.8 Giros Específicos de Negocio (Ferretaría, Restaurante, Taller, Clínica, Boutique, etc.)
+  if (textClean.includes('ferret') || textClean.includes('refacc') || textClean.includes('abarrot') || textClean.includes('tiend') || textClean.includes('boutiqu') || textClean.includes('super')) {
+    state.giro = 'Comercio / Tienda / Ferretería';
+    const reply = `¡Excelente giro! Para tiendas, ferreterías y comercios desarrollamos soluciones muy ágiles:\n\n• **Punto de Venta Táctil Móvil:** Cobro en 3 segundos con escáner de código de barras desde cualquier celular o tablet.\n• **Control de Stock e Inventario:** Manejo de unidades, cajas o paquetes con alertas de stock mínimo.\n• **Corte de Caja Diario:** Reporte de ventas en efectivo, transferencia o tarjeta.\n\nCuéntame: ¿cuántos productos o notas de venta manejan aproximadamente al día?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  if (textClean.includes('restauran') || textClean.includes('cafeter') || textClean.includes('comida') || textClean.includes('cocin') || textClean.includes('taquer') || textClean.includes('bar')) {
+    state.giro = 'Restaurante / Alimentos';
+    const reply = `¡Qué gran giro! Para restaurantes, cafeterías y negocios de alimentos implementamos:\n\n• **Comandero Móvil para Meseros:** Captura de comandas desde celular enviadas directo a cocina o barra.\n• **Control de Insumos e Inventario:** Descuento automático de ingredientes por cada platillo vendido.\n• **Asistente IA para Pedidos a Domicilio:** Toma de pedidos por WhatsApp 24/7 con ubicación del cliente.\n\n¿Tienen servicio de comedor, para llevar o a domicilio?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  if (textClean.includes('veterin') || textClean.includes('mascot') || textClean.includes('estetic') || textClean.includes('spa') || textClean.includes('barber') || textClean.includes('salon') || textClean.includes('peluquer')) {
+    state.giro = 'Salón / Barbería / Veterinaria';
+    const reply = `¡Excelente giro! Para barberías, spas, salones de belleza y veterinarias, las mejores herramientas son:\n\n• **Agendamiento Autónomo por WhatsApp 24/7:** El cliente elige su horario y servicio sin saturar tu teléfono.\n• **Recordatorios Automáticos:** Avisos por mensaje 24 horas antes para evitar ausentismos.\n• **Control de Ficha de Cliente / Mascota:** Historial de servicios, tratamientos o cortes previos.\n\n¿Cuántos especialistas o estilistas atienden en tu negocio?`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
   if (textClean.includes('hojalat') || textClean.includes('carroc') || textClean.includes('pintur') || textClean.includes('taller') || textClean.includes('mecanic') || textClean.includes('auto') || textClean.includes('vehic')) {
     state.giro = 'Taller Automotriz & Hojalatería';
     const reply = `¡Excelente giro! Para talleres mecánicos, de hojalatería y pintura desarrollamos soluciones muy prácticas:\n\n• **Recepción de Vehículos en Celular:** Capturas la orden con fotos de abolladuras y detalles desde el celular, generando la hoja de servicio al instante.\n• **Avisos Automáticos por WhatsApp:** El sistema notifica al cliente el avance de su vehículo (hojalatería, pintura o listo para entrega) sin que tengas que enviar mensajes a mano.\n• **Control de Presupuestos y Anticipos:** Manejo de reparaciones, refacciones y corte de caja.\n\nCuéntame: ¿cómo llevan actualmente la recepción de vehículos y el control de las órdenes de servicio en tu taller?`;
@@ -342,6 +371,7 @@ function generateHumanReply(chatId, userName, userText) {
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
+
 
   // 0.9 Consultas frecuentes (Ubicación, Facturación, Garantías, Tiempos)
   if (textClean.includes('donde estan') || textClean.includes('ubicacion') || textClean.includes('oficina')) {
