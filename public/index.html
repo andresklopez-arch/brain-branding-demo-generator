@@ -4214,19 +4214,30 @@
     </div>
   </div>
 
-  <!-- ADMIN AUTH LOGIN MODAL -->
+  <!-- ADMIN AUTH LOGIN MODAL (WITH TELEGRAM 2FA OTP) -->
   <div id="admin-login-modal" style="display: none; position: fixed; inset: 0; z-index: 10000; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);">
     <div class="glass-card" style="width: 90%; max-width: 420px; padding: 30px; border-radius: 24px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(0, 229, 255, 0.3); box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(0, 229, 255, 0.2); text-align: center; margin: auto;">
-      <div style="font-size: 38px; margin-bottom: 12px; filter: drop-shadow(0 0 10px rgba(0,229,255,0.5));">🧠</div>
-      <h3 style="color: #fff; font-size: 20px; font-weight: 800; margin-bottom: 6px; font-family: var(--font-title);">Acceso Administrativo</h3>
-      <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 22px; line-height: 1.4;">Ingresa tu clave de acceso autorizada para gestionar las características del negocio y los bots de IA.</p>
+      <div style="font-size: 38px; margin-bottom: 12px; filter: drop-shadow(0 0 10px rgba(0,229,255,0.5));">🛡️</div>
+      <h3 style="color: #fff; font-size: 20px; font-weight: 800; margin-bottom: 6px; font-family: var(--font-title);">Acceso Administrativo 2FA</h3>
+      <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 22px; line-height: 1.4;">Autenticación de 2 Factores activada. Ingresa tu contraseña autorizada.</p>
       
       <form id="admin-login-form" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 14px;">
-        <input type="password" id="admin-pass-input" placeholder="••••••••" style="width: 100%; padding: 14px 18px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 16px; text-align: center; letter-spacing: 3px; outline: none; box-sizing: border-box; transition: all 0.3s ease;">
-        <div id="admin-login-error" style="color: #ef4444; font-size: 12px; font-weight: 600; display: none;">Contraseña incorrecta</div>
+        <!-- Step 1: Password Input -->
+        <div id="admin-pass-step">
+          <input type="password" id="admin-pass-input" placeholder="••••••••" style="width: 100%; padding: 14px 18px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 16px; text-align: center; letter-spacing: 3px; outline: none; box-sizing: border-box; transition: all 0.3s ease;">
+          <div id="admin-login-error" style="color: #ef4444; font-size: 12px; font-weight: 600; margin-top: 8px; display: none;">Contraseña incorrecta</div>
+        </div>
+
+        <!-- Step 2: Telegram OTP Input (Hidden by default) -->
+        <div id="admin-otp-step" style="display: none;">
+          <div style="font-size: 12px; color: #10b981; font-weight: 700; margin-bottom: 8px;">🔑 Código 2FA enviado a Telegram de Andrés R</div>
+          <input type="text" id="admin-otp-input" placeholder="123456" maxlength="6" style="width: 100%; padding: 14px 18px; border-radius: 12px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.4); color: #10b981; font-size: 20px; font-weight: 800; text-align: center; letter-spacing: 6px; outline: none; box-sizing: border-box;">
+          <div id="admin-otp-error" style="color: #ef4444; font-size: 12px; font-weight: 600; margin-top: 8px; display: none;">Código 2FA incorrecto o expirado</div>
+        </div>
+
         <div style="display: flex; gap: 10px; margin-top: 6px;">
           <button type="button" id="admin-login-cancel" style="flex: 1; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); font-weight: 600; cursor: pointer;">Cancelar</button>
-          <button type="submit" id="admin-login-submit" style="flex: 1.5; padding: 12px; border-radius: 12px; background: linear-gradient(135deg, #00e5ff, #a855f7); border: none; color: #fff; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(0,229,255,0.3);">Ingresar →</button>
+          <button type="submit" id="admin-login-submit" style="flex: 1.5; padding: 12px; border-radius: 12px; background: linear-gradient(135deg, #00e5ff, #a855f7); border: none; color: #fff; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(0,229,255,0.3);">Enviar 2FA →</button>
         </div>
       </form>
     </div>

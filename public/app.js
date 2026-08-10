@@ -4705,26 +4705,82 @@ END:VCARD`;
       });
     }
 
-    // Handle Login Form Submit
+    // Handle 2FA Login Form Submit (Password + Telegram OTP)
+    let is2FAStepActive = false;
+
     if (loginForm) {
       loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const inputVal = (passInput ? passInput.value : '').trim();
-        const hash = await sha256Hex(inputVal);
+        const loginSubmitBtn = document.getElementById('admin-login-submit');
 
-        if (hash === ADMIN_PASS_HASH) {
-          loginModal.style.display = 'none';
-          dashboardModal.style.display = 'block';
-          if (kbEditor) {
-            kbEditor.value = localStorage.getItem('brain_branding_kb_features') || DEFAULT_BUSINESS_FEATURES;
+        if (!is2FAStepActive) {
+          // Step 1: Check Password & Request OTP to Telegram
+          const inputVal = (passInput ? passInput.value : '').trim();
+          const hash = await sha256Hex(inputVal);
+
+          if (hash === ADMIN_PASS_HASH) {
+            if (loginError) loginError.style.display = 'none';
+
+            try {
+              if (loginSubmitBtn) loginSubmitBtn.innerText = 'Enviando... ⏳';
+              await fetch('/api/admin/request-2fa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ passHash: hash })
+              });
+            } catch(e) {}
+
+            is2FAStepActive = true;
+            document.getElementById('admin-pass-step').style.display = 'none';
+            document.getElementById('admin-otp-step').style.display = 'block';
+            if (loginSubmitBtn) loginSubmitBtn.innerText = 'Verificar 2FA 🔓';
+            const otpIn = document.getElementById('admin-otp-input');
+            if (otpIn) otpIn.focus();
+          } else {
+            if (loginError) loginError.style.display = 'block';
+            if (passInput) {
+              passInput.classList.add('shake-input');
+              setTimeout(() => passInput.classList.remove('shake-input'), 450);
+            }
           }
-          renderAdminAnalytics();
-          if (window.renderAdminContractsList) window.renderAdminContractsList();
         } else {
-          if (loginError) loginError.style.display = 'block';
-          if (passInput) {
-            passInput.classList.add('shake-input');
-            setTimeout(() => passInput.classList.remove('shake-input'), 450);
+          // Step 2: Verify Telegram OTP Code
+          const otpVal = (document.getElementById('admin-otp-input')?.value || '').trim();
+          const otpError = document.getElementById('admin-otp-error');
+
+          try {
+            const res = await fetch('/api/admin/verify-2fa', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ otp: otpVal })
+            });
+            const data = await res.json();
+
+            if (data && data.ok) {
+              is2FAStepActive = false;
+              document.getElementById('admin-pass-step').style.display = 'block';
+              document.getElementById('admin-otp-step').style.display = 'none';
+              if (passInput) passInput.value = '';
+              if (loginSubmitBtn) loginSubmitBtn.innerText = 'Enviar 2FA →';
+
+              loginModal.style.display = 'none';
+              dashboardModal.style.display = 'block';
+              if (kbEditor) {
+                kbEditor.value = localStorage.getItem('brain_branding_kb_features') || DEFAULT_BUSINESS_FEATURES;
+              }
+              renderAdminAnalytics();
+              if (window.renderAdminContractsList) window.renderAdminContractsList();
+            } else {
+              if (otpError) {
+                otpError.innerText = data.error || 'Código 2FA incorrecto';
+                otpError.style.display = 'block';
+              }
+            }
+          } catch(err) {
+            if (otpError) {
+              otpError.innerText = 'Error al verificar 2FA';
+              otpError.style.display = 'block';
+            }
           }
         }
       });
