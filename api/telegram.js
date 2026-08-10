@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
+const { getGeminiReply } = require('./geminiHelper.js');
 
 const app = express();
 app.use(express.json());
@@ -438,75 +439,8 @@ function sanitizeReply(text) {
   return clean;
 }
 
-async function getGeminiReply(userText, userName, chatId, history = []) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-
-  try {
-    const systemInstruction = `Eres un consultor de ventas humano, empático, profesional y altamente capacitado llamado L.C.I. Andrés R, de Brain Branding (Agencia líder en México de Software a la Medida, Puntos de Venta e Inteligencia Artificial). Tu objetivo es atender y calificar prospectos que llegan solicitando información.
-
-REGLAS ABSOLUTAS E INVIOLABLES:
-1. SALUDO INICIAL: Si el usuario saluda ("Hola", "Buenas", etc.), inicia con:
-"¡Hola! 👋 Qué gusto saludarte, ¿cómo estás? En Brain Branding nos da mucho gusto atenderte. 😊"
-2. PROHIBIDO ENVIAR LINKS A LA PÁGINA WEB: Jamás envíes links a brainbranding.com.mx ni pidas que vayan a la web ni a probar demos. El prospecto viene de ahí.
-3. PROHIBIDO USAR OPCIONES NUMERADAS O MENÚS RÍGIDOS (1, 2, 3): Mantén una plática fluida, humana e inteligente.
-4. EXPLICACIÓN FLUIDA DE SERVICIOS: Explica con naturalidad nuestras soluciones:
-   - Asistentes de IA 24/7 para WhatsApp y Telegram.
-   - Puntos de Venta (POS) y ERPs en la Nube.
-   - Desarrollos Web y Apps a la Medida.
-5. DERIVACIÓN A ASESOR: No ofrezcas llamada ni asesor en la primera línea. Conversa primero. Si el cliente pide cotizar o cerrar, ofrece derivarlo con un asesor por WhatsApp.`;
-
-    const geminiHistory = [];
-    for (const item of history.slice(-6)) {
-      geminiHistory.push({
-        role: item.role === 'user' ? 'user' : 'model',
-        parts: [{ text: item.text }]
-      });
-    }
-
-    const payload = JSON.stringify({
-      systemInstruction: { parts: [{ text: systemInstruction }] },
-      contents: [
-        ...geminiHistory,
-        { role: 'user', parts: [{ text: userText }] }
-      ],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 600
-      }
-    });
-
-    return new Promise((resolve) => {
-      const req = https.request({
-        hostname: 'generativelanguage.googleapis.com',
-        port: 443,
-        path: `/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(payload)
-        }
-      }, (res) => {
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => {
-          try {
-            const json = JSON.parse(data);
-            const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-            resolve(text ? text.trim() : null);
-          } catch (e) {
-            resolve(null);
-          }
-        });
-      });
-
-      req.on('error', () => resolve(null));
-      req.write(payload);
-      req.end();
-    });
-  } catch (e) {
-    return null;
-  }
+async function getGeminiReplyWrapper(userText, userName, chatId, history = []) {
+  return await getGeminiReply(userText, userName, chatId, history);
 }
 
 function checkUserRateLimit(chatId) {
@@ -1058,8 +992,8 @@ app.get('/api/audit-log', (req, res) => {
 });
 
 const whatsappApp = require('./whatsapp.js');
-if (whatsappApp && whatsappApp.app) {
-  app.use(whatsappApp.app);
+if (whatsappApp && (whatsappApp.router || whatsappApp.app)) {
+  app.use(whatsappApp.router || whatsappApp.app);
 } else if (typeof whatsappApp === 'function') {
   app.use(whatsappApp);
 }

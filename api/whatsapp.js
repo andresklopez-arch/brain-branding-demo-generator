@@ -6,9 +6,15 @@
 
 const express = require('express');
 const https = require('https');
+const crypto = require('crypto');
+const { getGeminiReply } = require('./geminiHelper.js');
+
+const router = express.Router();
+router.use(express.json());
 
 const app = express();
 app.use(express.json());
+app.use(router);
 
 const OWNER_PHONE = '+52 771 233 9238';
 const ADMIN_CHAT_ID = '8337803949';
@@ -34,6 +40,21 @@ const kb = {
 };
 
 const conversationHistory = {};
+
+function verifyMetaSignature(req, res, next) {
+  const appSecret = process.env.WHATSAPP_APP_SECRET;
+  if (!appSecret) return next();
+  const signature = req.headers['x-hub-signature-256'];
+  if (!signature) {
+    return res.status(401).send('Signature missing');
+  }
+  const hmac = crypto.createHmac('sha256', appSecret);
+  const digest = 'sha256=' + (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
+  if (crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest))) {
+    return next();
+  }
+  return res.status(401).send('Signature mismatch');
+}
 
 function callTelegramAdminAlert(text) {
   return new Promise((resolve) => {
@@ -105,9 +126,18 @@ function getLeadTemperature(text) {
   return '❄️ *LEAD FRÍO (Contacto Inicial / Saludo)*';
 }
 
-function generateHumanWhatsappReply(phone, name, userText) {
+async function generateHumanWhatsappReply(phone, name, userText) {
   if (!conversationHistory[phone]) conversationHistory[phone] = [];
   const history = conversationHistory[phone];
+
+  // Try Gemini AI response first
+  const geminiReply = await getGeminiReply(userText, name, phone, history);
+  if (geminiReply) {
+    history.push({ role: 'user', text: userText });
+    history.push({ role: 'model', text: geminiReply });
+    if (history.length > 20) history.splice(0, history.length - 20);
+    return geminiReply;
+  }
 
   history.push({ role: 'user', text: userText });
   if (history.length > 20) history.shift();
@@ -156,7 +186,7 @@ function generateHumanWhatsappReply(phone, name, userText) {
   return fallback;
 }
 
-app.post('/api/whatsapp/webhook', (req, res) => {
+router.post('/api/whatsapp/webhook', verifyMetaSignature, async (req, res) => {
   try {
     const body = req.body;
     if (body.object === 'whatsapp_business_account' && body.entry && body.entry[0].changes && body.entry[0].changes[0].value.messages) {
@@ -179,7 +209,7 @@ app.post('/api/whatsapp/webhook', (req, res) => {
         callTelegramAdminAlert(`🚨 *¡NUEVO MENSAJE DE WHATSAPP!* 🚨\n\n${tempTag}\n👤 *Cliente:* ${name || 'Prospecto'} (\`${fromPhone}\`)\n💬 *Mensaje:* "${text}"`);
 
         if (!pausedWhatsapp[fromPhone] || pausedWhatsapp[fromPhone] < Date.now()) {
-          const reply = generateHumanWhatsappReply(fromPhone, name, text);
+          const reply = await generateHumanWhatsappReply(fromPhone, name, text);
           sendWhatsappMessage(fromPhone, reply);
         }
       }
@@ -190,7 +220,7 @@ app.post('/api/whatsapp/webhook', (req, res) => {
   }
 });
 
-app.get('/api/whatsapp/webhook', (req, res) => {
+router.get('/api/whatsapp/webhook', (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
@@ -201,4 +231,4 @@ app.get('/api/whatsapp/webhook', (req, res) => {
   }
 });
 
-module.exports = { app, sendWhatsappMessage, whatsappProspectLogs };
+module.exports = { router, app, sendWhatsappMessage, whatsappProspectLogs, generateHumanWhatsappReply };
