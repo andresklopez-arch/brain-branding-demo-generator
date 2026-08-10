@@ -1773,12 +1773,13 @@ app.get('/api/contracts-list', (req, res) => {
   return res.status(200).json({ ok: true, contracts: Object.values(contractsDB) });
 });
 
+app.post('/api/webhook', handleWebhookRequest);
 app.post('/api/telegram', handleWebhookRequest);
 app.post('/webhook', handleWebhookRequest);
 
 app.post('*', (req, res, next) => {
   // If request comes to root POST or /api/webhook, handle Telegram
-  if (req.path === '/' || req.path === '/api' || req.path === '/api/') {
+  if (req.path === '/' || req.path === '/api' || req.path === '/api/' || req.path === '/api/webhook' || req.path.includes('webhook')) {
     return handleWebhookRequest(req, res);
   }
   return res.status(404).json({ ok: false, error: `Ruta POST no encontrada: ${req.path}` });
