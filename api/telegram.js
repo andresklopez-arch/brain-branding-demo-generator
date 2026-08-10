@@ -748,34 +748,44 @@ function generateHmacSeal(dataStr) {
 // 2FA OTP State
 let currentAdminOTP = null;
 
+// Health check — confirms OTP routes are alive on Render
+app.get('/api/admin/otp-status', (req, res) => {
+  return res.status(200).json({ ok: true, message: 'OTP endpoint activo v2', hasOTP: !!currentAdminOTP });
+});
+
 // Endpoint 1: Request 2FA OTP Code to Telegram
 app.post('/api/admin/request-2fa', async (req, res) => {
   try {
-    const { passHash } = req.body || {};
-    // Hash of "ALR2026" / master password check
-    const validPassHash = '36b7c5ec'; 
-
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     currentAdminOTP = {
       code,
       expiresAt: Date.now() + 5 * 60 * 1000 // 5 Minutes Validity
     };
 
-    console.log(`[2FA OTP GENERATED] Code: ${code} sent to Telegram`);
+    console.log(`[2FA OTP GENERATED] Code: ${code} | Sending to chat: ${ADMIN_CHAT_ID}`);
 
     const otpMsg = `🔑 *CÓDIGO DE AUTENTICACIÓN 2FA (PANEL ADMIN)* 🔑\n\n` +
       `Tu código de verificación único es: *\`${code}\`*\n\n` +
       `⏱️ *Validez:* 5 Minutos.\n` +
-      `🛡️ Si no solicitaste este código, tu servidor se encuentra protegido.`;
+      `🛡️ Si no solicitaste este código, tu servidor se encuentra protegido.\n\n` +
+      `_Desde: Brain Branding Panel Admin_`;
 
-    await callTelegram('sendMessage', {
+    const tgResult = await callTelegram('sendMessage', {
       chat_id: ADMIN_CHAT_ID,
       text: otpMsg,
       parse_mode: 'Markdown'
     });
 
-    return res.status(200).json({ ok: true, message: 'Código 2FA despachado a Telegram' });
+    console.log(`[2FA TELEGRAM RESULT]`, JSON.stringify(tgResult));
+
+    if (!tgResult.ok) {
+      console.error('[2FA ERROR] Telegram rejected the message:', tgResult.description);
+      return res.status(500).json({ ok: false, error: 'Telegram no pudo enviar el OTP: ' + (tgResult.description || 'Error desconocido') });
+    }
+
+    return res.status(200).json({ ok: true, message: 'Código 2FA despachado a Telegram de Andrés R' });
   } catch (err) {
+    console.error('[2FA EXCEPTION]', err);
     return res.status(500).json({ ok: false, error: err.message });
   }
 });
