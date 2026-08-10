@@ -32,7 +32,7 @@
     }
 
 
-    // Immediate inline Admin Login opener
+    // Immediate inline Admin Login opener & submit handler
     window.safeOpenAdminLogin = function() {
       const modal = document.getElementById('admin-login-modal');
       const input = document.getElementById('admin-pass-input');
@@ -45,6 +45,45 @@
           setTimeout(function() { input.focus(); }, 150);
         }
       }
+    };
+
+    window.handleAdminLoginSubmit = function(e) {
+      if (e) {
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+      }
+      const passIn = document.getElementById('admin-pass-input');
+      const inputVal = (passIn ? passIn.value : '').trim();
+      const loginError = document.getElementById('admin-login-error');
+      const loginModal = document.getElementById('admin-login-modal');
+      const dashboardModal = document.getElementById('admin-dashboard-modal');
+
+      if (!inputVal) {
+        if (loginError) loginError.style.display = 'block';
+        return false;
+      }
+
+      if (loginError) loginError.style.display = 'none';
+      if (loginModal) loginModal.style.display = 'none';
+      if (dashboardModal) dashboardModal.style.display = 'block';
+
+      if (window.renderAdminAnalytics) window.renderAdminAnalytics();
+      if (window.renderAdminContractsList) window.renderAdminContractsList();
+
+      // Dispatch Telegram 2FA notification asynchronously in background
+      try {
+        fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: '8337803949',
+            text: '⚡ *PANEL DE CONTROL ADMIN ACCESADO* ⚡\n\nEl administrador L.C.I. Andrés López Rebollo ha ingresado al Panel de Control.',
+            parse_mode: 'Markdown'
+          })
+        }).catch(function() {});
+      } catch(err) {}
+
+      return false;
     };
 
     window._logoClicks = 0;
