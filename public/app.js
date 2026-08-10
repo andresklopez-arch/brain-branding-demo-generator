@@ -4084,6 +4084,15 @@ END:VCARD`;
 
     const input = document.getElementById('demo-business-name-input');
     let name = customName || (input ? input.value.trim() : '');
+    
+    // Check if input is a 6-digit contract folio! (5 digits = Demo, 6 digits = Contract)
+    if (/^\d{6}$/.test(name)) {
+      if (typeof window.openContractViewer === 'function') {
+        window.openContractViewer(name);
+        return;
+      }
+    }
+
     if (!name) {
       const params = new URLSearchParams(window.location.search);
       name = params.get('negocio') || params.get('nombre') || 'Tu Empresa';
@@ -4701,6 +4710,7 @@ END:VCARD`;
             kbEditor.value = localStorage.getItem('brain_branding_kb_features') || DEFAULT_BUSINESS_FEATURES;
           }
           renderAdminAnalytics();
+          if (window.renderAdminContractsList) window.renderAdminContractsList();
         } else {
           if (loginError) loginError.style.display = 'block';
           if (passInput) {
@@ -4945,6 +4955,296 @@ END:VCARD`;
 
   window.addEventListener('pagehide', () => {
     sendSessionReport('exit');
+  });
+
+})();
+
+/* ════════════════ SAAS CONTRACTS MANAGEMENT & VIEWER ENGINE ════════════════ */
+(function() {
+  const getContracts = () => {
+    try {
+      const raw = localStorage.getItem('brain_branding_contracts');
+      return raw ? JSON.parse(raw) : [];
+    } catch(e) { return []; }
+  };
+
+  const saveContractLocally = (contract) => {
+    const list = getContracts();
+    const idx = list.findIndex(c => c.code === contract.code);
+    if (idx >= 0) list[idx] = contract;
+    else list.push(contract);
+    localStorage.setItem('brain_branding_contracts', JSON.stringify(list));
+  };
+
+  window.renderAdminContractsList = () => {
+    const tbody = document.getElementById('admin-contracts-table-body');
+    if (!tbody) return;
+
+    const list = getContracts();
+    if (list.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 18px; color: var(--text-muted);">No hay contratos generados aún. Completa el formulario para emitir el primero.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = list.slice().reverse().map(c => {
+      const statusBadge = c.status === 'ACEPTADO' 
+        ? `<span style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.3);">✅ Aceptado</span>`
+        : `<span style="background: rgba(234, 179, 8, 0.15); color: #eab308; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; border: 1px solid rgba(234, 179, 8, 0.3);">🟡 Pendiente</span>`;
+
+      return `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <td style="padding: 10px 8px; font-family: monospace; font-weight: 800; color: #a855f7;">${c.code}</td>
+        <td style="padding: 10px 8px; font-weight: 700; color: #fff;">${c.clientName}</td>
+        <td style="padding: 10px 8px; color: #00e5ff;">${c.appName}</td>
+        <td style="padding: 10px 8px; color: #cbd5e1;">$${Number(c.initialPrice).toLocaleString('es-MX')} MXN</td>
+        <td style="padding: 10px 8px; color: #a855f7;">$${Number(c.monthlyPrice).toLocaleString('es-MX')} MXN/mes</td>
+        <td style="padding: 10px 8px;">${statusBadge}</td>
+        <td style="padding: 10px 8px; text-align: right;">
+          <button type="button" onclick="openContractViewer('${c.code}')" style="padding: 4px 9px; background: rgba(0,229,255,0.12); border: 1px solid rgba(0,229,255,0.3); border-radius: 6px; color: #00e5ff; font-size: 11px; font-weight: 700; cursor: pointer; margin-right: 4px;">Ver 👁️</button>
+          <button type="button" onclick="copyContractLink('${c.code}')" style="padding: 4px 9px; background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.3); border-radius: 6px; color: #a855f7; font-size: 11px; font-weight: 700; cursor: pointer;">Copiar Link 🔗</button>
+        </td>
+      </tr>`;
+    }).join('');
+  };
+
+  window.openContractViewer = async (code) => {
+    let contract = getContracts().find(c => c.code === String(code).trim());
+
+    if (!contract) {
+      try {
+        const res = await fetch(`/api/contracts/${code}`);
+        const data = await res.json();
+        if (data && data.ok && data.contract) {
+          contract = data.contract;
+          saveContractLocally(contract);
+        }
+      } catch(e) {}
+    }
+
+    if (!contract) {
+      alert(`⚠️ No se encontró ningún contrato registrado con el folio 6D: ${code}`);
+      return;
+    }
+
+    // Populate Viewer Modal
+    const folioEl = document.getElementById('contract-view-folio');
+    if (folioEl) folioEl.textContent = contract.code;
+    const clientNameEl = document.getElementById('contract-view-client-name');
+    if (clientNameEl) clientNameEl.textContent = contract.clientName;
+    const appNameEl = document.getElementById('contract-view-app-name');
+    if (appNameEl) appNameEl.textContent = contract.appName;
+    const dateEl = document.getElementById('contract-view-date');
+    if (dateEl) dateEl.textContent = `Fecha de Emisión: ${contract.date}`;
+    const initialPriceEl = document.getElementById('contract-view-initial-price');
+    if (initialPriceEl) initialPriceEl.textContent = `$${Number(contract.initialPrice).toLocaleString('es-MX')} MXN`;
+    const monthlyPriceEl = document.getElementById('contract-view-monthly-price');
+    if (monthlyPriceEl) monthlyPriceEl.textContent = `$${Number(contract.monthlyPrice).toLocaleString('es-MX')} MXN / mes`;
+
+    // Populate Clauses
+    const clauseClient = document.getElementById('clause-client-name');
+    if (clauseClient) clauseClient.textContent = contract.clientName;
+    const clauseApp = document.getElementById('clause-app-name');
+    if (clauseApp) clauseApp.textContent = contract.appName;
+    const clauseInitial = document.getElementById('clause-initial-price');
+    if (clauseInitial) clauseInitial.textContent = `$${Number(contract.initialPrice).toLocaleString('es-MX')} MXN`;
+    const clauseMonthly = document.getElementById('clause-monthly-price');
+    if (clauseMonthly) clauseMonthly.textContent = `$${Number(contract.monthlyPrice).toLocaleString('es-MX')} MXN/mes`;
+
+    // Signature Status
+    const statusEl = document.getElementById('contract-view-status');
+    const acceptBtn = document.getElementById('contract-accept-btn');
+
+    if (contract.status === 'ACEPTADO') {
+      if (statusEl) {
+        statusEl.innerHTML = '✅ FIRMADO Y ACEPTADO DIGITALMENTE';
+        statusEl.style.color = '#10b981';
+      }
+      if (acceptBtn) {
+        acceptBtn.style.display = 'none';
+      }
+      const titleEl = document.getElementById('signature-status-title');
+      if (titleEl) titleEl.textContent = 'Firma Digital Registrada';
+      const descEl = document.getElementById('signature-status-desc');
+      if (descEl) descEl.textContent = 'Sello digital y conformidad registrada electrónicamente';
+      const sigUser = document.getElementById('sig-user-name');
+      if (sigUser) sigUser.textContent = contract.signatureData ? contract.signatureData.signatureName : contract.clientName;
+      const sigTs = document.getElementById('sig-timestamp');
+      if (sigTs) sigTs.textContent = contract.acceptedAt || 'Registrado';
+    } else {
+      if (statusEl) {
+        statusEl.innerHTML = '🟡 PENDIENTE DE FIRMA DEL CLIENTE';
+        statusEl.style.color = '#eab308';
+      }
+      if (acceptBtn) {
+        acceptBtn.style.display = 'flex';
+      }
+      const titleEl = document.getElementById('signature-status-title');
+      if (titleEl) titleEl.textContent = 'Pendiente de Aceptación Digital';
+      const descEl = document.getElementById('signature-status-desc');
+      if (descEl) descEl.textContent = 'Presiona "Aceptar Términos y Condiciones" para firmar el contrato';
+      const sigUser = document.getElementById('sig-user-name');
+      if (sigUser) sigUser.textContent = 'Sin Firma Registrada';
+      const sigTs = document.getElementById('sig-timestamp');
+      if (sigTs) sigTs.textContent = 'Pendiente';
+    }
+
+    if (acceptBtn) {
+      acceptBtn.onclick = () => acceptContract(contract.code);
+    }
+
+    const modal = document.getElementById('contract-viewer-modal');
+    if (modal) modal.style.display = 'block';
+  };
+
+  const acceptContract = async (code) => {
+    let contract = getContracts().find(c => c.code === String(code).trim());
+    if (!contract) return;
+
+    contract.status = 'ACEPTADO';
+    contract.acceptedAt = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+    contract.signatureData = {
+      signatureName: contract.clientName,
+      timestamp: new Date().toISOString()
+    };
+
+    saveContractLocally(contract);
+    if (window.renderAdminContractsList) window.renderAdminContractsList();
+
+    fetch(`/api/contracts/${code}/accept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ signatureName: contract.clientName })
+    }).catch(() => {});
+
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+    }
+
+    openContractViewer(code);
+    alert(`🎉 ¡Felicidades! Has aceptado digitalmente los términos y condiciones del Contrato SaaS (Folio: ${code}).\n\nPuedes hacer clic en "Imprimir / Guardar PDF" para respaldar tu copia oficial.`);
+  };
+
+  window.copyContractLink = (code) => {
+    const link = `${window.location.origin}/?contrato=${code}`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(() => {
+        alert(`📋 Enlace del Contrato Copiado:\n${link}\n\nCompártelo con tu cliente para que consulte y firme su contrato.`);
+      }).catch(() => {
+        prompt(`Copia este enlace de contrato para tu cliente:`, link);
+      });
+    } else {
+      prompt(`Copia este enlace de contrato para tu cliente:`, link);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const contractForm = document.getElementById('admin-contract-form');
+    const dateInput = document.getElementById('contract-date');
+    const closeViewBtn = document.getElementById('contract-view-close-btn');
+
+    if (dateInput && !dateInput.value) {
+      dateInput.value = new Date().toISOString().split('T')[0];
+    }
+
+    if (contractForm) {
+      contractForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const clientName = document.getElementById('contract-client-name').value.trim();
+        const appName = document.getElementById('contract-app-name').value.trim();
+        const date = document.getElementById('contract-date').value;
+        const initialPrice = parseFloat(document.getElementById('contract-initial-price').value) || 4500;
+        const monthlyPrice = parseFloat(document.getElementById('contract-monthly-price').value) || 290;
+
+        if (!clientName || !appName) {
+          alert('Por favor ingresa el nombre del contratante y de la app.');
+          return;
+        }
+
+        let code;
+        const existing = getContracts();
+        do {
+          code = Math.floor(100000 + Math.random() * 900000).toString();
+        } while (existing.some(c => c.code === code));
+
+        const contract = {
+          code,
+          clientName,
+          appName,
+          date,
+          initialPrice,
+          monthlyPrice,
+          status: 'PENDIENTE',
+          createdAt: new Date().toISOString(),
+          acceptedAt: null,
+          signatureData: null
+        };
+
+        saveContractLocally(contract);
+        if (window.renderAdminContractsList) window.renderAdminContractsList();
+
+        fetch('/api/contracts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(contract)
+        }).catch(() => {});
+
+        document.getElementById('contract-client-name').value = '';
+        document.getElementById('contract-app-name').value = '';
+
+        alert(`📜 ¡CONTRATO DIGITAL SAAS GENERADO CON ÉXITO!\n\n• Folio de 6 Dígitos: ${code}\n• Cliente: ${clientName}\n• App: ${appName}\n\nEl cliente puede ingresar el código ${code} en el buscador de la web para firmar e imprimir su contrato.`);
+      });
+    }
+
+    if (closeViewBtn) {
+      closeViewBtn.addEventListener('click', () => {
+        const modal = document.getElementById('contract-viewer-modal');
+        if (modal) modal.style.display = 'none';
+      });
+    }
+
+    // Passcode Gate Modal 5-digit vs 6-digit handling
+    const passcodeModal = document.getElementById('passcode-modal');
+    const passcodeBtn = document.getElementById('submit-passcode-btn');
+    const passcodeClose = document.getElementById('close-passcode-btn');
+    const passcodeInput = document.getElementById('passcode-input');
+    const passcodeErr = document.getElementById('passcode-error');
+
+    const handlePasscodeSubmit = () => {
+      if (!passcodeInput) return;
+      const code = passcodeInput.value.trim();
+
+      if (/^\d{6}$/.test(code)) {
+        if (passcodeModal) passcodeModal.style.display = 'none';
+        if (typeof window.openContractViewer === 'function') {
+          window.openContractViewer(code);
+        }
+      } else if (code.toUpperCase() === 'BB2026' || code.length === 5 || code.length > 0) {
+        if (passcodeModal) passcodeModal.style.display = 'none';
+        if (typeof window.applyCustomBusinessDemo === 'function') {
+          window.applyCustomBusinessDemo(code);
+        }
+      } else {
+        if (passcodeErr) passcodeErr.style.display = 'block';
+      }
+    };
+
+    if (passcodeBtn) passcodeBtn.addEventListener('click', handlePasscodeSubmit);
+    if (passcodeInput) {
+      passcodeInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handlePasscodeSubmit();
+      });
+    }
+    if (passcodeClose && passcodeModal) {
+      passcodeClose.addEventListener('click', () => passcodeModal.style.display = 'none');
+    }
+
+    // Auto-check URL query parameters for ?contrato=684920 or ?codigo=684920
+    const urlParams = new URLSearchParams(window.location.search);
+    const contractCode = urlParams.get('contrato') || urlParams.get('codigo');
+    if (contractCode && contractCode.length === 6) {
+      setTimeout(() => {
+        openContractViewer(contractCode);
+      }, 700);
+    }
   });
 
 })();

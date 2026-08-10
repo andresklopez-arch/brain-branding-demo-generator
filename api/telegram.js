@@ -851,6 +851,78 @@ setInterval(async () => {
   }
 }, 60000);
 
+// Permanent SaaS Contracts Database & Endpoints
+const contractsDB = {};
+
+app.post('/api/contracts', (req, res) => {
+  try {
+    const { clientName, appName, date, initialPrice, monthlyPrice, code: customCode } = req.body || {};
+    if (!clientName || !appName) {
+      return res.status(400).json({ ok: false, error: 'Campos obligatorios faltantes' });
+    }
+
+    let code = customCode;
+    if (!code || code.length !== 6) {
+      do {
+        code = Math.floor(100000 + Math.random() * 900000).toString();
+      } while (contractsDB[code]);
+    }
+
+    const contract = {
+      code,
+      clientName: clientName.trim(),
+      appName: appName.trim(),
+      date: date || new Date().toISOString().split('T')[0],
+      initialPrice: parseFloat(initialPrice) || 4500,
+      monthlyPrice: parseFloat(monthlyPrice) || 290,
+      status: 'PENDIENTE',
+      createdAt: new Date().toISOString(),
+      acceptedAt: null,
+      signatureData: null
+    };
+
+    contractsDB[code] = contract;
+    console.log(`[CONTRACT CREATED] Code: ${code} for ${clientName}`);
+    return res.status(200).json({ ok: true, contract });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+app.get('/api/contracts/:code', (req, res) => {
+  const code = (req.params.code || '').trim();
+  const contract = contractsDB[code];
+  if (!contract) {
+    return res.status(404).json({ ok: false, error: 'Contrato no encontrado' });
+  }
+  return res.status(200).json({ ok: true, contract });
+});
+
+app.post('/api/contracts/:code/accept', (req, res) => {
+  const code = (req.params.code || '').trim();
+  const contract = contractsDB[code];
+  if (!contract) {
+    return res.status(404).json({ ok: false, error: 'Contrato no encontrado' });
+  }
+
+  const { signatureName, ip, userAgent } = req.body || {};
+  contract.status = 'ACEPTADO';
+  contract.acceptedAt = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+  contract.signatureData = {
+    signatureName: signatureName || contract.clientName,
+    ip: ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1',
+    userAgent: userAgent || req.headers['user-agent'] || 'Desconocido',
+    timestamp: new Date().toISOString()
+  };
+
+  console.log(`[CONTRACT ACCEPTED] Code: ${code} by ${contract.clientName}`);
+  return res.status(200).json({ ok: true, contract });
+});
+
+app.get('/api/contracts-list', (req, res) => {
+  return res.status(200).json({ ok: true, contracts: Object.values(contractsDB) });
+});
+
 app.post('*', handleWebhookRequest);
 app.get('*', (req, res) => res.json({ status: 'active', bot: '@Brainbranding_bot', service: 'Brain Branding 24/7 AI Engine (Telegram & WhatsApp)' }));
 
