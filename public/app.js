@@ -2406,137 +2406,79 @@ END:VCARD`;
       setInterval(updateLockClock, 60000);
     }
 
-    if (lockscreen) {
-      lockscreen.addEventListener('click', () => {
-        if (!isLocked) return;
-        
-        // Unlock immediately
-        isLocked = false;
+    const unlockPhone = () => {
+      if (!isLocked) return;
+      isLocked = false;
+      if (lockscreen) {
         lockscreen.classList.add('unlocked');
-        
-        // Trigger depth blur removal
-        const container = document.querySelector('.smartphone-container');
-        if (container) {
-          container.classList.add('unlocked-mockup');
-        }
-        
-        // Trigger avatar boot animation
-        const avatarCont = document.getElementById('telegram-avatar-container');
-        if (avatarCont) {
-          avatarCont.classList.remove('activated');
-          void avatarCont.offsetWidth;
-          avatarCont.classList.add('activated');
-        }
-        
-        // Play unlock chime
-        playSynthSound('unlock');
-        triggerDoubleHaptic();
-        
-        // Reset and start simulation
-        if (simulatorTimeout) {
-          clearTimeout(simulatorTimeout);
-        }
-        removeTypingIndicator();
-        telegramContainer.innerHTML = '';
-        currentScenarioIdx = 0;
-        currentMessageIdx = 0;
-        scenarioStartTime = Date.now();
-        updateActiveIcon(0);
-        
-        const scenario = chatScenarios[0];
-        if (scenario && scenario.length > 0) {
-          const firstMsg = scenario[0];
-          currentMessageIdx = 1;
-          
-          // Realistic typing delay on welcome message
+      }
+      const container = document.querySelector('.smartphone-container');
+      if (container) {
+        container.classList.add('unlocked-mockup');
+      }
+      const avatarCont = document.getElementById('telegram-avatar-container');
+      if (avatarCont) {
+        avatarCont.classList.remove('activated');
+        void avatarCont.offsetWidth;
+        avatarCont.classList.add('activated');
+      }
+      playSynthSound('unlock');
+      triggerDoubleHaptic();
+
+      if (simulatorTimeout) {
+        clearTimeout(simulatorTimeout);
+      }
+      removeTypingIndicator();
+      telegramContainer.innerHTML = '';
+      currentScenarioIdx = 0;
+      currentMessageIdx = 0;
+      scenarioStartTime = Date.now();
+      updateActiveIcon(0);
+
+      const scenario = chatScenarios[0];
+      if (scenario && scenario.length > 0) {
+        const firstMsg = scenario[0];
+        currentMessageIdx = 1;
+        simulatorTimeout = setTimeout(() => {
+          showTypingIndicator();
           simulatorTimeout = setTimeout(() => {
-            showTypingIndicator();
-            simulatorTimeout = setTimeout(() => {
-              removeTypingIndicator();
-              renderMessage(firstMsg.sender, firstMsg);
-              playNextMessage();
-            }, 1200);
-          }, 350);
-        }
-      });
+            removeTypingIndicator();
+            renderMessage(firstMsg.sender, firstMsg);
+            playNextMessage();
+          }, 800);
+        }, 200);
+      }
+    };
+
+    if (lockscreen) {
+      lockscreen.addEventListener('click', unlockPhone);
+    }
+    const phoneContainerEl = document.querySelector('.smartphone-container');
+    if (phoneContainerEl) {
+      phoneContainerEl.addEventListener('click', unlockPhone);
     }
 
-    // IntersectionObserver implementation for visibility check (Auto-Unlock on Scroll)
+    // Auto-unlock 800ms after load fallback
+    setTimeout(unlockPhone, 800);
+
     if (typeof IntersectionObserver !== 'undefined') {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            if (!isSectionVisible) {
-              isSectionVisible = true;
-            }
-            
-            // Auto-unlock instantly when visitor scrolls to the phone
+            isSectionVisible = true;
             if (isLocked) {
-              isLocked = false;
-              if (lockscreen) {
-                lockscreen.classList.add('unlocked');
-              }
-              const container = document.querySelector('.smartphone-container');
-              if (container) {
-                container.classList.add('unlocked-mockup');
-              }
-              
-              // Trigger avatar boot animation
-              const avatarCont = document.getElementById('telegram-avatar-container');
-              if (avatarCont) {
-                avatarCont.classList.remove('activated');
-                void avatarCont.offsetWidth;
-                avatarCont.classList.add('activated');
-              }
-              
-              playSynthSound('unlock');
-              triggerDoubleHaptic();
-              
-              if (simulatorTimeout) {
-                clearTimeout(simulatorTimeout);
-              }
-              removeTypingIndicator();
-              telegramContainer.innerHTML = '';
-              currentScenarioIdx = 0;
-              currentMessageIdx = 0;
-              scenarioStartTime = Date.now();
-              updateActiveIcon(0);
-              
-              const scenario = chatScenarios[0];
-              if (scenario && scenario.length > 0) {
-                const firstMsg = scenario[0];
-                currentMessageIdx = 1;
-                
-                // Realistic typing delay on welcome message
-                simulatorTimeout = setTimeout(() => {
-                  showTypingIndicator();
-                  simulatorTimeout = setTimeout(() => {
-                    removeTypingIndicator();
-                    renderMessage(firstMsg.sender, firstMsg);
-                    playNextMessage();
-                  }, 1200);
-                }, 350);
-              }
-            } else {
-              playNextMessage();
-            }
-          } else {
-            isSectionVisible = false;
-            if (simulatorTimeout) {
-              clearTimeout(simulatorTimeout);
-              simulatorTimeout = null;
+              unlockPhone();
             }
           }
         });
-      }, { threshold: 0.15 });
+      }, { threshold: 0.01 });
 
       const targetSection = document.getElementById('asistente-ia');
       if (targetSection) {
         observer.observe(targetSection);
       }
     } else {
-      // Fallback: start loop directly
-      playNextMessage();
+      unlockPhone();
     }
 
     const phoneContainer = document.querySelector('.smartphone-container');
@@ -3075,24 +3017,15 @@ END:VCARD`;
             isPOSVisible = true;
             startBatteryDischarging();
             if (!timer) runPOSCycle();
-          } else {
-            isPOSVisible = false;
-            stopBatteryDischarging();
-            if (timer) {
-              clearTimeout(timer);
-              timer = null;
-            }
-            clearPosTimeouts();
           }
         });
-      }, { threshold: 0.15 });
+      }, { threshold: 0.01 });
       
       const targetSection = document.getElementById('simulador-pos');
       if (targetSection) observer.observe(targetSection);
-    } else {
-      startBatteryDischarging();
-      runPOSCycle();
     }
+    startBatteryDischarging();
+    if (!timer) runPOSCycle();
 
     // Device switcher button interactions
     const switcherBtns = document.querySelectorAll('.pos-device-switcher .switcher-btn');
@@ -3627,22 +3560,14 @@ END:VCARD`;
           if (entry.isIntersecting) {
             isWebVisible = true;
             if (!timer) runWebCycle();
-          } else {
-            isWebVisible = false;
-            if (timer) {
-              clearTimeout(timer);
-              timer = null;
-            }
-            clearWebTimeouts();
           }
         });
-      }, { threshold: 0.15 });
+      }, { threshold: 0.01 });
       
       const targetSection = document.getElementById('simulador-web');
       if (targetSection) observer.observe(targetSection);
-    } else {
-      runWebCycle();
     }
+    if (!timer) runWebCycle();
     
     // Device switcher button interactions for web browser container
     const switcherBtns = document.querySelectorAll('#web-device-switcher .switcher-btn');
