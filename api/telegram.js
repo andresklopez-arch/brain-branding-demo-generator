@@ -133,9 +133,7 @@ function getUniqueReply(chatId, candidateReply, fallbackOptions = []) {
     }
   }
 
-  const dynamicVariation = `${candidateReply}\n\nSi gustas, también podemos agendar una breve llamada de 5 a 10 minutos para revisar los detalles con calma. ☕`;
-  sent.add(dynamicVariation.trim());
-  return dynamicVariation;
+  return candidateReply;
 }
 
 function callTelegram(method, data) {
@@ -218,8 +216,13 @@ function generateHumanReply(chatId, userName, userText) {
 
   // 0.2 Inicio de conversación (/start o saludo inicial)
   if (userText === '/start' || textClean === 'hola' || textClean === 'buenas' || textClean === 'buenos dias' || textClean === 'buenas tardes') {
+    conversationHistory[chatId] = [];
+    userStates[chatId] = { askedFallbacks: new Set(), sentReplies: new Set() };
+    const history = conversationHistory[chatId];
+
     const greetingName = userName ? ` ${userName}` : '';
     const welcome = `¡Hola${greetingName}! 👋 Qué gusto saludarte, ¿cómo estás? En Brain Branding nos da mucho gusto atenderte. 😊\n\nNos especializamos en desarrollar tecnología limpia y ágil a la medida de tu empresa:\n• **Asistentes IA para WhatsApp y Telegram 24/7:** Atención automática, agendamiento de citas y toma de pedidos.\n• **Puntos de Venta (POS) y ERPs Nube:** Cobro en segundos desde celular o tablet, control de stock y caja.\n• **Páginas Web y Software a la Medida:** Desarrollos de alta conversión adaptados a tu forma exacta de trabajar.\n\nPlatícame: ¿en qué te podemos ayudar el día de hoy o qué área de tu negocio te gustaría mejorar? ☕`;
+    history.push({ role: 'user', text: userText });
     history.push({ role: 'model', text: welcome });
     return getUniqueReply(chatId, welcome);
   }
