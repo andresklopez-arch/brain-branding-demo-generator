@@ -1058,7 +1058,11 @@ app.get('/api/audit-log', (req, res) => {
 });
 
 const whatsappApp = require('./whatsapp.js');
-app.use(whatsappApp);
+if (whatsappApp && whatsappApp.app) {
+  app.use(whatsappApp.app);
+} else if (typeof whatsappApp === 'function') {
+  app.use(whatsappApp);
+}
 
 // Deploy Notification Endpoint — called by subir-cambios.bat after successful deploy
 app.post('/api/deploy-notify', async (req, res) => {
