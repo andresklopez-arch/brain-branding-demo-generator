@@ -5263,6 +5263,15 @@ END:VCARD`;
       if (sigPreviewContainer) sigPreviewContainer.style.display = 'none';
     }
 
+    const lawfulCheckContainer = document.getElementById('contract-lawful-use-container');
+    const lawfulCheck = document.getElementById('contract-lawful-checkbox');
+    if (contract.status === 'ACEPTADO') {
+      if (lawfulCheckContainer) lawfulCheckContainer.style.display = 'none';
+    } else {
+      if (lawfulCheckContainer) lawfulCheckContainer.style.display = 'block';
+      if (lawfulCheck) lawfulCheck.checked = false;
+    }
+
     if (acceptBtn) {
       acceptBtn.onclick = () => acceptContract(contract.code);
     }
@@ -5280,6 +5289,13 @@ END:VCARD`;
     let contract = getContracts().find(c => c.code === String(code).trim());
     if (!contract) return;
 
+    const lawfulCheck = document.getElementById('contract-lawful-checkbox');
+    if (lawfulCheck && !lawfulCheck.checked) {
+      alert('⚠️ ATENCIÓN LEGAL:\n\nPara firmar y aceptar el contrato, debes marcar la casilla confirmando que operaras el software de forma lícita y aceptando el Deslinde de Responsabilidad.');
+      lawfulCheck.focus();
+      return;
+    }
+
     let signatureImage = null;
     const canvas = document.getElementById('contract-sig-canvas');
     if (canvas && window.hasUserDrawnOnCanvas) {
@@ -5296,6 +5312,10 @@ END:VCARD`;
 
     saveContractLocally(contract);
     if (window.renderAdminContractsList) window.renderAdminContractsList();
+
+    if (window.recordAuditLog) {
+      window.recordAuditLog('CONTRATO_ACEPTADO_FIRMADO', contract.clientName, { folio: code, app: contract.appName });
+    }
 
     fetch(`${window.API_BASE}/api/contracts/${code}/accept`, {
       method: 'POST',
