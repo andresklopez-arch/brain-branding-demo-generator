@@ -4590,94 +4590,12 @@ END:VCARD`;
     }
 
     // Handle 2FA Login Form Submit (Password + Telegram OTP)
-    let is2FAStepActive = false;
-
-    window.handleAdminLoginSubmit = async (e) => {
-      if (e) {
-        if (e.preventDefault) e.preventDefault();
-        if (e.stopPropagation) e.stopPropagation();
-      }
-
-      const passIn = document.getElementById('admin-pass-input');
-      const loginSubmitBtn = document.getElementById('admin-login-submit');
-      const loginError = document.getElementById('admin-login-error');
-      const loginModal = document.getElementById('admin-login-modal');
-      const dashboardModal = document.getElementById('admin-dashboard-modal');
-      const kbEditor = document.getElementById('admin-kb-editor');
-
-      const inputVal = (passIn ? passIn.value : '').trim();
-
-      if (!is2FAStepActive) {
-        // Step 1: Password Check
-        if (inputVal.length > 0) {
-          if (loginError) loginError.style.display = 'none';
-
-          // INSTANT DIRECT MASTER ACCESS FOR DEVELOPER (56932396)
-          if (inputVal === '56932396' || inputVal === '56932396!' || inputVal.toLowerCase() === 'admin') {
-            if (loginModal) loginModal.style.display = 'none';
-            if (dashboardModal) dashboardModal.style.display = 'block';
-            if (kbEditor) {
-              kbEditor.value = localStorage.getItem('brain_branding_kb_features') || DEFAULT_BUSINESS_FEATURES;
-            }
-            renderAdminAnalytics();
-            if (window.renderAdminContractsList) window.renderAdminContractsList();
-            return false;
-          }
-
-          // Otherwise proceed to 2FA OTP Step 2
-          const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-          safeSessionStorage.setItem('bb_2fa_otp', JSON.stringify({
-            code: otpCode,
-            expiresAt: Date.now() + 10 * 60 * 1000
-          }));
-
-          is2FAStepActive = true;
-          const passStep = document.getElementById('admin-pass-step');
-          const otpStep = document.getElementById('admin-otp-step');
-          if (passStep) passStep.style.display = 'none';
-          if (otpStep) otpStep.style.display = 'block';
-          if (loginSubmitBtn) loginSubmitBtn.innerText = 'Verificar 2FA 🔓';
-          
-          const otpIn = document.getElementById('admin-otp-input');
-          if (otpIn) {
-            otpIn.value = '';
-            otpIn.focus();
-          }
-
-          // Telegram Dispatch in background (non-blocking)
-          const otpMsg = `🔑 *CÓDIGO DE AUTENTICACIÓN 2FA (PANEL ADMIN)* 🔑\n\n` +
-            `Tu código de verificación único es: *\`${otpCode}\`*\n\n` +
-            `⏱️ *Validez:* 10 Minutos.\n` +
-            `_Desde: Brain Branding Panel Admin_`;
-
-          fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: '8337803949',
-              text: otpMsg,
-              parse_mode: 'Markdown'
-            })
-          }).catch(() => {});
-
-        } else {
-          if (loginError) loginError.style.display = 'block';
-        }
-      } else {
-        // Step 2: Open Dashboard directly
-        if (loginModal) loginModal.style.display = 'none';
-        if (dashboardModal) dashboardModal.style.display = 'block';
-        if (kbEditor) {
-          kbEditor.value = localStorage.getItem('brain_branding_kb_features') || DEFAULT_BUSINESS_FEATURES;
-        }
-        renderAdminAnalytics();
-        if (window.renderAdminContractsList) window.renderAdminContractsList();
-      }
-      return false;
-    };
-
     if (loginForm) {
-      loginForm.addEventListener('submit', window.handleAdminLoginSubmit);
+      loginForm.addEventListener('submit', function(e) {
+        if (typeof window.handleAdminLoginSubmit === 'function') {
+          window.handleAdminLoginSubmit(e);
+        }
+      });
     }
 
     if (loginCancel) {
