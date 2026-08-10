@@ -451,6 +451,7 @@ async function notifyOwner(chatId, firstName, username, userText) {
     name: firstName || 'Prospecto',
     username: username || 'Sin username',
     text: userText,
+    giro: state.giro || 'No especificado',
     conviction: state.conviction || 'REGULAR',
     temp: isCitaClick ? 'CITA_URGENTE' : (tempTag.includes('CALIENTE') ? 'CALIENTE' : (tempTag.includes('TIBIO') ? 'TIBIO' : 'FRÍO')),
     timestamp: new Date().toLocaleTimeString('es-MX')
@@ -458,8 +459,9 @@ async function notifyOwner(chatId, firstName, username, userText) {
   if (prospectLogs.length > 200) prospectLogs.shift();
 
   const alertHeader = isCitaClick ? '🚨 *¡PROSPECTO SOLICITÓ AGENDAR CITA EN WHATSAPP!* 🚨' : '🚨 *¡NUEVO MENSAJE DE PROSPECTO EN TELEGRAM!* 🚨';
+  const giroTag = state.giro ? `🏢 *Giro / Industria:* ${state.giro}\n` : '';
 
-  const alertText = `${alertHeader}\n\n${tempTag}\n${convictionTag}\n👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n💬 *Mensaje:* "${userText}"\n🆔 *Chat ID:* \`${chatId}\`\n📱 *Notificado a:* ${OWNER_PHONE}\n${statusTag}\n\n⚙️ *Comandos Rápido:* \`/pausa ${chatId}\` | \`/responder ${chatId} <mensaje>\` | \`/plantilla\`\n💡 *Tip de Intervención:* Responde (*Reply*) directamente a este mensaje para platicar con el cliente.`;
+  const alertText = `${alertHeader}\n\n${tempTag}\n${convictionTag}\n${giroTag}👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n💬 *Mensaje:* "${userText}"\n🆔 *Chat ID:* \`${chatId}\`\n📱 *Notificado a:* ${OWNER_PHONE}\n${statusTag}\n\n⚙️ *Comandos Rápido:* \`/pausa ${chatId}\` | \`/responder ${chatId} <mensaje>\` | \`/plantilla\`\n💡 *Tip de Intervención:* Responde (*Reply*) directamente a este mensaje para platicar con el cliente.`;
 
   try {
     await callTelegram('sendMessage', {
@@ -738,10 +740,27 @@ async function handleWebhookRequest(req, res) {
         await callTelegram('sendChatAction', { chat_id: chatId, action: 'typing' });
         const reply = generateHumanReply(chatId, firstName, userText);
 
+        const textClean = normalizeText(userText);
+        let replyMarkup = { remove_keyboard: true };
+
+        if (textClean.includes('asesor') || textClean.includes('representante') || textClean.includes('hablar') || textClean.includes('whatsapp') || textClean.includes('humano') || textClean.includes('cita')) {
+          replyMarkup = {
+            inline_keyboard: [
+              [
+                {
+                  text: '💬 Hablar con un Asesor por WhatsApp',
+                  url: 'https://wa.me/527712339238?text=Hola,%20quisiera%20hablar%20con%20un%20asesor%20de%20Brain%20Branding'
+                }
+              ]
+            ]
+          };
+        }
+
         await callTelegram('sendMessage', {
           chat_id: chatId,
           text: reply,
-          parse_mode: 'Markdown'
+          parse_mode: 'Markdown',
+          reply_markup: replyMarkup
         });
       }
     }
