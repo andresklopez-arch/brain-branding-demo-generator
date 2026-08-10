@@ -2072,7 +2072,7 @@ END:VCARD`;
     let currentMessageIdx = 0;
     let simulatorTimeout = null;
     let isSectionVisible = true;
-    let isLocked = true;
+    let isLocked = false;
     let scenarioStartTime = Date.now();
     let isSmartphoneHovered = false;
     let progressInterval = null;
@@ -2084,6 +2084,7 @@ END:VCARD`;
       const container = document.querySelector('.smartphone-container');
       if (container) container.classList.add('unlocked-mockup');
     };
+    window.unlockSmartphoneSimulator();
 
     function formatTimestamp() {
       const now = new Date();
