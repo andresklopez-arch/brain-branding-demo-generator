@@ -4853,6 +4853,19 @@ END:VCARD`;
 /* ════════════════ SAAS CONTRACTS MANAGEMENT & VIEWER ENGINE ════════════════ */
   const DEFAULT_SEED_CONTRACTS = [
     {
+      code: '423805',
+      clientName: 'Ana Lilia',
+      appName: 'Plataforma SaaS Ana Lilia',
+      date: '2026-08-10',
+      initialPrice: 4500,
+      monthlyPrice: 290,
+      status: 'PENDIENTE',
+      acceptedAt: null,
+      appStatus: 'ONLINE',
+      createdAt: '2026-08-10T16:00:00.000Z',
+      signatureData: null
+    },
+    {
       code: '839201',
       clientName: 'Juan Pérez',
       appName: 'JuanP',
@@ -4885,6 +4898,9 @@ END:VCARD`;
   ];
 
   const getContracts = () => {
+    if (typeof window.getContracts === 'function') {
+      return window.getContracts();
+    }
     try {
       const raw = localStorage.getItem('brain_branding_contracts');
       let list = raw ? JSON.parse(raw) : null;
