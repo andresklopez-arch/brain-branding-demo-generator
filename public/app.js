@@ -5173,9 +5173,10 @@ END:VCARD`;
         <td style="padding: 10px 8px; color: #a855f7;">$${Number(c.monthlyPrice).toLocaleString('es-MX')} MXN/mes</td>
         <td style="padding: 10px 8px;">${statusBadge}</td>
         <td style="padding: 10px 8px;">${appStatusBtn}</td>
-        <td style="padding: 10px 8px; text-align: right;">
+        <td style="padding: 10px 8px; text-align: right; white-space: nowrap;">
           <button type="button" onclick="openContractViewer('${c.code}')" style="padding: 4px 9px; background: rgba(0,229,255,0.12); border: 1px solid rgba(0,229,255,0.3); border-radius: 6px; color: #00e5ff; font-size: 11px; font-weight: 700; cursor: pointer; margin-right: 4px;">Ver 👁️</button>
-          <button type="button" onclick="copyContractLink('${c.code}')" style="padding: 4px 9px; background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.3); border-radius: 6px; color: #a855f7; font-size: 11px; font-weight: 700; cursor: pointer;">Copiar Link 🔗</button>
+          <button type="button" onclick="copyContractLink('${c.code}')" style="padding: 4px 9px; background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.3); border-radius: 6px; color: #a855f7; font-size: 11px; font-weight: 700; cursor: pointer; margin-right: 4px;">Copiar Link 🔗</button>
+          <button type="button" onclick="deleteContract('${c.code}')" title="Eliminar contrato o app de prueba" style="padding: 4px 8px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); border-radius: 6px; color: #ef4444; font-size: 11px; font-weight: 700; cursor: pointer;">🗑️</button>
         </td>
       </tr>`;
     }).join('');

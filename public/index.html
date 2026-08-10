@@ -398,12 +398,54 @@
           '<td style="padding: 10px 8px; color: #a855f7;">$' + monthlyPriceStr + ' MXN/mes</td>' +
           '<td style="padding: 10px 8px;">' + statusBadge + '</td>' +
           '<td style="padding: 10px 8px;">' + appStatusBtn + '</td>' +
-          '<td style="padding: 10px 8px; text-align: right;">' +
+          '<td style="padding: 10px 8px; text-align: right; white-space: nowrap;">' +
             '<button type="button" onclick="window.openContractViewer(\'' + c.code + '\')" style="padding: 4px 9px; background: rgba(0,229,255,0.12); border: 1px solid rgba(0,229,255,0.3); border-radius: 6px; color: #00e5ff; font-size: 11px; font-weight: 700; cursor: pointer; margin-right: 4px;">Ver 👁️</button>' +
-            '<button type="button" onclick="window.copyContractLink(\'' + c.code + '\')" style="padding: 4px 9px; background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.3); border-radius: 6px; color: #a855f7; font-size: 11px; font-weight: 700; cursor: pointer;">Copiar Link 🔗</button>' +
+            '<button type="button" onclick="window.copyContractLink(\'' + c.code + '\')" style="padding: 4px 9px; background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.3); border-radius: 6px; color: #a855f7; font-size: 11px; font-weight: 700; cursor: pointer; margin-right: 4px;">Copiar Link 🔗</button>' +
+            '<button type="button" onclick="window.deleteContract(\'' + c.code + '\')" title="Eliminar contrato o app de prueba" style="padding: 4px 8px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); border-radius: 6px; color: #ef4444; font-size: 11px; font-weight: 700; cursor: pointer;">🗑️</button>' +
           '</td>' +
         '</tr>';
       }).join('');
+    };
+
+    window.deleteContract = function(code) {
+      const codeStr = String(code).trim();
+      const list = window.getContracts();
+      const target = list.find(function(c) { return String(c.code).trim() === codeStr; });
+      const clientName = target ? target.clientName : codeStr;
+
+      if (!confirm('🗑️ ¿Estás seguro de ELIMINAR permanentemente el contrato folio ' + codeStr + ' (' + clientName + ')?\n\nEsta acción quitará el contrato de tu lista y del servidor.')) {
+        return;
+      }
+
+      // Filter out deleted contract from local list
+      const updatedList = list.filter(function(c) { return String(c.code).trim() !== codeStr; });
+      localStorage.setItem('brain_branding_contracts', JSON.stringify(updatedList));
+      localStorage.setItem('brain_branding_contracts_backup', JSON.stringify(updatedList));
+
+      // Re-draw table immediately
+      window.drawContractsTable(updatedList);
+
+      // Async DELETE call to Render API server
+      try {
+        fetch((window.API_BASE || '') + '/api/contracts/' + codeStr, {
+          method: 'DELETE'
+        }).catch(function() {});
+      } catch(e) {}
+
+      // Telegram notification
+      try {
+        fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: '8337803949',
+            text: '🗑️ *CONTRATO ELIMINADO* 🗑️\n\nEl folio de contrato `' + codeStr + '` (' + clientName + ') fue eliminado por L.C.I. Andrés López Rebollo.',
+            parse_mode: 'Markdown'
+          })
+        }).catch(function() {});
+      } catch(e) {}
+
+      alert('🗑️ Contrato ' + codeStr + ' (' + clientName + ') eliminado exitosamente.');
     };
 
     window.renderAdminContractsList = async function() {
