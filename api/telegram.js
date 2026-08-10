@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
-const { getGeminiReply } = require('./geminiHelper.js');
+const { getGeminiReply, geminiMetrics } = require('./geminiHelper.js');
 const { getHistory, addTurn } = require('./historyStore.js');
 
 const app = express();
@@ -913,6 +913,14 @@ app.get('/api/telegram/setup-webhook', async (req, res) => {
   }
 });
 
+// Endpoint: Retrieve Gemini AI Performance Telemetry & Metrics
+app.get('/api/admin/gemini-metrics', (req, res) => {
+  return res.status(200).json({
+    ok: true,
+    metrics: geminiMetrics
+  });
+});
+
 // Health check — confirms OTP routes are alive on Render
 app.get('/api/admin/otp-status', (req, res) => {
   return res.status(200).json({ ok: true, message: 'OTP endpoint activo v2', hasOTP: !!currentAdminOTP });
@@ -1472,8 +1480,20 @@ app.get('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Brain Branding 24/7 AI Telegram & WhatsApp Engine running on port ${PORT}`);
+  
+  // Auto-setup Webhook on startup if running on Render
+  if (process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL) {
+    try {
+      const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL;
+      const webhookUrl = `${baseUrl}/api/webhook`;
+      await callTelegram('setWebhook', { url: webhookUrl, drop_pending_updates: false });
+      console.log(`[AUTO-WEBHOOK] Webhook successfully linked to ${webhookUrl}`);
+    } catch (e) {
+      console.warn('[AUTO-WEBHOOK WARN] Failed to auto-link Webhook:', e.message);
+    }
+  }
 });
 
 module.exports = app;

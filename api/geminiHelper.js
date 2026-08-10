@@ -2,12 +2,33 @@
  * BRAIN BRANDING GEMINI AI ENGINE HELPER
  * Multi-model fallback engine (gemini-2.0-flash, gemini-2.5-flash, gemini-1.5-flash)
  * Integrated with Telegram & WhatsApp 24/7 Bots
- * Includes Security Prompt Injection Guard & Persistent History
+ * Includes Security Prompt Injection Guard, Telemetry & Performance Metrics
  */
 
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+
+const geminiMetrics = {
+  totalCalls: 0,
+  successfulCalls: 0,
+  failedCalls: 0,
+  blockedInjections: 0,
+  averageLatencyMs: 0,
+  totalLatencyMs: 0,
+  lastUsedModel: null,
+  recentLogs: []
+};
+
+function recordLog(entry) {
+  geminiMetrics.recentLogs.push({
+    ...entry,
+    timestamp: new Date().toLocaleTimeString('es-MX')
+  });
+  if (geminiMetrics.recentLogs.length > 50) {
+    geminiMetrics.recentLogs.shift();
+  }
+}
 
 // Auto-load .env or config if present locally
 function getApiKey() {
@@ -47,6 +68,8 @@ function sanitizeUserPrompt(text) {
   for (const pattern of injectionPatterns) {
     if (pattern.test(clean)) {
       console.warn(`[SECURITY ALERT] Prompt injection blocked: "${clean.substring(0, 50)}..."`);
+      geminiMetrics.blockedInjections++;
+      recordLog({ status: 'BLOCKED', reason: 'PROMPT_INJECTION', snippet: clean.substring(0, 40) });
       return "SECURITY_INJECTION_DETECTED";
     }
   }
@@ -69,6 +92,9 @@ async function getGeminiReply(userText, userName, contextId, history = [], custo
     console.log('[GEMINI] No GEMINI_API_KEY found in environment variables. Using rule-based fallback.');
     return null;
   }
+
+  geminiMetrics.totalCalls++;
+  const startTime = Date.now();
 
   const baseInstruction = `Eres L.C.I. Andrés R, consultor humano, empático y experto en Inteligencia Artificial y Software a la Medida de Brain Branding ("Empoderando Marcas, Reprogramando Mentes"). Tu objetivo es atender y calificar prospectos interesados en tecnología.
 
@@ -130,7 +156,13 @@ REGLAS OBLIGATORIAS:
                 const json = JSON.parse(data);
                 const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (text && text.trim()) {
-                  console.log(`[GEMINI SUCCESS] Model ${model} responded for context ${contextId}`);
+                  const latency = Date.now() - startTime;
+                  geminiMetrics.successfulCalls++;
+                  geminiMetrics.totalLatencyMs += latency;
+                  geminiMetrics.averageLatencyMs = Math.round(geminiMetrics.totalLatencyMs / geminiMetrics.successfulCalls);
+                  geminiMetrics.lastUsedModel = model;
+                  recordLog({ status: 'OK', model, latencyMs: latency, contextId });
+                  console.log(`[GEMINI SUCCESS] Model ${model} responded in ${latency}ms for context ${contextId}`);
                   return resolve(text.trim());
                 }
               } catch (e) {
@@ -163,7 +195,9 @@ REGLAS OBLIGATORIAS:
     }
   }
 
+  geminiMetrics.failedCalls++;
+  recordLog({ status: 'FAIL', reason: 'ALL_MODELS_FAILED', contextId });
   return null;
 }
 
-module.exports = { getGeminiReply, sanitizeUserPrompt };
+module.exports = { getGeminiReply, sanitizeUserPrompt, geminiMetrics };
