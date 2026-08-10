@@ -325,7 +325,23 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
-  if (textClean.includes('hojalat') || textClean.includes('carroc') || textClean.includes('pintur') || textClean.includes('taller') || textClean.includes('mecanic') || textClean.includes('auto') || textClean.includes('vehic')) {
+  // 0.75 Puntos de Venta (POS) / Cobro
+  if (textClean.includes('punto de venta') || textClean.includes('pos') || textClean.includes('sistema de cobro') || textClean.includes('caja registradora') || textClean.includes('terminal')) {
+    state.giro = state.giro || 'Punto de Venta';
+    const reply = `¡Con mucho gusto! Nuestros Puntos de Venta (POS) en la nube te permiten:\n\n• **Cobrar en Segundos:** Desde cualquier celular, tablet o computadora con escáner de código de barras.\n• **Control Total de Inventarios:** Alertas automáticas de productos o insumos por agotarse.\n• **Corte de Caja Diario:** Reporte claro de ingresos en efectivo, tarjeta y transferencias con respaldo seguro en la nube desde $290 MXN/mes.\n\nPara recomendarte la configuración idónea: ¿de qué giro es tu negocio y qué productos o servicios vendes? ☕`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 0.78 Autolavados & Car Wash (Comprobación prioritaria para evitar conflicto con talleres)
+  if (textClean.includes('autolavado') || textClean.includes('lavado de auto') || textClean.includes('carwash') || textClean.includes('car wash') || textClean.includes('lavadero')) {
+    state.giro = 'Autolavado & Car Wash';
+    const reply = `¡Excelente giro! Para autolavados y centros de estética automotriz implementamos soluciones muy prácticas:\n\n• **Punto de Venta Exprés para Autolavados:** Capturas el paquete de lavado (sencillo, detallado, encerado, vestiduras) por tipo de vehículo (sedán, SUV, camioneta) en 3 segundos desde celular o tablet.\n• **Ticket Digital por WhatsApp:** El cliente recibe su comprobante digital en su teléfono al dejar su auto.\n• **Aviso Automático de "Auto Listo":** Al terminar el lavado, el sistema notifica por WhatsApp al cliente para que pase a recogerlo.\n• **Control de Insumos y Corte de Caja:** Monitoreo de shampoo, cera, microfibras y reporte diario de caja.\n\nCuéntame: ¿cuántos autos lavan aproximadamente al día o qué paquetes manejan? ☕`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  if (textClean.includes('hojalat') || textClean.includes('carroc') || textClean.includes('pintur') || textClean.includes('taller') || textClean.includes('mecanic') || (textClean.includes('auto') && !textClean.includes('autolavado')) || textClean.includes('vehic')) {
     state.giro = 'Taller Automotriz & Hojalatería';
     const reply = `¡Excelente giro! Para talleres mecánicos, de hojalatería y pintura desarrollamos soluciones muy prácticas:\n\n• **Recepción de Vehículos en Celular:** Capturas la orden con fotos de abolladuras y detalles desde el celular, generando la hoja de servicio al instante.\n• **Avisos Automáticos por WhatsApp:** El sistema notifica al cliente el avance de su vehículo (hojalatería, pintura o listo para entrega) sin que tengas que enviar mensajes a mano.\n• **Control de Presupuestos y Anticipos:** Manejo de reparaciones, refacciones y corte de caja.\n\nCuéntame: ¿cómo llevan actualmente la recepción de vehículos y el control de las órdenes de servicio en tu taller?`;
     history.push({ role: 'model', text: reply });
