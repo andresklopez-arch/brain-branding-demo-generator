@@ -5250,7 +5250,6 @@ END:VCARD`;
         if (clearBtn) clearBtn.style.display = 'block';
       }
       if (sigPreviewContainer) sigPreviewContainer.style.display = 'none';
-      if (window.resetSignatureCanvas) window.resetSignatureCanvas();
     }
 
     if (acceptBtn) {
@@ -5259,6 +5258,11 @@ END:VCARD`;
 
     const modal = document.getElementById('contract-viewer-modal');
     if (modal) modal.style.display = 'block';
+
+    // Reset and size canvas AFTER modal is visible so client rect has real dimensions (>0)
+    setTimeout(() => {
+      if (window.resetSignatureCanvas) window.resetSignatureCanvas();
+    }, 40);
   };
 
   const acceptContract = async (code) => {
@@ -5379,18 +5383,22 @@ END:VCARD`;
       let isDrawing = false;
 
       const resizeCanvas = () => {
-        const rect = canvas.getBoundingClientRect();
-        if (rect.width > 0 && rect.height > 0) {
-          canvas.width = rect.width;
-          canvas.height = rect.height;
-          ctx.strokeStyle = '#00e5ff';
-          ctx.lineWidth = 2.5;
-          ctx.lineCap = 'round';
-          ctx.lineJoin = 'round';
+        const parent = canvas.parentElement || canvas.offsetParent;
+        const parentRect = parent ? parent.getBoundingClientRect() : canvas.getBoundingClientRect();
+        const width = Math.max(300, Math.round(parentRect.width || 450));
+        const height = 140;
+
+        if (canvas.width !== width || canvas.height !== height) {
+          canvas.width = width;
+          canvas.height = height;
         }
+        ctx.strokeStyle = '#00e5ff';
+        ctx.lineWidth = 2.8;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
       };
 
-      setTimeout(resizeCanvas, 300);
+      setTimeout(resizeCanvas, 100);
       window.addEventListener('resize', resizeCanvas);
 
       window.resetSignatureCanvas = () => {
@@ -5406,8 +5414,8 @@ END:VCARD`;
 
       const getPos = (e) => {
         const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+        const clientY = (e.touches && e.touches.length > 0) ? e.touches[0].clientY : e.clientY;
         return {
           x: clientX - rect.left,
           y: clientY - rect.top
@@ -5415,6 +5423,7 @@ END:VCARD`;
       };
 
       const startDrawing = (e) => {
+        if (e.cancelable) e.preventDefault();
         isDrawing = true;
         window.hasUserDrawnOnCanvas = true;
         if (placeholderText) placeholderText.style.display = 'none';
