@@ -5158,9 +5158,9 @@ END:VCARD`;
 
       if (sigCanvasSection) {
         const canvasContainer = sigCanvasSection.querySelector('div[style*="touch-action"]');
-        if (canvasContainer) canvasContainer.style.display = 'none';
+        if (canvasContainer) canvasContainer.style.display = 'block';
         const clearBtn = document.getElementById('clear-sig-btn');
-        if (clearBtn) clearBtn.style.display = 'none';
+        if (clearBtn) clearBtn.style.display = 'block';
       }
 
       if (contract.signatureData && contract.signatureData.signatureImage && sigPreviewImg && sigPreviewContainer) {
@@ -5437,17 +5437,26 @@ END:VCARD`;
 
     const handlePasscodeSubmit = () => {
       if (!passcodeInput) return;
-      const code = passcodeInput.value.trim();
+      const query = passcodeInput.value.trim();
+      if (!query) return;
 
-      if (/^\d{6}$/.test(code)) {
+      const contracts = getContracts();
+      const matched = contracts.find(c =>
+        String(c.code).trim() === query ||
+        (c.clientPhone && String(c.clientPhone).replace(/\D/g, '').includes(query.replace(/\D/g, ''))) ||
+        (c.clientName && c.clientName.toLowerCase().includes(query.toLowerCase())) ||
+        (c.appName && c.appName.toLowerCase().includes(query.toLowerCase()))
+      );
+
+      if (matched || /^\d{6}$/.test(query)) {
         if (passcodeModal) passcodeModal.style.display = 'none';
         if (typeof window.openContractViewer === 'function') {
-          window.openContractViewer(code);
+          window.openContractViewer(matched ? matched.code : query);
         }
-      } else if (code.toUpperCase() === 'BB2026' || code.length === 5 || code.length > 0) {
+      } else if (query.toUpperCase() === 'BB2026' || query.length === 5) {
         if (passcodeModal) passcodeModal.style.display = 'none';
         if (typeof window.applyCustomBusinessDemo === 'function') {
-          window.applyCustomBusinessDemo(code);
+          window.applyCustomBusinessDemo(query);
         }
       } else {
         if (passcodeErr) passcodeErr.style.display = 'block';
