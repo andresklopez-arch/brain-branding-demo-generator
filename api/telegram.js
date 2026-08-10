@@ -891,6 +891,28 @@ function generateHmacSeal(dataStr) {
 // 2FA OTP State
 let currentAdminOTP = null;
 
+// Automatic Telegram Webhook Registration Helper
+app.get('/api/telegram/setup-webhook', async (req, res) => {
+  try {
+    const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL || 'https://brain-branding-demo-generator.onrender.com';
+    const webhookUrl = `${baseUrl}/api/webhook`;
+    
+    const result = await callTelegram('setWebhook', {
+      url: webhookUrl,
+      drop_pending_updates: false
+    });
+    
+    return res.status(200).json({
+      ok: true,
+      message: `Webhook de Telegram configurado exitosamente`,
+      webhookUrl,
+      result
+    });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // Health check — confirms OTP routes are alive on Render
 app.get('/api/admin/otp-status', (req, res) => {
   return res.status(200).json({ ok: true, message: 'OTP endpoint activo v2', hasOTP: !!currentAdminOTP });
