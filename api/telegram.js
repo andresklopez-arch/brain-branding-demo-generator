@@ -216,18 +216,18 @@ function generateHumanReply(chatId, userName, userText) {
 
   state.conviction = evaluateConvictionLevel(textClean, fuzzyClean);
 
-  // 0.2 Inicio de conversación (/start)
-  if (userText === '/start') {
+  // 0.2 Inicio de conversación (/start o saludo inicial)
+  if (userText === '/start' || textClean === 'hola' || textClean === 'buenas' || textClean === 'buenos dias' || textClean === 'buenas tardes') {
     const greetingName = userName ? ` ${userName}` : '';
-    const welcome = `¡Hola${greetingName}! Qué gusto saludarte. 👋 Soy Andrés R de Brain Branding.\n\nDesarrollamos soluciones de software a la medida, asistentes conversacionales con Inteligencia Artificial y aplicaciones de alta conversión para empresas y negocios locales.\n\nPlatícame, ¿qué proyecto o área de tu empresa te gustaría automatizar o mejorar hoy?`;
+    const welcome = `¡Hola${greetingName}! 👋 Qué gusto saludarte, ¿cómo estás? En Brain Branding nos da mucho gusto atenderte. 😊\n\nNos especializamos en desarrollar tecnología limpia y ágil a la medida de tu empresa:\n• **Asistentes IA para WhatsApp y Telegram 24/7:** Atención automática, agendamiento de citas y toma de pedidos.\n• **Puntos de Venta (POS) y ERPs Nube:** Cobro en segundos desde celular o tablet, control de stock y caja.\n• **Páginas Web y Software a la Medida:** Desarrollos de alta conversión adaptados a tu forma exacta de trabajar.\n\nPlatícame: ¿en qué te podemos ayudar el día de hoy o qué área de tu negocio te gustaría mejorar? ☕`;
     history.push({ role: 'model', text: welcome });
     return getUniqueReply(chatId, welcome);
   }
 
-  // 0.3 Solicitud de Información / Demos / Ejemplos
-  if (userText === '/demo' || textClean.includes('demo') || fuzzyClean.includes('demo') || textClean.includes('demostracion') || fuzzyClean.includes('demostracion') || textClean.includes('ejemplo')) {
+  // 0.3 Solicitud de Información / Servicios / Ejemplos
+  if (userText === '/demo' || textClean.includes('demo') || fuzzyClean.includes('demo') || textClean.includes('demostracion') || textClean.includes('servicio') || textClean.includes('ejemplo')) {
     const greetingName = userName ? ` ${userName}` : '';
-    const reply = `¡Con mucho gusto${greetingName}! Te platico cómo trabajamos.\n\nEn Brain Branding desarrollamos soluciones 100% a la medida para cada negocio: desde Asistentes de Inteligencia Artificial para WhatsApp y Telegram, hasta Puntos de Venta (POS) en la nube y ERPs de gestión.\n\nPara orientarte de forma precisa, platícame: ¿de qué giro exacto es tu negocio y qué área o proceso te gustaría automatizar o mejorar primero? ☕`;
+    const reply = `¡Con mucho gusto${greetingName}! Te platico más sobre lo que podemos implementar para ti:\n\n1. **Asistentes de Inteligencia Artificial:** Responden a tus clientes las 24 horas por WhatsApp o Telegram, muestran información de tus servicios y agendan citas automáticamente.\n2. **Sistemas de Punto de Venta (POS) y ERP:** Para llevar el control de inventarios, presupuestos, notas y caja desde tu teléfono o computadora.\n3. **Desarrollos Web y Apps Personalizadas:** Creadas desde cero para la operación específica de tu empresa.\n\nPara orientarte mejor: ¿de qué giro es tu negocio o qué proceso te quita más tiempo en el día a día? ☕`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
@@ -235,7 +235,7 @@ function generateHumanReply(chatId, userName, userText) {
   // 0.4 Fase Cierre Listo
   if (state.conviction === 'TOTALMENTE' || textClean.includes('pasame la cuenta') || textClean.includes('datos bancarios') || textClean.includes('donde transfiero')) {
     state.temp = 'CITA_URGENTE';
-    const reply = `¡Excelente decisión! Vamos a dejar tu sistema funcionando exactamente como lo necesitas.\n\nPodemos coordinar la reunión de arranque o enviarte la información bancaria para el anticipo inicial (35%).\n\n¿Prefieres que te llamemos hoy mismo o a qué hora te queda mejor platicar 5 minutos? ☕`;
+    const reply = `¡Excelente decisión! Vamos a dejar tu sistema funcionando exactamente como lo necesitas.\n\nSi gustas, te podemos canalizar con un representante para coordinar la reunión de arranque o enviarte la propuesta formal con datos bancarios para el anticipo inicial (35%).\n\n¿Prefieres que un representante te llame hoy mismo o a qué hora te queda mejor platicar 5 minutos? ☕`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
