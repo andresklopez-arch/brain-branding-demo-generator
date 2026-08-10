@@ -868,6 +868,9 @@ app.post('/api/contracts', (req, res) => {
       } while (contractsDB[code]);
     }
 
+    const rawSealStr = `${code}_${clientName.trim()}_${appName.trim()}_${date}_${initialPrice}_${monthlyPrice}_BRAIN_BRANDING_SAAS`;
+    const sha256Seal = crypto.createHash('sha256').update(rawSealStr).digest('hex').substring(0, 32).toUpperCase();
+
     const contract = {
       code,
       clientName: clientName.trim(),
@@ -878,11 +881,30 @@ app.post('/api/contracts', (req, res) => {
       status: 'PENDIENTE',
       createdAt: new Date().toISOString(),
       acceptedAt: null,
+      sha256Seal,
       signatureData: null
     };
 
     contractsDB[code] = contract;
     console.log(`[CONTRACT CREATED] Code: ${code} for ${clientName}`);
+
+    // Send instant Telegram notification to Andrés R
+    const notifyMsg = `📜 *NUEVO CONTRATO DIGITAL SAAS GENERADO* 📜\n\n` +
+      `🔢 *Folio 6D:* \`${code}\`\n` +
+      `👤 *Cliente:* ${contract.clientName}\n` +
+      `📱 *App / Software:* ${contract.appName}\n` +
+      `💰 *Inversión Inicial:* $${contract.initialPrice.toLocaleString('es-MX')} MXN\n` +
+      `💳 *Mensualidad Nube:* $${contract.monthlyPrice.toLocaleString('es-MX')} MXN/mes\n` +
+      `📅 *Fecha:* ${contract.date}\n` +
+      `🔒 *Sello Digital SHA-256:* \`${sha256Seal}\`\n\n` +
+      `🔗 *Enlace:* https://brainbranding.com.mx/?contrato=${code}`;
+
+    callTelegram('sendMessage', {
+      chat_id: ADMIN_CHAT_ID,
+      text: notifyMsg,
+      parse_mode: 'Markdown'
+    }).catch(() => {});
+
     return res.status(200).json({ ok: true, contract });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message });
@@ -906,16 +928,42 @@ app.post('/api/contracts/:code/accept', (req, res) => {
   }
 
   const { signatureName, ip, userAgent } = req.body || {};
+  const acceptTime = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+  const clientIP = ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+  
+  const rawAcceptSeal = `${code}_${contract.clientName}_${acceptTime}_${clientIP}_FIRMADO_SAAS_BRAIN_BRANDING`;
+  const sha256AcceptSeal = crypto.createHash('sha256').update(rawAcceptSeal).digest('hex').substring(0, 32).toUpperCase();
+
   contract.status = 'ACEPTADO';
-  contract.acceptedAt = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+  contract.acceptedAt = acceptTime;
+  contract.sha256Seal = sha256AcceptSeal;
   contract.signatureData = {
     signatureName: signatureName || contract.clientName,
-    ip: ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1',
+    ip: clientIP,
     userAgent: userAgent || req.headers['user-agent'] || 'Desconocido',
+    sha256Seal: sha256AcceptSeal,
     timestamp: new Date().toISOString()
   };
 
   console.log(`[CONTRACT ACCEPTED] Code: ${code} by ${contract.clientName}`);
+
+  // Send instant Telegram notification to Andrés R
+  const acceptMsg = `🎉 *CONTRATO SAAS FIRMADO Y ACEPTADO EN VIVO* 🎉\n\n` +
+    `🔢 *Folio 6D:* \`${code}\`\n` +
+    `👤 *Cliente:* ${contract.clientName}\n` +
+    `📱 *App / Software:* ${contract.appName}\n` +
+    `✍️ *Firmado por:* ${contract.signatureData.signatureName}\n` +
+    `⏰ *Fecha y Hora:* ${acceptTime}\n` +
+    `🌐 *Dirección IP:* \`${clientIP}\`\n` +
+    `🔒 *Sello Criptográfico SHA-256:* \`${sha256AcceptSeal}\`\n\n` +
+    `⚖️ *Validez Legal:* Registro de aceptación con sello inalterable en base de datos.`;
+
+  callTelegram('sendMessage', {
+    chat_id: ADMIN_CHAT_ID,
+    text: acceptMsg,
+    parse_mode: 'Markdown'
+  }).catch(() => {});
+
   return res.status(200).json({ ok: true, contract });
 });
 

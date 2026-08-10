@@ -4924,16 +4924,8 @@ END:VCARD`;
       localStorage.setItem('brain_branding_analytics_log', JSON.stringify(logs));
     } catch(e) {}
 
-    // Send via navigator.sendBeacon or fetch
-    const tgUrl = `https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage?chat_id=8337803949&text=${encodeURIComponent(textMsg)}&parse_mode=Markdown`;
-    
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(tgUrl);
-    } else {
-      fetch(tgUrl).catch(function(){});
-    }
-
-    // Also send visit report to Render backend
+    // Visit tracking is saved locally and sent ONLY to the backend server
+    // for the consolidated 8:00 AM Daily Summary Report (no individual Telegram alerts).
     fetch('/api/track-visit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
