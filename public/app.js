@@ -1,3 +1,12 @@
+// Force Service Worker & Browser Cache Update to ensure latest feature release (v30.0.0)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(registrations => {
+    for (let registration of registrations) {
+      registration.update();
+    }
+  });
+}
+
 // Safe storage wrapper to prevent crashes in strict privacy settings / custom domains
 const safeStorage = (type) => {
   try {

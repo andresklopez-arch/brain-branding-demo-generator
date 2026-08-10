@@ -1,26 +1,17 @@
-const CACHE_NAME = 'bb-cache-v71';
+const CACHE_NAME = 'bb-cache-v30.0.0-force-update';
 const ASSETS = [
   '/',
-  '/index.html',
-  '/gracias.html',
-  '/confirmacion.html',
-  '/index.css?v=29.0.0',
-  '/app.js?v=29.0.0',
-  '/js/analytics.js?v=3.0.0',
-  '/assets/og-image.jpg?v=3.0.0',
-  '/favicon.jpg',
-  '/favicon.png',
-  '/favicon.ico',
-  '/assets/logo.jpg',
-  '/privacidad.html',
-  '/terminos.html'
+  '/index.html?v=30.0.0',
+  '/index.css?v=30.0.0',
+  '/app.js?v=30.0.0',
+  '/js/analytics.js?v=30.0.0',
+  '/favicon.png'
 ];
 
 self.addEventListener('install', (e) => {
+  self.skipWaiting();
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
 });
 
@@ -34,14 +25,25 @@ self.addEventListener('activate', (e) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
+// Network-First Strategy for HTML & JS to ensure instant live updates on reload
 self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      return cachedResponse || fetch(e.request);
-    })
-  );
+  if (e.request.mode === 'navigate' || e.request.url.includes('.js') || e.request.url.includes('.html')) {
+    e.respondWith(
+      fetch(e.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+        }
+        return networkResponse;
+      }).catch(() => caches.match(e.request))
+    );
+  } else {
+    e.respondWith(
+      caches.match(e.request).then((cachedResponse) => cachedResponse || fetch(e.request))
+    );
+  }
 });
