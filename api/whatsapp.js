@@ -122,7 +122,7 @@ function generateHumanWhatsappReply(phone, name, userText) {
   }
 
   if (textLower.includes('demo') || textLower.includes('demostracion') || textLower.includes('ejemplo')) {
-    const reply = `Con mucho gusto te comparto nuestras demostraciones interactivas en vivo. 🌐\n\nPuedes probar cómo funcionan nuestros desarrollos directamente en tu navegador:\nhttps://brainbranding.com.mx/demos\n\nAllí encontrarás simuladores de Punto de Venta (POS), Asistentes de Citas por IA y ERPs de gestión.\n\n¿De qué giro es tu negocio para recomendarte la demo más adecuada?`;
+    const reply = `¡Con mucho gusto! En Brain Branding desarrollamos tecnología 100% a la medida según las necesidades de tu empresa.\n\nContamos con soluciones de Asistentes IA 24/7 para WhatsApp y Telegram, Puntos de Venta (POS) en la nube y ERPs de gestión operativa.\n\nPara orientarte de la mejor manera, platícame: ¿de qué giro es tu negocio y qué área o proceso te gustaría optimizar primero? ☕`;
     history.push({ role: 'model', text: reply });
     return reply;
   }
@@ -134,7 +134,7 @@ function generateHumanWhatsappReply(phone, name, userText) {
   }
 
   if (textLower.includes('hojalat') || textLower.includes('carroc') || textLower.includes('taller') || textLower.includes('mecanic') || textLower.includes('auto')) {
-    const reply = `¡Excelente giro! Para talleres mecánicos, de hojalatería y pintura desarrollamos soluciones muy prácticas:\n\n• **Recepción de Vehículos en Celular:** Capturas la orden con fotos de abolladuras y detalles desde el celular, generando la hoja de servicio al instante.\n• **Avisos Automáticos por WhatsApp:** El sistema notifica al cliente el avance de su vehículo sin enviar mensajes a mano.\n• **Control de Presupuestos y Anticipos:** Registro de reparaciones y corte de caja.\n\nPuedes ver una demostración en vivo de este tipo de sistemas en:\n🌐 https://brainbranding.com.mx/demos\n\nCuéntame: ¿cómo llevan actualmente el control de las órdenes de servicio en tu taller?`;
+    const reply = `¡Excelente giro! Para talleres mecánicos, de hojalatería y pintura desarrollamos soluciones muy prácticas:\n\n• **Recepción de Vehículos en Celular:** Capturas la orden con fotos de abolladuras y detalles desde el celular, generando la hoja de servicio al instante.\n• **Avisos Automáticos por WhatsApp:** El sistema notifica al cliente el avance de su vehículo sin enviar mensajes a mano.\n• **Control de Presupuestos y Anticipos:** Registro de reparaciones y corte de caja.\n\nCuéntame: ¿cómo llevan actualmente la recepción de vehículos y el control de las órdenes de servicio en tu taller?`;
     history.push({ role: 'model', text: reply });
     return reply;
   }
@@ -146,12 +146,12 @@ function generateHumanWhatsappReply(phone, name, userText) {
   }
 
   if (textLower.includes('cita') || textLower.includes('agend') || textLower.includes('horari')) {
-    const reply = `Entiendo perfecto. Cuando trabajas por citas, contestar mensajes a mano quita tiempo valioso.\n\nCon un Asistente IA personalizado:\n1. El cliente consulta disponibilidad y agenda 24/7 por WhatsApp.\n2. Se sincroniza con tu calendario en tiempo real.\n3. Envía recordatorios automáticos para evitar cancelaciones.\n\n¿Te gustaría ver una demo de cómo agendaría un cliente en tu caso?`;
+    const reply = `Entiendo perfecto. Cuando trabajas por citas, contestar mensajes a mano quita tiempo valioso.\n\nCon un Asistente IA personalizado:\n1. El cliente consulta disponibilidad y agenda 24/7 por WhatsApp.\n2. Se sincroniza con tu calendario en tiempo real.\n3. Envía recordatorios automáticos para evitar cancelaciones.\n\n¿Te gustaría que diseñemos un flujo de agendamiento adaptado exactamente a tus horarios y servicios?`;
     history.push({ role: 'model', text: reply });
     return reply;
   }
 
-  const fallback = `Entiendo perfectamente lo que buscas. En Brain Branding nos especializamos en construir tecnología limpia y funcional adaptada a la manera exacta en que trabajas.\n\nSi gustas, platícame más sobre tu proceso actual o dime si prefieres revisar las demostraciones en vivo en la web: https://brainbranding.com.mx/demos 🌐`;
+  const fallback = `Entiendo perfectamente lo que buscas. En Brain Branding nos especializamos en construir tecnología limpia y funcional adaptada a la manera exacta en que trabajas.\n\nPlatícame un poco más sobre tu proceso actual: ¿cuántas personas colaboran en tu equipo o qué volumen de atenciones gestionan al día? ☕`;
   history.push({ role: 'model', text: fallback });
   return fallback;
 }

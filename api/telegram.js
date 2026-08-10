@@ -224,9 +224,10 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, welcome);
   }
 
-  // 0.3 Solicitud de Demos
+  // 0.3 Solicitud de Información / Demos / Ejemplos
   if (userText === '/demo' || textClean.includes('demo') || fuzzyClean.includes('demo') || textClean.includes('demostracion') || fuzzyClean.includes('demostracion') || textClean.includes('ejemplo')) {
-    const reply = `Con mucho gusto te comparto nuestras demostraciones interactivas en vivo. 📱\n\nPuedes probar cómo funcionan nuestros desarrollos directamente en tu navegador desde tu celular o computadora:\n🌐 https://brainbranding.com.mx/demos\n\nAllí encontrarás simuladores de Punto de Venta (POS), Asistentes de Citas por IA y ERPs de gestión.\n\n¿De qué giro es tu negocio para sugerirte la demo más alineada a lo que buscas?`;
+    const greetingName = userName ? ` ${userName}` : '';
+    const reply = `¡Con mucho gusto${greetingName}! Te platico cómo trabajamos.\n\nEn Brain Branding desarrollamos soluciones 100% a la medida para cada negocio: desde Asistentes de Inteligencia Artificial para WhatsApp y Telegram, hasta Puntos de Venta (POS) en la nube y ERPs de gestión.\n\nPara orientarte de forma precisa, platícame: ¿de qué giro exacto es tu negocio y qué área o proceso te gustaría automatizar o mejorar primero? ☕`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
@@ -234,7 +235,7 @@ function generateHumanReply(chatId, userName, userText) {
   // 0.4 Fase Cierre Listo
   if (state.conviction === 'TOTALMENTE' || textClean.includes('pasame la cuenta') || textClean.includes('datos bancarios') || textClean.includes('donde transfiero')) {
     state.temp = 'CITA_URGENTE';
-    const reply = `¡Excelente decisión! Vamos a dejar tu sistema funcionando exactamente como lo necesitas.\n\nTe comparto los datos para coordinar la reunión de arranque o enviarte la información bancaria para el anticipo inicial (35%):\n\n📱 Contacto directo para arranque: https://wa.me/527712339238?text=Hola%20Andr%C3%A9s%20R,%20estoy%20listo%20para%20arrancar%20el%20proyecto.\n\n¿Prefieres que te llamemos hoy mismo o a qué hora te queda mejor?`;
+    const reply = `¡Excelente decisión! Vamos a dejar tu sistema funcionando exactamente como lo necesitas.\n\nPodemos coordinar la reunión de arranque o enviarte la información bancaria para el anticipo inicial (35%).\n\n¿Prefieres que te llamemos hoy mismo o a qué hora te queda mejor platicar 5 minutos? ☕`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
@@ -258,7 +259,7 @@ function generateHumanReply(chatId, userName, userText) {
 
   if (isPostponing) {
     const greetingName = userName ? ` ${userName}` : '';
-    const rescueReply = `Entiendo perfectamente${greetingName}, sé que en el día a día el tiempo vuela. 🙌\n\nSin ningún compromiso, cuando tengas un par de minutos libres podemos coordinar una breve llamada de 5 minutos o te puedo enviar una propuesta rápida por WhatsApp para que la revises con calma.\n\nQuedo a la orden cuando te desocupes. ¡Que tengas un excelente día! ☕`;
+    const rescueReply = `Entiendo perfectamente${greetingName}, sé que en el día a día el tiempo vuela. 🙌\n\nSin ningún compromiso, cuando tengas un par de minutos libres podemos coordinar una breve llamada de 5 minutos para que la revises con calma.\n\nQuedo a la orden cuando te desocupes. ¡Que tengas un excelente día! ☕`;
     history.push({ role: 'model', text: rescueReply });
     return getUniqueReply(chatId, rescueReply);
   }
@@ -292,7 +293,7 @@ function generateHumanReply(chatId, userName, userText) {
   // 0.8 Giros Específicos de Negocio (Taller, Restaurantes, Clínicas, etc.)
   if (textClean.includes('hojalat') || textClean.includes('carroc') || textClean.includes('pintur') || textClean.includes('taller') || textClean.includes('mecanic') || textClean.includes('auto') || textClean.includes('vehic')) {
     state.giro = 'Taller Automotriz & Hojalatería';
-    const reply = `¡Excelente giro! Para talleres mecánicos, de hojalatería y pintura desarrollamos soluciones muy prácticas:\n\n• **Recepción de Vehículos en Celular:** Capturas la orden con fotos de abolladuras y detalles desde el celular, generando la hoja de servicio al instante.\n• **Avisos Automáticos por WhatsApp:** El sistema notifica al cliente el avance de su vehículo (hojalatería, pintura o listo para entrega) sin que tengas que enviar mensajes a mano.\n• **Control de Presupuestos y Anticipos:** Manejo de reparaciones, refacciones y corte de caja.\n\nPuedes ver una demostración en vivo de este tipo de sistemas en:\n🌐 https://brainbranding.com.mx/demos\n\nCuéntame: ¿cómo llevan actualmente el control de las órdenes de servicio en tu taller?`;
+    const reply = `¡Excelente giro! Para talleres mecánicos, de hojalatería y pintura desarrollamos soluciones muy prácticas:\n\n• **Recepción de Vehículos en Celular:** Capturas la orden con fotos de abolladuras y detalles desde el celular, generando la hoja de servicio al instante.\n• **Avisos Automáticos por WhatsApp:** El sistema notifica al cliente el avance de su vehículo (hojalatería, pintura o listo para entrega) sin que tengas que enviar mensajes a mano.\n• **Control de Presupuestos y Anticipos:** Manejo de reparaciones, refacciones y corte de caja.\n\nCuéntame: ¿cómo llevan actualmente la recepción de vehículos y el control de las órdenes de servicio en tu taller?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
@@ -306,7 +307,7 @@ function generateHumanReply(chatId, userName, userText) {
 
   if (textClean.includes('cita') || textClean.includes('agend') || textClean.includes('horari') || textClean.includes('reserv')) {
     state.dolor = 'Agendamiento de citas';
-    const reply = `Entiendo perfecto. Cuando trabajas por citas, contestar mensajes manuales quita muchísimo tiempo y a veces se pierden clientes por tardar en responder.\n\nCon un Asistente IA personalizado:\n1. El cliente consulta disponibilidad y agenda 24/7 por WhatsApp o Telegram.\n2. Se sincroniza con tu agenda en tiempo real.\n3. Envía recordatorios automáticos para evitar cancelaciones de última hora.\n\n¿Te gustaría ver un ejemplo de cómo agendaría un cliente en tu caso?`;
+    const reply = `Entiendo perfecto. Cuando trabajas por citas, contestar mensajes manuales quita muchísimo tiempo y a veces se pierden clientes por tardar en responder.\n\nCon un Asistente IA personalizado:\n1. El cliente consulta disponibilidad y agenda 24/7 por WhatsApp o Telegram.\n2. Se sincroniza con tu agenda en tiempo real.\n3. Envía recordatorios automáticos para evitar cancelaciones de última hora.\n\n¿Te gustaría que diseñemos un flujo de agendamiento adaptado exactamente a tus horarios y servicios?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
@@ -341,7 +342,7 @@ function generateHumanReply(chatId, userName, userText) {
 
   // 0.9 Consultas frecuentes (Ubicación, Facturación, Garantías, Tiempos)
   if (textClean.includes('donde estan') || textClean.includes('ubicacion') || textClean.includes('oficina')) {
-    const reply = `Nuestras oficinas de desarrollo se encuentran en Pachuca, Hidalgo, y brindamos servicio e implementación digital a clientes en todo México y Latinoamérica 🇲🇽🌎.\n\nTodo el desarrollo y las demostraciones se realizan en línea para tu mayor comodidad. ¿Te gustaría agendar una breve videollamada para conocernos?`;
+    const reply = `Nuestras oficinas de desarrollo se encuentran en Pachuca, Hidalgo, y brindamos servicio e implementación digital a clientes en todo México y Latinoamérica 🇲🇽🌎.\n\nTodo el desarrollo y las reuniones se realizan en línea para tu mayor comodidad. ¿Te gustaría agendar una breve llamada de 5 minutos para conocernos?`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
@@ -371,7 +372,7 @@ function generateHumanReply(chatId, userName, userText) {
   }
 
   // 1.1 Respuesta fluida de seguimiento conversacional
-  const reply = `Entiendo perfectamente lo que buscas. En Brain Branding nos especializamos en construir tecnología limpia y funcional adaptada a la manera exacta en que trabajas.\n\nSi gustas, platícame más sobre tu proceso actual o dime si prefieres revisar las demostraciones en vivo en la web: https://brainbranding.com.mx/demos 🌐`;
+  const reply = `Entiendo perfectamente lo que buscas. En Brain Branding nos especializamos en construir tecnología limpia y funcional adaptada a la manera exacta en que trabajas.\n\nPlatícame un poco más sobre tu proceso actual: ¿cuántas personas colaboran en tu equipo o qué volumen de atenciones gestionan al día? ☕`;
   history.push({ role: 'model', text: reply });
   return getUniqueReply(chatId, reply);
 }
