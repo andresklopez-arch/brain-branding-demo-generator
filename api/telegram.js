@@ -417,6 +417,98 @@ const pausedChats = {};
 const prospectLogs = [];
 const userRateLimits = {};
 
+function sanitizeReply(text) {
+  if (!text) return "";
+  let clean = text;
+
+  // Remove any website URLs sending prospect back to domain
+  clean = clean.replace(/https?:\/\/brainbranding\.com\.mx[^\s]*/gi, '');
+  clean = clean.replace(/https?:\/\/[^\s]*\.onrender\.com[^\s]*/gi, '');
+
+  // Remove numbered menu options and rigid menu phrases
+  clean = clean.replace(/responde únicamente con el número[^\n]*/gi, '');
+  clean = clean.replace(/para darte la información exacta sin hacerte perder tiempo[^\n]*/gi, '');
+  clean = clean.replace(/para darte la mejor atención sin rodeos[^\n]*/gi, '');
+  clean = clean.replace(/ver la demo en pantalla[^\n]*/gi, '');
+  clean = clean.replace(/Probar Demo en Vivo:[^\n]*/gi, '');
+  clean = clean.replace(/Ver Demos Interactivas[^\n]*/gi, '');
+
+  // Clean up double newlines or trailing spaces
+  clean = clean.replace(/\n{3,}/g, '\n\n').trim();
+  return clean;
+}
+
+async function getGeminiReply(userText, userName, chatId, history = []) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const systemInstruction = `Eres un consultor de ventas humano, empático, profesional y altamente capacitado llamado L.C.I. Andrés R, de Brain Branding (Agencia líder en México de Software a la Medida, Puntos de Venta e Inteligencia Artificial). Tu objetivo es atender y calificar prospectos que llegan solicitando información.
+
+REGLAS ABSOLUTAS E INVIOLABLES:
+1. SALUDO INICIAL: Si el usuario saluda ("Hola", "Buenas", etc.), inicia con:
+"¡Hola! 👋 Qué gusto saludarte, ¿cómo estás? En Brain Branding nos da mucho gusto atenderte. 😊"
+2. PROHIBIDO ENVIAR LINKS A LA PÁGINA WEB: Jamás envíes links a brainbranding.com.mx ni pidas que vayan a la web ni a probar demos. El prospecto viene de ahí.
+3. PROHIBIDO USAR OPCIONES NUMERADAS O MENÚS RÍGIDOS (1, 2, 3): Mantén una plática fluida, humana e inteligente.
+4. EXPLICACIÓN FLUIDA DE SERVICIOS: Explica con naturalidad nuestras soluciones:
+   - Asistentes de IA 24/7 para WhatsApp y Telegram.
+   - Puntos de Venta (POS) y ERPs en la Nube.
+   - Desarrollos Web y Apps a la Medida.
+5. DERIVACIÓN A ASESOR: No ofrezcas llamada ni asesor en la primera línea. Conversa primero. Si el cliente pide cotizar o cerrar, ofrece derivarlo con un asesor por WhatsApp.`;
+
+    const geminiHistory = [];
+    for (const item of history.slice(-6)) {
+      geminiHistory.push({
+        role: item.role === 'user' ? 'user' : 'model',
+        parts: [{ text: item.text }]
+      });
+    }
+
+    const payload = JSON.stringify({
+      systemInstruction: { parts: [{ text: systemInstruction }] },
+      contents: [
+        ...geminiHistory,
+        { role: 'user', parts: [{ text: userText }] }
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 600
+      }
+    });
+
+    return new Promise((resolve) => {
+      const req = https.request({
+        hostname: 'generativelanguage.googleapis.com',
+        port: 443,
+        path: `/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload)
+        }
+      }, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data);
+            const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+            resolve(text ? text.trim() : null);
+          } catch (e) {
+            resolve(null);
+          }
+        });
+      });
+
+      req.on('error', () => resolve(null));
+      req.write(payload);
+      req.end();
+    });
+  } catch (e) {
+    return null;
+  }
+}
+
 function checkUserRateLimit(chatId) {
   if (chatId && chatId.toString() === ADMIN_CHAT_ID) return { allowed: true };
 
@@ -784,7 +876,13 @@ async function handleWebhookRequest(req, res) {
         }
 
         await callTelegram('sendChatAction', { chat_id: chatId, action: 'typing' });
-        const reply = generateHumanReply(chatId, firstName, userText);
+        
+        let reply = await getGeminiReply(userText, firstName, chatId, conversationHistory[chatId] || []);
+        if (!reply) {
+          reply = generateHumanReply(chatId, firstName, userText);
+        }
+
+        reply = sanitizeReply(reply);
 
         const textClean = normalizeText(userText);
         let replyMarkup = { remove_keyboard: true };
