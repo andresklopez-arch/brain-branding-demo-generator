@@ -913,6 +913,41 @@ function antiBruteForceGuard(req, res, next) {
   next();
 }
 
+// Honeypot Trap Security Middleware against Automated Scanners & Vulnerability Probes
+const HONEYPOT_ROUTES = [
+  '/wp-login.php', '/wp-admin', '/.env', '/admin.php', '/phpmyadmin',
+  '/.git/config', '/xmlrpc.php', '/setup.php', '/config.json', '/vendor/.env',
+  '/api/v1/auth/login.php', '/database.sql'
+];
+
+app.use((req, res, next) => {
+  const pathLower = (req.path || '').toLowerCase();
+  if (HONEYPOT_ROUTES.some(route => pathLower.includes(route))) {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    console.warn(`[HONEYPOT TRAP TRIGGERED] Suspicious probe at "${req.path}" from IP: ${ip}`);
+
+    // Ban IP for 48 hours
+    failedLoginAttempts[ip] = {
+      count: 20,
+      bannedUntil: Date.now() + 48 * 60 * 60 * 1000
+    };
+
+    // Dispatch security alert
+    callTelegram('sendMessage', {
+      chat_id: ADMIN_CHAT_ID,
+      text: `🚨 *¡HONEYPOT TRAP ACTIVADO (IP BANEADA 48H)!* 🚨\n\n` +
+        `👤 *IP Atacante:* \`${ip}\`\n` +
+        `🌐 *Ruta Trampa Sondada:* \`${req.path}\`\n` +
+        `🖥️ *User-Agent:* \`${req.headers['user-agent'] || 'Desconocido'}\`\n\n` +
+        `🛡️ *Acción:* La IP ha sido suspendida automáticamente por **48 horas** de todo el servidor.`,
+      parse_mode: 'Markdown'
+    }).catch(() => {});
+
+    return res.status(403).json({ ok: false, error: '🚨 ACCESO DENEGADO POR CORTAFUEGOS DE SEGURIDAD HONEYPOT WAF.' });
+  }
+  next();
+});
+
 // Anti-Scanner & Vulnerability Botnet WAF Blocker (Suggestion 2)
 const SUSPICIOUS_AG_PATTERNS = [/sqlmap/i, /nikto/i, /nmap/i, /zgrab/i, /censys/i, /masscan/i, /gobuster/i, /dirbuster/i, /w3af/i, /acunetix/i];
 app.use((req, res, next) => {
@@ -982,6 +1017,53 @@ async function checkInactiveLeadsFollowup() {
 setInterval(() => {
   checkInactiveLeadsFollowup();
 }, 2 * 60 * 60 * 1000);
+
+// Morning Report Scheduler at 8:00 AM (Suggestion 3)
+async function sendMorningReport8AM() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  const hotLeads = prospectLogs.filter(p => p.temp === 'CALIENTE' || p.temp === 'CITA_URGENTE');
+  const warmLeads = prospectLogs.filter(p => p.temp === 'TIBIO');
+
+  let reportMsg = `☀️ *REPORTE MATUTINO DE PROSPECTOS Y RENDIMIENTO IA (8:00 AM)* ☀️\n` +
+    `📅 *Fecha:* ${dateStr}\n\n` +
+    `📊 *ESTADÍSTICAS DE INTERACCIÓN:*\n` +
+    `🔥 *Prospectos Calientes / Citas:* ${hotLeads.length}\n` +
+    `🟡 *Prospectos Tibios:* ${warmLeads.length}\n` +
+    `💬 *Total Interacciones:* ${prospectLogs.length}\n\n` +
+    `🤖 *MOTOR GEMINI AI TELEMETRÍA:*\n` +
+    `⚡ *Modelo Activo:* ${geminiMetrics.lastUsedModel || 'gemini-2.0-flash'}\n` +
+    `⏱️ *Latencia Promedio:* ${geminiMetrics.averageLatencyMs || 0}ms\n` +
+    `✅ *Llamadas Exitosas:* ${geminiMetrics.successfulCalls}\n` +
+    `⚡ *Caché Hits:* ${geminiMetrics.cacheHits}\n` +
+    `🛡️ *Inyecciones Bloqueadas:* ${geminiMetrics.blockedInjections}\n\n` +
+    `💡 *Tip de Gestión:* Usa \`/exportarcsv\` para descargar la base de prospectos en Excel.`;
+
+  try {
+    await callTelegram('sendMessage', {
+      chat_id: ADMIN_CHAT_ID,
+      text: reportMsg,
+      parse_mode: 'Markdown'
+    });
+    console.log('[MORNING REPORT] 8:00 AM Report dispatched successfully.');
+  } catch (e) {
+    console.error('[MORNING REPORT ERROR]', e.message);
+  }
+}
+
+// 8:00 AM Cron Timer Check
+let lastMorningReportDate = '';
+setInterval(() => {
+  const now = new Date();
+  const todayStr = now.toDateString();
+  const currentHour = now.getHours();
+
+  if (currentHour === 8 && lastMorningReportDate !== todayStr) {
+    lastMorningReportDate = todayStr;
+    sendMorningReport8AM();
+  }
+}, 60 * 1000);
 
 // HMAC SHA-256 Master Key Secret Generator
 const HMAC_SECRET = process.env.HMAC_SECRET || 'BRAIN_BRANDING_MASTER_SAAS_HMAC_KEY_2026_SECRET';
