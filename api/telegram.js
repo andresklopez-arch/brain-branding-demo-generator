@@ -328,15 +328,71 @@ function generateHumanReply(chatId, userName, userText) {
   // 0.75 Puntos de Venta (POS) / Cobro
   if (textClean.includes('punto de venta') || textClean.includes('pos') || textClean.includes('sistema de cobro') || textClean.includes('caja registradora') || textClean.includes('terminal')) {
     state.giro = state.giro || 'Punto de Venta';
-    const reply = `¡Con mucho gusto! Nuestros Puntos de Venta (POS) en la nube te permiten:\n\n• **Cobrar en Segundos:** Desde cualquier celular, tablet o computadora con escáner de código de barras.\n• **Control Total de Inventarios:** Alertas automáticas de productos o insumos por agotarse.\n• **Corte de Caja Diario:** Reporte claro de ingresos en efectivo, tarjeta y transferencias con respaldo seguro en la nube desde $290 MXN/mes.\n\nPara recomendarte la configuración idónea: ¿de qué giro es tu negocio y qué productos o servicios vendes? ☕`;
+    const reply = `¡Con mucho gusto! Nuestros Puntos de Venta (POS) en la nube te permiten:\n\n• **Cobrar en Segundos:** Desde cualquier celular, tablet o computadora con escáner de código de barras.\n• **Control Total de Inventarios:** Alertas automáticas de productos o insumos por agotarse.\n• **Corte de Caja Diario:** Reporte claro de ingresos en efectivo, tarjeta y transferencias con respaldo seguro en la nube desde $290 MXN/mes.\n\n🌐 **Probar Demo Interactiva en Vivo:** https://brain-branding.web.app/#demo-pos\n\nPara recomendarte la configuración idónea: ¿de qué giro es tu negocio y qué productos o servicios vendes? ☕`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  // 0.78 Autolavados & Car Wash (Comprobación prioritaria para evitar conflicto con talleres)
+  // 0.78 Autolavados & Car Wash (Comprobación prioritaria)
   if (textClean.includes('autolavado') || textClean.includes('lavado de auto') || textClean.includes('carwash') || textClean.includes('car wash') || textClean.includes('lavadero')) {
     state.giro = 'Autolavado & Car Wash';
-    const reply = `¡Excelente giro! Para autolavados y centros de estética automotriz implementamos soluciones muy prácticas:\n\n• **Punto de Venta Exprés para Autolavados:** Capturas el paquete de lavado (sencillo, detallado, encerado, vestiduras) por tipo de vehículo (sedán, SUV, camioneta) en 3 segundos desde celular o tablet.\n• **Ticket Digital por WhatsApp:** El cliente recibe su comprobante digital en su teléfono al dejar su auto.\n• **Aviso Automático de "Auto Listo":** Al terminar el lavado, el sistema notifica por WhatsApp al cliente para que pase a recogerlo.\n• **Control de Insumos y Corte de Caja:** Monitoreo de shampoo, cera, microfibras y reporte diario de caja.\n\nCuéntame: ¿cuántos autos lavan aproximadamente al día o qué paquetes manejan? ☕`;
+    const reply = `¡Excelente giro! Para autolavados y centros de estética automotriz implementamos soluciones muy prácticas:\n\n• **Punto de Venta Exprés para Autolavados:** Capturas el paquete de lavado (sencillo, detallado, encerado, vestiduras) por tipo de vehículo (sedán, SUV, camioneta) en 3 segundos desde celular o tablet.\n• **Ticket Digital por WhatsApp:** El cliente recibe su comprobante digital en su teléfono al dejar su auto.\n• **Aviso Automático de "Auto Listo":** Al terminar el lavado, el sistema notifica por WhatsApp al cliente para que pase a recogerlo.\n• **Control de Insumos y Corte de Caja:** Monitoreo de shampoo, cera, microfibras y reporte diario de caja.\n\n🌐 **Probar Demo Interactiva en Vivo:** https://brain-branding.web.app/#demo-autolavado\n\nCuéntame: ¿cuántos autos lavan aproximadamente al día o qué paquetes manejan? ☕`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 0.79 Purificadoras de Agua y Garrafones (Giro Centro de México)
+  if (textClean.includes('purificadora') || textClean.includes('garrafon') || textClean.includes('planta de agua') || textClean.includes('agua purificada') || textClean.includes('embotelladora')) {
+    state.giro = 'Purificadora de Agua & Garrafones';
+    const reply = `¡Gran giro! Para purificadoras de agua y plantas embotelladoras del centro de México desarrollamos:\n\n• **Punto de Venta de Cobro Exprés:** Registro de recarga de garrafón, envase nuevo y fichas de mostrador en 2 segundos.\n• **Rutas de Repartidores por WhatsApp:** Pedidos a domicilio tomados 24/7 con dirección y ubicación GPS del cliente.\n• **Control de Insumos y Filtros:** Registro de tapones, sellos, garrafones prestados y corte de caja por turno.\n\n🌐 **Probar Demo Interactiva:** https://brain-branding.web.app/#demo-purificadora\n\n¿Tienen venta únicamente en mostrador o cuentan con rutas de repartidores a domicilio? ☕`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 0.80 Tortillerías & Molinos de Nixtamal (Giro Centro de México)
+  if (textClean.includes('tortilleria') || textClean.includes('molino') || textClean.includes('nixtamal') || textClean.includes('tortilla')) {
+    state.giro = 'Tortillería & Molino';
+    const reply = `¡Excelente giro tradicional! Para tortillerías y molinos de nixtamal desarrollamos soluciones muy ágiles:\n\n• **Cobro Táctil de Botón Rápido:** Botones de importe exacto ($10, $20, $50, $100) y kilos para cobro en 2 segundos.\n• **Control de Reparto a Taquerías y Cocinas:** Notas de entrega a crédito o contado para clientes mayoristas.\n• **Rendimiento de Harina y Maíz:** Registro de bultos procesados y kilos de masa producidos.\n\n🌐 **Probar Demo Interactiva:** https://brain-branding.web.app/#demo-tortilleria\n\n¿Surten pedidos a taquerías/restaurantes o atienden principalmente mostrador? ☕`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 0.81 Imprentas, Sublimación, Tazas & Publicidad (Giro Centro de México)
+  if (textClean.includes('imprenta') || textClean.includes('sublimac') || textClean.includes('taza') || textClean.includes('serigraf') || textClean.includes('volante') || textClean.includes('lona') || textClean.includes('impresion') || textClean.includes('publicidad')) {
+    state.giro = 'Imprenta & Sublimación / Publicidad';
+    const reply = `¡Buenísimo giro! Para imprentas, centros de sublimación y publicidad implementamos:\n\n• **Cotizador Expres de Impresión y Regalos:** Precios automáticos por millar, pliego o unidad en tazas, lonas, playeras y volantes.\n• **Control de Anticipos (50%):** Registro de abono para enviar a producción y saldo pendiente contra entrega.\n• **Avisos de "Trabajo Listo" por WhatsApp:** Notificación automática al cliente cuando su pedido esté terminado.\n\n🌐 **Probar Demo Interactiva:** https://brain-branding.web.app/#demo-imprenta\n\n¿Qué tipo de trabajos realizan con mayor frecuencia? ☕`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 0.82 Carnicerías, Pollerías & Cremerías (Giro Centro de México)
+  if (textClean.includes('carniceria') || textClean.includes('polleria') || textClean.includes('cremeria') || textClean.includes('salchichoneria') || textClean.includes('carnes')) {
+    state.giro = 'Carnicería / Pollería / Cremería';
+    const reply = `¡Excelente giro! Para carnicerías, pollerías y cremerías implementamos:\n\n• **Punto de Venta Táctil Exprés:** Captura por kilos, gramos o peso exacto con cobro ultra rápido.\n• **Control de Inventarios y Cámara Fría:** Registro de entrada de canales, cortes y mermas.\n• **Corte de Caja Diario:** Control exacto de ventas en efectivo, tarjeta y transferencias.\n\n🌐 **Probar Demo Interactiva:** https://brain-branding.web.app/#demo-carniceria\n\n¿Manejan únicamente venta al menudeo o también surten a taquerías y banquetes? ☕`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 0.83 Farmacias & Boticas de Barrio (Giro Centro de México)
+  if (textClean.includes('farmacia') || textClean.includes('botica') || textClean.includes('medicamento') || textClean.includes('patente') || textClean.includes('drogueria')) {
+    state.giro = 'Farmacia & Botica';
+    const reply = `¡Un giro fundamental! Para farmacias y boticas de barrio implementamos:\n\n• **Punto de Venta con Búsqueda de Genéricos y Patentes:** Consulta rápida por ingrediente activo, sustancia o marca.\n• **Alerta de Caducidades Próximas:** Reporte automático de lotes por vencer para prevenir mermas.\n• **Módulo de Consultorio Anexo:** Registro de recetas y consultas médicas rápidas.\n\n🌐 **Probar Demo Interactiva:** https://brain-branding.web.app/#demo-farmacia\n\n¿Cuentan con consultorio médico anexo o únicamente mostrador de venta? ☕`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 0.84 Materiales de Construcción & Bloqueras (Giro Centro de México)
+  if (textClean.includes('materiales') || textClean.includes('cemento') || textClean.includes('varilla') || textClean.includes('bloquera') || textClean.includes('tabique') || textClean.includes('arena')) {
+    state.giro = 'Materiales para Construcción';
+    const reply = `¡Excelente giro! Para casas de materiales de construcción y bloqueras del centro de México desarrollamos:\n\n• **Venta por Viajes, Bultos y Metros:** Cotizaciones rápidas de cemento, varilla, arena y tabique.\n• **Control de Fletes y Entregas en Obra:** Asignación de remisiones a choferes con cobro a contraentrega.\n• **Créditos a Maestros de Obra:** Estado de cuenta claro con folios de notas firmadas.\n\n🌐 **Probar Demo Interactiva:** https://brain-branding.web.app/#demo-materiales\n\n¿Cuenta con camiones propios para entrega en obra? ☕`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 0.85 Cabañas, Hoteles, Balnearios & Turismo (Hidalgo, Querétaro, Edomex)
+  if (textClean.includes('balneario') || textClean.includes('cabana') || textClean.includes('cabaña') || textClean.includes('hotel') || textClean.includes('posada') || textClean.includes('hospedaje') || textClean.includes('turismo')) {
+    state.giro = 'Hotel / Cabañas / Balneario';
+    const reply = `¡Excelente giro turístico! Para cabañas, hoteles, balnearios y parques ecoturísticos del centro de México implementamos:\n\n• **Reservación Inteligente 24/7 por WhatsApp:** El cliente consulta fotos, tarifas y disponibilidad de cabañas u habitaciones.\n• **Anticipos y Comprobantes:** Recepción automática de transferencias y confirmación de reserva.\n• **Punto de Venta para Consumos:** Cobro en restaurante, accesos a albercas y actividades.\n\n🌐 **Probar Demo Interactiva:** https://brain-branding.web.app/#demo-turismo\n\n¿Cuántas cabañas o habitaciones manejan en sus instalaciones? ☕`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
