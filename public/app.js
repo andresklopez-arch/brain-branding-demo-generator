@@ -277,12 +277,21 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. Dynamic typing text for the Hero
   const typingElement = document.getElementById('typing-text');
   if (typingElement) {
-    const words = Object.freeze(["Asistente Personal IA", "Punto de Venta", "Software Personalizado", "Página Web"]);
+    const words = Object.freeze([
+      "Asistente Personal IA",
+      "Apps Móviles Android & iOS",
+      "Punto de Venta POS",
+      "Simulador de Presupuesto IA",
+      "Software a la Medida",
+      "Página Web de Alta Conversión"
+    ]);
     const descriptions = Object.freeze([
-      "Implementamos tu Asistente Personal de Inteligencia Artificial que puedes controlar desde Whatsapp o Telegram para que puedas disfrutar más de las cosas que valen la pena.",
-      "Controla tu negocio 24/7 desde cualquier lugar y/o dispositivo, administra tus inventarios, sucursales, facturación y cobros, todo a medida.",
+      "Implementamos tu Asistente Personal de Inteligencia Artificial que puedes controlar desde WhatsApp o Telegram para que disfrutes más de las cosas que valen la pena.",
+      "Desarrollamos Aplicaciones Móviles (PWA y Nativas) para Android e iOS publicadas en Play Store y App Store con cobro en tarjeta y notificaciones push.",
+      "Controla tu negocio 24/7 desde cualquier lugar y dispositivo: administra inventarios, sucursales, cortes de caja y facturación a tu medida.",
+      "Cotiza e interactúa en tiempo real con nuestro Simulador de Presupuestos IA para calcular la inversión y retorno exacto de tu proyecto.",
       "Desarrollamos Software Personalizado, ERP, CRM y Plataformas a la Medida para automatizar la operación exacta de tu empresa.",
-      "Establece una presencia digital corporativa premium con tu Página Web, con el nombre de tu empresa en la WEB."
+      "Establece una presencia digital corporativa premium con tu Página Web disruptiva con puntuación 98+ en velocidad y conversión."
     ]);
     let wordIndex = 0;
     let charIndex = 0;
