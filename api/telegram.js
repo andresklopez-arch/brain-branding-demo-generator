@@ -473,8 +473,27 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
-  if (textClean.includes('factura') || textClean.includes('cfdi') || textClean.includes('sat')) {
-    const reply = `Así es, por supuesto. 📜 Todos nuestros desarrollos y servicios son 100% deducibles y emitimos factura fiscal CFDI 4.0.\n\n¿Requieres facturar a nombre de persona física o moral?`;
+  // 0.88 Disambiguation of Invoicing System vs Our Invoicing
+  const isInvoiceSystemRequest = textClean.includes('modulo de factura') || 
+                                textClean.includes('sistema de factura') || 
+                                textClean.includes('facturacion') ||
+                                (textClean.includes('programa') && textClean.includes('factur')) || 
+                                (textClean.includes('integre') && textClean.includes('factur')) || 
+                                (textClean.includes('modulo') && textClean.includes('factur')) || 
+                                textClean.includes('facturar a mis clientes') || 
+                                textClean.includes('autofactura') || 
+                                textClean.includes('timbrad');
+
+  if (isInvoiceSystemRequest) {
+    state.giro = state.giro || 'Sistema de Facturación e Inventario';
+    const reply = `¡Sí, totalmente! Desarrollamos e integramos **Módulos de Facturación Electrónica CFDI 4.0** (con timbrado automático SAT / PAC) en tus Puntos de Venta (POS), ERPs, Apps o Sistemas a la Medida. 📄⚡\n\nTu software puede generar facturas en PDF/XML al instante al cobrar, enviarlas por WhatsApp/correo a tus clientes o habilitar un **Portal de Autofacturación Web** para tu negocio.\n\n¿Qué modalidad de facturación prefieres que tenga tu sistema?\n\n📄 **1.** Facturación automática al momento del cobro en caja (POS).\n🌐 **2.** Portal de Autofacturación Web por ticket de venta.\n📊 **3.** Módulo de Facturación masiva e inventario integrado. ☕`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  const isOurInvoiceQuery = textClean.includes('ustedes facturan') || textClean.includes('dan factura') || textClean.includes('emiten factura') || textClean.includes('son deducibles') || (textClean.includes('factura') && (textClean.includes('servicio') || textClean.includes('desarrollo') || textClean.includes('ustedes')));
+  if (isOurInvoiceQuery) {
+    const reply = `¡Así es, por supuesto! 📜 Todos nuestros desarrollos y servicios de Brain Branding son 100% deducibles de impuestos y emitimos factura fiscal CFDI 4.0 a persona física o moral.\n\n¿Deseas que te enviemos una cotización formal deducible para tu empresa? ☕`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
