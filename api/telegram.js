@@ -982,6 +982,19 @@ async function handleWebhookRequest(req, res) {
           return res.status(200).json({ ok: true });
         }
 
+        if (cmdLower === '/exportarvisitas' || cmdLower === '/csvvisitas') {
+          let csv = 'Fecha,Hora,Ciudad,Region,Pais,Dispositivo,Origen,Duracion,Scroll,Clics\n';
+          visitsLog.forEach(v => {
+            csv += `"${v.timestamp || ''}","${v.time || ''}","${v.city || ''}","${v.region || ''}","${v.country || ''}","${v.device || ''}","${v.source || ''}","${v.duration || ''}","${v.scroll || 0}%","${(v.clicks || []).join(';')}"\n`;
+          });
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: `🌐 *EXPORTACIÓN DE VISITAS WEB CSV (ÚLTIMAS 24H)* 🌐\n\n\`\`\`csv\n${csv.substring(0, 3500)}\n\`\`\``,
+            parse_mode: 'Markdown'
+          });
+          return res.status(200).json({ ok: true });
+        }
+
         if (cmdLower === '/exportar' || cmdLower === '/crm') {
           let jsonStr = JSON.stringify(prospectLogs.slice(-20), null, 2);
           if (jsonStr.length > 3500) jsonStr = jsonStr.substring(0, 3500) + '\n... (truncado)';
@@ -1684,7 +1697,15 @@ function buildDetailedAnalytics8AMReport(allVisits = []) {
     });
   }
 
-  report += `\n💬 *Tip:* Escribe /resumen8am o /visitas en cualquier momento para generar este reporte consolidado.`;
+  // Suggestion 3: Conversion Rate Calculation (Visits vs Captured Phone Leads)
+  const leadsWithPhone = prospectLogs.filter(p => p.phone || p.contactNum).length;
+  const conversionRate = total > 0 ? ((leadsWithPhone / total) * 100).toFixed(1) : '0.0';
+
+  report += `\n📈 *TASA DE CONVERSIÓN (VISITAS ➔ LEADS CAPTURADOS):*\n`;
+  report += `• *Leads con Teléfono Capturado:* *${leadsWithPhone}*\n`;
+  report += `• *Tasa de Conversión Estimada:* *${conversionRate}%*\n`;
+
+  report += `\n💬 *Tip:* Escribe /exportarvisitas para descargar el reporte en CSV o /visitas para refrescar el conteo.`;
   return report;
 }
 
@@ -1727,7 +1748,21 @@ app.post('/api/track-visit', async (req, res) => {
 
     saveVisitsToDisk(visitsLog);
 
-    return res.status(200).json({ ok: true, totalVisits: visitsLog.length });
+    // Suggestion 2: High Traffic Alert Trigger (Fires when 24h visits reach milestones: 10, 20, 50, 100)
+    const active24hCount = visitsLog.filter(v => {
+      const vTime = v.timestamp ? new Date(v.timestamp).getTime() : 0;
+      return vTime > 0 ? (nowMs - vTime) <= (24 * 60 * 60 * 1000) : true;
+    }).length;
+
+    if ([10, 20, 50, 100].includes(active24hCount) && existingIndex === -1) {
+      callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: `🔥 *ALTA AFLUENCIA DETECTADA EN EL SITIO WEB* 🔥\n\nEl sitio web de *Brain Branding* acaba de alcanzar un hito de *${active24hCount} visitas únicas* en las últimas 24 horas.\n\n📍 *Último visitante registrado:* ${city || 'México'}, ${region || ''} (${device || 'Móvil'})\n💬 *Tip:* Usa /visitas o /exportarvisitas para ver el informe detallado en Excel.`,
+        parse_mode: 'Markdown'
+      }).catch(function(){});
+    }
+
+    return res.status(200).json({ ok: true, totalVisits: visitsLog.length, active24h: active24hCount });
   } catch (err) {
     console.error('[TRACK VISIT ERROR]', err);
     return res.status(200).json({ ok: false, error: err.message });
