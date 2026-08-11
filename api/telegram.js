@@ -476,6 +476,35 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
+  // 0.90 Solicitud de Hablar con un Humano / Asesor / Persona
+  const isHumanRequest = textClean.includes('persona') || textClean.includes('humano') || textClean.includes('asesor') || textClean.includes('alguien') || textClean.includes('hablar con') || textClean.includes('contacto directo') || textClean.includes('llamada');
+  if (isHumanRequest) {
+    pausedChats[chatId] = Date.now() + 2 * 60 * 60 * 1000; // Pause bot for 2 hours for this chat
+    const greetingName = userName ? ` ${userName}` : '';
+    const reply = `¡Por supuesto${greetingName}! De inmediato te pongo en contacto directo con Andrés R. 🙌\n\n📱 Puedes abrir conversación directa por WhatsApp dando clic aquí: https://wa.me/527712339238\n\nO si prefieres, compárteme tu número de teléfono a 10 dígitos y te marcamos personalmente en 5 minutos. ☕`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 0.91 Confirmación de Recepción de Teléfono / WhatsApp
+  const phoneInputMatch = userText.match(/(?:\+?52\s*)?(?:\(?\d{2,3}\)?[\s.-]*)?\d{3,4}[\s.-]*\d{4}\b/g);
+  if (phoneInputMatch && phoneInputMatch.length > 0) {
+    const rawPhone = phoneInputMatch[0].replace(/\D/g, '');
+    if (rawPhone.length >= 10) {
+      const cleanPhone = rawPhone.length === 10 ? `52${rawPhone}` : rawPhone;
+      state.phone = cleanPhone;
+      const reply = `¡Excelente! Ya registré tu número (+${cleanPhone}). 📲 Andrés R se pondrá en contacto contigo a la brevedad.\n\n¿Prefieres que te contactemos por llamada telefónica directa o mensaje de WhatsApp? ☕`;
+      history.push({ role: 'model', text: reply });
+      return getUniqueReply(chatId, reply);
+    }
+  }
+
+  if (textClean.includes('ya te di') || textClean.includes('ya te pase') || textClean.includes('ya te mande') || textClean.includes('ya envie') || textClean.includes('ya te lo mande')) {
+    const reply = `¡Excelente! Ya recibí tus datos y Andrés R te estará contactando a la brevedad. Si deseas agregar algún detalle adicional sobre tu proyecto o duda específica, con gusto lo registro. ☕`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
   // 1.0 Manejo natural de entradas cortas o genéricas ("hola", "ok", "bien", "saludos")
   const isShortInput = userText.trim().split(/\s+/).length <= 3;
   const genericWords = ['si', 'sí', 'ok', 'no', 'bien', 'hola', 'interesa', 'mm', 'a ver', 'saludos', 'gracias', 'grax', 'buenas', 'buenos dias', 'buenas tardes'];
@@ -488,8 +517,18 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
-  // 1.1 Respuesta fluida de seguimiento conversacional
-  const reply = `Entiendo perfectamente lo que buscas. En Brain Branding nos especializamos en construir tecnología limpia y funcional adaptada a la manera exacta en que trabajas.\n\nPlatícame un poco más sobre tu proceso actual: ¿cuántas personas colaboran en tu equipo o qué volumen de atenciones gestionan al día? ☕\n\n📱 *Si gustas, déjame tu WhatsApp a 10 dígitos y te enviamos la propuesta por mensaje.*`;
+  // 1.1 Matriz Dinámica Conversacional No Repetitiva
+  const fallbackMatrix = [
+    `Entiendo perfectamente. En Brain Branding desarrollamos tecnología ágil y funcional adaptada a la manera exacta en que trabaja tu negocio.\n\nPara orientarte de la mejor manera: ¿cuál es la tarea o proceso que más tiempo te quita actualmente en el día a día? ☕`,
+    `¡Con mucho gusto te asesoramos! Podemos implementar desde Asistentes IA 24/7 para tu WhatsApp hasta Puntos de Venta (POS) en la nube.\n\nPlatícame: ¿qué productos o servicios ofrece tu empresa o qué área te gustaría optimizar? ☕`,
+    `En Brain Branding creamos herramientas digitales pensadas para recuperar tu inversión rápidamente y agilizar tu atención a clientes.\n\n¿Te gustaría que agendemos una breve llamada de 5 minutos para mostrarte la plataforma o prefieres recibir una cotización estimada por aquí? ☕`,
+    `¡Excelente! Podemos diseñar una propuesta a la medida de tu presupuesto sin ningún compromiso.\n\n¿De qué ciudad nos escribes o cuántas personas integran tu equipo actualmente? ☕`
+  ];
+
+  const userFallbackIndex = (state.fallbackCounter || 0) % fallbackMatrix.length;
+  state.fallbackCounter = (state.fallbackCounter || 0) + 1;
+
+  const reply = fallbackMatrix[userFallbackIndex];
   history.push({ role: 'model', text: reply });
   return getUniqueReply(chatId, reply);
 }
@@ -498,7 +537,8 @@ const OWNER_PHONE = '+52 771 233 9238';
 const ADMIN_CHAT_ID = '8337803949';
 
 const pausedChats = {};
-const prospectLogs = [];
+const { loadProspectsFromDisk, saveProspectsToDisk } = require('./historyStore.js');
+const prospectLogs = loadProspectsFromDisk();
 const userRateLimits = {};
 
 function sanitizeReply(text) {
@@ -625,7 +665,8 @@ async function notifyOwner(chatId, firstName, username, userText) {
     timestamp: new Date().toLocaleTimeString('es-MX'),
     lastActiveMs: Date.now()
   });
-  if (prospectLogs.length > 200) prospectLogs.shift();
+  if (prospectLogs.length > 500) prospectLogs.shift();
+  saveProspectsToDisk(prospectLogs);
 
   const alertHeader = isCitaClick ? '🚨 *¡PROSPECTO SOLICITÓ AGENDAR CITA EN WHATSAPP!* 🚨' : '🚨 *¡NUEVO MENSAJE DE PROSPECTO EN TELEGRAM!* 🚨';
   const giroTag = state.giro ? `🏢 *Giro / Industria:* ${state.giro}\n` : '';
@@ -1187,12 +1228,12 @@ async function sendMorningReport8AM() {
   }
 }
 
-// 8:00 AM Cron Timer Check
+// 8:00 AM Cron Timer Check (Mexico City CST Timezone UTC-6)
 let lastMorningReportDate = '';
 setInterval(() => {
-  const now = new Date();
-  const todayStr = now.toDateString();
-  const currentHour = now.getHours();
+  const nowCST = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
+  const todayStr = nowCST.toDateString();
+  const currentHour = nowCST.getHours();
 
   if (currentHour === 8 && lastMorningReportDate !== todayStr) {
     lastMorningReportDate = todayStr;

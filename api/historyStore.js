@@ -129,10 +129,47 @@ setInterval(() => {
   saveToDisk();
 }, 24 * 60 * 60 * 1000);
 
+const PROSPECTS_FILE = path.join(DATA_DIR, 'prospects_db.json');
+const METRICS_FILE = path.join(DATA_DIR, 'metrics_db.json');
+
+function loadProspectsFromDisk() {
+  try {
+    if (fs.existsSync(PROSPECTS_FILE)) {
+      return JSON.parse(fs.readFileSync(PROSPECTS_FILE, 'utf8')) || [];
+    }
+  } catch (e) {}
+  return [];
+}
+
+function saveProspectsToDisk(logs) {
+  try {
+    fs.writeFileSync(PROSPECTS_FILE, JSON.stringify(logs.slice(-500), null, 2), 'utf8');
+  } catch (e) {}
+}
+
+function loadMetricsFromDisk() {
+  try {
+    if (fs.existsSync(METRICS_FILE)) {
+      return JSON.parse(fs.readFileSync(METRICS_FILE, 'utf8'));
+    }
+  } catch (e) {}
+  return null;
+}
+
+function saveMetricsToDisk(metrics) {
+  try {
+    fs.writeFileSync(METRICS_FILE, JSON.stringify(metrics, null, 2), 'utf8');
+  } catch (e) {}
+}
+
 module.exports = {
   getHistory,
   addTurn,
   clearHistory,
   purgeOldSessions,
-  inMemoryStore
+  inMemoryStore,
+  loadProspectsFromDisk,
+  saveProspectsToDisk,
+  loadMetricsFromDisk,
+  saveMetricsToDisk
 };
