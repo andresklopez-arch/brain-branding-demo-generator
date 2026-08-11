@@ -4832,21 +4832,46 @@ END:VCARD`;
       localStorage.setItem('brain_branding_analytics_log', JSON.stringify(logs));
     } catch(e) {}
 
-    // Visit tracking is saved locally and sent ONLY to the backend server
-    // for the consolidated 8:00 AM Daily Summary Report (no individual Telegram alerts).
-    fetch(window.API_BASE + '/api/track-visit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ city, region, country, flag, source, device, isp, duration: durationStr, scroll: maxScroll, clicks: clickedElements })
-    }).catch(function(){});
+    // Visit tracking is saved locally and sent to backend server (instant ping + beacon on exit)
+    const payloadData = JSON.stringify({ city, region, country, flag, source, device, isp, duration: durationStr, scroll: maxScroll, clicks: clickedElements });
+    const apiUrl = (window.API_BASE || '') + '/api/track-visit';
+
+    try {
+      if (navigator.sendBeacon) {
+        const blob = new Blob([payloadData], { type: 'application/json' });
+        navigator.sendBeacon(apiUrl, blob);
+      } else {
+        fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payloadData
+        }).catch(function(){});
+      }
+    } catch(e) {
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payloadData
+      }).catch(function(){});
+    }
   };
 
-  // Trigger 1: Send at 5 minutes (300,000 ms)
+  // Trigger 0: Send INSTANT tracking ping on page load (1 second) to guarantee 100% of visits are recorded
+  setTimeout(() => {
+    sendSessionReport('initial');
+  }, 1000);
+
+  // Trigger 1: Send update at 30 seconds
+  setTimeout(() => {
+    sendSessionReport('30sec');
+  }, 30000);
+
+  // Trigger 2: Send update at 5 minutes (300,000 ms)
   setTimeout(() => {
     sendSessionReport('5min');
   }, 300000);
 
-  // Trigger 2: Send when tab is closed or hidden (Exit)
+  // Trigger 3: Send when tab is closed or hidden (Exit)
   window.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
       sendSessionReport('exit');
