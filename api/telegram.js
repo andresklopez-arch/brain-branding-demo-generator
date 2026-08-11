@@ -226,7 +226,7 @@ function generateHumanReply(chatId, userName, userText) {
     const history = conversationHistory[chatId];
 
     const greetingName = userName ? ` ${userName}` : '';
-    const welcome = `¡Hola${greetingName}! 👋 Qué gusto saludarte, ¿cómo estás? En Brain Branding nos da mucho gusto atenderte. 😊\n\nNos especializamos en desarrollar tecnología limpia y ágil a la medida de tu empresa:\n• **Asistentes IA para WhatsApp y Telegram 24/7:** Atención automática, agendamiento de citas y toma de pedidos.\n• **Puntos de Venta (POS) y ERPs Nube:** Cobro en segundos desde celular o tablet, control de stock y caja.\n• **Apps Móviles (Android & iOS / PWA):** Aplicaciones móviles nativas e instalables para tus clientes con notificaciones push a pantalla de bloqueo, pagos en línea y publicación en tiendas (Google Play & App Store).\n• **Páginas Web y Software a la Medida:** Desarrollos de alta conversión adaptados a tu forma exacta de trabajar.\n\nPlatícame: ¿en qué te podemos ayudar el día de hoy o qué área de tu negocio te gustaría mejorar? ☕`;
+    const welcome = `¡Hola${greetingName}! 👋 Qué gusto saludarte, ¿cómo estás? En Brain Branding nos da mucho gusto atenderte. 😊\n\nResolvemos tus dudas y desarrollamos la tecnología que necesita tu empresa para vender más y trabajar mejor:\n\n• **Asistentes IA 24/7:** Atención automática, cotizaciones y agendamiento por WhatsApp.\n• **Apps Móviles (Android & iOS / PWA):** Tienda digital con notificaciones push a pantalla de bloqueo.\n• **Puntos de Venta (POS) y ERPs Nube:** Cobro en 2 segundos desde celular o tablet y control de stock.\n• **Software y Páginas Web a la Medida:** Plataformas creadas para tu forma exacta de trabajar.\n\nPara orientarte de forma rápida: ¿cuál de estas opciones prefieres que desarrollemos para ti?\n\n📱 **1.** Una Aplicación Móvil (Android / iOS / PWA)\n🤖 **2.** Un Asistente de IA 24/7 para WhatsApp / Telegram\n💳 **3.** Un Punto de Venta (POS) o ERP en la Nube\n🌐 **4.** Una Página Web o Sistema a la Medida ☕`;
     history.push({ role: 'user', text: userText });
     history.push({ role: 'model', text: welcome });
     return getUniqueReply(chatId, welcome);
@@ -235,7 +235,7 @@ function generateHumanReply(chatId, userName, userText) {
   // 0.3 Solicitud de Información / Servicios / Ejemplos
   if (userText === '/demo' || textClean.includes('demo') || fuzzyClean.includes('demo') || textClean.includes('demostracion') || textClean.includes('servicio') || textClean.includes('ejemplo')) {
     const greetingName = userName ? ` ${userName}` : '';
-    const reply = `¡Con mucho gusto${greetingName}! Te platico más sobre lo que podemos implementar para ti:\n\n1. **Asistentes de Inteligencia Artificial:** Responden a tus clientes las 24 horas por WhatsApp o Telegram, muestran información de tus servicios y agendan citas automáticamente.\n2. **Sistemas de Punto de Venta (POS) y ERP:** Para llevar el control de inventarios, presupuestos, notas y caja desde tu teléfono o computadora.\n3. **Apps Móviles (Android & iOS / PWA):** Aplicaciones de venta para clientes o de trabajo para tu personal, con notificaciones Push a pantalla de bloqueo y pagos integrados.\n4. **Desarrollos Web y Software a la Medida:** Creados desde cero para la operación específica de tu empresa.\n\nPara orientarte mejor: ¿de qué giro es tu negocio o qué proceso te quita más tiempo en el día a día? ☕`;
+    const reply = `¡Con mucho gusto${greetingName}! Te explico exactamente las opciones que podemos construir para ti:\n\n1. **Asistentes IA 24/7:** Responden dudas, cotizan y agendan citas por WhatsApp las 24 horas.\n2. **Apps Móviles (Android & iOS):** Tus clientes la instalan en 1 clic y les envías promociones a su pantalla de bloqueo.\n3. **Puntos de Venta (POS) en la Nube:** Cobras en segundos desde celular o tablet y controlas tu caja.\n4. **Software a la Medida:** Plataformas creadas según tu operación.\n\n¿Qué prefieres que realice tu sistema?\n\n• **Opción A:** Automatizar atención a clientes y ventas por WhatsApp 24/7.\n• **Opción B:** Cobro rápido e inventario en punto de venta.\n• **Opción C:** Una App Móvil completa para tu marca. ☕`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
@@ -603,17 +603,16 @@ function generateHumanReply(chatId, userName, userText) {
 
   if (isShortInput && isGeneric) {
     const greetingName = userName ? ` ${userName}` : '';
-    const reply = `¡Con mucho gusto${greetingName}! Platícame un poquito sobre tu negocio o qué proyecto tienes en mente para orientarte de la mejor manera. ☕\n\n📱 *O si prefieres, compárteme tu número telefónico y dime en qué horario te resulta más cómodo recibir una llamada.*`;
+    const reply = `¡Con mucho gusto${greetingName}! Te resuelvo cualquier duda y te guío paso a paso. 💡\n\n¿Qué prefieres que desarrollemos para tu negocio?\n\n📱 **1.** Una Aplicación Móvil (Android / iOS / PWA)\n🤖 **2.** Un Asistente de IA 24/7 para WhatsApp / Telegram\n💳 **3.** Un Punto de Venta (POS) o ERP en la Nube\n🌐 **4.** Una Página Web o Plataforma a la Medida\n\nEscribe el número u opción que te llame la atención para explicarte detalles. ☕`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
 
-  // 1.1 Matriz Dinámica Conversacional No Repetitiva
+  // 1.1 Matriz Consultiva Guía de Opciones (Resolvedor de Dudas)
   const fallbackMatrix = [
-    `Entiendo perfectamente. En Brain Branding desarrollamos tecnología ágil y funcional adaptada a la manera exacta en que trabaja tu negocio.\n\nPara orientarte de la mejor manera: ¿cuál es la tarea o proceso que más tiempo te quita actualmente en el día a día? ☕`,
-    `¡Con mucho gusto te asesoramos! Podemos implementar desde Asistentes IA 24/7 para tu WhatsApp hasta Puntos de Venta (POS) en la nube.\n\nPlatícame: ¿qué productos o servicios ofrece tu empresa o qué área te gustaría optimizar? ☕`,
-    `En Brain Branding creamos herramientas digitales pensadas para recuperar tu inversión rápidamente y agilizar tu atención a clientes.\n\n¿Te gustaría que agendemos una breve llamada de 5 minutos para mostrarte la plataforma o prefieres recibir una cotización estimada por aquí? ☕`,
-    `¡Excelente! Podemos diseñar una propuesta a la medida de tu presupuesto sin ningún compromiso.\n\n¿De qué ciudad nos escribes o cuántas personas integran tu equipo actualmente? ☕`
+    `En Brain Branding resolvemos tus dudas operativas y guiamos tu proyecto paso a paso. 🚀\n\nPara recomendarte la mejor alternativa, ¿cuál de estas soluciones encaja mejor con tu negocio?\n\n• **1. Automatizar Atención:** Responder dudas, cotizaciones y citas por WhatsApp 24/7.\n• **2. Fidelizar Clientes:** App Móvil con catálogo, pedidos y notificaciones a pantalla de bloqueo.\n• **3. Control Operativo:** Punto de Venta (POS) y caja rápida desde celular o tablet. ☕`,
+    `¡Con gusto resolvemos cada una de tus inquietudes! Toda nuestra tecnología está diseñada para recuperar tu inversión rápidamente. 💡\n\n¿Qué tipo de solución buscas hoy?\n\n• **Opción A:** Una App Móvil publicada en Google Play y App Store.\n• **Opción B:** Un Asistente de IA operando en tu WhatsApp.\n• **Opción C:** Un Sistema Web a la medida de tu empresa. ☕`,
+    `Con mucho gusto te asesoro de forma directa. En Brain Branding nos enfocamos en darte certeza y resultados medibles desde la primera semana. 📌\n\n¿Prefieres que te enviemos una propuesta estimada por aquí o que agendemos una breve llamada de 5 minutos con Andrés R? ☕`
   ];
 
   const userFallbackIndex = (state.fallbackCounter || 0) % fallbackMatrix.length;
