@@ -4832,20 +4832,26 @@ END:VCARD`;
       localStorage.setItem('brain_branding_analytics_log', JSON.stringify(logs));
     } catch(e) {}
 
-    // Unique Client Session ID Generator (Suggestion 2)
+    // Unique Client Session ID & Returning Visitor Detector (Suggestions 2 & 3)
     let clientSessionId = '';
+    let isReturningVisitor = false;
     try {
       clientSessionId = sessionStorage.getItem('brain_session_id');
       if (!clientSessionId) {
         clientSessionId = 'sess_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
         sessionStorage.setItem('brain_session_id', clientSessionId);
       }
+      if (localStorage.getItem('brain_visitor_seen')) {
+        isReturningVisitor = true;
+      } else {
+        localStorage.setItem('brain_visitor_seen', new Date().toISOString());
+      }
     } catch(e) {
       clientSessionId = 'sess_' + Date.now();
     }
 
     // Visit tracking is saved locally and sent to backend server (instant ping + beacon on exit)
-    const payloadData = JSON.stringify({ sessionId: clientSessionId, city, region, country, flag, source, device, isp, duration: durationStr, scroll: maxScroll, clicks: clickedElements });
+    const payloadData = JSON.stringify({ sessionId: clientSessionId, isReturning: isReturningVisitor, city, region, country, flag, source, device, isp, duration: durationStr, scroll: maxScroll, clicks: clickedElements });
     const apiUrl = (window.API_BASE || '') + '/api/track-visit';
 
     try {

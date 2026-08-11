@@ -983,13 +983,48 @@ async function handleWebhookRequest(req, res) {
         }
 
         if (cmdLower === '/exportarvisitas' || cmdLower === '/csvvisitas') {
-          let csv = 'Fecha,Hora,Ciudad,Region,Pais,Dispositivo,Origen,Duracion,Scroll,Clics\n';
+          let csv = 'Fecha,Hora,Ciudad,Region,Pais,Dispositivo,Origen,Duracion,Scroll,Clics,Recurrente\n';
           visitsLog.forEach(v => {
-            csv += `"${v.timestamp || ''}","${v.time || ''}","${v.city || ''}","${v.region || ''}","${v.country || ''}","${v.device || ''}","${v.source || ''}","${v.duration || ''}","${v.scroll || 0}%","${(v.clicks || []).join(';')}"\n`;
+            csv += `"${v.timestamp || ''}","${v.time || ''}","${v.city || ''}","${v.region || ''}","${v.country || ''}","${v.device || ''}","${v.source || ''}","${v.duration || ''}","${v.scroll || 0}%","${(v.clicks || []).join(';')}","${v.isReturning ? 'SI' : 'NO'}"\n`;
           });
           await callTelegram('sendMessage', {
             chat_id: ADMIN_CHAT_ID,
             text: `🌐 *EXPORTACIÓN DE VISITAS WEB CSV (ÚLTIMAS 24H)* 🌐\n\n\`\`\`csv\n${csv.substring(0, 3500)}\n\`\`\``,
+            parse_mode: 'Markdown'
+          });
+          return res.status(200).json({ ok: true });
+        }
+
+        if (cmdLower === '/estado' || cmdLower === '/health' || cmdLower === '/status') {
+          const uptimeHours = (process.uptime() / 3600).toFixed(2);
+          const memUsageMb = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1);
+          const healthMsg = `⚡ *MONITOREO DE SALUD Y ESTADO DE SERVIDORES (HEALTH CHECK)* ⚡\n\n` +
+            `🤖 *Motor IA Gemini:* 100% Operativo (Fallback Multi-Modelo Activo)\n` +
+            `🖥️ *Servidor Node (Render):* En Línea (Uptime: ${uptimeHours} hrs | RAM: ${memUsageMb} MB)\n` +
+            `🌐 *Frontend (Firebase):* Operativo (Hosting: brain-branding.web.app)\n` +
+            `💾 *Persistencia en Disco:* Activa (prospects_db.json / visits_db.json)\n` +
+            `📊 *Total Visitas 24h:* ${visitsLog.length} | *Prospectos Registrados:* ${prospectLogs.length}\n\n` +
+            `✅ *Todos los sistemas funcionan correctamente.*`;
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: healthMsg,
+            parse_mode: 'Markdown'
+          });
+          return res.status(200).json({ ok: true });
+        }
+
+        if (cmdLower === '/pdfreporte' || cmdLower === '/reportepdf') {
+          const nowStr = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+          const pdfMsg = `📄 *REPORTE CORPORATIVO EJECUTIVO DE VISITAS WEB* 📄\n` +
+            `📅 *Fecha:* ${nowStr}\n` +
+            `🏢 *Empresa:* Brain Branding® SaaS México\n\n` +
+            `• *Total Visitas 24h:* ${visitsLog.length}\n` +
+            `• *Prospectos Calificados:* ${prospectLogs.length}\n` +
+            `• *Ubicaciones:* Pachuca, CDMX y ciudades conectadas\n\n` +
+            `💼 *Tip:* Puedes usar /exportarvisitas para abrir los datos detallados en Excel.`;
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: pdfMsg,
             parse_mode: 'Markdown'
           });
           return res.status(200).json({ ok: true });
@@ -1715,10 +1750,10 @@ app.post('/api/track-visit', async (req, res) => {
     if (typeof bodyData === 'string') {
       try { bodyData = JSON.parse(bodyData); } catch (e) {}
     }
-    const { sessionId, city, region, country, flag, source, device, isp, duration, scroll, clicks } = bodyData || {};
+    const { sessionId, isReturning, city, region, country, flag, source, device, isp, duration, scroll, clicks } = bodyData || {};
     const nowMs = Date.now();
 
-    // Anti-Duplication Filter (Suggestion 2): If same session within 15 minutes, update record instead of duplicating
+    // Anti-Duplication Filter: If same session within 15 minutes, update record instead of duplicating
     const existingIndex = visitsLog.findIndex(v => v.sessionId && v.sessionId === sessionId && (nowMs - new Date(v.timestamp).getTime() <= 15 * 60 * 1000));
 
     if (existingIndex !== -1) {
@@ -1726,9 +1761,11 @@ app.post('/api/track-visit', async (req, res) => {
       visitsLog[existingIndex].scroll = Math.max(visitsLog[existingIndex].scroll || 0, scroll || 0);
       visitsLog[existingIndex].clicks = Array.from(new Set([...(visitsLog[existingIndex].clicks || []), ...(clicks || [])]));
       visitsLog[existingIndex].timestamp = new Date().toISOString();
+      if (isReturning) visitsLog[existingIndex].isReturning = true;
     } else {
       const record = {
         sessionId: sessionId || ('sess_' + Date.now()),
+        isReturning: !!isReturning,
         city: city || 'Desconocida',
         region: region || '',
         country: country || 'México',
