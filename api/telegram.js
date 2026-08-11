@@ -60,7 +60,8 @@ const kb = {
 
 const userStates = {};
 const conversationHistory = {};
-const visitsLog = [];
+const { loadVisitsFromDisk, saveVisitsToDisk } = require('./historyStore.js');
+const visitsLog = loadVisitsFromDisk();
 
 function normalizeText(text) {
   return (text || '')
@@ -1585,12 +1586,19 @@ app.post('/api/conversion-alert', async (req, res) => {
   }
 });
 
-function buildDetailedAnalytics8AMReport(visits) {
-  const total = visits.length;
-  const nowStr = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', year: 'numeric', month: 'long', day: 'numeric' });
+function buildDetailedAnalytics8AMReport(allVisits = []) {
+  const nowMs = Date.now();
+  const nowStr = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
+  // Filter visits from the last 24 hours
+  const visits = allVisits.filter(v => {
+    const vTime = v.timestamp ? new Date(v.timestamp).getTime() : 0;
+    return vTime > 0 ? (nowMs - vTime) <= (24 * 60 * 60 * 1000) : true;
+  });
+
+  const total = visits.length;
   if (total === 0) {
-    return `☀️ *RESUMEN DIARIO DE VISITAS WEB (8:00 AM)* ☀️\n📅 *Fecha:* ${nowStr}\n\n📍 Sin visitas registradas en las últimas 24 horas.`;
+    return `☀️ *RESUMEN DIARIO DE VISITAS WEB (8:00 AM)* ☀️\n📅 *Fecha:* ${nowStr}\n\n📊 *Total de Visitas Registradas (Últimas 24h):* *0*\n\n💡 *Tip:* Las visitas se registran en tiempo real cuando un usuario ingresa al sitio web.`;
   }
 
   const osCounts = {};
@@ -1696,7 +1704,8 @@ app.post('/api/track-visit', async (req, res) => {
       timestamp: new Date().toISOString()
     };
     visitsLog.push(record);
-    if (visitsLog.length > 500) visitsLog.shift();
+    if (visitsLog.length > 1000) visitsLog.shift();
+    saveVisitsToDisk(visitsLog);
 
     return res.status(200).json({ ok: true, totalVisits: visitsLog.length });
   } catch (err) {

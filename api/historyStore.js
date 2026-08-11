@@ -162,6 +162,23 @@ function saveMetricsToDisk(metrics) {
   } catch (e) {}
 }
 
+const VISITS_FILE = path.join(DATA_DIR, 'visits_db.json');
+
+function loadVisitsFromDisk() {
+  try {
+    if (fs.existsSync(VISITS_FILE)) {
+      return JSON.parse(fs.readFileSync(VISITS_FILE, 'utf8')) || [];
+    }
+  } catch (e) {}
+  return [];
+}
+
+function saveVisitsToDisk(logs) {
+  try {
+    fs.writeFileSync(VISITS_FILE, JSON.stringify(logs.slice(-1000), null, 2), 'utf8');
+  } catch (e) {}
+}
+
 module.exports = {
   getHistory,
   addTurn,
@@ -171,5 +188,7 @@ module.exports = {
   loadProspectsFromDisk,
   saveProspectsToDisk,
   loadMetricsFromDisk,
-  saveMetricsToDisk
+  saveMetricsToDisk,
+  loadVisitsFromDisk,
+  saveVisitsToDisk
 };
