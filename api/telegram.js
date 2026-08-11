@@ -506,9 +506,10 @@ function generateHumanReply(chatId, userName, userText) {
 
       // NOTIFICACIÓN INMEDIATA A ANDRÉS R EN TELEGRAM (+52 771 233 9238 / Chat ID 8337803949)
       try {
+        const nowTime = new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
         callTelegram('sendMessage', {
           chat_id: ADMIN_CHAT_ID,
-          text: `🚨 *NUEVO TELÉFONO CAPTURADO PARA CONTACTO INMEDIATO* 🚨\n\n👤 *Usuario:* *${userName || 'Cliente'}*\n📲 *Teléfono:* \`+${cleanPhone}\`\n🏢 *Giro:* *${state.giro || 'No especificado'}*\n💬 *Chat ID:* \`${chatId}\`\n\n⚡ *Acción:* Escribe \`/enviarwa ${cleanPhone} Hola, recibí tu solicitud...\` o llama directamente.`,
+          text: `🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n🔴 *OPORTUNIDAD DE VENTA EN VIVO* 🔴\n⚡ *ATENCIÓN URGENTE A CLIENTE* ⚡\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n📲 *TELÉFONO:* \`+${cleanPhone}\`\n👤 *CLIENTE:* *${userName || 'Cliente'}*\n🏢 *GIRO / EMPRESA:* *${state.giro || 'No especificado'}*\n⏰ *HORA:* *${nowTime} (Centro MX)*\n💬 *CHAT ID:* \`${chatId}\`\n\n👉 *Marcar directo:* \`tel:+${cleanPhone}\`\n👉 *Responder por WA:* \`/enviarwa ${cleanPhone} Hola ${userName || ''}, recibí tu solicitud de contacto de Brain Branding...\`\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨`,
           parse_mode: 'Markdown'
         });
       } catch(e) { console.error('Error enviando notificacion inmediata:', e); }
@@ -545,11 +546,11 @@ function generateHumanReply(chatId, userName, userText) {
       state.contactTime = userText.trim();
     }
 
-    // NOTIFICAR ACTUALIZACIÓN DE FICHA AL ADMINISTRADOR
+    // NOTIFICAR ACTUALIZACIÓN DE FICHA DESTACADA AL ADMINISTRADOR
     try {
       callTelegram('sendMessage', {
         chat_id: ADMIN_CHAT_ID,
-        text: `📋 *FICHA DE CONTACTO ACTUALIZADA* 📋\n\n👤 *Nombre:* *${state.contactName || userName || 'Cliente'}*\n💼 *Puesto / Cargo:* *${state.contactPosition || 'Dueño / Director'}*\n📲 *Teléfono:* \`+${state.phone}\`\n📞 *Medio Preferido:* *${state.contactMode}*\n⏰ *Horario:* *${state.contactTime || 'Lo antes posible'}*\n🏢 *Giro:* *${state.giro || 'General'}*`,
+        text: `💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎\n👑 *FICHA DE LEAD PERFILADO DE ALTO VALOR* 👑\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n👤 *CONTACTO:* *${state.contactName || userName || 'Cliente'}*\n💼 *PUESTO / CARGO:* 👑 *${state.contactPosition || 'Dueño / Director General'}*\n📲 *TELÉFONO:* \`+${state.phone}\`\n📞 *MEDIO PREFERIDO:* *${state.contactMode}*\n⏰ *HORARIO SOLICITADO:* *${state.contactTime || 'Lo antes posible / Horario laboral'}*\n🏢 *GIRO COMERCIAL:* *${state.giro || 'General / PyME'}*\n💬 *CHAT ID:* \`${chatId}\`\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n⚡ *ACCIONES RÁPIDAS:*\n• *Marcar:* \`tel:+${state.phone}\`\n• *Mandar WA:* \`/enviarwa ${state.phone} Hola ${state.contactName || userName || ''}, soy Andrés R de Brain Branding...\`\n💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎`,
         parse_mode: 'Markdown'
       });
     } catch(e) { console.error('Error notificando ficha:', e); }
