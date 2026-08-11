@@ -471,7 +471,7 @@ function generateHumanReply(chatId, userName, userText) {
   if (unknownGiroMatch && unknownGiroMatch[1] && !state.giro) {
     const rawGiro = unknownGiroMatch[1].trim();
     state.giro = rawGiro.charAt(0).toUpperCase() + rawGiro.slice(1);
-    const reply = `¡Excelente giro! Para negocios y empresas del sector **${state.giro}** desarrollamos tecnología limpia y ágil a la medida de tu operación:\n\n• **Punto de Venta (POS) y Control Operativo:** Cobro en segundos desde celular o tablet con control de inventarios y stock.\n• **Asistente IA 24/7 para WhatsApp y Telegram:** Atención de consultas, catálogos digitales y agendamiento automático sin saturar tu teléfono.\n• **Software y Plataforma Web a la Medida:** Desarrollada exactamente para la forma en que trabaja tu empresa.\n\nPara proponerte la solución más precisa: ¿cuántos colaboradores trabajan en tu negocio de **${state.giro}** o cuál es el proceso que más tiempo les quita en el día a día? ☕\n\n📱 *Si gustas, compárteme tu número de WhatsApp a 10 dígitos y te contactamos personalmente para enviarte una propuesta formal.*`;
+    const reply = `¡Excelente giro! Para negocios y empresas del sector **${state.giro}** desarrollamos tecnología limpia y ágil a la medida de tu operación:\n\n• **Punto de Venta (POS) y Control Operativo:** Cobro en segundos desde celular o tablet con control de inventarios y stock.\n• **Asistente IA 24/7 para WhatsApp y Telegram:** Atención de consultas, catálogos digitales y agendamiento automático sin saturar tu teléfono.\n• **Software y Plataforma Web a la Medida:** Desarrollada exactamente para la forma en que trabaja tu empresa.\n\nPara proponerte la solución más precisa: ¿cuántos colaboradores trabajan en tu negocio de **${state.giro}** o cuál es el proceso que más tiempo les quita en el día a día? ☕\n\n📱 *Si gustas, compárteme tu número telefónico o WhatsApp de contacto y platícame en qué horario te queda mejor recibir una llamada breve.*`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
@@ -481,7 +481,7 @@ function generateHumanReply(chatId, userName, userText) {
   if (isHumanRequest) {
     pausedChats[chatId] = Date.now() + 2 * 60 * 60 * 1000; // Pause bot for 2 hours for this chat
     const greetingName = userName ? ` ${userName}` : '';
-    const reply = `¡Por supuesto${greetingName}! De inmediato te pongo en contacto directo con Andrés R. 🙌\n\n📱 Puedes abrir conversación directa por WhatsApp dando clic aquí: https://wa.me/527712339238\n\nO si prefieres, compárteme tu número de teléfono a 10 dígitos y te marcamos personalmente en 5 minutos. ☕`;
+    const reply = `¡Por supuesto${greetingName}! De inmediato te pongo en contacto directo con Andrés R. 🙌\n\n📱 Puedes abrir conversación directa por WhatsApp dando clic aquí: https://wa.me/527712339238\n\nO si prefieres, compárteme tu teléfono de contacto y dinos en qué horario te resulta más cómodo recibir nuestra llamada. ☕`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
@@ -512,7 +512,7 @@ function generateHumanReply(chatId, userName, userText) {
 
   if (isShortInput && isGeneric) {
     const greetingName = userName ? ` ${userName}` : '';
-    const reply = `¡Con mucho gusto${greetingName}! Platícame un poquito sobre tu negocio o qué proyecto tienes en mente para orientarte de la mejor manera. ☕\n\n📱 *O si prefieres, compárteme tu teléfono a 10 dígitos y un asesor te contactará directamente por WhatsApp.*`;
+    const reply = `¡Con mucho gusto${greetingName}! Platícame un poquito sobre tu negocio o qué proyecto tienes en mente para orientarte de la mejor manera. ☕\n\n📱 *O si prefieres, compárteme tu número telefónico y dime en qué horario te resulta más cómodo recibir una llamada.*`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
@@ -617,21 +617,28 @@ async function notifyOwner(chatId, firstName, username, userText) {
   const isCitaClick = textLower.includes('cita') || textLower.includes('agend') || textLower.includes('whatsapp');
 
   // Instant Phone Number Extraction Alert to Admin & Owner WhatsApp 7712339238
-  const phoneMatch = userText.match(/(?:\+?52\s*)?(?:\(?\d{2,3}\)?[\s.-]*)?\d{3,4}[\s.-]*\d{4}\b/g);
+  const phoneMatch = userText.match(/(?:\+?\d{1,3}[\s.-]*)?(?:\(?\d{2,4}\)?[\s.-]*)?\d{3,4}[\s.-]*\d{4}\b/g);
   if (phoneMatch && phoneMatch.length > 0) {
     const rawPhone = phoneMatch[0].replace(/\D/g, '');
-    if (rawPhone.length >= 10) {
+    if (rawPhone.length >= 7 && rawPhone.length <= 15) {
       const cleanPhone = rawPhone.length === 10 ? `52${rawPhone}` : rawPhone;
       state.phone = cleanPhone;
+
+      // Extract schedule preference if mentioned
+      const scheduleMatch = userText.match(/(?:mañana|tarde|noche|horario|hora|despues|antes|a las|pm|am|[0-9]{1,2}\s*(?:am|pm|hrs?))/i);
+      if (scheduleMatch) {
+        state.preferredSchedule = userText;
+      }
       
       const phoneUrgentMsg = `🚨 *¡TELÉFONO DE PROSPECTO CAPTURADO!* 🚨\n\n` +
         `👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n` +
         `📞 *Teléfono Detectado:* \`+${cleanPhone}\`\n` +
+        `⏰ *Horario Preferido para Llamada:* ${state.preferredSchedule || 'Flexible / Por confirmar'}\n` +
         `🏢 *Giro:* ${state.giro || 'No especificado'}\n` +
         `💬 *Mensaje:* "${userText}"\n` +
         `🆔 *Chat ID:* \`${chatId}\`\n\n` +
         `📲 *Llamar / WhatsApp Directo:* https://wa.me/${cleanPhone}\n\n` +
-        `⚡ *Respuesta directa:* \`/responder ${chatId} ¡Hola! Te marco en 2 minutos.\``;
+        `⚡ *Respuesta directa:* \`/responder ${chatId} ¡Hola! Te marco en el horario indicado.\``;
 
       try {
         await callTelegram('sendMessage', {
@@ -644,7 +651,7 @@ async function notifyOwner(chatId, firstName, username, userText) {
       try {
         const sendWa = require('./whatsapp.js').sendWhatsappMessage;
         if (sendWa) {
-          sendWa('527712339238', `🚨 NUEVO PROSPECTO REGISTRADO:\nNombre: ${firstName || 'Prospecto'}\nTeléfono: +${cleanPhone}\nGiro: ${state.giro || 'General'}\nMensaje: ${userText}`);
+          sendWa('527712339238', `🚨 NUEVO PROSPECTO REGISTRADO:\nNombre: ${firstName || 'Prospecto'}\nTeléfono: +${cleanPhone}\nHorario Preferido: ${state.preferredSchedule || 'Flexible'}\nGiro: ${state.giro || 'General'}\nMensaje: ${userText}`);
         }
       } catch (e) {}
     }
