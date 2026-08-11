@@ -1713,7 +1713,7 @@ function buildDetailedAnalytics8AMReport(allVisits = []) {
   report += `📅 *Fecha:* ${nowStr}\n`;
   report += `📊 *Total de Visitas Registradas (Últimas 24h):* *${total}*\n\n`;
 
-  report += `📍 *DETALLE INDIVIDUAL DE CADA VISITA (HORA Y PROFUNDIDAD SCROLL):*\n`;
+  report += `📍 *DETALLE INDIVIDUAL DE CADA VISITA (HORA, SCROLL Y CLICS):*\n`;
   visits.forEach((v, idx) => {
     const vTime = v.time || (v.timestamp ? new Date(v.timestamp).toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' }) : 'N/A');
     const scrollVal = v.scroll !== undefined ? v.scroll : 0;
@@ -1726,10 +1726,14 @@ function buildDetailedAnalytics8AMReport(allVisits = []) {
     else if (raw.includes('Windows')) devName = 'Windows PC 💻';
     else if (raw.includes('MacBook') || raw.includes('macOS')) devName = 'Mac (macOS) 💻';
 
+    const clickList = (v.clicks && v.clicks.length > 0)
+      ? v.clicks.join(' ➔ ')
+      : 'Sin clics (Solo lectura)';
+
     report += `${idx + 1}. ${v.flag || '🇲🇽'} *${v.city || 'Desconocida'}, ${v.region || ''}*\n`;
     report += `   ⏰ *Hora:* ${vTime} | 📜 *Scroll:* *${scrollVal}%* | 📱 *Equipo:* ${devName}${retTag}\n`;
+    report += `   🖱️ *Clics / Botones:* \`${clickList}\`\n\n`;
   });
-  report += `\n`;
 
   report += `📱 *DISPOSITIVOS Y SISTEMAS OPERATIVOS:*\n`;
   Object.entries(osCounts).sort((a, b) => b[1] - a[1]).forEach(([dev, count]) => {
