@@ -495,26 +495,71 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
-  // 0.91 Confirmación de Recepción de Teléfono / WhatsApp
+  // 0.91 Confirmación de Recepción de Teléfono / WhatsApp e Notificación Inmediata a 7712339238
   const phoneInputMatch = userText.match(/(?:\+?52\s*)?(?:\(?\d{2,3}\)?[\s.-]*)?\d{3,4}[\s.-]*\d{4}\b/g);
   if (phoneInputMatch && phoneInputMatch.length > 0) {
     const rawPhone = phoneInputMatch[0].replace(/\D/g, '');
     if (rawPhone.length >= 10) {
       const cleanPhone = rawPhone.length === 10 ? `52${rawPhone}` : rawPhone;
       state.phone = cleanPhone;
-      const reply = `¡Excelente! Ya registré tu número (+${cleanPhone}). 📲 Andrés R se pondrá en contacto contigo a la brevedad.\n\n¿Prefieres que te contactemos por llamada telefónica directa o mensaje de WhatsApp? ☕`;
+      state.awaitingQualification = true;
+
+      // NOTIFICACIÓN INMEDIATA A ANDRÉS R EN TELEGRAM (+52 771 233 9238 / Chat ID 8337803949)
+      try {
+        callTelegram('sendMessage', {
+          chat_id: ADMIN_CHAT_ID,
+          text: `🚨 *NUEVO TELÉFONO CAPTURADO PARA CONTACTO INMEDIATO* 🚨\n\n👤 *Usuario:* *${userName || 'Cliente'}*\n📲 *Teléfono:* \`+${cleanPhone}\`\n🏢 *Giro:* *${state.giro || 'No especificado'}*\n💬 *Chat ID:* \`${chatId}\`\n\n⚡ *Acción:* Escribe \`/enviarwa ${cleanPhone} Hola, recibí tu solicitud...\` o llama directamente.`,
+          parse_mode: 'Markdown'
+        });
+      } catch(e) { console.error('Error enviando notificacion inmediata:', e); }
+
+      const greetingName = userName ? ` ${userName}` : '';
+      const reply = `¡Excelente${greetingName}! Ya registré tu número (+${cleanPhone}) y le notifiqué de inmediato a Andrés R (771 233 9238). 📲\n\nPara personalizar tu atención y dirigirnos correctamente contigo:\n1. ¿Cuál es tu **nombre completo** y tu **puesto/cargo** en tu empresa (ej. Carlos Mendoza - Director / Dueño / Gerente de Ventas)?\n2. ¿Prefieres que te contactemos por **llamada telefónica** o **WhatsApp** y en qué **horario** te resulta más cómodo? ☕`;
       history.push({ role: 'model', text: reply });
       return getUniqueReply(chatId, reply);
     }
   }
 
-  // 0.915 Selección de Canal de Contacto (cuando YA tenemos su teléfono)
-  if (state.phone && (textClean.includes('llamada') || textClean.includes('whatsapp') || textClean.includes('mensaje') || textClean.includes('marquen') || textClean.includes('marcar') || textClean.includes('por llamada') || textClean.includes('por whatsapp'))) {
-    const isCall = textClean.includes('llamada') || textClean.includes('marquen') || textClean.includes('marcar');
-    state.contactMode = isCall ? 'LLAMADA' : 'WHATSAPP';
-    const channelText = isCall ? 'por llamada telefónica' : 'por mensaje de WhatsApp';
-    const icon = isCall ? '📞' : '💬';
-    const reply = `¡Anotado perfectamente! ${icon} Andrés R te contactará **${channelText}** al **+${state.phone}**.\n\n¿Hay algún horario en específico que prefieras (ej. 4:00 PM o mañana por la mañana)? ☕`;
+  // 0.915 Captura de Nombre, Puesto, Horario y Canal Preferido de Contacto
+  if (state.phone && (state.awaitingQualification || textClean.includes('llamada') || textClean.includes('whatsapp') || textClean.includes('dueño') || textClean.includes('dueno') || textClean.includes('director') || textClean.includes('gerente') || textClean.includes('administrad') || textClean.includes('encargad') || textClean.includes('fundador') || textClean.includes('socio') || textClean.includes('pm') || textClean.includes('am') || textClean.includes('tarde') || textClean.includes('mañana'))) {
+    state.awaitingQualification = false;
+
+    // Detect contact channel preference
+    const isCall = textClean.includes('llamada') || textClean.includes('marquen') || textClean.includes('marcar') || textClean.includes('telefono');
+    state.contactMode = isCall ? 'Llamada Telefónica 📞' : 'Mensaje de WhatsApp 💬';
+
+    // Detect position/role if mentioned
+    const posMatch = userText.match(/(dueño|dueña|dueno|duena|director|directora|gerente|administrador|administradora|encargado|encargada|fundador|fundadora|socio|socia|jefe|jefa|coordinador|coordinadora|supervisor|supervisora|propietario|propietaria)/i);
+    if (posMatch) {
+      state.contactPosition = posMatch[0].charAt(0).toUpperCase() + posMatch[0].slice(1);
+    }
+
+    // Capture contact name if user gave it
+    const cleanWords = userText.replace(/(soy|mi nombre es|me llamo|llamada|whatsapp|dueño|dueno|director|gerente|por|en|a las|\d+)/gi, '').trim();
+    if (cleanWords.length > 2 && !state.contactName) {
+      state.contactName = cleanWords.split(/\s+/).slice(0, 3).join(' ');
+    }
+
+    // Capture preferred time
+    if (textClean.includes('tarde') || textClean.includes('mañana') || textClean.includes('pm') || textClean.includes('am') || /\d+/.test(textClean)) {
+      state.contactTime = userText.trim();
+    }
+
+    // NOTIFICAR ACTUALIZACIÓN DE FICHA AL ADMINISTRADOR
+    try {
+      callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: `📋 *FICHA DE CONTACTO ACTUALIZADA* 📋\n\n👤 *Nombre:* *${state.contactName || userName || 'Cliente'}*\n💼 *Puesto / Cargo:* *${state.contactPosition || 'Dueño / Director'}*\n📲 *Teléfono:* \`+${state.phone}\`\n📞 *Medio Preferido:* *${state.contactMode}*\n⏰ *Horario:* *${state.contactTime || 'Lo antes posible'}*\n🏢 *Giro:* *${state.giro || 'General'}*`,
+        parse_mode: 'Markdown'
+      });
+    } catch(e) { console.error('Error notificando ficha:', e); }
+
+    const clientName = state.contactName || userName || '';
+    const nameGreeting = clientName ? ` ${clientName}` : '';
+    const channelText = state.contactMode.includes('Llamada') ? 'por llamada telefónica' : 'por mensaje de WhatsApp';
+    const timeText = state.contactTime ? `en el horario acordado (${state.contactTime})` : 'a la brevedad';
+
+    const reply = `¡Anotado perfectamente${nameGreeting}! 📌 Tu solicitud ha sido registrada formalmente.\n\nAndrés R te contactará **${channelText}** al **+${state.phone}** ${timeText}.\n\n¡Muchas gracias por comunicarte con Brain Branding! Que tengas un excelente día. ☕`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
