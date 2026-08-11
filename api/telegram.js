@@ -1713,7 +1713,7 @@ function buildDetailedAnalytics8AMReport(allVisits = []) {
   report += `📅 *Fecha:* ${nowStr}\n`;
   report += `📊 *Total de Visitas Registradas (Últimas 24h):* *${total}*\n\n`;
 
-  report += `📍 *DETALLE INDIVIDUAL DE CADA VISITA (HORA, SCROLL Y CLICS):*\n`;
+  report += `📍 *DETALLE INDIVIDUAL DE CADA VISITA (HORA, SCROLL Y CLICS):*\n\n`;
   visits.forEach((v, idx) => {
     const vTime = v.time || (v.timestamp ? new Date(v.timestamp).toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' }) : 'N/A');
     const scrollVal = v.scroll !== undefined ? v.scroll : 0;
@@ -1728,9 +1728,11 @@ function buildDetailedAnalytics8AMReport(allVisits = []) {
 
     const clickList = (v.clicks && v.clicks.length > 0)
       ? v.clicks.join(' ➔ ')
-      : 'Sin clics (Solo lectura)';
+      : 'Ingreso a la web';
 
-    report += `${idx + 1}. ${v.flag || '🇲🇽'} *${v.city || 'Desconocida'}, ${v.region || ''}*\n`;
+    const stateLabel = v.region ? ` (${v.region})` : '';
+
+    report += `${idx + 1}. ${v.flag || '🇲🇽'} *${v.city || 'Desconocida'}* _${stateLabel}_\n`;
     report += `   ⏰ *Hora:* ${vTime} | 📜 *Scroll:* *${scrollVal}%* | 📱 *Equipo:* ${devName}${retTag}\n`;
     report += `   🖱️ *Clics / Botones:* \`${clickList}\`\n\n`;
   });
