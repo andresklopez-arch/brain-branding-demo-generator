@@ -495,12 +495,25 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
-  // 0.90 Solicitud de Hablar con un Humano / Asesor / Persona
-  const isHumanRequest = textClean.includes('persona') || textClean.includes('humano') || textClean.includes('asesor') || textClean.includes('alguien') || textClean.includes('hablar con') || textClean.includes('contacto directo') || textClean.includes('llamada');
+  // 0.90 Solicitud de Hablar con un Humano / Asesor / Contacto Directo
+  const isTeamSize = /\d+\s*persona/i.test(textClean) || textClean.includes('trabajamos') || textClean.includes('somos');
+  const isHumanRequest = !isTeamSize && (
+    textClean.includes('hablar con humano') || 
+    textClean.includes('un humano') || 
+    textClean.includes('un asesor') || 
+    textClean.includes('hablar con alguien') || 
+    textClean.includes('contacto directo') || 
+    textClean.includes('me contacten') || 
+    textClean.includes('me llamen') || 
+    textClean.includes('contactenme') || 
+    textClean.includes('llamenme') || 
+    textClean.includes('llamada')
+  );
+
   if (isHumanRequest) {
-    pausedChats[chatId] = Date.now() + 2 * 60 * 60 * 1000; // Pause bot for 2 hours for this chat
+    if (pausedChats[chatId]) delete pausedChats[chatId];
     const greetingName = userName ? ` ${userName}` : '';
-    const reply = `¡Por supuesto${greetingName}! De inmediato te pongo en contacto directo con Andrés R. 🙌\n\n📱 Puedes abrir conversación directa por WhatsApp dando clic aquí: https://wa.me/527712339238\n\nO si prefieres, compárteme tu teléfono de contacto y dinos en qué horario te resulta más cómodo recibir nuestra llamada. ☕`;
+    const reply = `¡Por supuesto${greetingName}! Con mucho gusto te canalizo directamente con Andrés R. 🙌\n\n📱 Puedes abrir conversación directa por WhatsApp dando clic aquí: https://wa.me/527712339238\n\nO si prefieres, compárteme por aquí tu **número telefónico o WhatsApp (10 dígitos)** y platícame en qué horario te resulta más cómodo recibir nuestra llamada. ☕`;
     history.push({ role: 'model', text: reply });
     return getUniqueReply(chatId, reply);
   }
