@@ -5551,6 +5551,53 @@ END:VCARD`;
     }
   });
 
+/* ════════════════ 3D PARALLAX TILT & GLARE ENGINE (PILAR 1 & 3) ════════════════ */
+(function init3DParallaxTiltEngine() {
+  const setupCards = () => {
+    const selector = '.glass-card, .service-card, .brain-card, .testimonial-card, .simulador-card';
+    const cards = document.querySelectorAll(selector);
+
+    cards.forEach(card => {
+      if (card.dataset.tiltInit) return;
+      card.dataset.tiltInit = 'true';
+
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+
+        const rotateX = ((y - centerY) / centerY) * -12;
+        const rotateY = ((x - centerX) / centerX) * 12;
+
+        const glareX = (x / rect.width) * 100;
+        const glareY = (y / rect.height) * 100;
+
+        card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateZ(14px) scale(1.025)`;
+        card.style.setProperty('--glare-x', `${glareX.toFixed(1)}%`);
+        card.style.setProperty('--glare-y', `${glareY.toFixed(1)}%`);
+        card.style.setProperty('--glare-opacity', '1');
+      });
+
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px) scale(1)';
+        card.style.setProperty('--glare-opacity', '0');
+      });
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupCards);
+  } else {
+    setupCards();
+  }
+
+  // Periodic check for dynamically added cards
+  setInterval(setupCards, 2000);
+})();
+
 
 
 
