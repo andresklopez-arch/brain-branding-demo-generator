@@ -1694,23 +1694,37 @@ app.post('/api/track-visit', async (req, res) => {
     if (typeof bodyData === 'string') {
       try { bodyData = JSON.parse(bodyData); } catch (e) {}
     }
-    const { city, region, country, flag, source, device, isp, duration, scroll, clicks } = bodyData || {};
-    const record = {
-      city: city || 'Desconocida',
-      region: region || '',
-      country: country || 'México',
-      flag: flag || '🇲🇽',
-      source: source || 'Acceso Directo Web 🌐',
-      device: device || 'Web',
-      isp: isp || '',
-      duration: duration || 'N/A',
-      scroll: scroll || 0,
-      clicks: clicks || [],
-      time: new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' }),
-      timestamp: new Date().toISOString()
-    };
-    visitsLog.push(record);
-    if (visitsLog.length > 1000) visitsLog.shift();
+    const { sessionId, city, region, country, flag, source, device, isp, duration, scroll, clicks } = bodyData || {};
+    const nowMs = Date.now();
+
+    // Anti-Duplication Filter (Suggestion 2): If same session within 15 minutes, update record instead of duplicating
+    const existingIndex = visitsLog.findIndex(v => v.sessionId && v.sessionId === sessionId && (nowMs - new Date(v.timestamp).getTime() <= 15 * 60 * 1000));
+
+    if (existingIndex !== -1) {
+      visitsLog[existingIndex].duration = duration || visitsLog[existingIndex].duration;
+      visitsLog[existingIndex].scroll = Math.max(visitsLog[existingIndex].scroll || 0, scroll || 0);
+      visitsLog[existingIndex].clicks = Array.from(new Set([...(visitsLog[existingIndex].clicks || []), ...(clicks || [])]));
+      visitsLog[existingIndex].timestamp = new Date().toISOString();
+    } else {
+      const record = {
+        sessionId: sessionId || ('sess_' + Date.now()),
+        city: city || 'Desconocida',
+        region: region || '',
+        country: country || 'México',
+        flag: flag || '🇲🇽',
+        source: source || 'Acceso Directo Web 🌐',
+        device: device || 'Web',
+        isp: isp || '',
+        duration: duration || 'N/A',
+        scroll: scroll || 0,
+        clicks: clicks || [],
+        time: new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' }),
+        timestamp: new Date().toISOString()
+      };
+      visitsLog.push(record);
+      if (visitsLog.length > 1000) visitsLog.shift();
+    }
+
     saveVisitsToDisk(visitsLog);
 
     return res.status(200).json({ ok: true, totalVisits: visitsLog.length });
