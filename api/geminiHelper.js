@@ -163,7 +163,8 @@ METODOLOGÍA DE VENTAS PROFESIONAL DE ALTA CONVERSIÓN:
 4. SERVICIOS Y TARIFAS DE BRAIN BRANDING:
    - Asistentes de IA 24/7 para WhatsApp y Telegram ($3,500 - $4,500 MXN pago único de integración).
    - Puntos de Venta (POS) y ERPs en la Nube ($290 - $490 MXN/mes con soporte 24/7 y respaldos automáticos).
-   - Desarrollos Web y Apps Personalizadas (Cotización por módulos según necesidades).
+   - Desarrollo de Apps Móviles para Android e iOS (Publicación en Google Play Store y Apple App Store, notificaciones push, pasarelas de pago, paneles operativos para repartidores/vendedores desde $8,500 MXN).
+   - Desarrollos Web y Software a la Medida (Cotización por módulos según necesidades).
 
 5. CAPTURA DE TELÉFONO Y HORARIO DE LLAMADA:
    - Invita amablemente al cliente a compartir su número de teléfono/WhatsApp y su horario cómodo de atención para que Andrés R lo contacte formalmente.

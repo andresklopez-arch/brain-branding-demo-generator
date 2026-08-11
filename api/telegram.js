@@ -325,6 +325,14 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
+  // 0.74 Desarrollo de Aplicaciones Móviles (Android & iOS)
+  if (textClean.includes('app') || textClean.includes('aplicacion') || textClean.includes('movil') || textClean.includes('android') || textClean.includes('ios') || textClean.includes('play store') || textClean.includes('app store') || textClean.includes('iphone')) {
+    state.giro = state.giro || 'Desarrollo de Apps Móviles';
+    const reply = `¡Excelente! En Brain Branding desarrollamos Aplicaciones Móviles (Apps) nativas y PWA a la medida para Android e iOS (iPhone):\n\n• **Apps de Venta y Pedidos para Clientes:** Catálogo digital con cobro en tarjeta (Stripe/Mercado Pago) y notificaciones push al celular.\n• **Apps Operativas para Empleados:** Control de repartidores, citas, inventarios y comandas en tiempo real desde cualquier teléfono o tablet.\n• **Publicación Oficial en Play Store y App Store:** Gestionamos todo el desarrollo técnico y proceso de publicación oficial.\n\n🌐 **Probar Demo de App Móvil:** https://brain-branding.web.app/#demo-apps\n\nPlatícame: ¿qué función principal te gustaría que tenga tu App o para quién estará dirigida? ☕`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
   // 0.75 Puntos de Venta (POS) / Cobro
   if (textClean.includes('punto de venta') || textClean.includes('pos') || textClean.includes('sistema de cobro') || textClean.includes('caja registradora') || textClean.includes('terminal')) {
     state.giro = state.giro || 'Punto de Venta';
