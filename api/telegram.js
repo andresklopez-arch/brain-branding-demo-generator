@@ -993,7 +993,7 @@ async function handleWebhookRequest(req, res) {
           return res.status(200).json({ ok: true });
         }
 
-        if (cmdLower === '/visitas' || cmdLower === '/metricas' || cmdLower === '/resumen8am' || cmdLower === '/reporte_visitas') {
+        if (cmdLower === '/visitas' || cmdLower === '/metricas' || cmdLower === '/resumen8am' || cmdLower === '/reporte_visitas' || cmdLower === '/reporte24h' || cmdLower === '/reporte') {
           const reportText = buildDetailedAnalytics8AMReport(visitsLog);
           await callTelegram('sendMessage', {
             chat_id: ADMIN_CHAT_ID,
@@ -1650,9 +1650,9 @@ function buildDetailedAnalytics8AMReport(allVisits = []) {
 
   const getPercent = (count) => ((count / total) * 100).toFixed(1);
 
-  let report = `☀️ *RESUMEN DIARIO DE VISITAS WEB (8:00 AM)* ☀️\n`;
+  let report = `☀️ *RESUMEN CONSOLIDADO DE VISITAS WEB (ÚLTIMAS 24 HORAS)* ☀️\n`;
   report += `📅 *Fecha:* ${nowStr}\n`;
-  report += `📊 *Total de Visitas Registradas:* *${total}*\n\n`;
+  report += `📊 *Total de Visitas Registradas (Últimas 24h):* *${total}*\n\n`;
 
   report += `📱 *DISPOSITIVOS Y SISTEMAS OPERATIVOS:*\n`;
   Object.entries(osCounts).sort((a, b) => b[1] - a[1]).forEach(([dev, count]) => {
