@@ -1030,6 +1030,17 @@ async function handleWebhookRequest(req, res) {
           return res.status(200).json({ ok: true });
         }
 
+        if (cmdLower === '/resetvisitas' || cmdLower === '/limpiarvisitas') {
+          visitsLog.length = 0;
+          saveVisitsToDisk([]);
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: `🗑️ *HISTORIAL DE VISITAS REINICIADO DE FORMA SEGURA* 🗑️\n\nEl contador de visitas web ha sido restablecido a 0. Todas las nuevas visitas comenzarán a acumularse a partir de este instante.`,
+            parse_mode: 'Markdown'
+          });
+          return res.status(200).json({ ok: true });
+        }
+
         if (cmdLower === '/exportar' || cmdLower === '/crm') {
           let jsonStr = JSON.stringify(prospectLogs.slice(-20), null, 2);
           if (jsonStr.length > 3500) jsonStr = jsonStr.substring(0, 3500) + '\n... (truncado)';
@@ -1732,6 +1743,21 @@ function buildDetailedAnalytics8AMReport(allVisits = []) {
     });
   }
 
+  // Suggestion 2: Hourly Traffic Histogram
+  const hourHistogram = {};
+  visits.forEach(v => {
+    const rawTime = v.time || '12:00';
+    const hourPart = rawTime.split(':')[0].padStart(2, '0');
+    const hKey = `${hourPart}:00`;
+    hourHistogram[hKey] = (hourHistogram[hKey] || 0) + 1;
+  });
+
+  report += `\n📊 *DISTRIBUCIÓN DE TRÁFICO POR HORAS (HISTOGRAMA 24H):*\n`;
+  Object.entries(hourHistogram).sort((a, b) => a[0].localeCompare(b[0])).forEach(([hr, count]) => {
+    const bar = '█'.repeat(Math.min(count, 12));
+    report += `• *${hr}:* ${bar} *${count} visitas*\n`;
+  });
+
   // Suggestion 3: Conversion Rate Calculation (Visits vs Captured Phone Leads)
   const leadsWithPhone = prospectLogs.filter(p => p.phone || p.contactNum).length;
   const conversionRate = total > 0 ? ((leadsWithPhone / total) * 100).toFixed(1) : '0.0';
@@ -1784,6 +1810,15 @@ app.post('/api/track-visit', async (req, res) => {
     }
 
     saveVisitsToDisk(visitsLog);
+
+    // Suggestion 3: Instant Returning Visitor Alert
+    if (isReturning && existingIndex === -1) {
+      callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: `🌟 *¡ALERTA DE CLIENTE RECURRENTE EN TU WEB!* 🌟\n\nUn visitante que ya conocía *Brain Branding* acaba de reingresar al sitio web.\n\n📍 *Ubicación:* ${city || 'México'}, ${region || ''} ${flag || '🇲🇽'}\n📱 *Dispositivo:* ${device || 'Móvil'}\n🎯 *Origen:* ${source || 'Directo'}\n⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' })}\n\n💬 *Tip:* Contacta al prospecto si solicita cotización o inicia chat con el bot.`,
+        parse_mode: 'Markdown'
+      }).catch(function(){});
+    }
 
     // Suggestion 2: High Traffic Alert Trigger (Fires when 24h visits reach milestones: 10, 20, 50, 100)
     const active24hCount = visitsLog.filter(v => {
