@@ -7,7 +7,9 @@ const { getGeminiReply, geminiMetrics, setSecurityAlertCallback, generateLeadBri
 const { getHistory, addTurn } = require('./historyStore.js');
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.text({ type: '*/*', limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve static web app files directly with anti-caching headers
 app.use(express.static(path.join(__dirname, '../public'), {
@@ -1688,7 +1690,11 @@ function buildDetailedAnalytics8AMReport(allVisits = []) {
 
 app.post('/api/track-visit', async (req, res) => {
   try {
-    const { city, region, country, flag, source, device, isp, duration, scroll, clicks } = req.body || {};
+    let bodyData = req.body;
+    if (typeof bodyData === 'string') {
+      try { bodyData = JSON.parse(bodyData); } catch (e) {}
+    }
+    const { city, region, country, flag, source, device, isp, duration, scroll, clicks } = bodyData || {};
     const record = {
       city: city || 'Desconocida',
       region: region || '',
@@ -1700,7 +1706,7 @@ app.post('/api/track-visit', async (req, res) => {
       duration: duration || 'N/A',
       scroll: scroll || 0,
       clicks: clicks || [],
-      time: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+      time: new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' }),
       timestamp: new Date().toISOString()
     };
     visitsLog.push(record);
