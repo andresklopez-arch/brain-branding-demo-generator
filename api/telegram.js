@@ -607,6 +607,34 @@ function getLeadTemperature(text) {
   return '❄️ *LEAD FRÍO (Contacto Inicial / Saludo)*';
 }
 
+// Universal Phone Normalizer (Suggestion 3)
+function normalizePhoneNumber(rawInput) {
+  if (!rawInput) return '';
+  let digits = rawInput.replace(/\D/g, '');
+  if (digits.length === 10) return `52${digits}`;
+  if (digits.length === 7 || digits.length === 8) return `52771${digits.slice(-7)}`;
+  if (digits.startsWith('52') && digits.length === 12) return digits;
+  return digits ? `52${digits}` : '';
+}
+
+// Time Bucket Schedule Categorizer (Suggestion 1)
+function categorizeCallSchedule(text) {
+  if (!text) return '📅 FLEXIBLE / POR CONFIRMAR';
+  const t = text.toLowerCase();
+  if (t.includes('mañana') || t.includes('am') || t.includes('temprano')) return `🌅 MAÑANA (9:00 AM - 1:00 PM) — "${text}"`;
+  if (t.includes('tarde') || t.includes('medio dia') || t.includes('mediodia') || t.includes('pm')) return `☀️ TARDE (1:00 PM - 6:00 PM) — "${text}"`;
+  if (t.includes('noche') || t.includes('cenar')) return `🌙 NOCHE (6:00 PM - 9:00 PM) — "${text}"`;
+  if (t.includes('ahora') || t.includes('ya') || t.includes('inmediato') || t.includes('urgente')) return `⚡ LO ANTES POSIBLE — "${text}"`;
+  return `📅 FLEXIBLE — "${text}"`;
+}
+
+// Google Calendar 1-Click Quick Add Generator (Suggestion 2)
+function buildGoogleCalendarLink(name, phone, giro, scheduleStr) {
+  const title = encodeURIComponent(`Llamada Brain Branding - ${name || 'Prospecto'}`);
+  const details = encodeURIComponent(`Cliente: ${name || 'Prospecto'}\nTeléfono: +${phone}\nGiro: ${giro || 'General'}\nHorario: ${scheduleStr}`);
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}`;
+}
+
 async function notifyOwner(chatId, firstName, username, userText) {
   if (chatId.toString() === ADMIN_CHAT_ID) return;
 
@@ -616,29 +644,32 @@ async function notifyOwner(chatId, firstName, username, userText) {
   const textLower = (userText || '').toLowerCase();
   const isCitaClick = textLower.includes('cita') || textLower.includes('agend') || textLower.includes('whatsapp');
 
-  // Instant Phone Number Extraction Alert to Admin & Owner WhatsApp 7712339238
+  // Instant Phone Number Extraction Alert with Schedule & Calendar Link
   const phoneMatch = userText.match(/(?:\+?\d{1,3}[\s.-]*)?(?:\(?\d{2,4}\)?[\s.-]*)?\d{3,4}[\s.-]*\d{4}\b/g);
   if (phoneMatch && phoneMatch.length > 0) {
-    const rawPhone = phoneMatch[0].replace(/\D/g, '');
-    if (rawPhone.length >= 7 && rawPhone.length <= 15) {
-      const cleanPhone = rawPhone.length === 10 ? `52${rawPhone}` : rawPhone;
+    const cleanPhone = normalizePhoneNumber(phoneMatch[0]);
+    if (cleanPhone && cleanPhone.length >= 10) {
       state.phone = cleanPhone;
 
-      // Extract schedule preference if mentioned
+      // Extract & categorize schedule preference if mentioned
       const scheduleMatch = userText.match(/(?:mañana|tarde|noche|horario|hora|despues|antes|a las|pm|am|[0-9]{1,2}\s*(?:am|pm|hrs?))/i);
       if (scheduleMatch) {
         state.preferredSchedule = userText;
       }
-      
+
+      const scheduleCategory = categorizeCallSchedule(state.preferredSchedule || userText);
+      const calendarUrl = buildGoogleCalendarLink(firstName, cleanPhone, state.giro, scheduleCategory);
+
       const phoneUrgentMsg = `🚨 *¡TELÉFONO DE PROSPECTO CAPTURADO!* 🚨\n\n` +
         `👤 *Cliente:* ${firstName || 'Prospecto'} (${username ? '@' + username : 'Sin Username'})\n` +
         `📞 *Teléfono Detectado:* \`+${cleanPhone}\`\n` +
-        `⏰ *Horario Preferido para Llamada:* ${state.preferredSchedule || 'Flexible / Por confirmar'}\n` +
+        `⏰ *Horario Preferido:* ${scheduleCategory}\n` +
         `🏢 *Giro:* ${state.giro || 'No especificado'}\n` +
         `💬 *Mensaje:* "${userText}"\n` +
         `🆔 *Chat ID:* \`${chatId}\`\n\n` +
-        `📲 *Llamar / WhatsApp Directo:* https://wa.me/${cleanPhone}\n\n` +
-        `⚡ *Respuesta directa:* \`/responder ${chatId} ¡Hola! Te marco en el horario indicado.\``;
+        `📲 *WhatsApp Directo:* https://wa.me/${cleanPhone}\n` +
+        `🗓️ *Agendar en Google Calendar:* [Agendar Cita](${calendarUrl})\n\n` +
+        `⚡ *Respuesta directa desde Telegram:* \`/responder ${chatId} ¡Hola! Te marco en el horario indicado.\``;
 
       try {
         await callTelegram('sendMessage', {
@@ -651,7 +682,7 @@ async function notifyOwner(chatId, firstName, username, userText) {
       try {
         const sendWa = require('./whatsapp.js').sendWhatsappMessage;
         if (sendWa) {
-          sendWa('527712339238', `🚨 NUEVO PROSPECTO REGISTRADO:\nNombre: ${firstName || 'Prospecto'}\nTeléfono: +${cleanPhone}\nHorario Preferido: ${state.preferredSchedule || 'Flexible'}\nGiro: ${state.giro || 'General'}\nMensaje: ${userText}`);
+          sendWa('527712339238', `🚨 NUEVO PROSPECTO REGISTRADO:\nNombre: ${firstName || 'Prospecto'}\nTeléfono: +${cleanPhone}\nHorario: ${scheduleCategory}\nGiro: ${state.giro || 'General'}\nMensaje: ${userText}`);
         }
       } catch (e) {}
     }
