@@ -1807,7 +1807,14 @@ app.post('/api/track-visit', async (req, res) => {
 });
 
 app.get('/api/analytics-db', (req, res) => {
-  return res.status(200).json({ ok: true, visits: visitsLog.slice(-100) });
+  const allVisits = visitsLog.length > 0 ? visitsLog : loadVisitsFromDisk();
+  const nowMs = Date.now();
+  const visits24h = allVisits.filter(v => {
+    const vTime = v.timestamp ? new Date(v.timestamp).getTime() : 0;
+    return vTime > 0 ? (nowMs - vTime) <= (24 * 60 * 60 * 1000) : true;
+  });
+  const targetVisits = visits24h.length > 0 ? visits24h : allVisits.slice(-50);
+  return res.status(200).json({ ok: true, visits: targetVisits, total24h: visits24h.length, totalAllTime: allVisits.length });
 });
 
 // Local Blockchain Chain Hash State
