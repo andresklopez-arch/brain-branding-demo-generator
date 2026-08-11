@@ -495,29 +495,6 @@ function generateHumanReply(chatId, userName, userText) {
     return getUniqueReply(chatId, reply);
   }
 
-  // 0.90 Solicitud de Hablar con un Humano / Asesor / Contacto Directo
-  const isTeamSize = /\d+\s*persona/i.test(textClean) || textClean.includes('trabajamos') || textClean.includes('somos');
-  const isHumanRequest = !isTeamSize && (
-    textClean.includes('hablar con humano') || 
-    textClean.includes('un humano') || 
-    textClean.includes('un asesor') || 
-    textClean.includes('hablar con alguien') || 
-    textClean.includes('contacto directo') || 
-    textClean.includes('me contacten') || 
-    textClean.includes('me llamen') || 
-    textClean.includes('contactenme') || 
-    textClean.includes('llamenme') || 
-    textClean.includes('llamada')
-  );
-
-  if (isHumanRequest) {
-    if (pausedChats[chatId]) delete pausedChats[chatId];
-    const greetingName = userName ? ` ${userName}` : '';
-    const reply = `¡Por supuesto${greetingName}! Con mucho gusto te canalizo directamente con Andrés R. 🙌\n\n📱 Puedes abrir conversación directa por WhatsApp dando clic aquí: https://wa.me/527712339238\n\nO si prefieres, compárteme por aquí tu **número telefónico o WhatsApp (10 dígitos)** y platícame en qué horario te resulta más cómodo recibir nuestra llamada. ☕`;
-    history.push({ role: 'model', text: reply });
-    return getUniqueReply(chatId, reply);
-  }
-
   // 0.91 Confirmación de Recepción de Teléfono / WhatsApp
   const phoneInputMatch = userText.match(/(?:\+?52\s*)?(?:\(?\d{2,3}\)?[\s.-]*)?\d{3,4}[\s.-]*\d{4}\b/g);
   if (phoneInputMatch && phoneInputMatch.length > 0) {
@@ -530,6 +507,42 @@ function generateHumanReply(chatId, userName, userText) {
       return getUniqueReply(chatId, reply);
     }
   }
+
+  // 0.915 Selección de Canal de Contacto (cuando YA tenemos su teléfono)
+  if (state.phone && (textClean.includes('llamada') || textClean.includes('whatsapp') || textClean.includes('mensaje') || textClean.includes('marquen') || textClean.includes('marcar') || textClean.includes('por llamada') || textClean.includes('por whatsapp'))) {
+    const isCall = textClean.includes('llamada') || textClean.includes('marquen') || textClean.includes('marcar');
+    state.contactMode = isCall ? 'LLAMADA' : 'WHATSAPP';
+    const channelText = isCall ? 'por llamada telefónica' : 'por mensaje de WhatsApp';
+    const icon = isCall ? '📞' : '💬';
+    const reply = `¡Anotado perfectamente! ${icon} Andrés R te contactará **${channelText}** al **+${state.phone}**.\n\n¿Hay algún horario en específico que prefieras (ej. 4:00 PM o mañana por la mañana)? ☕`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+  // 0.90 Solicitud de Hablar con un Humano / Asesor / Contacto Directo (cuando NO tenemos su teléfono)
+  const isTeamSize = /\d+\s*persona/i.test(textClean) || textClean.includes('trabajamos') || textClean.includes('somos');
+  const isHumanRequest = !isTeamSize && !state.phone && (
+    textClean.includes('hablar con humano') || 
+    textClean.includes('un humano') || 
+    textClean.includes('un asesor') || 
+    textClean.includes('hablar con alguien') || 
+    textClean.includes('contacto directo') || 
+    textClean.includes('me contacten') || 
+    textClean.includes('me llamen') || 
+    textClean.includes('contactenme') || 
+    textClean.includes('llamenme') || 
+    (textClean.includes('llamada') && !state.phone)
+  );
+
+  if (isHumanRequest) {
+    if (pausedChats[chatId]) delete pausedChats[chatId];
+    const greetingName = userName ? ` ${userName}` : '';
+    const reply = `¡Por supuesto${greetingName}! Con mucho gusto te canalizo directamente con Andrés R. 🙌\n\n📱 Puedes abrir conversación directa por WhatsApp dando clic aquí: https://wa.me/527712339238\n\nO si prefieres, compárteme por aquí tu **número telefónico o WhatsApp (10 dígitos)** y platícame en qué horario te resulta más cómodo recibir nuestra llamada. ☕`;
+    history.push({ role: 'model', text: reply });
+    return getUniqueReply(chatId, reply);
+  }
+
+
 
   if (textClean.includes('ya te di') || textClean.includes('ya te pase') || textClean.includes('ya te mande') || textClean.includes('ya envie') || textClean.includes('ya te lo mande')) {
     const reply = `¡Excelente! Ya recibí tus datos y Andrés R te estará contactando a la brevedad. Si deseas agregar algún detalle adicional sobre tu proyecto o duda específica, con gusto lo registro. ☕`;
