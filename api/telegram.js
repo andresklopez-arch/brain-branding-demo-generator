@@ -1713,6 +1713,24 @@ function buildDetailedAnalytics8AMReport(allVisits = []) {
   report += `📅 *Fecha:* ${nowStr}\n`;
   report += `📊 *Total de Visitas Registradas (Últimas 24h):* *${total}*\n\n`;
 
+  report += `📍 *DETALLE INDIVIDUAL DE CADA VISITA (HORA Y PROFUNDIDAD SCROLL):*\n`;
+  visits.forEach((v, idx) => {
+    const vTime = v.time || (v.timestamp ? new Date(v.timestamp).toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' }) : 'N/A');
+    const scrollVal = v.scroll !== undefined ? v.scroll : 0;
+    const retTag = v.isReturning ? ' 🌟 *(RECURRENTE)*' : ' 🆕 *(NUEVO)*';
+    
+    let devName = 'Móvil 📱';
+    const raw = v.device || '';
+    if (raw.includes('iPhone') || raw.includes('iOS')) devName = 'iPhone (iOS) 📱';
+    else if (raw.includes('Android')) devName = 'Android Móvil 📱';
+    else if (raw.includes('Windows')) devName = 'Windows PC 💻';
+    else if (raw.includes('MacBook') || raw.includes('macOS')) devName = 'Mac (macOS) 💻';
+
+    report += `${idx + 1}. ${v.flag || '🇲🇽'} *${v.city || 'Desconocida'}, ${v.region || ''}*\n`;
+    report += `   ⏰ *Hora:* ${vTime} | 📜 *Scroll:* *${scrollVal}%* | 📱 *Equipo:* ${devName}${retTag}\n`;
+  });
+  report += `\n`;
+
   report += `📱 *DISPOSITIVOS Y SISTEMAS OPERATIVOS:*\n`;
   Object.entries(osCounts).sort((a, b) => b[1] - a[1]).forEach(([dev, count]) => {
     report += `• ${dev}: *${count}* (${getPercent(count)}%)\n`;
