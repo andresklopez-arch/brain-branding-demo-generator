@@ -416,11 +416,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await window.loadIntegrationSettings(); // Cargar configuraciones de Telegram y Firebase
   await window.initFirebaseSync(); // Inicializar sincronización con Firebase
 
-  // 1. Sincronización inteligente y silenciosa en el arranque (Sugerencia 1)
-  if (state.licenses.length === 0 && window.FIREBASE_SYNC_ENABLED && window.firestoreDb) {
-    console.log("[INICIO] Base de datos local vacía. Iniciando sincronización silenciosa desde la nube...");
-    window.pullAllLicensesFromCloud(true);
-  }
+  // Sincronización incondicional e inmediata en el arranque desde Cloud Firestore REST API
+  await window.pullAllLicensesFromCloud(true);
 
   // Procesar cualquier notificación de Telegram encolada localmente mientras estaba offline
   window.processOfflineNotificationsQueue();
