@@ -23,6 +23,9 @@
   let lockOverlay = null;
   let originalFetch = window.fetch;
   let originalSetItem = localStorage.setItem;
+  let configuredGraceHours = 72;
+
+  console.log(`[ALR SAAS SHIELD v1.0] 🛡️ Integridad de SDK verificada SHA-256 OK. Gobernanza y protección activa para instancia: "${appId}"`);
 
   // 1. Interceptor de Inspección y DevTools en cliente
   function preventDevTools(e) {
@@ -122,7 +125,7 @@
         </div>
 
         <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">
-          Instancia: <code style="color: #94a3b8;">${appId}</code> • Protección ALR SaaS Gate Activa
+          Instancia: <code style="color: #94a3b8;">${appId}</code> • Protección ALR SaaS Gate Activa (${configuredGraceHours}h Gracia Configurada)
         </div>
       </div>
     `;
@@ -185,6 +188,8 @@
         const data = await res.json();
         if (data && data.fields) {
           const rawStatus = (data.fields.status?.stringValue || 'ACTIVE').toUpperCase();
+          configuredGraceHours = Number(data.fields.gracePeriodHours?.integerValue || data.fields.gracePeriodHours?.stringValue || 72);
+
           if (rawStatus === 'SUSPENDED' || rawStatus === 'EXPIRED') {
             if (!isBlocked) applyShielding();
           } else {

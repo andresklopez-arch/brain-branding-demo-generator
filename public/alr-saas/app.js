@@ -6923,71 +6923,37 @@ window.addEventListener('unhandledrejection', function(event) {
 // 🔐 Sugerencia 3: Ofuscador de Código AST para el SDK
 window.downloadObfuscatedSdk = async function() {
   try {
-    const response = await fetch('ReyLicensingValidator.js');
-    if (!response.ok) throw new Error("No se pudo cargar el SDK.");
+    const response = await fetch('alr-saas-gate-sdk.js');
+    if (!response.ok) throw new Error("No se pudo cargar el SDK Universal.");
     let sdkCode = await response.text();
-    sdkCode = sdkCode.replace(/\/\*[\s\S]*?\*\//g, '');
-    sdkCode = sdkCode.replace(/(^|[^\/])\/\/.*$/gm, '$1');
-    
-    const xorKey = Math.floor(Math.random() * 240) + 10;
-    
-    const base64DeobfTarget = 'const _deobfuscateStr = (str) => atob(str);';
-    const xorDeobfReplacement = `const _deobfuscateStr = (arr, key) => {
-      const offset = (key % 7) + 2;
-      return arr.map(c => String.fromCharCode(((c ^ key) - offset) & 255)).join('');
-    };`;
-    sdkCode = sdkCode.replace(base64DeobfTarget, xorDeobfReplacement);
-    
-    const stringsToObfuscate = [
-      'REVOKED',
-      'alr_cache_',
-      'MANIPULACIÓN DE HORA DETECTADA',
-      'LICENCIA REVOCADA'
-    ];
-    stringsToObfuscate.forEach(str => {
-      const currentXorKey = Math.floor(Math.random() * 240) + 10;
-      const offset = (currentXorKey % 7) + 2;
-      const xorBytes = Array.from(str).map(char => ((char.charCodeAt(0) + offset) & 255) ^ currentXorKey);
-      const arrayStr = `[${xorBytes.join(',')}]`;
-      const regex = new RegExp(`['"]${str}['"]`, 'g');
-      sdkCode = sdkCode.replace(regex, `_deobfuscateStr(${arrayStr}, ${currentXorKey})`);
-    });
-
-    const varsToReplace = [
-      'constantTimeCompare',
-      'normalizedPayload',
-      'decryptedPayload',
-      'secureCache',
-      'cachedData',
-      'dataToDecrypt',
-      'decrypted',
-      'encryptedBuffer',
-      'decryptedBuffer',
-      'hashBuffer',
-      'signatureBuffer',
-      '_deobfuscateStr',
-      '_verifyHMACSignature',
-      '_xorDecrypt'
-    ];
-    varsToReplace.forEach((v, idx) => {
-      const hexName = `_0x${(idx + 10).toString(16)}`;
-      const regex = new RegExp(`\\b${v}\\b`, 'g');
-      sdkCode = sdkCode.replace(regex, hexName);
-    });
     const blob = new Blob([sdkCode], { type: 'application/javascript' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'ReyLicensingValidator.obfuscated.js';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast("SDK Ofuscado (XOR) descargado con éxito.", "success");
-    addAuditLog('SYSTEM', 'SDK_DOWNLOAD_OBFUSCATED', "Se descargó una copia ofuscada con cifrado XOR del SDK de gobernanza.");
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'alr-saas-gate-sdk.js';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("SDK Universal ALR SaaS Gate descargado con éxito.", "success");
   } catch (err) {
-    console.error(err);
-    showToast("Error al generar el SDK ofuscado: " + err.message, "danger");
+    showToast(`Error al descargar el SDK: ${err.message}`, "danger");
   }
 };
+
+window.copyUniversalSdkSnippet = function(appId = 'kuatsi_central') {
+  const tag = `<script src="https://brain-branding.web.app/alr-saas/alr-saas-gate-sdk.js" data-app-id="${appId}" data-project-id="brain-branding"></script>`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(tag).then(() => {
+      showToast(`Tag de Integración SDK Universal copiado al portapapeles.`, "success");
+    }).catch(() => {
+      prompt("Copie este script tag de 1 sola línea para integrar su aplicación:", tag);
+    });
+  } else {
+    prompt("Copie este script tag de 1 sola línea para integrar su aplicación:", tag);
+  }
+};
+
 
   // 🔐 Sugerencia avanzada 55: Detección Activa de Inyección en el DOM mediante MutationObserver
   let domObserverInterval = null;

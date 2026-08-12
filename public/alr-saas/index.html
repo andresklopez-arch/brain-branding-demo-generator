@@ -309,8 +309,11 @@
                 <input type="text" id="portfolio-search" class="form-input" placeholder="🔍 Buscar aplicación por nombre o ID..." oninput="window.filterAppsPortfolio(this.value)" style="height: 36px; font-size: 11px;">
               </div>
               <div style="display: flex; gap: 10px;">
-                <button class="btn btn-secondary" onclick="window.downloadObfuscatedSdk()" style="height: 36px; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;" title="Descargar una versión ofuscada y protegida del SDK de Licencias">
-                  <i class="ri-shield-flash-line"></i> Descargar SDK Ofuscado
+                <button class="btn btn-secondary" onclick="window.copyUniversalSdkSnippet('kuatsi_central')" style="height: 36px; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; color: var(--accent); border-color: rgba(0,229,255,0.3);" title="Copiar script tag de 1 sola línea para integrar cualquier aplicación actual o futura">
+                  <i class="ri-code-s-slash-line"></i> Copiar Tag SDK (1-Línea)
+                </button>
+                <button class="btn btn-secondary" onclick="window.downloadObfuscatedSdk()" style="height: 36px; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;" title="Descargar SDK Universal de Licencias">
+                  <i class="ri-shield-flash-line"></i> Descargar SDK Universal
                 </button>
                 <button class="btn btn-secondary" onclick="window.exportAllSeedsJson()" style="height: 36px; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;" title="Exportar todas las semillas base cargadas en un solo archivo JSON">
                   <i class="ri-download-2-line"></i> Exportar Lote JSON
