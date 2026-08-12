@@ -748,6 +748,7 @@ async function loadFromStorage() {
     }
 
     await saveToStorage();
+    await window.pullAllLicensesFromCloud(true);
   } catch (error) {
     console.error("CRITICAL ERROR in loadFromStorage:", error);
     state.apps = state.apps || [];
@@ -802,10 +803,10 @@ window.pullAllLicensesFromCloud = async function(silent = false) {
   try {
     let pulledLicenses = [];
 
-    // 1. Consulta directa y en vivo a la REST API de Cloud Firestore (Ignora la caché IndexedDB local)
+    // 1. Consulta directa y en vivo a la REST API de Cloud Firestore (Bypassea caché y fuerza lectura fresca)
     try {
-      const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses`;
-      const res = await fetch(restUrl);
+      const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses?t=${Date.now()}`;
+      const res = await fetch(restUrl, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' } });
       if (res.ok) {
         const data = await res.json();
         if (data && data.documents) {
@@ -844,46 +845,36 @@ window.pullAllLicensesFromCloud = async function(silent = false) {
       console.warn('[REST PRIMARY PULL WARN]', restErr);
     }
 
-    // 2. Fallback por SDK si la llamada REST falla
-    if (pulledLicenses.length === 0 && window.firestoreDb) {
-      try {
-        const querySnapshot = await window.firestoreDb.collection('master_licenses').get();
-        querySnapshot.forEach(doc => {
-          const data = doc.data();
-          pulledLicenses.push({
-            id: doc.id,
-            clientName: data.clientName,
-            appName: data.appName,
-            appId: data.appId,
-            apiKey: data.apiKey,
-            expiryDate: data.expiryDate || data.expirationDate,
-            expirationDate: data.expiryDate || data.expirationDate,
-            currentPlan: data.currentPlan,
-            baseMonthlyFee: Number(data.baseMonthlyFee || 500),
-            adjustedMonthlyFee: Number(data.adjustedMonthlyFee || 500),
-            renewalPeriod: data.renewalPeriod || 'Mensual',
-            paymentPeriod: data.paymentPeriod || 'Mensual',
-            startDate: data.startDate || '2025-01-01',
-            dailyCost: Number(data.dailyCost || 0),
-            initialAmount: Number(data.initialAmount || 0),
-            status: (data.status || 'ACTIVE').toUpperCase(),
-            contact: data.contact || '',
-            gracePeriodHours: Number(data.gracePeriodHours || 24),
-            appUrl: data.appUrl || '',
-            version: Number(data.version || 1),
-            customConfig: data.customConfig || null
-          });
-        });
-      } catch (sdkErr) {
-        console.warn('[SDK PULL WARN]', sdkErr);
-      }
-    }
-
+    // 2. Consolidación y deduplicación para que Kuatsi tenga una única representación (kuatsi_central)
     if (pulledLicenses.length > 0) {
-      state.licenses = pulledLicenses;
+      const kuatsiDocs = pulledLicenses.filter(l => l.id.includes('kuatsi'));
+      const isKuatsiSuspended = kuatsiDocs.some(l => l.status === 'SUSPENDED');
+      
+      const cleanLicenses = [];
+      let kuatsiCentralAdded = false;
+
+      pulledLicenses.forEach(l => {
+        if (l.id.includes('kuatsi')) {
+          if (!kuatsiCentralAdded) {
+            cleanLicenses.push({
+              ...l,
+              id: 'kuatsi_central',
+              appId: 'kuatsi-cafeteria',
+              clientName: 'Kuatsi Cafetería Central',
+              appName: 'Kuatsi POS & Cafetería',
+              status: isKuatsiSuspended ? 'SUSPENDED' : (l.status || 'ACTIVE')
+            });
+            kuatsiCentralAdded = true;
+          }
+        } else {
+          cleanLicenses.push(l);
+        }
+      });
+
+      state.licenses = cleanLicenses;
       await saveToStorage();
       renderAll();
-      if (!silent) showToast(`Sincronización exitosa: ${pulledLicenses.length} licencia(s) actualizadas desde la nube.`, "success");
+      if (!silent) showToast(`Sincronización exitosa: ${cleanLicenses.length} licencia(s) en vivo desde la nube.`, "success");
     } else {
       if (!silent) showToast("No se encontraron licencias registradas en la nube.", "warning");
     }
