@@ -796,37 +796,8 @@ window.pullAllLicensesFromCloud = async function(silent = false) {
   try {
     let pulledLicenses = [];
 
-    // 1. Intentar primero vía Firebase SDK si está disponible
-    if (window.firestoreDb) {
-      try {
-        const querySnapshot = await window.firestoreDb.collection('master_licenses').get();
-        querySnapshot.forEach(doc => {
-          const data = doc.data();
-          pulledLicenses.push({
-            id: doc.id,
-            clientName: data.clientName,
-            appName: data.appName,
-            appId: data.appId,
-            apiKey: data.apiKey,
-            expiryDate: data.expiryDate || data.expirationDate,
-            currentPlan: data.currentPlan,
-            dailyCost: Number(data.dailyCost || 0),
-            initialAmount: Number(data.initialAmount || 0),
-            status: (data.status || 'ACTIVE').toUpperCase(),
-            contact: data.contact || '',
-            gracePeriodHours: Number(data.gracePeriodHours || 24),
-            appUrl: data.appUrl || '',
-            version: Number(data.version || 1),
-            customConfig: data.customConfig || null
-          });
-        });
-      } catch (sdkErr) {
-        console.warn('[SDK PULL WARN]', sdkErr);
-      }
-    }
-
-    // 2. Fallback garantizado por REST API (Garantiza lectura en vivo sin depender de switches locales)
-    if (pulledLicenses.length === 0) {
+    // 1. Consulta directa y en vivo a la REST API de Cloud Firestore (Ignora la caché IndexedDB local)
+    try {
       const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses`;
       const res = await fetch(restUrl);
       if (res.ok) {
@@ -851,6 +822,37 @@ window.pullAllLicensesFromCloud = async function(silent = false) {
             });
           });
         }
+      }
+    } catch (restErr) {
+      console.warn('[REST PRIMARY PULL WARN]', restErr);
+    }
+
+    // 2. Fallback por SDK si la llamada REST falla
+    if (pulledLicenses.length === 0 && window.firestoreDb) {
+      try {
+        const querySnapshot = await window.firestoreDb.collection('master_licenses').get();
+        querySnapshot.forEach(doc => {
+          const data = doc.data();
+          pulledLicenses.push({
+            id: doc.id,
+            clientName: data.clientName,
+            appName: data.appName,
+            appId: data.appId,
+            apiKey: data.apiKey,
+            expiryDate: data.expiryDate || data.expirationDate,
+            currentPlan: data.currentPlan,
+            dailyCost: Number(data.dailyCost || 0),
+            initialAmount: Number(data.initialAmount || 0),
+            status: (data.status || 'ACTIVE').toUpperCase(),
+            contact: data.contact || '',
+            gracePeriodHours: Number(data.gracePeriodHours || 24),
+            appUrl: data.appUrl || '',
+            version: Number(data.version || 1),
+            customConfig: data.customConfig || null
+          });
+        });
+      } catch (sdkErr) {
+        console.warn('[SDK PULL WARN]', sdkErr);
       }
     }
 
