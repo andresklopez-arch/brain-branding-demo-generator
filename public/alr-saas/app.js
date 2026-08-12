@@ -2613,13 +2613,18 @@ window.togglePlanStatus = function(clientId) {
   license.currentPlan = nextPlan;
 
   if (nextPlan === 'PAGADO') {
-    if (license.status === 'SUSPENDED') {
-      license.status = 'ACTIVE';
-    }
-    showToast(`¡Pago verificado para ${license.clientName}! Suspensión desactivada 🟢`, "success");
+    license.status = 'ACTIVE';
+    window.writeGovernanceStatus(license.id, 'ACTIVE');
+    showToast(`¡Pago verificado para ${license.clientName}! Sistema puesto en línea en automático 🟢`, "success");
   } else {
     const suspensionInfo = window.calculateNextSuspensionDate(license);
-    showToast(`Cliente ${license.clientName} marcado como NO_PAGADO. Próxima suspensión: ${suspensionInfo.formattedDate}`, "warning");
+    if (suspensionInfo.isOverdue || suspensionInfo.daysLeft <= 0) {
+      license.status = 'SUSPENDED';
+      window.writeGovernanceStatus(license.id, 'SUSPENDED');
+      showToast(`Cliente ${license.clientName} marcado como NO_PAGADO y suspendido automáticamente 🔴`, "danger");
+    } else {
+      showToast(`Cliente ${license.clientName} marcado como NO_PAGADO. Próxima suspensión: ${suspensionInfo.formattedDate}`, "warning");
+    }
   }
 
   license.version = (license.version || 1) + 1;
@@ -2632,6 +2637,7 @@ window.togglePlanStatus = function(clientId) {
   window.syncLicenseToFirestore(license);
   renderAll();
 };
+
 
 // 💳 TARJETA MODAL PARA REGISTRO DE MESES PAGADOS & SEMÁFORO DE SUSPENSIÓN (VERDE, ÁMBAR, NARANJA, ROJO)
 window.openPaymentMonthsModal = function(clientId) {
@@ -6844,7 +6850,14 @@ async function processImportedSeed(data) {
 window.syncLicenseToFirestore = async function(license) {
   if (!license || !license.id) return;
 
-  // 📡 RESPALDO DE SINCRONIZACIÓN INMEDIATA VÍA REST API (Garantiza propagación a Kuatsi y aplicaciones remotas)
+  const currentStatus = (license.status || 'ACTIVE').toUpperCase();
+
+  // ⚡ GOBERNANZA SERVER-SIDE: Enviar estado operativo a Firestore a través del backend Render (sin problemas de CORS)
+  if (typeof window.writeGovernanceStatus === 'function') {
+    window.writeGovernanceStatus(license.id, currentStatus);
+  }
+
+  // 📡 RESPALDO DE SINCRONIZACIÓN INMEDIATA VÍA REST API
   try {
     const candidateIds = Array.from(new Set([
       license.id,
