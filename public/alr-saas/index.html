@@ -493,12 +493,22 @@
                       <input type="number" id="w-base-monthly-fee" class="form-input" value="500" placeholder="Ej: 500" step="50">
                     </div>
                     <div class="form-group">
-                      <label class="form-label" style="color: var(--accent); font-weight: 800;">🔄 Frecuencia / Período de Pago</label>
+                      <label class="form-label" style="color: var(--accent); font-weight: 800;">🔄 Período de Renovación Contratada (+6% Anual)</label>
                       <select id="w-renewal-period" class="form-input" onchange="window.onWizardStartDateOrPeriodChange()" style="background: #000; border: 1px solid var(--border-glass); color: #fff;">
-                        <option value="Mensual" selected>Mensual</option>
+                        <option value="Mensual">Mensual</option>
                         <option value="Trimestral">Trimestral</option>
                         <option value="Semestral">Semestral</option>
-                        <option value="Anual">Anual (+6% Anual Acumulado)</option>
+                        <option value="Anual" selected>Anual (+6% Inflación)</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" style="color: #f59e0b; font-weight: 800;">💳 Período de Pago (Frecuencia de Cobro Operativo)</label>
+                      <select id="w-payment-period" class="form-input" style="background: #000; border: 1px solid rgba(245,158,11,0.4); color: #f59e0b;">
+                        <option value="Mensual" selected>Mensual</option>
+                        <option value="Quincenal">Quincenal</option>
+                        <option value="Trimestral">Trimestral</option>
+                        <option value="Semestral">Semestral</option>
+                        <option value="Anual">Anual</option>
                       </select>
                     </div>
                     <div class="form-group">

@@ -2239,6 +2239,7 @@ window.processAprovisionamiento = async function() {
 
     const baseMonthlyFee = getNum('w-base-monthly-fee') || 500;
     const renewalPeriod = getVal('w-renewal-period') || 'Mensual';
+    const paymentPeriod = getVal('w-payment-period') || 'Mensual';
     const startDate = getVal('w-start-date') || new Date().toISOString().split('T')[0];
     const userExpiry = getVal('w-expiry-date');
     const expiryDateIso = userExpiry ? userExpiry + 'T23:59:59Z' : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
@@ -2255,6 +2256,7 @@ window.processAprovisionamiento = async function() {
       expiryDate: expiryDateIso,
       expirationDate: expiryDateIso,
       renewalPeriod: renewalPeriod,
+      paymentPeriod: paymentPeriod,
       baseMonthlyFee: baseMonthlyFee,
       adjustedMonthlyFee: calc.adjustedFee,
       startDate: startDate,
@@ -2762,11 +2764,12 @@ window.openRenewalConfigModal = function(clientId) {
   const calc = window.calculateAdjustedMonthlyFee(license);
   const currentExpiry = (license.expiryDate || license.expirationDate || '2099-12-30').split('T')[0];
   const currentPeriod = license.renewalPeriod || 'Mensual';
+  const currentPaymentPeriod = license.paymentPeriod || 'Mensual';
   const currentBaseFee = Number(license.baseMonthlyFee || license.monthlyFee || 500);
   const currentStartDate = (license.startDate || license.createdAt || '2025-01-01').split('T')[0];
 
   box.innerHTML = `
-    <div style="padding: 28px; max-width: 580px; width: 100%;">
+    <div style="padding: 28px; max-width: 600px; width: 100%;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px;">
         <div>
           <h2 style="font-size: 15px; font-weight: 900; color: var(--accent); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
@@ -2784,23 +2787,33 @@ window.openRenewalConfigModal = function(clientId) {
             <input type="date" id="ren-start-date" class="form-input" value="${currentStartDate}" onchange="window.onModalStartDateOrPeriodChange()" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5);">
           </div>
           <div class="form-group">
-            <label class="form-label" style="font-size: 11px; font-weight: 800;">🔄 Período de Renovación</label>
+            <label class="form-label" style="font-size: 11px; font-weight: 800;">🔄 Período de Renovación (Aumento +6%)</label>
             <select id="ren-period" class="form-input" onchange="window.onModalStartDateOrPeriodChange()" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5); color: #fff;">
               <option value="Mensual" ${currentPeriod === 'Mensual' ? 'selected' : ''}>Mensual</option>
               <option value="Trimestral" ${currentPeriod === 'Trimestral' ? 'selected' : ''}>Trimestral</option>
               <option value="Semestral" ${currentPeriod === 'Semestral' ? 'selected' : ''}>Semestral</option>
-              <option value="Anual" ${currentPeriod === 'Anual' ? 'selected' : ''}>Anual</option>
+              <option value="Anual" ${currentPeriod === 'Anual' ? 'selected' : ''}>Anual (+6% Inflación)</option>
             </select>
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
           <div class="form-group">
-            <label class="form-label" style="font-size: 11px; font-weight: 800;">💵 Mensualidad Base ($ MXN)</label>
+            <label class="form-label" style="font-size: 10.5px; font-weight: 800;">💳 Período de Pago (Cobro Operativo)</label>
+            <select id="ren-payment-period" class="form-input" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5); color: #f59e0b; border-color: rgba(245,158,11,0.4);">
+              <option value="Mensual" ${currentPaymentPeriod === 'Mensual' ? 'selected' : ''}>Mensual</option>
+              <option value="Quincenal" ${currentPaymentPeriod === 'Quincenal' ? 'selected' : ''}>Quincenal</option>
+              <option value="Trimestral" ${currentPaymentPeriod === 'Trimestral' ? 'selected' : ''}>Trimestral</option>
+              <option value="Semestral" ${currentPaymentPeriod === 'Semestral' ? 'selected' : ''}>Semestral</option>
+              <option value="Anual" ${currentPaymentPeriod === 'Anual' ? 'selected' : ''}>Anual</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size: 10.5px; font-weight: 800;">💵 Mensualidad Base ($ MXN)</label>
             <input type="number" id="ren-base-fee" class="form-input" value="${currentBaseFee}" step="10" oninput="window.updateModalFeePreview()" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5);">
           </div>
           <div class="form-group">
-            <label class="form-label" style="font-size: 11px; font-weight: 800;">📅 Próxima Renovación (Calculada ⚡)</label>
+            <label class="form-label" style="font-size: 10.5px; font-weight: 800;">📅 Próxima Renovación (Calculada ⚡)</label>
             <input type="date" id="ren-expiry-date" class="form-input" value="${currentExpiry}" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5); border-color: var(--accent);">
           </div>
         </div>
@@ -2938,6 +2951,7 @@ window.saveRenewalConfigModal = function(clientId) {
 
   const newExpiry = document.getElementById('ren-expiry-date')?.value;
   const newPeriod = document.getElementById('ren-period')?.value;
+  const newPaymentPeriod = document.getElementById('ren-payment-period')?.value;
   const newBaseFee = Number(document.getElementById('ren-base-fee')?.value || 500);
   const newStartDate = document.getElementById('ren-start-date')?.value;
 
@@ -2946,6 +2960,7 @@ window.saveRenewalConfigModal = function(clientId) {
     license.expirationDate = newExpiry + 'T23:59:59Z';
   }
   if (newPeriod) license.renewalPeriod = newPeriod;
+  if (newPaymentPeriod) license.paymentPeriod = newPaymentPeriod;
   if (!isNaN(newBaseFee) && newBaseFee > 0) license.baseMonthlyFee = newBaseFee;
   if (newStartDate) license.startDate = newStartDate;
 
@@ -2956,11 +2971,11 @@ window.saveRenewalConfigModal = function(clientId) {
   saveToStorage();
   window.syncLicenseToFirestore(license);
 
-  const tgMsg = `📅 <b>[CONFIGURACIÓN DE RENOVACIÓN ALR SAAS]</b> 📅\n\nCliente: <b>${license.clientName}</b> (${license.id})\n<b>Próxima Renovación:</b> ${newExpiry}\n<b>Período:</b> ${newPeriod}\n<b>Tarifa Base:</b> $${newBaseFee} MXN\n<b>Mensualidad Vigente (+6% Anual):</b> ${calc.formattedAdjusted}`;
+  const tgMsg = `📅 <b>[CONFIGURACIÓN DE RENOVACIÓN & PAGO ALR SAAS]</b> 📅\n\nCliente: <b>${license.clientName}</b> (${license.id})\n<b>Próxima Renovación:</b> ${newExpiry}\n<b>Período Renovación (+6%):</b> ${newPeriod}\n<b>Frecuencia de Pago:</b> ${newPaymentPeriod}\n<b>Tarifa Base:</b> $${newBaseFee} MXN\n<b>Mensualidad Vigente:</b> ${calc.formattedAdjusted}`;
   window.sendTelegramNotification(tgMsg);
 
-  addAuditLog('ORQUESTADOR', 'CONFIGURACIÓN_RENOVACIÓN', `Se actualizó la renovación de ${license.clientName}: Vencimiento ${newExpiry}, Período ${newPeriod}, Mensualidad Vigente ${calc.formattedAdjusted}.`);
-  showToast(`¡Configuración de renovación guardada para ${license.clientName}!`, "success");
+  addAuditLog('ORQUESTADOR', 'CONFIGURACIÓN_RENOVACIÓN', `Actualizado ${license.clientName}: Vencimiento ${newExpiry}, Renovación ${newPeriod}, Pago ${newPaymentPeriod}, Cuota ${calc.formattedAdjusted}.`);
+  showToast(`¡Configuración de renovación y pago guardada para ${license.clientName}!`, "success");
   closeModal();
   renderAll();
 };
@@ -6467,6 +6482,11 @@ window.syncLicenseToFirestore = async function(license) {
             expiryDate: { stringValue: license.expiryDate || license.expirationDate || '2099-12-31T23:59:59Z' },
             expirationDate: { stringValue: license.expiryDate || license.expirationDate || '2099-12-31T23:59:59Z' },
             currentPlan: { stringValue: license.currentPlan || 'PAGADO' },
+            renewalPeriod: { stringValue: license.renewalPeriod || 'Mensual' },
+            paymentPeriod: { stringValue: license.paymentPeriod || 'Mensual' },
+            baseMonthlyFee: { doubleValue: Number(license.baseMonthlyFee || license.monthlyFee || 500) },
+            adjustedMonthlyFee: { doubleValue: Number(license.adjustedMonthlyFee || 500) },
+            startDate: { stringValue: license.startDate || license.createdAt || '2025-01-01' },
             dailyCost: { doubleValue: Number(license.dailyCost || 0) },
             version: { integerValue: String(license.version || 1) },
             lastUpdated: { stringValue: new Date().toISOString() }
