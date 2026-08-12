@@ -1337,12 +1337,14 @@ async function handleWebhookRequest(req, res) {
         if (cmdLower === '/respaldototal' || cmdLower === '/backup' || cmdLower === '/descargarbd') {
           const allVisits = loadVisitsFromDisk();
           const jsonStr = JSON.stringify(allVisits, null, 2);
+          const seal = generateHmacSeal(jsonStr);
           const timeStr = new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
 
           const msg = `💾 *RESPALDO MAESTRO COMPLETO DE BASE DE DATOS* 💾\n⏰ *Generado:* ${timeStr}\n\n` +
             `📊 *Total Registros Históricos:* *${allVisits.length}*\n` +
+            `🔒 *Sello HMAC-SHA256:* \`${seal}\`\n` +
             `📁 *Formato:* JSON Master Store\n\n` +
-            `\`\`\`json\n${jsonStr.substring(0, 3200)}\n\`\`\``;
+            `\`\`\`json\n${jsonStr.substring(0, 3100)}\n\`\`\``;
 
           await callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text: msg, parse_mode: 'Markdown' });
           return res.status(200).json({ ok: true });
@@ -2274,9 +2276,10 @@ function checkFirstVisitOfDay(city, region, flag, device, source) {
 }
 
 let notifiedSessions5Min = new Set();
+let notifiedSessions10Min = new Set();
 function checkHighEngagementVisit(sessionId, city, device, durationStr) {
   try {
-    if (!sessionId || notifiedSessions5Min.has(sessionId)) return;
+    if (!sessionId) return;
 
     let sec = 0;
     if (typeof durationStr === 'number') sec = durationStr;
@@ -2288,7 +2291,7 @@ function checkHighEngagementVisit(sessionId, city, device, durationStr) {
       else sec = parseInt(durationStr, 10) || 0;
     }
 
-    if (sec >= 300) {
+    if (sec >= 300 && !notifiedSessions5Min.has(sessionId)) {
       notifiedSessions5Min.add(sessionId);
       const mins = Math.floor(sec / 60);
       const secs = sec % 60;
@@ -2301,6 +2304,23 @@ function checkHighEngagementVisit(sessionId, city, device, durationStr) {
               `📍 *Ubicación:* ${city || 'México'}\n` +
               `📱 *Dispositivo:* ${device || 'Móvil'}\n\n` +
               `💬 *Tip:* Este visitante está examinando la propuesta a detalle. Ofrece asesoría personalizada si inicia chat.`,
+        parse_mode: 'Markdown'
+      }).catch(function(){});
+    }
+
+    if (sec >= 600 && !notifiedSessions10Min.has(sessionId)) {
+      notifiedSessions10Min.add(sessionId);
+      const mins = Math.floor(sec / 60);
+      const secs = sec % 60;
+      const timeDisplay = `${mins} min ${secs} seg`;
+
+      callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: `🏆 *¡PROSPECTO VIP ENTERPRISE DETECTADO (PERMANENCIA > 10 MINUTOS)!* 🏆\n\n` +
+              `⏱️ *Tiempo Navegando:* *${timeDisplay}*\n` +
+              `📍 *Ubicación:* ${city || 'México'}\n` +
+              `📱 *Dispositivo:* ${device || 'Móvil'}\n\n` +
+              `💬 *Atención Comercial:* El cliente lleva más de 10 minutos analizando el sitio web. ¡Oportunidad de alta conversión!`,
         parse_mode: 'Markdown'
       }).catch(function(){});
     }
@@ -2457,6 +2477,87 @@ app.post('/api/sync-visits', (req, res) => {
   } catch (e) {
     return res.status(200).json({ ok: false, error: e.message });
   }
+});
+
+// Endpoint: Interactive Web Dashboard for Live Analytics
+app.get('/api/analytics/dashboard', (req, res) => {
+  const allVisits = visitsLog.length > 0 ? visitsLog : loadVisitsFromDisk();
+  const activeVisits = getActive24hVisits(allVisits);
+  const avgDur = calculateAverageDuration(activeVisits);
+  const nowStr = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Brain Branding — Dashboard de Analítica 24/7</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0A0D14; color: #EAEFFC; margin: 0; padding: 20px; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    .card { background: #121824; border: 1px solid #1E293B; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    h1 { color: #38BDF8; font-size: 24px; margin-top: 0; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .stat-box { background: #1E293B; padding: 16px; border-radius: 8px; text-align: center; }
+    .stat-val { font-size: 28px; font-weight: bold; color: #38BDF8; }
+    .stat-lbl { font-size: 13px; color: #94A3B8; text-transform: uppercase; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #1E293B; font-size: 14px; }
+    th { color: #94A3B8; background: #0F172A; }
+    tr:hover { background: rgba(56, 189, 248, 0.05); }
+    .badge { background: #0284C7; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>📊 Brain Branding — Tablero de Métricas en Tiempo Real</h1>
+      <p style="color: #94A3B8; font-size: 13px;">Última actualización: ${nowStr} (CDMX)</p>
+      
+      <div class="grid">
+        <div class="stat-box">
+          <div class="stat-val">${activeVisits.length}</div>
+          <div class="stat-lbl">Visitas (Últimas 24h)</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${allVisits.length}</div>
+          <div class="stat-lbl">Total Acumulado en Base de Datos</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${avgDur}</div>
+          <div class="stat-lbl">Tiempo Promedio Permanencia</div>
+        </div>
+      </div>
+
+      <h2>📍 Últimas Visitas Registradas</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha / Hora</th>
+            <th>Ubicación</th>
+            <th>Dispositivo</th>
+            <th>Origen</th>
+            <th>Scroll</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${activeVisits.slice(-15).reverse().map(v => `
+            <tr>
+              <td>${v.time || 'N/A'}</td>
+              <td>${v.flag || '🇲🇽'} ${v.city || 'México'}, ${v.region || ''}</td>
+              <td>${v.device || 'Móvil'}</td>
+              <td><span class="badge">${v.source || 'Directo'}</span></td>
+              <td>${v.scroll || 0}%</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  return res.status(200).send(html);
 });
 
 // Server Keep-Alive Ping Endpoint
