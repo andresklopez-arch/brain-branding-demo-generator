@@ -1834,6 +1834,33 @@ function getActive24hVisits(allVisits = []) {
   });
 }
 
+function getVisitsTrendComparison(allVisits = []) {
+  const nowMs = Date.now();
+  const h24 = 24 * 60 * 60 * 1000;
+  const h48 = 48 * 60 * 60 * 1000;
+
+  const current24h = allVisits.filter(v => {
+    const t = parseVisitTimestamp(v.timestamp);
+    return t > 0 && (nowMs - t) <= h24;
+  }).length;
+
+  const previous24h = allVisits.filter(v => {
+    const t = parseVisitTimestamp(v.timestamp);
+    return t > 0 && (nowMs - t) > h24 && (nowMs - t) <= h48;
+  }).length;
+
+  if (previous24h === 0) {
+    if (current24h > 0) return `🔥 *Crecimiento:* 🟢 +100% vs. día anterior (*${current24h}* hoy vs. *0* ayer)`;
+    return `➖ *Variación vs. Día Anterior:* Sin variación (*0* hoy vs. *0* ayer)`;
+  }
+
+  const diff = current24h - previous24h;
+  const pct = ((diff / previous24h) * 100).toFixed(1);
+  const icon = diff >= 0 ? '📈 ⬆️' : '📉 ⬇️';
+  const sign = diff >= 0 ? '+' : '';
+  return `${icon} *Variación vs. Día Anterior:* *${sign}${pct}%* (*${current24h}* hoy vs. *${previous24h}* ayer)`;
+}
+
 function buildDetailedAnalytics8AMReport(allVisits = [], isScheduled8AM = false) {
   const visits = getActive24hVisits(allVisits);
   const total = visits.length;
@@ -1967,6 +1994,11 @@ function buildDetailedAnalytics8AMReport(allVisits = [], isScheduled8AM = false)
     report += `• *${hr}:* ${bar} *${count} visitas*\n`;
   });
 
+  // Trend comparison vs previous 24h window
+  const trendSummary = getVisitsTrendComparison(allVisits);
+  report += `\n📊 *COMPARATIVA Y TENDENCIA DE TRÁFICO (24H VS. 24H ANTERIORES):*\n`;
+  report += `• ${trendSummary}\n`;
+
   // Suggestion 3: Conversion Rate Calculation (Visits vs Captured Phone Leads)
   const leadsWithPhone = prospectLogs.filter(p => p.phone || p.contactNum).length;
   const conversionRate = total > 0 ? ((leadsWithPhone / total) * 100).toFixed(1) : '0.0';
@@ -2061,6 +2093,14 @@ app.get('/api/keep-alive', (req, res) => {
   checkAndTriggerMorningReports();
   return res.status(200).json({ ok: true, status: 'ONLINE', timestamp: new Date().toISOString(), visitsCount: visitsLog.length });
 });
+
+// Internal Self-Ping / Keep-Alive Runner (Pings every 8 minutes to prevent Render sleep)
+setInterval(() => {
+  try {
+    const targetUrl = 'https://brain-branding-demo-generator.onrender.com/api/keep-alive';
+    https.get(targetUrl, (res) => {}).on('error', () => {});
+  } catch (e) {}
+}, 8 * 60 * 1000);
 
 // Local Blockchain Chain Hash State
 let lastBlockchainHash = "GENESIS_BRAIN_BRANDING_BLOCK_SAAS_2026";

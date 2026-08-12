@@ -179,6 +179,50 @@ function saveVisitsToDisk(logs) {
   } catch (e) {}
 }
 
+function purgeOldVisits(maxDays = 30) {
+  try {
+    const visits = loadVisitsFromDisk();
+    if (!Array.isArray(visits) || visits.length === 0) return;
+    
+    const cutoffMs = Date.now() - (maxDays * 24 * 60 * 60 * 1000);
+    const recent = [];
+    const archived = [];
+
+    visits.forEach(v => {
+      let vTime = v.timestamp ? new Date(v.timestamp).getTime() : 0;
+      if (isNaN(vTime) || vTime <= 0) {
+        recent.push(v);
+      } else if (vTime < cutoffMs) {
+        archived.push(v);
+      } else {
+        recent.push(v);
+      }
+    });
+
+    if (archived.length > 0) {
+      const ARCHIVE_FILE = path.join(DATA_DIR, 'visits_archive.json');
+      let existingArchive = [];
+      try {
+        if (fs.existsSync(ARCHIVE_FILE)) {
+          existingArchive = JSON.parse(fs.readFileSync(ARCHIVE_FILE, 'utf8')) || [];
+        }
+      } catch (e) {}
+
+      const updatedArchive = [...existingArchive, ...archived].slice(-5000);
+      fs.writeFileSync(ARCHIVE_FILE, JSON.stringify(updatedArchive, null, 2), 'utf8');
+      saveVisitsToDisk(recent);
+      console.log(`[VISITS PURGE] Archived ${archived.length} visits older than ${maxDays} days to visits_archive.json.`);
+    }
+  } catch (e) {
+    console.error('[PURGE VISITS ERROR]', e);
+  }
+}
+
+// Run visits purge check every 12 hours
+setInterval(() => {
+  purgeOldVisits(30);
+}, 12 * 60 * 60 * 1000);
+
 module.exports = {
   getHistory,
   addTurn,
@@ -190,5 +234,6 @@ module.exports = {
   loadMetricsFromDisk,
   saveMetricsToDisk,
   loadVisitsFromDisk,
-  saveVisitsToDisk
+  saveVisitsToDisk,
+  purgeOldVisits
 };
