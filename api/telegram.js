@@ -2275,4 +2275,107 @@ app.listen(PORT, async () => {
   }
 });
 
+// ================================================================
+// 🔐 ALR SaaS GOVERNANCE API — /api/governance/set-status
+// Proxy server-side para escribir status de licencias en Firestore.
+// Usa https Node.js (sin CORS, sin problemas de browser).
+// ================================================================
+const ALR_GOVERNANCE_SECRET = 'alr-saas-master-2025-brain';
+const KUATSI_DOC_IDS = ['kuatsi_central', 'kuatsi', 'kuatsi-cafeteria'];
+
+function patchFirestoreStatus(docId, status) {
+  return new Promise((resolve) => {
+    const payload = JSON.stringify({
+      fields: { status: { stringValue: status } }
+    });
+    const path = `/v1/projects/brain-branding/databases/(default)/documents/master_licenses/${docId}?updateMask.fieldPaths=status`;
+    const req = https.request({
+      hostname: 'firestore.googleapis.com',
+      port: 443,
+      path: path,
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(payload)
+      }
+    }, (res) => {
+      let body = '';
+      res.on('data', c => body += c);
+      res.on('end', () => {
+        try {
+          const d = JSON.parse(body);
+          resolve({ docId, ok: res.statusCode === 200, status: d.fields?.status?.stringValue, httpCode: res.statusCode });
+        } catch (e) {
+          resolve({ docId, ok: false, error: e.message, httpCode: res.statusCode });
+        }
+      });
+    });
+    req.on('error', e => resolve({ docId, ok: false, error: e.message }));
+    req.write(payload);
+    req.end();
+  });
+}
+
+app.post('/api/governance/set-status', async (req, res) => {
+  const { licenseId, status, callerKey } = req.body || {};
+
+  if (callerKey !== ALR_GOVERNANCE_SECRET) {
+    console.warn('[GOVERNANCE API] ⛔ Unauthorized attempt from:', req.headers.origin || req.ip);
+    return res.status(403).json({ ok: false, error: 'Not authorized.' });
+  }
+
+  const validStatuses = ['ACTIVE', 'SUSPENDED', 'EXPIRED'];
+  const normalized = (status || '').toUpperCase();
+  if (!validStatuses.includes(normalized)) {
+    return res.status(400).json({ ok: false, error: `Invalid status: ${status}` });
+  }
+
+  const docIds = Array.from(new Set([
+    ...KUATSI_DOC_IDS,
+    ...(licenseId && !KUATSI_DOC_IDS.includes(licenseId) ? [licenseId] : [])
+  ]));
+
+  console.log(`[GOVERNANCE API] ⚡ Writing "${normalized}" to Firestore docs: ${docIds.join(', ')}`);
+
+  const results = await Promise.all(docIds.map(d => patchFirestoreStatus(d, normalized)));
+  const allOk = results.every(r => r.ok);
+  const failedDocs = results.filter(r => !r.ok);
+
+  if (failedDocs.length > 0) {
+    console.error('[GOVERNANCE API] ❌ Failed docs:', JSON.stringify(failedDocs));
+  } else {
+    console.log(`[GOVERNANCE API] ✅ All ${results.length} docs updated to "${normalized}"`);
+  }
+
+  return res.status(allOk ? 200 : 207).json({
+    ok: allOk,
+    status: normalized,
+    results,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// GET para verificar estado desde cualquier app
+app.get('/api/governance/status', async (req, res) => {
+  return new Promise((resolve) => {
+    https.get(`https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses/kuatsi_central?t=${Date.now()}`, (fsRes) => {
+      let body = '';
+      fsRes.on('data', c => body += c);
+      fsRes.on('end', () => {
+        try {
+          const d = JSON.parse(body);
+          resolve(res.json({
+            ok: true,
+            status: d.fields?.status?.stringValue || 'UNKNOWN',
+            lastUpdated: d.fields?.lastUpdated?.stringValue,
+            source: 'firestore:kuatsi_central'
+          }));
+        } catch (e) {
+          resolve(res.status(500).json({ ok: false, error: e.message }));
+        }
+      });
+    });
+  });
+});
+
 module.exports = app;

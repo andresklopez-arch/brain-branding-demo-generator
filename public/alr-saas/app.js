@@ -4485,37 +4485,36 @@ if (document.readyState === 'loading') {
   initGovernanceFirebase();
 }
 
-// Función centralizada de escritura de licencias en Firestore (usa governanceDb)
+// ================================================================
+// ⚡ GOVERNANCE API — Escritura via servidor Render (Node.js)
+// El servidor hace el PATCH a Firestore sin restricciones CORS.
+// URL del servidor: brain-branding-demo-generator.onrender.com
+// ================================================================
+const GOVERNANCE_API = 'https://brain-branding-demo-generator.onrender.com/api/governance/set-status';
+const ALR_GOVERNANCE_SECRET = 'alr-saas-master-2025-brain';
+
 window.writeGovernanceStatus = async function(licenseId, status) {
-  if (!window.governanceDb) {
-    console.warn('[ALR GOVERNANCE] ⚠️ governanceDb no disponible, usando PATCH REST como fallback.');
-    window._syncStatusDirectPatch(status);
-    return false;
-  }
-
-  const docIds = Array.from(new Set([
-    'kuatsi_central', 'kuatsi', 'kuatsi-cafeteria',
-    ...(licenseId ? [licenseId] : [])
-  ]));
-
-  const timestamp = new Date().toISOString();
-  const batch = window.governanceDb.batch();
-
-  for (const docId of docIds) {
-    const ref = window.governanceDb.collection('master_licenses').doc(docId);
-    batch.update(ref, {
-      status: status,
-      lastUpdated: timestamp,
-      lastGovernedBy: 'ALR_SAAS_COMMANDER'
-    });
-  }
-
   try {
-    await batch.commit();
-    console.log(`[ALR GOVERNANCE] ✅ Batch commit OK → "${status}" en docs: ${docIds.join(', ')}`);
-    return true;
+    const res = await fetch(GOVERNANCE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ licenseId, status, callerKey: ALR_GOVERNANCE_SECRET })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.ok) {
+      console.log(`[ALR GOVERNANCE] ✅ Servidor Render OK → "${status}" en Firestore`, data.results?.map(r => r.docId + ':' + (r.ok ? '✅' : '❌')).join(', '));
+      return true;
+    } else {
+      console.error(`[ALR GOVERNANCE] ❌ Servidor Render HTTP ${res.status}:`, data.error || JSON.stringify(data));
+      // Fallback: PATCH REST directo
+      window._syncStatusDirectPatch(status);
+      return false;
+    }
   } catch (e) {
-    console.error('[ALR GOVERNANCE] ❌ Batch commit falló:', e.message, '— usando PATCH REST fallback.');
+    console.error('[ALR GOVERNANCE] ❌ Error de red al llamar servidor Render:', e.message);
+    // Fallback: PATCH REST directo
     window._syncStatusDirectPatch(status);
     return false;
   }
