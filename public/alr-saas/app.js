@@ -2625,6 +2625,64 @@ window.calculateAdjustedMonthlyFee = function(license) {
   };
 };
 
+// ⚡ CÁLCULO AUTOMÁTICO DE FECHAS DE RENOVACIÓN Y PROYECCIÓN FUTURA (+6% ANUAL)
+
+window.autoCalculateRenewalDate = function(startDateStr, periodStr) {
+  if (!startDateStr) return '';
+  const parts = startDateStr.split('-');
+  if (parts.length !== 3) return '';
+  
+  const y = Number(parts[0]);
+  const m = Number(parts[1]) - 1;
+  const d = Number(parts[2]);
+  
+  const date = new Date(y, m, d);
+  if (isNaN(date.getTime())) return '';
+
+  const period = periodStr || 'Mensual';
+  if (period === 'Mensual') {
+    date.setMonth(date.getMonth() + 1);
+  } else if (period === 'Trimestral') {
+    date.setMonth(date.getMonth() + 3);
+  } else if (period === 'Semestral') {
+    date.setMonth(date.getMonth() + 6);
+  } else if (period === 'Anual') {
+    date.setFullYear(date.getFullYear() + 1);
+  } else {
+    date.setMonth(date.getMonth() + 1);
+  }
+
+  const resY = date.getFullYear();
+  const resM = String(date.getMonth() + 1).padStart(2, '0');
+  const resD = String(date.getDate()).padStart(2, '0');
+  return `${resY}-${resM}-${resD}`;
+};
+
+window.onModalStartDateOrPeriodChange = function() {
+  const startStr = document.getElementById('ren-start-date')?.value;
+  const period = document.getElementById('ren-period')?.value;
+  if (startStr) {
+    const calculatedExpiry = window.autoCalculateRenewalDate(startStr, period);
+    const expiryEl = document.getElementById('ren-expiry-date');
+    if (expiryEl && calculatedExpiry) {
+      expiryEl.value = calculatedExpiry;
+    }
+  }
+  window.updateModalFeePreview();
+};
+
+window.onWizardStartDateOrPeriodChange = function() {
+  const startStr = document.getElementById('w-start-date')?.value;
+  const period = document.getElementById('w-renewal-period')?.value;
+  if (startStr) {
+    const calculatedExpiry = window.autoCalculateRenewalDate(startStr, period);
+    const expiryEl = document.getElementById('w-expiry-date');
+    if (expiryEl && calculatedExpiry) {
+      expiryEl.value = calculatedExpiry;
+    }
+  }
+};
+
 window.openRenewalConfigModal = function(clientId) {
   const license = state.licenses.find(l => l.id === clientId || l.appId === clientId);
   if (!license) return;
@@ -2640,7 +2698,7 @@ window.openRenewalConfigModal = function(clientId) {
   const currentStartDate = (license.startDate || license.createdAt || '2025-01-01').split('T')[0];
 
   box.innerHTML = `
-    <div style="padding: 28px; max-width: 520px; width: 100%;">
+    <div style="padding: 28px; max-width: 580px; width: 100%;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px;">
         <div>
           <h2 style="font-size: 15px; font-weight: 900; color: var(--accent); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
@@ -2654,12 +2712,12 @@ window.openRenewalConfigModal = function(clientId) {
       <div style="display: flex; flex-direction: column; gap: 16px;">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div class="form-group">
-            <label class="form-label" style="font-size: 11px; font-weight: 800;">📅 Fecha de Próxima Renovación</label>
-            <input type="date" id="ren-expiry-date" class="form-input" value="${currentExpiry}" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5);">
+            <label class="form-label" style="font-size: 11px; font-weight: 800;">🗓️ Fecha Inicio Contrato</label>
+            <input type="date" id="ren-start-date" class="form-input" value="${currentStartDate}" onchange="window.onModalStartDateOrPeriodChange()" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5);">
           </div>
           <div class="form-group">
             <label class="form-label" style="font-size: 11px; font-weight: 800;">🔄 Período de Renovación</label>
-            <select id="ren-period" class="form-input" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5); color: #fff;">
+            <select id="ren-period" class="form-input" onchange="window.onModalStartDateOrPeriodChange()" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5); color: #fff;">
               <option value="Mensual" ${currentPeriod === 'Mensual' ? 'selected' : ''}>Mensual</option>
               <option value="Trimestral" ${currentPeriod === 'Trimestral' ? 'selected' : ''}>Trimestral</option>
               <option value="Semestral" ${currentPeriod === 'Semestral' ? 'selected' : ''}>Semestral</option>
@@ -2674,8 +2732,8 @@ window.openRenewalConfigModal = function(clientId) {
             <input type="number" id="ren-base-fee" class="form-input" value="${currentBaseFee}" step="10" oninput="window.updateModalFeePreview()" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5);">
           </div>
           <div class="form-group">
-            <label class="form-label" style="font-size: 11px; font-weight: 800;">🗓️ Fecha Inicio Contrato</label>
-            <input type="date" id="ren-start-date" class="form-input" value="${currentStartDate}" onchange="window.updateModalFeePreview()" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5);">
+            <label class="form-label" style="font-size: 11px; font-weight: 800;">📅 Próxima Renovación (Calculada ⚡)</label>
+            <input type="date" id="ren-expiry-date" class="form-input" value="${currentExpiry}" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5); border-color: var(--accent);">
           </div>
         </div>
 
@@ -2701,7 +2759,30 @@ window.openRenewalConfigModal = function(clientId) {
           </div>
         </div>
 
-        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+        <!-- 📊 TABLA PROYECTADA DE PAGOS PARA LOS PRÓXIMOS 5 AÑOS -->
+        <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-glass); border-radius: 12px; padding: 12px;">
+          <div style="font-size: 10px; font-weight: 900; color: var(--accent); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; text-transform: uppercase; letter-spacing: 0.5px;">
+            <span><i class="ri-table-line"></i> Proyección Futura de Cuotas (+6.0% Anual)</span>
+            <span style="font-size: 8.5px; opacity: 0.7; color: #a0aec0;">Próximos 5 Años</span>
+          </div>
+          <div style="max-height: 150px; overflow-y: auto;">
+            <table class="saas-table" style="width: 100%; font-size: 9.5px;">
+              <thead>
+                <tr style="background: rgba(255,255,255,0.03);">
+                  <th style="padding: 4px 6px; text-align: left;">Año / Ciclo</th>
+                  <th style="padding: 4px 6px; text-align: left;">Inicio Ciclo</th>
+                  <th style="padding: 4px 6px; text-align: right;">Aumento</th>
+                  <th style="padding: 4px 6px; text-align: right;">Mensualidad Vigente</th>
+                </tr>
+              </thead>
+              <tbody id="ren-projection-tbody">
+                <!-- Dinámico -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px;">
           <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
           <button class="btn btn-primary" onclick="window.saveRenewalConfigModal('${escapeHtml(license.id)}')">
             <i class="ri-save-3-line"></i> Guardar y Sincronizar
@@ -2713,12 +2794,17 @@ window.openRenewalConfigModal = function(clientId) {
 
   overlay.classList.add('active');
   overlay.style.display = 'flex';
+  window.updateModalFeePreview();
 };
 
 window.updateModalFeePreview = function() {
   const baseFee = Number(document.getElementById('ren-base-fee')?.value || 500);
   const startStr = document.getElementById('ren-start-date')?.value || '2025-01-01';
-  const startDate = new Date(startStr);
+  const parts = startStr.split('-');
+  let startDate = new Date();
+  if (parts.length === 3) {
+    startDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  }
   const now = new Date();
 
   let yearsElapsed = now.getFullYear() - startDate.getFullYear();
@@ -2740,6 +2826,37 @@ window.updateModalFeePreview = function() {
   if (baseEl) baseEl.innerHTML = `Tarifa Base Inicial: <strong>$${baseFee.toLocaleString()} MXN</strong>`;
   if (rateEl) rateEl.innerHTML = `Incremento Acumulado: <strong>+${(yearsElapsed * 6).toFixed(1)}%</strong>`;
   if (adjEl) adjEl.textContent = formatted;
+
+  // Generar Filas de Proyección para los Próximos 5 Años
+  let projRowsHtml = '';
+  for (let i = 0; i <= 5; i++) {
+    const projYearDate = new Date(startDate);
+    projYearDate.setFullYear(projYearDate.getFullYear() + i);
+
+    const yearLabel = i === 0 ? 'Año 1 (Inicial)' : `Año ${i + 1}`;
+    const dateLabel = projYearDate.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
+    
+    const ratePct = ((Math.pow(1.06, i) - 1) * 100).toFixed(1);
+    const projFee = Math.round(baseFee * Math.pow(1.06, i) * 100) / 100;
+    const formattedProjFee = '$' + projFee.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN';
+
+    const isCurrentYear = i === yearsElapsed;
+    const rowBg = isCurrentYear ? 'rgba(16, 185, 129, 0.15)' : 'transparent';
+    const rowColor = isCurrentYear ? '#10b981' : '#fff';
+    const currentTag = isCurrentYear ? ' <span style="font-size:8px; background:#10b981; color:#000; padding:1px 5px; border-radius:4px; font-weight:900;">VIGENTE</span>' : '';
+
+    projRowsHtml += `
+      <tr style="background: ${rowBg}; color: ${rowColor}; font-weight: ${isCurrentYear ? '900' : '500'};">
+        <td style="padding: 5px 6px; font-weight: 800;">${yearLabel}${currentTag}</td>
+        <td style="padding: 5px 6px; opacity: 0.85;">${dateLabel}</td>
+        <td style="padding: 5px 6px; text-align: right; opacity: 0.85;">+${ratePct}%</td>
+        <td style="padding: 5px 6px; text-align: right; font-weight: 900; color: ${isCurrentYear ? '#10b981' : '#34d399'};">${formattedProjFee}</td>
+      </tr>
+    `;
+  }
+
+  const tbodyEl = document.getElementById('ren-projection-tbody');
+  if (tbodyEl) tbodyEl.innerHTML = projRowsHtml;
 };
 
 window.saveRenewalConfigModal = function(clientId) {
