@@ -2875,16 +2875,17 @@ window.toggleLicenseStatus = function(clientId, currentStatus) {
     const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses/${docId}?updateMask.fieldPaths=status`;
     return fetch(restUrl, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
+      headers: { 'Content-Type': 'application/json' },
       body: statusPayload
-    }).then(res => {
+    }).then(async res => {
       if (res.ok) {
         writtenCount++;
         console.log(`[ALR SAAS SYNC] ✅ ${docId} → ${nextStatus}`);
       } else {
-        console.warn(`[ALR SAAS SYNC] ⚠️ ${docId} → HTTP ${res.status}`);
+        const errBody = await res.text();
+        console.error(`[ALR SAAS SYNC] ❌ ${docId} → HTTP ${res.status}:`, errBody);
       }
-    }).catch(e => console.warn(`[ALR SAAS SYNC ERR] ${docId}:`, e));
+    }).catch(e => console.error(`[ALR SAAS SYNC ERR] ❌ ${docId}:`, e.message));
   });
 
   Promise.all(writePromises).then(() => {
@@ -6802,9 +6803,11 @@ window.syncLicenseToFirestore = async function(license) {
           body: JSON.stringify(payload)
         }).then(res => {
           if (res.ok) {
-            console.log(`[REST SYNC OK] Documento "${docId}" persistido inmutablemente en Firestore con updateMask.`);
+            console.log(`[REST SYNC OK] ✅ Documento "${docId}" → ${license.status} persistido en Firestore.`);
+          } else {
+            res.text().then(t => console.error(`[REST SYNC FAIL] ❌ ${docId} HTTP ${res.status}:`, t));
           }
-        }).catch(e => console.warn('[REST SYNC WARN]', e));
+        }).catch(e => console.error('[REST SYNC ERR] ❌', docId, e.message));
       }
     }
   } catch (restErr) {
