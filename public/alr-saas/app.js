@@ -5926,6 +5926,41 @@ async function processImportedSeed(data) {
 }
 
 window.syncLicenseToFirestore = async function(license) {
+  if (!license || !license.id) return;
+
+  // 📡 RESPALDO DE SINCRONIZACIÓN INMEDIATA VÍA REST API (Garantiza propagación a Kuatsi y aplicaciones remotas)
+  try {
+    const docId = license.id;
+    const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses/${docId}`;
+    const payload = {
+      fields: {
+        id: { stringValue: license.id || '' },
+        clientName: { stringValue: license.clientName || '' },
+        appName: { stringValue: license.appName || '' },
+        appId: { stringValue: license.appId || '' },
+        apiKey: { stringValue: license.apiKey || '' },
+        status: { stringValue: license.status || 'ACTIVE' },
+        expiryDate: { stringValue: license.expiryDate || license.expirationDate || '2099-12-31T23:59:59Z' },
+        expirationDate: { stringValue: license.expiryDate || license.expirationDate || '2099-12-31T23:59:59Z' },
+        currentPlan: { stringValue: license.currentPlan || 'PAGADO' },
+        dailyCost: { doubleValue: Number(license.dailyCost || 0) },
+        version: { integerValue: String(license.version || 1) },
+        lastUpdated: { stringValue: new Date().toISOString() }
+      }
+    };
+    fetch(restUrl, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(res => {
+      if (res.ok) {
+        console.log(`[REST SYNC OK] Estado de licencia "${license.clientName}" (${license.status}) propagado exitosamente en Firestore.`);
+      }
+    }).catch(e => console.warn('[REST SYNC WARN]', e));
+  } catch (restErr) {
+    console.warn('[REST SYNC ERR]', restErr);
+  }
+
   if (!window.FIREBASE_SYNC_ENABLED || !window.firestoreDb) {
     return;
   }
