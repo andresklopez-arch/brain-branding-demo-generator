@@ -3671,42 +3671,7 @@ function startServerlessBillingCron() {
 
   setInterval(() => {
     window.runAutoSuspensionCron(true);
-
-    let updated = false;
-    state.licenses.forEach(l => {
-      if (l.status === 'ACTIVE') {
-        // Generar de 1 a 3 operaciones de uso simuladas aleatorias
-        const newOps = Math.floor(Math.random() * 3) + 1;
-        l.usageOps = (l.usageOps || 0) + newOps;
-        
-        // Calcular el cobro proporcional (prorrateo para fines dinámicos de demostración visual)
-        const useCost = newOps * (l.perOpCost || 0.50);
-        const microDailyDebit = 1.50; // Débito proporcional simulado para demostración dinámica
-        const totalDebit = microDailyDebit + useCost;
-        
-        l.initialAmount = Math.max(0, l.initialAmount - totalDebit);
-        updated = true;
-        
-        // Si el saldo se agota, suspender automáticamente la licencia por falta de fondos
-        if (l.initialAmount <= 0) {
-          l.status = 'SUSPENDED';
-          l.version = (l.version || 1) + 1;
-          addAuditLog('API_GATEWAY', 'SUSPENSIÓN_AUTOMÁTICA', `La licencia del cliente ${l.clientName} ha sido suspendida automáticamente por saldo insuficiente (Crédito agotado).`);
-          showToast(`Cliente ${l.clientName} suspendido automáticamente por falta de saldo.`, "danger");
-        }
-      }
-    });
-    if (updated) {
-      saveToStorage();
-      
-      // Renderizar dinámicamente si la pestaña activa lo requiere
-      const billingTab = document.getElementById('view-billing');
-      const dashTab = document.getElementById('view-dashboard');
-      if ((billingTab && billingTab.classList.contains('active')) || (dashTab && dashTab.classList.contains('active'))) {
-        renderAll();
-      }
-    }
-  }, 10000); // Se ejecuta en segundo plano cada 10 segundos
+  }, 30000);
 }
 
 // 🔐 AUTENTICACIÓN DE DOBLE FACTOR (BYPASSED)
