@@ -807,6 +807,12 @@ window.pullAllLicensesFromCloud = async function(silent = false) {
             const fields = doc.fields || {};
             const docId = doc.name.split('/').pop();
             const rawStatus = (fields.status?.stringValue || 'ACTIVE').toUpperCase();
+            const baseMonthlyFee = Number(fields.baseMonthlyFee?.doubleValue || fields.baseMonthlyFee?.integerValue || 500);
+            const adjustedMonthlyFee = Number(fields.adjustedMonthlyFee?.doubleValue || fields.adjustedMonthlyFee?.integerValue || baseMonthlyFee);
+            const renewalPeriod = fields.renewalPeriod?.stringValue || 'Mensual';
+            const paymentPeriod = fields.paymentPeriod?.stringValue || 'Mensual';
+            const startDate = fields.startDate?.stringValue || '2025-01-01';
+
             pulledLicenses.push({
               id: docId,
               clientName: fields.clientName?.stringValue || 'Cliente',
@@ -816,6 +822,11 @@ window.pullAllLicensesFromCloud = async function(silent = false) {
               expiryDate: fields.expiryDate?.stringValue || fields.expirationDate?.stringValue || '2099-12-31T23:59:59Z',
               expirationDate: fields.expiryDate?.stringValue || fields.expirationDate?.stringValue || '2099-12-31T23:59:59Z',
               currentPlan: fields.currentPlan?.stringValue || 'PAGADO',
+              baseMonthlyFee: baseMonthlyFee,
+              adjustedMonthlyFee: adjustedMonthlyFee,
+              renewalPeriod: renewalPeriod,
+              paymentPeriod: paymentPeriod,
+              startDate: startDate,
               dailyCost: Number(fields.dailyCost?.doubleValue || fields.dailyCost?.integerValue || 0),
               status: rawStatus,
               version: Number(fields.version?.integerValue || 1)
@@ -840,7 +851,13 @@ window.pullAllLicensesFromCloud = async function(silent = false) {
             appId: data.appId,
             apiKey: data.apiKey,
             expiryDate: data.expiryDate || data.expirationDate,
+            expirationDate: data.expiryDate || data.expirationDate,
             currentPlan: data.currentPlan,
+            baseMonthlyFee: Number(data.baseMonthlyFee || 500),
+            adjustedMonthlyFee: Number(data.adjustedMonthlyFee || 500),
+            renewalPeriod: data.renewalPeriod || 'Mensual',
+            paymentPeriod: data.paymentPeriod || 'Mensual',
+            startDate: data.startDate || '2025-01-01',
             dailyCost: Number(data.dailyCost || 0),
             initialAmount: Number(data.initialAmount || 0),
             status: (data.status || 'ACTIVE').toUpperCase(),
