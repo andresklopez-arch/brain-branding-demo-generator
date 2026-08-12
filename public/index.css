@@ -1503,6 +1503,14 @@ html, body {
     border: none !important;
   }
 
+  #printable-contract-card,
+  #printable-contract-card:hover {
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    perspective: none !important;
+  }
+
   #printable-contract-card {
     background: #ffffff !important;
     color: #000000 !important;
@@ -1626,5 +1634,15 @@ html, body {
   pointer-events: none;
   transition: opacity 0.3s ease;
   z-index: 10;
+}
+
+/* Ensure Contract Card is 100% Flat without 3D animation or tilt */
+#printable-contract-card,
+#printable-contract-card:hover {
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  perspective: none !important;
+  will-change: auto !important;
 }
 

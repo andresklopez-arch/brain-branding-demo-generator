@@ -4906,8 +4906,8 @@ END:VCARD`;
   const DEFAULT_SEED_CONTRACTS = [
     {
       code: '763190',
-      clientName: 'Ana Lilia',
-      appName: 'Plataforma SaaS Ana Lilia',
+      clientName: 'Ana Lilia Salazar Jiménez',
+      appName: 'Plataforma SaaS Ana Lilia Salazar Jiménez',
       date: '2026-08-10',
       initialPrice: 3500,
       monthlyPrice: 250,
@@ -4967,8 +4967,10 @@ END:VCARD`;
       } else {
         let modified = false;
         list.forEach(c => {
-          if (c && String(c.code).trim() === '423805') {
+          if (c && (String(c.code).trim() === '423805' || String(c.code).trim() === '763190')) {
             c.code = '763190';
+            c.clientName = 'Ana Lilia Salazar Jiménez';
+            c.appName = 'Plataforma SaaS Ana Lilia Salazar Jiménez';
             c.initialPrice = 3500;
             c.monthlyPrice = 250;
             c.date = '2026-08-10';
@@ -5579,7 +5581,7 @@ END:VCARD`;
     const cards = document.querySelectorAll(selector);
 
     cards.forEach(card => {
-      if (card.dataset.tiltInit) return;
+      if (card.dataset.tiltInit || card.id === 'printable-contract-card') return;
       card.dataset.tiltInit = 'true';
 
       card.addEventListener('mousemove', (e) => {
