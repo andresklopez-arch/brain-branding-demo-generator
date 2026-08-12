@@ -1522,11 +1522,22 @@ html, body {
     padding: 10px 0 !important;
   }
 
+  /* Universal dark text override for all elements inside contract card */
+  #printable-contract-card * {
+    color: #0f172a !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+
   /* Expand legal clauses box to flow naturally into pages without inner scrollbar or overflow height */
-  #printable-contract-card div[style*="overflow-y: auto"] {
+  #printable-contract-card div[style*="overflow-y: auto"],
+  #printable-contract-card div[style*="max-height"] {
     max-height: none !important;
+    height: auto !important;
     overflow: visible !important;
-    background: #f8fafc !important;
+    background: #ffffff !important;
     border: 1px solid #cbd5e1 !important;
     color: #0f172a !important;
     padding: 16px !important;
@@ -1537,14 +1548,20 @@ html, body {
   #printable-contract-card h2,
   #printable-contract-card h3,
   #printable-contract-card h4,
-  #printable-contract-card strong {
-    color: #0f172a !important;
+  #printable-contract-card strong,
+  #printable-contract-card b {
+    color: #020617 !important;
+    font-weight: 800 !important;
   }
 
   #printable-contract-card p,
   #printable-contract-card span,
-  #printable-contract-card div {
-    color: #1e293b !important;
+  #printable-contract-card div,
+  #printable-contract-card td,
+  #printable-contract-card th,
+  #printable-contract-card label,
+  #printable-contract-card li {
+    color: #0f172a !important;
   }
 
   #contract-sha256-seal-box {
@@ -1556,9 +1573,11 @@ html, body {
 
   #contract-sha256-hash-value {
     color: #0284c7 !important;
+    font-weight: 800 !important;
   }
 
-  .no-print {
+  .no-print,
+  .no-print * {
     display: none !important;
   }
 }

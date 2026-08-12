@@ -5112,10 +5112,6 @@ END:VCARD`;
   };
 
   window.handleContractPrint = () => {
-    if (!window.currentViewerContract || window.currentViewerContract.status !== 'ACEPTADO') {
-      alert('⚠️ DESCARGA BLOQUEADA:\n\nPara poder descargar o imprimir tu contrato en formato PDF, primero debes firmarlo digitalmente aceptando los Términos y Condiciones en la parte inferior.');
-      return;
-    }
     window.print();
   };
 
