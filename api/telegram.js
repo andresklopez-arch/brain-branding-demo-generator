@@ -1334,6 +1334,20 @@ async function handleWebhookRequest(req, res) {
           return res.status(200).json({ ok: true });
         }
 
+        if (cmdLower === '/respaldototal' || cmdLower === '/backup' || cmdLower === '/descargarbd') {
+          const allVisits = loadVisitsFromDisk();
+          const jsonStr = JSON.stringify(allVisits, null, 2);
+          const timeStr = new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
+
+          const msg = `💾 *RESPALDO MAESTRO COMPLETO DE BASE DE DATOS* 💾\n⏰ *Generado:* ${timeStr}\n\n` +
+            `📊 *Total Registros Históricos:* *${allVisits.length}*\n` +
+            `📁 *Formato:* JSON Master Store\n\n` +
+            `\`\`\`json\n${jsonStr.substring(0, 3200)}\n\`\`\``;
+
+          await callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text: msg, parse_mode: 'Markdown' });
+          return res.status(200).json({ ok: true });
+        }
+
         if (cmdLower === '/modoresumen') {
           global.notifyLiveVisits = false;
           await callTelegram('sendMessage', {
@@ -2259,6 +2273,79 @@ function checkFirstVisitOfDay(city, region, flag, device, source) {
   } catch (e) {}
 }
 
+let notifiedSessions5Min = new Set();
+function checkHighEngagementVisit(sessionId, city, device, durationStr) {
+  try {
+    if (!sessionId || notifiedSessions5Min.has(sessionId)) return;
+
+    let sec = 0;
+    if (typeof durationStr === 'number') sec = durationStr;
+    else if (typeof durationStr === 'string') {
+      const matchSec = durationStr.match(/(\d+)\s*s/i);
+      const matchMin = durationStr.match(/(\d+)\s*m/i);
+      if (matchSec) sec = parseInt(matchSec[1], 10);
+      else if (matchMin) sec = parseInt(matchMin[1], 10) * 60;
+      else sec = parseInt(durationStr, 10) || 0;
+    }
+
+    if (sec >= 300) {
+      notifiedSessions5Min.add(sessionId);
+      const mins = Math.floor(sec / 60);
+      const secs = sec % 60;
+      const timeDisplay = `${mins} min ${secs} seg`;
+
+      callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: `🔥 *PROSPECTO ALTAMENTE INTERESADO (PERMANENCIA > 5 MINUTOS)* 🔥\n\n` +
+              `⏱️ *Tiempo Navegando:* *${timeDisplay}*\n` +
+              `📍 *Ubicación:* ${city || 'México'}\n` +
+              `📱 *Dispositivo:* ${device || 'Móvil'}\n\n` +
+              `💬 *Tip:* Este visitante está examinando la propuesta a detalle. Ofrece asesoría personalizada si inicia chat.`,
+        parse_mode: 'Markdown'
+      }).catch(function(){});
+    }
+  } catch (e) {}
+}
+
+async function sendMondayWeeklyInsightReport() {
+  try {
+    const allVisits = visitsLog.length > 0 ? visitsLog : loadVisitsFromDisk();
+    const nowMs = Date.now();
+    const w1Ms = 7 * 24 * 60 * 60 * 1000;
+    const w2Ms = 14 * 24 * 60 * 60 * 1000;
+
+    const visitsLastWeek = allVisits.filter(v => {
+      const t = parseVisitTimestamp(v.timestamp);
+      return t > 0 && (nowMs - t) <= w1Ms;
+    }).length;
+
+    const visitsPrevWeek = allVisits.filter(v => {
+      const t = parseVisitTimestamp(v.timestamp);
+      return t > 0 && (nowMs - t) > w1Ms && (nowMs - t) <= w2Ms;
+    }).length;
+
+    let trendText = '';
+    if (visitsPrevWeek === 0) {
+      trendText = visitsLastWeek > 0 ? `🚀 *Crecimiento:* 🟢 +100% vs. semana previa (*${visitsLastWeek}* vs. *0*)` : `➖ *Sin variación acumulada* (*0* vs. *0*)`;
+    } else {
+      const diff = visitsLastWeek - visitsPrevWeek;
+      const pct = ((diff / visitsPrevWeek) * 100).toFixed(1);
+      const icon = diff >= 0 ? '📈 ⬆️' : '📉 ⬇️';
+      const sign = diff >= 0 ? '+' : '';
+      trendText = `${icon} *Variación Semanal:* *${sign}${pct}%* (*${visitsLastWeek}* esta semana vs. *${visitsPrevWeek}* la previa)`;
+    }
+
+    const msg = `🚀 *INFORME DE RENDIMIENTO Y TENDENCIA SEMANAL (LUNES 8:00 AM)* 🚀\n\n` +
+      `📊 *Visitas en la Última Semana:* *${visitsLastWeek}*\n` +
+      `• ${trendText}\n\n` +
+      `💡 *Tip de Estrategia:* Usa /semana o /exportarvisitas para el análisis completo en Excel.`;
+
+    await callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text: msg, parse_mode: 'Markdown' });
+  } catch (e) {
+    console.error('[MONDAY INSIGHT ERROR]', e.message);
+  }
+}
+
 app.post('/api/track-visit', async (req, res) => {
   try {
     let bodyData = req.body;
@@ -2299,6 +2386,9 @@ app.post('/api/track-visit', async (req, res) => {
     }
 
     saveVisitsToDisk(visitsLog);
+
+    // Suggestion 2: High Engagement Alert (> 5 Minutes Browsing)
+    checkHighEngagementVisit(sessionId, city, device, duration);
 
     // Suggestion 3: Instant Returning Visitor Alert
     if (isReturning && existingIndex === -1) {
