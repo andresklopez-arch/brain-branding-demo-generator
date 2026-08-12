@@ -207,7 +207,6 @@ const App = {
         window.location.href = `https://brainbranding.com.mx/?contrato=${cleanCode}`;
       });
   },
-  },
 
   handleInvalidPin: function(code) {
     this.enteredPin = "";
