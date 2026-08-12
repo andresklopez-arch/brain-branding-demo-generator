@@ -182,16 +182,22 @@ const DEFAULT_LICENSES = [
   {
     id: 'kuatsi_central',
     clientName: 'Kuatsi Cafetería Central',
-    appId: 'kuatsi',
+    appId: 'kuatsi-cafeteria',
     appName: 'Kuatsi POS & Cafetería',
     appUrl: 'https://kuatsi.web.app/',
     apiKey: 'ALR-KUATSI-2026-LIVE-8899',
     status: 'ACTIVE',
-    expirationDate: '2099-12-31',
-    plan: 'PRO_ULTIMATE',
+    expiryDate: '2027-08-10T23:59:59Z',
+    expirationDate: '2027-08-10T23:59:59Z',
+    currentPlan: 'PAGADO',
+    renewalPeriod: 'Anual',
+    paymentPeriod: 'Mensual',
+    baseMonthlyFee: 250,
+    adjustedMonthlyFee: 250,
+    startDate: '2026-08-10',
     maxUsers: 25,
-    monthlyFee: 499,
-    createdAt: '2026-01-01',
+    monthlyFee: 250,
+    createdAt: '2026-08-10',
     notes: 'Instancia principal de Kuatsi Cafetería gestionada desde ALR SaaS Commander.'
   }
 ];
