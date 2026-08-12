@@ -1042,9 +1042,15 @@ function renderAll() {
 }
 
 window.dashboardFilter = 'all';
+window.dashboardSearchQuery = '';
 
 window.filterDashboardApps = function(mode) {
   window.dashboardFilter = mode;
+  renderDashboardTable();
+};
+
+window.filterDashboardAppsSearch = function(query) {
+  window.dashboardSearchQuery = (query || '').toLowerCase().trim();
   renderDashboardTable();
 };
 
@@ -1102,6 +1108,13 @@ function renderMetrics() {
   if (warningClientsElem) warningClientsElem.innerText = warningClientsCount;
   if (mrrElem) mrrElem.innerText = '$' + Math.round(totalMRR).toLocaleString('es-MX');
 
+  // Actualización dinámica del título de la pestaña del navegador (Sugerencia 3)
+  if (warningClientsCount > 0) {
+    document.title = `(⚠️ ${warningClientsCount}) ALR SaaS Commander Hub`;
+  } else {
+    document.title = `ALR SaaS Commander Hub`;
+  }
+
   // Control del banner dinámico de alertas preventivas de suspensión
   const alertBanner = document.getElementById('dashboard-pre-suspension-alert');
   const alertMsg = document.getElementById('dashboard-alert-message');
@@ -1132,8 +1145,19 @@ function renderDashboardTable() {
     });
   }
 
+  if (window.dashboardSearchQuery) {
+    const q = window.dashboardSearchQuery;
+    list = list.filter(l => {
+      const app = state.apps.find(a => a.id === l.appId) || {};
+      return (l.clientName || '').toLowerCase().includes(q) ||
+             (l.appName || '').toLowerCase().includes(q) ||
+             (app.name || '').toLowerCase().includes(q) ||
+             (l.apiKey || '').toLowerCase().includes(q);
+    });
+  }
+
   if (list.length === 0) {
-    container.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; opacity:0.5; font-style:italic;">No hay aplicaciones que coincidan con el filtro seleccionado.</td></tr>`;
+    container.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; opacity:0.5; font-style:italic;">No hay aplicaciones que coincidan con la búsqueda o filtro.</td></tr>`;
     return;
   }
 

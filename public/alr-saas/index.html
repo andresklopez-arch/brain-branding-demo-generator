@@ -219,7 +219,11 @@
                   <i class="ri-apps-fill" style="color: var(--accent);"></i> Matriz Master de Aplicaciones e Instancias
                 </h2>
               </div>
-              <div style="display: flex; gap: 6px;">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <div style="position: relative;">
+                  <input type="text" id="dashboard-search-input" placeholder="🔍 Buscar cliente o app..." style="height: 28px; width: 170px; font-size: 9px; font-weight: 800; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); color: #fff; padding: 0 10px 0 24px; outline: none;" onkeyup="window.filterDashboardAppsSearch(this.value)">
+                  <i class="ri-search-line" style="position: absolute; left: 8px; top: 7px; font-size: 11px; opacity: 0.5;"></i>
+                </div>
                 <button class="btn btn-secondary" style="height: 28px; padding: 0 10px; font-size: 9px; font-weight: 800;" onclick="window.filterDashboardApps('all')">Todas</button>
                 <button class="btn btn-secondary" style="height: 28px; padding: 0 10px; font-size: 9px; font-weight: 800; color: #f59e0b;" onclick="window.filterDashboardApps('warning')">Por Vencer</button>
               </div>
