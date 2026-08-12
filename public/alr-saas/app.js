@@ -2454,34 +2454,27 @@ window.togglePlanStatus = function(clientId) {
   renderAll();
 };
 
-// ⚡ EDICIONES RÁPIDAS DIRECTAS (DIRECT 1-CLICK EDITORS)
+// ⚡ EDICIONES RÁPIDAS DIRECTAS CON TELEMETRÍA Y RESUMEN (SUGERENCIAS 1, 2 Y 3)
 
 window.quickEditExpiryDate = function(clientId) {
   const license = state.licenses.find(l => l.id === clientId || l.appId === clientId) || state.licenses[0];
   if (!license) { showToast("Cliente no encontrado", "danger"); return; }
 
-  const currentExpiry = (license.expiryDate || license.expirationDate || '2099-12-30').split('T')[0];
-  const newDate = prompt(`Editar Fecha de Próxima Renovación para ${license.clientName}:\n(Formato: AAAA-MM-DD)`, currentExpiry);
-
-  if (!newDate || newDate.trim() === '' || newDate === currentExpiry) return;
-
-  license.expiryDate = newDate + 'T23:59:59Z';
-  license.expirationDate = newDate + 'T23:59:59Z';
-  license.version = (license.version || 1) + 1;
-
-  saveToStorage();
-  window.syncLicenseToFirestore(license);
-  showToast(`Fecha de renovación actualizada a ${newDate} para ${license.clientName}.`, "success");
-  renderAll();
+  // Sugerencia 1: Abrir el modal de configuración de renovación enfocado en la fecha
+  window.openRenewalConfigModal(license.id);
+  setTimeout(() => {
+    const input = document.getElementById('ren-expiry-date');
+    if (input) { input.focus(); input.click(); }
+  }, 100);
 };
 
 window.quickEditPeriod = function(clientId) {
   const license = state.licenses.find(l => l.id === clientId || l.appId === clientId) || state.licenses[0];
   if (!license) { showToast("Cliente no encontrado", "danger"); return; }
 
-  const currentPeriod = license.renewalPeriod || 'Mensual';
+  const oldPeriod = license.renewalPeriod || 'Mensual';
   const periods = ['Mensual', 'Trimestral', 'Semestral', 'Anual'];
-  const nextIndex = (periods.indexOf(currentPeriod) + 1) % periods.length;
+  const nextIndex = (periods.indexOf(oldPeriod) + 1) % periods.length;
   const newPeriod = periods[nextIndex];
 
   license.renewalPeriod = newPeriod;
@@ -2489,7 +2482,15 @@ window.quickEditPeriod = function(clientId) {
 
   saveToStorage();
   window.syncLicenseToFirestore(license);
-  showToast(`Período de renovación cambiado a "${newPeriod}" para ${license.clientName}.`, "success");
+
+  // Sugerencia 2: Toast Resumen (Valor Anterior -> Valor Nuevo)
+  showToast(`🔄 Período actualizado: "${oldPeriod}" ➔ "${newPeriod}" (${license.clientName})`, "info");
+
+  // Sugerencia 3: Bitácora de Auditoría y Telegram
+  addAuditLog('ORQUESTADOR', 'CAMBIO_PERÍODO', `Período de renovación de ${license.clientName} modificado: "${oldPeriod}" ➔ "${newPeriod}".`);
+  const tgMsg = `🔄 <b>[CAMBIO DE PERÍODO ALR SAAS]</b> 🔄\n\nCliente: <b>${license.clientName}</b> (${license.id})\n<b>Período Anterior:</b> ${oldPeriod}\n<b>Nuevo Período:</b> ${newPeriod}`;
+  window.sendTelegramNotification(tgMsg);
+
   renderAll();
 };
 
@@ -2497,21 +2498,12 @@ window.quickEditFee = function(clientId) {
   const license = state.licenses.find(l => l.id === clientId || l.appId === clientId) || state.licenses[0];
   if (!license) { showToast("Cliente no encontrado", "danger"); return; }
 
-  const currentBase = Number(license.baseMonthlyFee || license.monthlyFee || 500);
-  const inputStr = prompt(`Ingresar nueva Mensualidad Base ($ MXN) para ${license.clientName}:\n(Se aplicará automáticamente el incremento del +6% anual acumulado)`, currentBase);
-
-  const newBase = Number(inputStr);
-  if (isNaN(newBase) || newBase <= 0 || inputStr === null) return;
-
-  license.baseMonthlyFee = newBase;
-  const calc = window.calculateAdjustedMonthlyFee(license);
-  license.adjustedMonthlyFee = calc.adjustedFee;
-  license.version = (license.version || 1) + 1;
-
-  saveToStorage();
-  window.syncLicenseToFirestore(license);
-  showToast(`Mensualidad base actualizada a $${newBase} MXN (Vigente: ${calc.formattedAdjusted}) para ${license.clientName}.`, "success");
-  renderAll();
+  // Sugerencia 1: Abrir modal de configuración enfocado en la mensualidad
+  window.openRenewalConfigModal(license.id);
+  setTimeout(() => {
+    const input = document.getElementById('ren-base-fee');
+    if (input) { input.focus(); input.select(); }
+  }, 100);
 };
 
 window.toggleLicenseStatus = function(clientId, currentStatus) {
