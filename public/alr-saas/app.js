@@ -2733,9 +2733,85 @@ window.undoOverwrite = async function(clientId) {
   window.overwrittenLicenseBackup = null;
 };
 
+// ⏳ CRON DE SUSPENSIÓN PROGRAMADA AUTOMÁTICA CON PERÍODO DE GRACIA (72H)
+window.runAutoSuspensionCron = function(silent = false) {
+  let suspendedCount = 0;
+  let graceCount = 0;
+  let updated = false;
+
+  const GRACE_PERIOD_HOURS = 72;
+  const GRACE_PERIOD_MS = GRACE_PERIOD_HOURS * 60 * 60 * 1000;
+
+  state.licenses.forEach(l => {
+    if (!l.expiryDate && !l.expirationDate) return;
+    const expiryDateStr = l.expiryDate || l.expirationDate;
+    if (expiryDateStr === 'Ilimitado') return;
+
+    const expTime = new Date(expiryDateStr).getTime();
+    if (isNaN(expTime)) return;
+
+    const now = Date.now();
+
+    // Si la fecha de expiración ha transcurrido
+    if (now > expTime) {
+      const graceTimeEnd = expTime + GRACE_PERIOD_MS;
+      
+      if (now < graceTimeEnd) {
+        // En Periodo de Gracia (72h)
+        if (l.status === 'ACTIVE' && !l.inGracePeriod) {
+          l.inGracePeriod = true;
+          graceCount++;
+          updated = true;
+          const hoursLeft = Math.ceil((graceTimeEnd - now) / (1000 * 60 * 60));
+          const logMsg = `PERIODO_DE_GRACIA: El cliente ${l.clientName} (${l.appName}) venció el ${new Date(expiryDateStr).toLocaleDateString('es-MX')}. Periodo de gracia de 72h activo (Restan ${hoursLeft}h).`;
+          addAuditLog('AUTO_SUSPENSION_CRON', 'GRACE_PERIOD', logMsg);
+        }
+      } else {
+        // Expiró y superó las 72h de gracia -> SUSPENDER AUTOMÁTICAMENTE
+        if (l.status === 'ACTIVE') {
+          l.status = 'SUSPENDED';
+          l.inGracePeriod = false;
+          l.version = (l.version || 1) + 1;
+          suspendedCount++;
+          updated = true;
+
+          const logMsg = `SUSPENSIÓN AUTOMÁTICA PROGRAMADA: La licencia del cliente ${l.clientName} (${l.appName}) venció el ${new Date(expiryDateStr).toLocaleDateString('es-MX')} y agotó el periodo de gracia de 72h. Acceso restringido automáticamente por el sistema.`;
+          addAuditLog('AUTO_SUSPENSION_CRON', 'SUSPENSIÓN_AUTOMÁTICA', logMsg);
+
+          if (typeof window.sendTelegramNotification === 'function') {
+            window.sendTelegramNotification(`🛑 *SUSPENSIÓN AUTOMÁTICA ALR SAAS*\n\nEl cliente *${l.clientName}* (${l.appName}) ha sido suspendido automáticamente por el sistema tras agotar el periodo de gracia de 72h.`, 'DANGER');
+          }
+
+          window.syncLicenseToFirestore(l);
+        }
+      }
+    }
+  });
+
+  if (updated) {
+    saveToStorage();
+    renderAll();
+  }
+
+  if (!silent) {
+    if (suspendedCount > 0) {
+      showToast(`🛑 Cron de Suspensión: ${suspendedCount} cliente(s) suspendido(s) automáticamente.`, "danger");
+    } else if (graceCount > 0) {
+      showToast(`⚠️ Cron de Suspensión: ${graceCount} cliente(s) en período de gracia (72h).`, "warning");
+    } else {
+      showToast("✅ Cron de Suspensión: Todas las licencias al día.", "success");
+    }
+  }
+};
+
 // 💸 CRON DE DÉBITO Y MICRO-FACTURACIÓN EN TIEMPO REAL (METERED USE SIMULATION)
 function startServerlessBillingCron() {
+  // Ejecución inicial en el arranque
+  window.runAutoSuspensionCron(true);
+
   setInterval(() => {
+    window.runAutoSuspensionCron(true);
+
     let updated = false;
     state.licenses.forEach(l => {
       if (l.status === 'ACTIVE') {
