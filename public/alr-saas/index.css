@@ -88,12 +88,12 @@ body {
 }
 
 .sidebar-header {
-  padding: 30px 24px;
+  padding: 24px 20px;
   border-bottom: 1px solid var(--border-glass);
 }
 
 .brand-title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 900;
   letter-spacing: -0.5px;
   color: var(--text-white);
@@ -113,7 +113,7 @@ body {
   font-size: 9px;
   font-weight: 800;
   color: var(--text-muted);
-  letter-spacing: 5px;
+  letter-spacing: 4px;
   text-transform: uppercase;
   margin-top: 4px;
   opacity: 0.4;
@@ -121,7 +121,7 @@ body {
 
 .sidebar-nav {
   flex: 1;
-  padding: 24px 16px;
+  padding: 20px 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -142,11 +142,11 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
-  border-radius: 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1px solid transparent;
@@ -156,6 +156,7 @@ body {
 .nav-item i {
   font-size: 18px;
   opacity: 0.7;
+  flex-shrink: 0;
 }
 
 .nav-item:hover {
@@ -171,8 +172,55 @@ body {
 }
 
 .sidebar-footer {
-  padding: 20px 24px;
+  padding: 16px 20px;
   border-top: 1px solid var(--border-glass);
+}
+
+/* 🎛️ SIDEBAR COLLAPSED / HOVERABLE DRAWER MODE */
+.saas-sidebar.collapsed {
+  width: 72px;
+}
+
+.saas-sidebar.collapsed .brand-title span,
+.saas-sidebar.collapsed .brand-subtitle,
+.saas-sidebar.collapsed .nav-section,
+.saas-sidebar.collapsed .nav-item-text,
+.saas-sidebar.collapsed .sidebar-footer-info {
+  display: none !important;
+}
+
+.saas-sidebar.collapsed .sidebar-header {
+  padding: 20px 12px;
+  text-align: center;
+}
+
+.saas-sidebar.collapsed .brand-title {
+  justify-content: center;
+}
+
+.saas-sidebar.collapsed .nav-item {
+  padding: 12px;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.saas-sidebar.collapsed:hover {
+  width: 260px;
+  box-shadow: 15px 0 50px rgba(0, 0, 0, 0.95);
+  background: rgba(4, 6, 12, 0.98);
+}
+
+.saas-sidebar.collapsed:hover .brand-title span,
+.saas-sidebar.collapsed:hover .brand-subtitle,
+.saas-sidebar.collapsed:hover .nav-section,
+.saas-sidebar.collapsed:hover .nav-item-text,
+.saas-sidebar.collapsed:hover .sidebar-footer-info {
+  display: block !important;
+}
+
+.saas-sidebar.collapsed:hover .nav-item {
+  justify-content: flex-start;
+  padding: 12px 16px;
 }
 
 /* 🚀 MAIN CONTENT & CONTAINER */
@@ -181,17 +229,18 @@ body {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
+  min-width: 0;
 }
 
 .saas-header {
-  height: 80px;
+  height: 70px;
   border-bottom: 1px solid var(--border-glass);
   background: rgba(3, 5, 9, 0.3);
   backdrop-filter: blur(20px);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 40px;
+  padding: 0 32px;
   position: sticky;
   top: 0;
   z-index: 90;
@@ -221,11 +270,74 @@ body {
 }
 
 .saas-main {
-  padding: 40px;
-  max-width: 1400px;
+  padding: 24px 32px;
+  max-width: 100%;
   width: 100%;
   margin: 0 auto;
   flex: 1;
+}
+
+/* 🖼️ ULTRA COMPACT METRICS GRID & CARDS */
+.metric-grid-compact {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 1100px) {
+  .metric-grid-compact {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+}
+
+.metric-card-compact {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid var(--border-glass);
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 52px;
+}
+
+.metric-card-compact:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-active);
+  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.05);
+}
+
+.metric-card-compact .metric-title {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.metric-card-compact .metric-value {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--text-white);
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.metric-card-compact .metric-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: var(--text-muted);
+  border: 1px solid var(--border-glass);
+  flex-shrink: 0;
 }
 
 /* 🖼️ GLASS PANELS & DYNAMIC CARDS */

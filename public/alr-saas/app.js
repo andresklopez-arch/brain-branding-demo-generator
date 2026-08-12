@@ -7904,4 +7904,24 @@ window.downloadObfuscatedSdk = async function() {
     reader.readAsText(file);
   };
 
+  window.toggleSidebar = function() {
+    const sidebar = document.querySelector('.saas-sidebar');
+    if (sidebar) {
+      sidebar.classList.toggle('collapsed');
+      const isCollapsed = sidebar.classList.contains('collapsed');
+      localStorage.setItem('alr_saas_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+      if (typeof showToast === 'function') {
+        showToast(isCollapsed ? "Menú lateral colapsado (auto-ocultable en hover)" : "Menú lateral expandido", "info");
+      }
+    }
+  };
+
+  // Rehidratar estado del menú lateral
+  try {
+    if (localStorage.getItem('alr_saas_sidebar_collapsed') === 'true') {
+      const sidebar = document.querySelector('.saas-sidebar');
+      if (sidebar) sidebar.classList.add('collapsed');
+    }
+  } catch(e) {}
+
 })();
