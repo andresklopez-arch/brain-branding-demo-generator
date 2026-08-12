@@ -5112,7 +5112,90 @@ END:VCARD`;
   };
 
   window.handleContractPrint = () => {
-    window.print();
+    const card = document.getElementById('printable-contract-card');
+    if (!card) {
+      window.print();
+      return;
+    }
+
+    const clone = card.cloneNode(true);
+    clone.querySelectorAll('.no-print').forEach(el => el.remove());
+
+    const folio = window.currentViewerContract ? window.currentViewerContract.code : '763190';
+    const client = window.currentViewerContract ? window.currentViewerContract.clientName : 'Ana Lilia Salazar Jiménez';
+
+    const printWin = window.open('', '_blank', 'width=980,height=900');
+    if (!printWin) {
+      window.print();
+      return;
+    }
+
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <title>Contrato Brain Branding - ${folio} - ${client}</title>
+        <style>
+          @page { size: portrait; margin: 12mm 15mm 15mm 15mm; }
+          body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #ffffff !important;
+            color: #000000 !important;
+            margin: 0;
+            padding: 15px;
+          }
+          * {
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+            transform: none !important;
+            animation: none !important;
+          }
+          h1, h2, h3, h4, strong, b {
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+            font-weight: 800 !important;
+          }
+          div[style*="overflow-y: auto"], div[style*="max-height"] {
+            max-height: none !important;
+            height: auto !important;
+            overflow: visible !important;
+            border: 1px solid #cbd5e1 !important;
+            padding: 16px !important;
+            margin-bottom: 18px !important;
+          }
+          #contract-sha256-seal-box {
+            border: 1px solid #64748b !important;
+            padding: 12px !important;
+            margin-top: 15px !important;
+            background: #f8fafc !important;
+          }
+          #contract-sha256-hash-value {
+            color: #0284c7 !important;
+            -webkit-text-fill-color: #0284c7 !important;
+            font-family: monospace;
+            font-weight: 800;
+          }
+          .no-print { display: none !important; }
+        </style>
+      </head>
+      <body>
+        ${clone.outerHTML}
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+              window.close();
+            }, 350);
+          };
+        <\/script>
+      </body>
+      </html>
+    `);
+    printWin.document.close();
   };
 
   window.openContractViewer = async (code) => {

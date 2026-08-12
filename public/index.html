@@ -728,12 +728,106 @@
 
 
 
-  <link rel="stylesheet" href="index.css?v=1.0.0">
+  <link rel="stylesheet" href="index.css?v=31.0.0">
   <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
   <link rel="icon" href="/favicon.png" type="image/png">
   <link rel="apple-touch-icon" href="/favicon.png">
   <meta name="msapplication-TileImage" content="/favicon.png">
   <meta name="msapplication-TileColor" content="#06080c">
+
+  <!-- DEDICATED HIGH-CONTRAST CONTRACT PRINT ENGINE STYLES (PREVENTS BLANK PRINTING) -->
+  <style id="print-contract-engine-styles">
+    @media print {
+      /* Hide all top-level elements except contract viewer modal */
+      body > *:not(#contract-viewer-modal) {
+        display: none !important;
+      }
+      html, body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      #contract-viewer-modal {
+        position: static !important;
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      #printable-contract-card {
+        background: #ffffff !important;
+        color: #000000 !important;
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 10px 0 !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+      }
+      /* Force dark ink color on ALL inner contract elements for sharp print/PDF rendering */
+      #printable-contract-card,
+      #printable-contract-card * {
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+        opacity: 1 !important;
+        filter: none !important;
+      }
+      #printable-contract-card h1,
+      #printable-contract-card h2,
+      #printable-contract-card h3,
+      #printable-contract-card h4,
+      #printable-contract-card strong,
+      #printable-contract-card b {
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
+        font-weight: 800 !important;
+      }
+      #printable-contract-card div[style*="overflow-y: auto"],
+      #printable-contract-card div[style*="max-height"] {
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #000000 !important;
+        padding: 16px !important;
+        margin-bottom: 18px !important;
+      }
+      #contract-sha256-seal-box {
+        background: #f8fafc !important;
+        border: 1px solid #64748b !important;
+        color: #000000 !important;
+      }
+      #contract-sha256-hash-value {
+        color: #0284c7 !important;
+        -webkit-text-fill-color: #0284c7 !important;
+        font-weight: 800 !important;
+      }
+      .no-print,
+      .no-print * {
+        display: none !important;
+      }
+    }
+  </style>
+
   <style>
     html, body {
       overflow-x: hidden !important;
