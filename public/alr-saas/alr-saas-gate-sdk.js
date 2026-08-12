@@ -106,26 +106,18 @@
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
         </div>
 
-        <h1 style="font-size: 1.8rem; font-weight: 900; color: #f8fafc; margin-bottom: 6px; letter-spacing: -0.02em; text-transform: uppercase;">
-          Acceso Restringido
+        <h1 style="font-size: 1.45rem; font-weight: 900; color: #f8fafc; margin-bottom: 24px; letter-spacing: -0.01em; text-transform: uppercase; line-height: 1.3;">
+          SOFTWARE TEMPORALMENTE SUSPENDIDO.
         </h1>
-        
-        <div style="color: #ef4444; font-weight: 900; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px; margin-bottom: 28px;">
-          🛑 INSTANCIA SUSPENDIDA POR ALR SAAS
-        </div>
 
-        <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 22px; margin-bottom: 28px; font-size: 0.88rem; color: #94a3b8; line-height: 1.6; text-align: left;">
-          <div style="margin-bottom: 12px;">
-            <strong style="color: #f8fafc; display: block; margin-bottom: 2px;">Licencia Inactiva o Vencida</strong>
-            El servicio para esta aplicación se encuentra bloqueado en la consola central de <strong>ALR SaaS Commander</strong>.
+        <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 22px 20px; font-size: 0.92rem; color: #cbd5e1; line-height: 1.7; text-align: center;">
+          <div style="margin-bottom: 12px; word-break: break-all;">
+            <span style="opacity: 0.6; font-size: 0.75rem; display: block; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Contacto / Soporte:</span>
+            <a href="mailto:andreskrebollo@gmail.com" style="color: #38bdf8; text-decoration: none; font-weight: 700;">andreskrebollo@gmail.com</a>
           </div>
-          <div style="font-size: 0.82rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; color: #cbd5e1;">
-            <strong>Control Remoto Centralizado:</strong> Esta instancia está blindada. Únicamente la consola central de ALR SaaS tiene autorización para reactivar el servicio.
+          <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
+            <a href="https://www.brainbranding.com.mx" target="_blank" rel="noopener noreferrer" style="color: #ef4444; text-decoration: none; font-weight: 800; letter-spacing: 0.5px;">https://www.brainbranding.com.mx</a>
           </div>
-        </div>
-
-        <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">
-          Instancia: <code style="color: #94a3b8;">${appId}</code> • Protección ALR SaaS Gate Activa (${configuredGraceHours}h Gracia Configurada)
         </div>
       </div>
     `;
