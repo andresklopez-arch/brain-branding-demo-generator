@@ -4905,12 +4905,12 @@ END:VCARD`;
 /* ════════════════ SAAS CONTRACTS MANAGEMENT & VIEWER ENGINE ════════════════ */
   const DEFAULT_SEED_CONTRACTS = [
     {
-      code: '423805',
+      code: '763190',
       clientName: 'Ana Lilia',
       appName: 'Plataforma SaaS Ana Lilia',
       date: '2026-08-10',
-      initialPrice: 4500,
-      monthlyPrice: 290,
+      initialPrice: 3500,
+      monthlyPrice: 250,
       status: 'PENDIENTE',
       acceptedAt: null,
       appStatus: 'ONLINE',
@@ -4965,11 +4965,26 @@ END:VCARD`;
         localStorage.setItem('brain_branding_contracts', JSON.stringify(list));
         localStorage.setItem('brain_branding_contracts_backup', JSON.stringify(list));
       } else {
-        DEFAULT_SEED_CONTRACTS.forEach(seed => {
-          if (!list.some(c => c.code === seed.code)) {
-            list.push(seed);
+        let modified = false;
+        list.forEach(c => {
+          if (c && String(c.code).trim() === '423805') {
+            c.code = '763190';
+            c.initialPrice = 3500;
+            c.monthlyPrice = 250;
+            c.date = '2026-08-10';
+            modified = true;
           }
         });
+        DEFAULT_SEED_CONTRACTS.forEach(seed => {
+          if (!list.some(c => String(c.code).trim() === seed.code)) {
+            list.push(seed);
+            modified = true;
+          }
+        });
+        if (modified) {
+          localStorage.setItem('brain_branding_contracts', JSON.stringify(list));
+          localStorage.setItem('brain_branding_contracts_backup', JSON.stringify(list));
+        }
       }
       return list;
     } catch(e) {

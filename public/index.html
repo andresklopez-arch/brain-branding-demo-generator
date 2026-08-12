@@ -315,12 +315,12 @@
 
     window.DEFAULT_SEED_CONTRACTS = [
       {
-        code: '423805',
+        code: '763190',
         clientName: 'Ana Lilia',
         appName: 'Plataforma SaaS Ana Lilia',
         date: '2026-08-10',
-        initialPrice: 4500,
-        monthlyPrice: 290,
+        initialPrice: 3500,
+        monthlyPrice: 250,
         status: 'PENDIENTE',
         acceptedAt: null,
         appStatus: 'ONLINE',
@@ -372,11 +372,27 @@
           localStorage.setItem('brain_branding_contracts', JSON.stringify(list));
           localStorage.setItem('brain_branding_contracts_backup', JSON.stringify(list));
         } else {
-          window.DEFAULT_SEED_CONTRACTS.forEach(function(seed) {
-            if (!list.some(function(c) { return c.code === seed.code; })) {
-              list.push(seed);
+          // Migración automática de 423805 a 763190 para Ana Lilia
+          let modified = false;
+          list.forEach(function(c) {
+            if (c && String(c.code).trim() === '423805') {
+              c.code = '763190';
+              c.initialPrice = 3500;
+              c.monthlyPrice = 250;
+              c.date = '2026-08-10';
+              modified = true;
             }
           });
+          window.DEFAULT_SEED_CONTRACTS.forEach(function(seed) {
+            if (!list.some(function(c) { return String(c.code).trim() === seed.code; })) {
+              list.push(seed);
+              modified = true;
+            }
+          });
+          if (modified) {
+            localStorage.setItem('brain_branding_contracts', JSON.stringify(list));
+            localStorage.setItem('brain_branding_contracts_backup', JSON.stringify(list));
+          }
         }
         return list;
       } catch(e) {

@@ -2122,6 +2122,25 @@ try {
     Object.assign(contractsDB, parsed);
     console.log(`[CONTRACTS DB LOADED] Loaded ${Object.keys(contractsDB).length} permanent contracts from disk.`);
   }
+
+  // Migración / Garantía de Contrato 763190 para Ana Lilia
+  delete contractsDB['423805'];
+  contractsDB['763190'] = {
+    code: '763190',
+    clientName: 'Ana Lilia',
+    appName: 'Plataforma SaaS Ana Lilia',
+    date: '2026-08-10',
+    initialPrice: 3500,
+    monthlyPrice: 250,
+    status: contractsDB['763190']?.status || 'PENDIENTE',
+    acceptedAt: contractsDB['763190']?.acceptedAt || null,
+    appStatus: contractsDB['763190']?.appStatus || 'ONLINE',
+    createdAt: contractsDB['763190']?.createdAt || '2026-08-10T16:00:00.000Z',
+    signatureData: contractsDB['763190']?.signatureData || null
+  };
+
+  // Guardar estado inicial actualizado
+  saveContractsToDisk();
 } catch(e) {
   console.error('[CONTRACTS DB LOAD ERROR]', e);
 }
