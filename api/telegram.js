@@ -1557,9 +1557,41 @@ async function sendWeeklyAnalyticsReport8PM() {
       parse_mode: 'Markdown'
     });
     console.log('[WEEKLY REPORT] Sunday 8:00 PM Report dispatched successfully.');
+
+    // Dispatch Sunday CSV Backup Document to Telegram
+    sendWeeklyCSVBackupReport().catch(e => console.error('[WEEKLY CSV BACKUP ERROR]', e.message));
   } catch (e) {
     console.error('[WEEKLY REPORT ERROR]', e.message);
   }
+}
+
+async function sendWeeklyCSVBackupReport() {
+  const allVisits = getActive24hVisits(visitsLog);
+  if (!allVisits || allVisits.length === 0) return;
+
+  let csv = "Fecha,Hora,Ciudad,Estado,Pais,Dispositivo,Fuente,Scroll\n";
+  allVisits.forEach(v => {
+    const dateStr = v.timestamp ? new Date(v.timestamp).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' }) : 'N/A';
+    const timeStr = v.time || 'N/A';
+    const city = (v.city || 'Desconocida').replace(/,/g, '');
+    const region = (v.region || '').replace(/,/g, '');
+    const country = (v.country || 'Mexico').replace(/,/g, '');
+    const device = (v.device || 'Web').replace(/,/g, '');
+    const source = (v.source || 'Directo').replace(/,/g, '');
+    const scroll = v.scroll || 0;
+    csv += `"${dateStr}","${timeStr}","${city}","${region}","${country}","${device}","${source}","${scroll}%"\n`;
+  });
+
+  const msgText = `💾 *RESPALDO SEMANAL DE VISITAS WEB (DOMINGO 8:00 PM)* 💾\n\n` +
+    `📊 *Total de Registros en Respaldo:* *${allVisits.length}*\n` +
+    `📁 *Formato:* CSV / Excel\n\n` +
+    `\`\`\`csv\n${csv.substring(0, 3200)}\n\`\`\``;
+
+  await callTelegram('sendMessage', {
+    chat_id: ADMIN_CHAT_ID,
+    text: msgText,
+    parse_mode: 'Markdown'
+  });
 }
 
 // Sunday 8:00 PM Cron Timer Check
@@ -1962,10 +1994,24 @@ function buildDetailedAnalytics8AMReport(allVisits = [], isScheduled8AM = false)
   report += `\n`;
 
   report += `📍 *UBICACIÓN DE VISITANTES (CIUDADES):*\n`;
-  Object.entries(locationCounts).sort((a, b) => b[1] - a[1]).forEach(([loc, count]) => {
+  const locationEntries = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]);
+  locationEntries.forEach(([loc, count]) => {
     report += `• ${loc}: *${count} visitas* (${getPercent(count)}%)\n`;
   });
   report += `\n`;
+
+  // Top 3 Regional Heatmap
+  if (locationEntries.length > 0) {
+    const medals = ['🥇', '🥈', '🥉'];
+    report += `🗺️ *MAPA TÉRMICO REGIONAL (TOP 3 CIUDADES):*\n`;
+    locationEntries.slice(0, 3).forEach(([loc, count], idx) => {
+      const pctVal = parseFloat(getPercent(count));
+      const barCount = Math.max(1, Math.round(pctVal / 10));
+      const barStr = '█'.repeat(barCount);
+      report += `${medals[idx] || '•'} *${loc}:* ${barStr} *${count}* (${pctVal}%)\n`;
+    });
+    report += `\n`;
+  }
 
   report += `🎯 *FUENTES DE TRÁFICO / CANALES:*\n`;
   Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]).forEach(([src, count]) => {
@@ -2009,6 +2055,38 @@ function buildDetailedAnalytics8AMReport(allVisits = [], isScheduled8AM = false)
 
   report += `\n💬 *Tip:* Escribe /exportarvisitas para descargar el reporte en CSV o /visitas para refrescar el conteo.`;
   return report;
+}
+
+// Suggestion 1: Unusual Traffic Spike Alert Trigger
+let lastSpikeAlertTime = 0;
+function checkTrafficSpike(city, device) {
+  try {
+    const nowMs = Date.now();
+    if (nowMs - lastSpikeAlertTime < 2 * 60 * 60 * 1000) return; // 2 hour cooldown
+
+    const visits24h = getActive24hVisits(visitsLog);
+    if (visits24h.length < 6) return;
+
+    const visits1h = visits24h.filter(v => {
+      const t = parseVisitTimestamp(v.timestamp);
+      return t > 0 && (nowMs - t) <= (60 * 60 * 1000);
+    }).length;
+
+    const hourlyAvg = visits24h.length / 24;
+    if (visits1h >= 4 && visits1h >= (hourlyAvg * 2.5)) {
+      lastSpikeAlertTime = nowMs;
+      const spikePct = (((visits1h - hourlyAvg) / (hourlyAvg || 1)) * 100).toFixed(0);
+      callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: `⚡ *¡ALERTA DE PICO INUSUAL DE TRÁFICO DETECTADO EN TU WEB!* ⚡\n\n` +
+              `📊 *Visitas en la Última Hora:* *${visits1h} visitas* (+${spikePct}% sobre el promedio histórico)\n` +
+              `📍 *Última Ubicación:* ${city || 'México'}\n` +
+              `📱 *Dispositivo:* ${device || 'Móvil'}\n\n` +
+              `💬 *Tip:* Escribe /visitas para ver la actividad en tiempo real.`,
+        parse_mode: 'Markdown'
+      }).catch(function(){});
+    }
+  } catch (e) {}
 }
 
 app.post('/api/track-visit', async (req, res) => {
@@ -2059,6 +2137,11 @@ app.post('/api/track-visit', async (req, res) => {
         text: `🌟 *¡ALERTA DE CLIENTE RECURRENTE EN TU WEB!* 🌟\n\nUn visitante que ya conocía *Brain Branding* acaba de reingresar al sitio web.\n\n📍 *Ubicación:* ${city || 'México'}, ${region || ''} ${flag || '🇲🇽'}\n📱 *Dispositivo:* ${device || 'Móvil'}\n🎯 *Origen:* ${source || 'Directo'}\n⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' })}\n\n💬 *Tip:* Contacta al prospecto si solicita cotización o inicia chat con el bot.`,
         parse_mode: 'Markdown'
       }).catch(function(){});
+    }
+
+    // Suggestion 1: Spike Traffic Detector
+    if (existingIndex === -1) {
+      checkTrafficSpike(city, device);
     }
 
     // Suggestion 2: High Traffic Alert Trigger (Fires when 24h visits reach milestones: 10, 20, 50, 100)
