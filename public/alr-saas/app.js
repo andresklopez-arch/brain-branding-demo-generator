@@ -794,75 +794,89 @@ async function loadFromStorage() {
 }
 
 window.pullAllLicensesFromCloud = async function(silent = false) {
-  if (!window.FIREBASE_SYNC_ENABLED || !window.firestoreDb) {
-    if (!silent) showToast("Firebase no está configurado o sincronizado en esta sesión.", "danger");
-    return;
-  }
   if (!silent) showToast("Consultando licencias en la nube...", "info");
+  
   try {
-    const querySnapshot = await window.firestoreDb.collection('master_licenses').get();
-    const pulledLicenses = [];
-    querySnapshot.forEach(doc => {
-      const data = doc.data();
-      pulledLicenses.push({
-        id: doc.id,
-        clientName: data.clientName,
-        appName: data.appName,
-        appId: data.appId,
-        apiKey: data.apiKey,
-        expiryDate: data.expiryDate,
-        currentPlan: data.currentPlan,
-        dailyCost: Number(data.dailyCost || 0),
-        initialAmount: Number(data.initialAmount || 0),
-        status: data.status || 'ACTIVE',
-        contact: data.contact || '',
-        gracePeriodHours: Number(data.gracePeriodHours || 24),
-        appUrl: data.appUrl || '',
-        version: Number(data.version || 1),
-        customConfig: data.customConfig || null
-      });
-    });
-    
-    if (pulledLicenses.length === 0) {
-      if (!silent) showToast("No se encontraron licencias registradas en la nube.", "warning");
-      return;
+    let pulledLicenses = [];
+
+    // 1. Intentar primero vía Firebase SDK si está disponible
+    if (window.firestoreDb) {
+      try {
+        const querySnapshot = await window.firestoreDb.collection('master_licenses').get();
+        querySnapshot.forEach(doc => {
+          const data = doc.data();
+          pulledLicenses.push({
+            id: doc.id,
+            clientName: data.clientName,
+            appName: data.appName,
+            appId: data.appId,
+            apiKey: data.apiKey,
+            expiryDate: data.expiryDate || data.expirationDate,
+            currentPlan: data.currentPlan,
+            dailyCost: Number(data.dailyCost || 0),
+            initialAmount: Number(data.initialAmount || 0),
+            status: (data.status || 'ACTIVE').toUpperCase(),
+            contact: data.contact || '',
+            gracePeriodHours: Number(data.gracePeriodHours || 24),
+            appUrl: data.appUrl || '',
+            version: Number(data.version || 1),
+            customConfig: data.customConfig || null
+          });
+        });
+      } catch (sdkErr) {
+        console.warn('[SDK PULL WARN]', sdkErr);
+      }
     }
 
-    // Fusionar con el estado actual
-    state.licenses = pulledLicenses;
-    
-    // Migrar URLs al instante si alguna es de Vercel
-    let migratedCount = 0;
-    state.licenses.forEach(l => {
-      if (l.appUrl && l.appUrl.includes('vercel.app') && !l.appUrl.includes('?s=')) {
-        try {
-          const urlObj = new URL(l.appUrl);
-          const slug = urlObj.pathname.replace(/^\//, '');
-          if (slug) {
-            l.appUrl = `${urlObj.origin}/?s=${slug}`;
-            migratedCount++;
-          }
-        } catch (e) {}
+    // 2. Fallback garantizado por REST API (Garantiza lectura en vivo sin depender de switches locales)
+    if (pulledLicenses.length === 0) {
+      const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses`;
+      const res = await fetch(restUrl);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.documents) {
+          data.documents.forEach(doc => {
+            const fields = doc.fields || {};
+            const docId = doc.name.split('/').pop();
+            const rawStatus = (fields.status?.stringValue || 'ACTIVE').toUpperCase();
+            pulledLicenses.push({
+              id: docId,
+              clientName: fields.clientName?.stringValue || 'Cliente',
+              appName: fields.appName?.stringValue || 'Aplicación',
+              appId: fields.appId?.stringValue || docId,
+              apiKey: fields.apiKey?.stringValue || '',
+              expiryDate: fields.expiryDate?.stringValue || fields.expirationDate?.stringValue || '2099-12-31T23:59:59Z',
+              expirationDate: fields.expiryDate?.stringValue || fields.expirationDate?.stringValue || '2099-12-31T23:59:59Z',
+              currentPlan: fields.currentPlan?.stringValue || 'PAGADO',
+              dailyCost: Number(fields.dailyCost?.doubleValue || fields.dailyCost?.integerValue || 0),
+              status: rawStatus,
+              version: Number(fields.version?.integerValue || 1)
+            });
+          });
+        }
       }
-    });
+    }
 
-    await saveToStorage();
-    renderAll();
-    
-    if (!silent) {
-      if (migratedCount > 0) {
-        showToast(`¡Se descargaron ${pulledLicenses.length} licencias de la nube (y se corrigieron ${migratedCount} enlaces)!`, "success");
-      } else {
-        showToast(`¡Sincronización exitosa! Se descargaron ${pulledLicenses.length} licencias de la nube.`, "success");
-      }
+    if (pulledLicenses.length > 0) {
+      state.licenses = pulledLicenses;
+      await saveToStorage();
+      renderAll();
+      if (!silent) showToast(`Sincronización exitosa: ${pulledLicenses.length} licencia(s) actualizadas desde la nube.`, "success");
     } else {
-      console.log(`[INICIO] Sincronización silenciosa completada. Se descargaron ${pulledLicenses.length} licencias.`);
+      if (!silent) showToast("No se encontraron licencias registradas en la nube.", "warning");
     }
   } catch (err) {
-    console.error("Error al descargar licencias:", err);
-    if (!silent) showToast(`Error al sincronizar con Firestore: ${err.message}`, "danger");
+    console.error("[PULL LICENSES ERR]", err);
+    if (!silent) showToast(`Error consultando la nube: ${err.message}`, "danger");
   }
 };
+
+// 🔄 Polling en segundo plano en la Consola Commander para sincronía bidireccional continua
+setInterval(() => {
+  if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+    window.pullAllLicensesFromCloud(true);
+  }
+}, 8000);
 
 window.exportLocalBackupJson = function() {
   try {
