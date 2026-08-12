@@ -2865,7 +2865,33 @@ window.toggleLicenseStatus = function(clientId, currentStatus) {
   window.sendTelegramNotification(tgMessage);
 
   saveToStorage();
-  window.syncLicenseToFirestore(license);
+
+  // ⚡ ESCRITURA DIRECTA SIMULTÁNEA EN LOS 3 DOCUMENTOS DE FIRESTORE
+  const allKuatsiDocIds = ['kuatsi_central', 'kuatsi', 'kuatsi-cafeteria'];
+  const statusPayload = JSON.stringify({ fields: { status: { stringValue: nextStatus } } });
+  let writtenCount = 0;
+
+  const writePromises = allKuatsiDocIds.map(docId => {
+    const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses/${docId}?updateMask.fieldPaths=status`;
+    return fetch(restUrl, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
+      body: statusPayload
+    }).then(res => {
+      if (res.ok) {
+        writtenCount++;
+        console.log(`[ALR SAAS SYNC] ✅ ${docId} → ${nextStatus}`);
+      } else {
+        console.warn(`[ALR SAAS SYNC] ⚠️ ${docId} → HTTP ${res.status}`);
+      }
+    }).catch(e => console.warn(`[ALR SAAS SYNC ERR] ${docId}:`, e));
+  });
+
+  Promise.all(writePromises).then(() => {
+    console.log(`[ALR SAAS SYNC] Escritura completada en ${writtenCount}/3 documentos para estado: ${nextStatus}`);
+    // Sincronizar también el resto de campos con syncLicenseToFirestore
+    window.syncLicenseToFirestore(license);
+  });
 
   // ⚡ DIFUSIÓN INSTANTÁNEA MULTI-PESTAÑA EN TIEMPO REAL (0 MILISEGUNDOS)
   try {
