@@ -2866,33 +2866,40 @@ window.toggleLicenseStatus = function(clientId, currentStatus) {
 
   saveToStorage();
 
-  // ⚡ ESCRITURA DIRECTA SIMULTÁNEA EN LOS 3 DOCUMENTOS DE FIRESTORE
-  const allKuatsiDocIds = ['kuatsi_central', 'kuatsi', 'kuatsi-cafeteria'];
-  const statusPayload = JSON.stringify({ fields: { status: { stringValue: nextStatus } } });
-  let writtenCount = 0;
+  // ======================================================
+  // ⚡ GOBERNANZA VÍA CLOUD FUNCTION (Firebase Admin SDK)
+  // Escritura autoritativa sin restricciones de CORS/auth.
+  // Fallback: PATCH directo si la función no responde.
+  // ======================================================
+  const CLOUD_FN_URL = 'https://us-central1-brain-branding.cloudfunctions.net/setLicenseStatus';
+  const ALR_SECRET = 'alr-saas-master-2025-brain';
 
-  const writePromises = allKuatsiDocIds.map(docId => {
-    const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses/${docId}?updateMask.fieldPaths=status`;
-    return fetch(restUrl, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: statusPayload
-    }).then(async res => {
-      if (res.ok) {
-        writtenCount++;
-        console.log(`[ALR SAAS SYNC] ✅ ${docId} → ${nextStatus}`);
-      } else {
-        const errBody = await res.text();
-        console.error(`[ALR SAAS SYNC] ❌ ${docId} → HTTP ${res.status}:`, errBody);
-      }
-    }).catch(e => console.error(`[ALR SAAS SYNC ERR] ❌ ${docId}:`, e.message));
+  fetch(CLOUD_FN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      licenseId: license.id,
+      status: nextStatus,
+      callerKey: ALR_SECRET
+    })
+  }).then(async res => {
+    if (res.ok) {
+      const data = await res.json();
+      console.log(`[ALR SAAS CLOUD FN] ✅ Cloud Function OK → ${nextStatus}`, data.updatedDocs);
+    } else {
+      const errBody = await res.text();
+      console.warn(`[ALR SAAS CLOUD FN] ⚠️ HTTP ${res.status} — usando fallback PATCH directo:`, errBody);
+      // 🔁 Fallback: PATCH directo a Firestore REST si la función falla
+      window._syncStatusDirectPatch(nextStatus);
+    }
+  }).catch(e => {
+    console.warn('[ALR SAAS CLOUD FN] ⚠️ Cloud Function no disponible — usando fallback:', e.message);
+    // 🔁 Fallback: PATCH directo a Firestore REST
+    window._syncStatusDirectPatch(nextStatus);
   });
 
-  Promise.all(writePromises).then(() => {
-    console.log(`[ALR SAAS SYNC] Escritura completada en ${writtenCount}/3 documentos para estado: ${nextStatus}`);
-    // Sincronizar también el resto de campos con syncLicenseToFirestore
-    window.syncLicenseToFirestore(license);
-  });
+  // Sincronizar resto de campos (no bloqueante)
+  setTimeout(() => window.syncLicenseToFirestore(license), 800);
 
   // ⚡ DIFUSIÓN INSTANTÁNEA MULTI-PESTAÑA EN TIEMPO REAL (0 MILISEGUNDOS)
   try {
@@ -2906,6 +2913,31 @@ window.toggleLicenseStatus = function(clientId, currentStatus) {
 
   showToast(`Cliente ${license.clientName}: Estado cambiado a ${nextStatus === 'ACTIVE' ? 'ONLINE 🟢' : 'SUSPENDIDO 🔴'}.`, nextStatus === 'ACTIVE' ? 'success' : 'danger');
   renderAll();
+};
+
+// ============================================================
+// 🔁 FALLBACK: Escritura PATCH directa a Firestore REST API
+// Se usa solo si la Cloud Function setLicenseStatus no responde.
+// ============================================================
+window._syncStatusDirectPatch = function(status) {
+  const allKuatsiDocIds = ['kuatsi_central', 'kuatsi', 'kuatsi-cafeteria'];
+  const statusPayload = JSON.stringify({ fields: { status: { stringValue: status } } });
+
+  allKuatsiDocIds.forEach(docId => {
+    const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses/${docId}?updateMask.fieldPaths=status`;
+    fetch(restUrl, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: statusPayload
+    }).then(async res => {
+      if (res.ok) {
+        console.log(`[FALLBACK PATCH] ✅ ${docId} → ${status}`);
+      } else {
+        const t = await res.text();
+        console.error(`[FALLBACK PATCH] ❌ ${docId} HTTP ${res.status}:`, t);
+      }
+    }).catch(e => console.error(`[FALLBACK PATCH ERR] ${docId}:`, e.message));
+  });
 };
 
 // 📈 CÁLCULO DE AUMENTO DEL 6% ANUAL Y TARIFA MENSUAL VIGENTE

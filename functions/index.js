@@ -207,3 +207,121 @@ exports.telegramWebhook = functions.https.onRequest(async (req, res) => {
     res.status(200).send({ ok: true, error: err.message });
   }
 });
+
+// ============================================================
+// 🔐 ALR SAAS GOVERNANCE — setLicenseStatus (Cloud Function)
+// Proxy con Firebase Admin SDK para escritura segura y autoritativa
+// en Firestore. El Commander llama a este endpoint en lugar de
+// escribir directo desde el browser (evita CORS y permisos).
+// ============================================================
+
+const admin = require('firebase-admin');
+
+// Inicializar Firebase Admin solo si aún no está inicializado
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
+
+const adminDb = admin.firestore();
+
+exports.setLicenseStatus = functions.https.onRequest(async (req, res) => {
+  // CORS — Permitir solo desde brain-branding.web.app y localhost
+  const allowedOrigins = [
+    'https://brain-branding.web.app',
+    'https://brain-branding.firebaseapp.com',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ];
+  const origin = req.headers.origin || '';
+  const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  res.set('Access-Control-Allow-Origin', corsOrigin);
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.set('Access-Control-Max-Age', '3600');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).send('');
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método no permitido. Usa POST.' });
+  }
+
+  try {
+    const { licenseId, status, callerKey } = req.body;
+
+    // Validación mínima de seguridad — clave compartida con Commander
+    const ADMIN_SECRET = 'alr-saas-master-2025-brain';
+    if (callerKey !== ADMIN_SECRET) {
+      console.warn('[ALR SAAS FUNCTION] ⛔ Intento sin autorización desde:', origin);
+      return res.status(403).json({ error: 'No autorizado.' });
+    }
+
+    // Validar status
+    const validStatuses = ['ACTIVE', 'SUSPENDED', 'EXPIRED'];
+    const normalizedStatus = (status || '').toUpperCase();
+    if (!validStatuses.includes(normalizedStatus)) {
+      return res.status(400).json({ error: `Estado inválido: ${status}. Usa ACTIVE, SUSPENDED o EXPIRED.` });
+    }
+
+    // Documentos a actualizar — siempre los 3 de Kuatsi + el ID específico
+    const docIds = Array.from(new Set([
+      'kuatsi_central',
+      'kuatsi',
+      'kuatsi-cafeteria',
+      ...(licenseId ? [licenseId] : [])
+    ]));
+
+    const timestamp = new Date().toISOString();
+    const writeResults = [];
+
+    // Escritura en batch con Admin SDK (sin restricciones de CORS ni auth)
+    const batch = adminDb.batch();
+    for (const docId of docIds) {
+      const docRef = adminDb.collection('master_licenses').doc(docId);
+      batch.update(docRef, {
+        status: normalizedStatus,
+        lastUpdated: timestamp,
+        lastGovernedBy: 'ALR_SAAS_COMMANDER',
+        governanceTimestamp: admin.firestore.FieldValue.serverTimestamp()
+      });
+      writeResults.push(docId);
+    }
+    await batch.commit();
+
+    console.log(`[ALR SAAS FUNCTION] ✅ Status "${normalizedStatus}" aplicado a: ${writeResults.join(', ')}`);
+
+    // Notificación Telegram
+    const emoji = normalizedStatus === 'ACTIVE' ? '🟢' : '🔴';
+    const tgMsg = `${emoji} <b>[ALR SaaS Cloud Function]</b>\n\nEstado de Kuatsi actualizado a <b>${normalizedStatus}</b> vía Cloud Function.\nDocumentos: ${writeResults.join(', ')}\nFecha: ${timestamp}`;
+    const tgPayload = JSON.stringify({
+      chat_id: '-4784988247',
+      text: tgMsg,
+      parse_mode: 'HTML'
+    });
+
+    // Enviar Telegram (fire-and-forget, sin bloquear la respuesta)
+    const tgReq = require('https').request({
+      hostname: 'api.telegram.org',
+      port: 443,
+      path: `/bot${TELEGRAM_TOKEN}/sendMessage`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(tgPayload) }
+    }, () => {});
+    tgReq.on('error', () => {});
+    tgReq.write(tgPayload);
+    tgReq.end();
+
+    return res.status(200).json({
+      ok: true,
+      status: normalizedStatus,
+      updatedDocs: writeResults,
+      timestamp
+    });
+
+  } catch (err) {
+    console.error('[ALR SAAS FUNCTION ERROR]', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
