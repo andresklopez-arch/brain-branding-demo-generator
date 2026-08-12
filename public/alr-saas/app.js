@@ -1026,6 +1026,19 @@ window.switchView = function(viewId) {
     addAuditLog('SYSTEM', 'CAMBIO_VISTA', `Operador cambió a la vista: ${viewId}`);
   }
 
+  if (viewId === 'wizard') {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const nextMonth = new Date(today);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const nextMonthStr = nextMonth.toISOString().split('T')[0];
+
+    const startDateEl = document.getElementById('w-start-date');
+    const expiryDateEl = document.getElementById('w-expiry-date');
+    if (startDateEl && !startDateEl.value) startDateEl.value = todayStr;
+    if (expiryDateEl && !expiryDateEl.value) expiryDateEl.value = nextMonthStr;
+  }
+
   if (viewId === 'dashboard' || viewId === 'licenses' || viewId === 'billing' || viewId === 'telemetry') {
     verifyAuditLedger();
     renderAll();
@@ -2212,6 +2225,14 @@ window.processAprovisionamiento = async function() {
       business: { name: bizName }
     };
 
+    const baseMonthlyFee = getNum('w-base-monthly-fee') || 500;
+    const renewalPeriod = getVal('w-renewal-period') || 'Mensual';
+    const startDate = getVal('w-start-date') || new Date().toISOString().split('T')[0];
+    const userExpiry = getVal('w-expiry-date');
+    const expiryDateIso = userExpiry ? userExpiry + 'T23:59:59Z' : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+
+    const calc = window.calculateAdjustedMonthlyFee ? window.calculateAdjustedMonthlyFee({ baseMonthlyFee, startDate }) : { adjustedFee: baseMonthlyFee };
+
     // Crear objeto de licencia
     const newLicense = {
       id: clientId,
@@ -2219,7 +2240,12 @@ window.processAprovisionamiento = async function() {
       appName: appTitle,
       appId,
       apiKey,
-      expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 Año por defecto
+      expiryDate: expiryDateIso,
+      expirationDate: expiryDateIso,
+      renewalPeriod: renewalPeriod,
+      baseMonthlyFee: baseMonthlyFee,
+      adjustedMonthlyFee: calc.adjustedFee,
+      startDate: startDate,
       currentPlan: plan,
       dailyCost,
       initialAmount,
