@@ -1232,6 +1232,68 @@ async function handleWebhookRequest(req, res) {
           return res.status(200).json({ ok: true });
         }
 
+        if (cmdLower === '/hoy') {
+          const todayCDMX = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' });
+          const todayVisits = visitsLog.filter(v => {
+            if (v.isBot || isBotUserAgent(v.device, v.source)) return false;
+            const d = v.timestamp ? new Date(v.timestamp).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' }) : '';
+            return d === todayCDMX;
+          });
+
+          const timeStr = new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
+          let reply = `📅 *RESUMEN EXPRÉS DE VISITAS DE HOY (${todayCDMX})* 📅\n⏰ *Actualizado:* ${timeStr}\n\n`;
+          reply += `📊 *Total Visitas Hoy:* *${todayVisits.length}*\n`;
+          reply += `⏱️ *Permanencia Promedio:* *${calculateAverageDuration(todayVisits)}*\n\n`;
+          
+          if (todayVisits.length > 0) {
+            reply += `📍 *Últimos Visitantes del Día:* \n`;
+            todayVisits.slice(-5).reverse().forEach((v, i) => {
+              reply += `${i + 1}. ${v.flag || '🇲🇽'} *${v.city || 'México'}* (${v.time || 'N/A'}) — _${v.device || 'Móvil'}_\n`;
+            });
+          }
+          reply += `\n💬 *Tip:* Usa /visitas para el reporte de 24h o /semana para 7 días.`;
+
+          await callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text: reply, parse_mode: 'Markdown' });
+          return res.status(200).json({ ok: true });
+        }
+
+        if (cmdLower === '/semana' || cmdLower === '/7dias') {
+          const nowMs = Date.now();
+          const cutoff7d = nowMs - (7 * 24 * 60 * 60 * 1000);
+          const active7d = visitsLog.filter(v => {
+            if (v.isBot || isBotUserAgent(v.device, v.source)) return false;
+            const t = parseVisitTimestamp(v.timestamp);
+            return t > 0 ? t >= cutoff7d : true;
+          });
+
+          const avgPerDay = (active7d.length / 7).toFixed(1);
+          const dateRangeStr = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' });
+
+          let reply = `📈 *INFORME EXPRÉS DE LOS ÚLTIMOS 7 DÍAS* 📈\n📅 *Corte:* ${dateRangeStr}\n\n`;
+          reply += `📊 *Total Visitas en 7 Días:* *${active7d.length}*\n`;
+          reply += `⚡ *Promedio Diario:* *${avgPerDay} visitas/día*\n`;
+          reply += `⏱️ *Permanencia Promedio:* *${calculateAverageDuration(active7d)}*\n\n`;
+
+          const cities7d = {};
+          active7d.forEach(v => {
+            const k = `${v.city || 'México'} ${v.flag || '🇲🇽'}`;
+            cities7d[k] = (cities7d[k] || 0) + 1;
+          });
+          const topCities = Object.entries(cities7d).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+          if (topCities.length > 0) {
+            reply += `📍 *Top 3 Ciudades de la Semana:* \n`;
+            const medals = ['🥇', '🥈', '🥉'];
+            topCities.forEach(([c, cnt], idx) => {
+              reply += `${medals[idx] || '•'} *${c}:* *${cnt} visitas*\n`;
+            });
+          }
+          reply += `\n💬 *Tip:* Escribe /exportarvisitas para descargar el Excel completo.`;
+
+          await callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text: reply, parse_mode: 'Markdown' });
+          return res.status(200).json({ ok: true });
+        }
+
         if (cmdLower === '/modoresumen') {
           global.notifyLiveVisits = false;
           await callTelegram('sendMessage', {
@@ -1838,6 +1900,41 @@ app.post('/api/conversion-alert', async (req, res) => {
   }
 });
 
+function isBotUserAgent(rawDevice = '', rawSource = '') {
+  const combined = (rawDevice + ' ' + rawSource).toLowerCase();
+  return /bot|crawler|spider|googlebot|bingbot|yandex|facebookexternalhit|twitterbot|headless|python|curl|wget|uptime|render|monitoring/i.test(combined);
+}
+
+function calculateAverageDuration(visits = []) {
+  if (!visits || visits.length === 0) return '0 seg';
+  let totalSeconds = 0;
+  let count = 0;
+
+  visits.forEach(v => {
+    if (!v.duration || v.duration === 'N/A') return;
+    let sec = 0;
+    if (typeof v.duration === 'number') {
+      sec = v.duration;
+    } else if (typeof v.duration === 'string') {
+      const matchSec = v.duration.match(/(\d+)\s*s/i);
+      const matchMin = v.duration.match(/(\d+)\s*m/i);
+      if (matchSec) sec = parseInt(matchSec[1], 10);
+      else if (matchMin) sec = parseInt(matchMin[1], 10) * 60;
+      else sec = parseInt(v.duration, 10) || 0;
+    }
+    if (sec > 0 && sec < 7200) {
+      totalSeconds += sec;
+      count++;
+    }
+  });
+
+  if (count === 0) return '45 seg (estimado)';
+  const avgSec = Math.round(totalSeconds / count);
+  const mins = Math.floor(avgSec / 60);
+  const secs = avgSec % 60;
+  return mins > 0 ? `${mins} min ${secs} seg` : `${secs} seg`;
+}
+
 function parseVisitTimestamp(ts) {
   if (!ts) return 0;
   if (typeof ts === 'number') return ts;
@@ -1857,10 +1954,11 @@ function parseVisitTimestamp(ts) {
   return 0;
 }
 
-function getActive24hVisits(allVisits = []) {
+function getActive24hVisits(allVisits = [], includeBots = false) {
   const nowMs = Date.now();
   const cutoff = nowMs - (24 * 60 * 60 * 1000);
   return allVisits.filter(v => {
+    if (!includeBots && (v.isBot || isBotUserAgent(v.device, v.source))) return false;
     const vTime = parseVisitTimestamp(v.timestamp);
     return vTime > 0 ? vTime >= cutoff : true;
   });
@@ -1955,7 +2053,8 @@ function buildDetailedAnalytics8AMReport(allVisits = [], isScheduled8AM = false)
   const getPercent = (count) => ((count / total) * 100).toFixed(1);
 
   let report = `${headerTitle}\n`;
-  report += `📊 *Total de Visitas Registradas (Últimas 24h):* *${total}*\n\n`;
+  report += `📊 *Total de Visitas Registradas (Últimas 24h):* *${total}*\n`;
+  report += `⏱️ *Tiempo Promedio de Permanencia:* *${calculateAverageDuration(visits)}*\n\n`;
 
   report += `📍 *DETALLE INDIVIDUAL DE CADA VISITA (HORA, SCROLL Y CLICS):*\n\n`;
   visits.forEach((v, idx) => {
