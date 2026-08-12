@@ -2289,6 +2289,33 @@ app.get('/api/analytics-db', (req, res) => {
   return res.status(200).json({ ok: true, visits: targetVisits, total24h: visits24h.length, totalAllTime: allVisits.length });
 });
 
+// Endpoint: Sync Local Browser Visits to Backend DB
+app.post('/api/sync-visits', (req, res) => {
+  try {
+    const { visits } = req.body || {};
+    if (Array.isArray(visits) && visits.length > 0) {
+      let added = 0;
+      visits.forEach(v => {
+        if (!v || !v.timestamp) return;
+        const exists = visitsLog.some(existing => existing.sessionId === v.sessionId || (existing.timestamp === v.timestamp && existing.time === v.time));
+        if (!exists) {
+          visitsLog.push(v);
+          added++;
+        }
+      });
+      if (added > 0) {
+        if (visitsLog.length > 1000) visitsLog.splice(0, visitsLog.length - 1000);
+        saveVisitsToDisk(visitsLog);
+        console.log(`[SYNC VISITS] Synced ${added} new visits from client storage.`);
+      }
+      return res.status(200).json({ ok: true, synced: added, total: visitsLog.length });
+    }
+    return res.status(200).json({ ok: true, synced: 0, total: visitsLog.length });
+  } catch (e) {
+    return res.status(200).json({ ok: false, error: e.message });
+  }
+});
+
 // Server Keep-Alive Ping Endpoint
 app.get('/api/keep-alive', (req, res) => {
   checkAndTriggerMorningReports();

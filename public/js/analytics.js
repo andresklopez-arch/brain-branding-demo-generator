@@ -141,6 +141,15 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(initialRecord)
       }).catch(function(){});
+
+      // Sync full local visit history to backend DB
+      if (logs.length > 0) {
+        fetch((window.API_BASE || 'https://brain-branding-demo-generator.onrender.com') + '/api/sync-visits', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visits: logs })
+        }).catch(function(){});
+      }
     } catch(e) {}
   };
 
