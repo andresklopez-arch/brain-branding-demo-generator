@@ -20,13 +20,10 @@ const App = {
   },
 
   checkSession: function() {
-    // 1. Verificar bloqueo por intentos fallidos
-    const savedLock = localStorage.getItem("pedro_demo_lock_time");
-    if (savedLock && parseInt(savedLock) > Date.now()) {
-      this.lockUntil = parseInt(savedLock);
-      this.showLockScreen();
-      return;
-    }
+    // Limpiar cualquier bloqueo residual previo en localStorage
+    localStorage.removeItem("pedro_demo_lock_time");
+    this.lockUntil = 0;
+    this.failedAttempts = 0;
 
     // 2. Verificar expiración efímera de 90 días
     const created = new Date(initialData.createdDate || "2026-08-08");
@@ -52,7 +49,6 @@ const App = {
     }
 
     // SIEMPRE EXIGIR EL NIP DE 5 DÍGITOS AL ENTRAR AL HUB DE DEMOS
-    // Esto asegura que cada persona ingrese su NIP y sea redirigida a su propia demo.
     const pinGate = document.getElementById("pinGateOverlay");
     if (pinGate) {
       pinGate.style.display = "flex";
@@ -62,11 +58,6 @@ const App = {
   bindEvents: function() {
     document.querySelectorAll(".key-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
-        if (Date.now() < this.lockUntil) {
-          alert("🔒 El sistema está temporalmente bloqueado por seguridad. Espera un momento.");
-          return;
-        }
-
         const val = e.target.dataset.key;
         if (val === "del") {
           this.enteredPin = this.enteredPin.slice(0, -1);
@@ -100,7 +91,7 @@ const App = {
     });
 
     if (this.enteredPin.length === 5) {
-      const tenant = demoRegistry[this.enteredPin];
+      const tenant = typeof demoRegistry !== 'undefined' ? demoRegistry[this.enteredPin] : null;
       if (tenant) {
         this.failedAttempts = 0;
         
@@ -118,14 +109,7 @@ const App = {
           this.showWelcomeModal();
         }, 300);
       } else {
-        this.failedAttempts++;
-        if (this.failedAttempts >= 3) {
-          this.lockUntil = Date.now() + 5 * 60 * 1000;
-          localStorage.setItem("pedro_demo_lock_time", this.lockUntil.toString());
-          this.showLockScreen();
-        } else {
-          alert(`⚠️ NIP Incorrecto (${this.failedAttempts}/3 intentos). Revisa el NIP de 5 dígitos proporcionado por tu ejecutivo.`);
-        }
+        alert("⚠️ NIP Incorrecto. Revisa el NIP de 5 dígitos proporcionado por tu ejecutivo.");
         this.enteredPin = "";
         this.updatePinDisplay();
       }
@@ -133,7 +117,7 @@ const App = {
   },
 
   showLockScreen: function() {
-    alert("🔒 Seguridad Activada: 3 intentos fallidos de NIP. El acceso a los demos se ha congelado temporalmente por 5 minutos.");
+    // Función deshabilitada para evitar bloqueos
   },
 
   showWelcomeModal: function() {
