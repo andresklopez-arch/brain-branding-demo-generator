@@ -2,6 +2,11 @@
 <html lang="es">
 <head>
   <script>
+    // Global API Base URL definition for backend database persistence
+    window.API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:3000'
+      : 'https://brain-branding-demo-generator.onrender.com';
+
     // Strict HTTPS Enforcement
     if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
       window.location.href = 'https://' + window.location.hostname + window.location.pathname + window.location.search;
@@ -468,30 +473,50 @@
     };
 
     window.renderAdminContractsList = async function() {
+      const apiBase = window.API_BASE || 'https://brain-branding-demo-generator.onrender.com';
       const localList = window.getContracts();
       window.drawContractsTable(localList);
 
       try {
-        const res = await fetch((window.API_BASE || '') + '/api/contracts-list');
+        const res = await fetch(apiBase + '/api/contracts-list');
         const data = await res.json();
         if (data && data.ok && Array.isArray(data.contracts)) {
+          const remoteList = data.contracts;
           const currentMap = new Map();
-          localList.forEach(function(c) { currentMap.set(String(c.code).trim(), c); });
-          data.contracts.forEach(function(rc) {
-            const k = String(rc.code).trim();
-            const lc = currentMap.get(k);
-            if (!lc) {
-              currentMap.set(k, rc);
+
+          // 1. Cargar contratos remotos desde el servidor Render
+          remoteList.forEach(function(rc) {
+            if (rc && rc.code) currentMap.set(String(rc.code).trim(), rc);
+          });
+
+          // 2. Cargar contratos locales y AUTO-RESPALDAR al servidor Render cualquier contrato faltante
+          localList.forEach(function(lc) {
+            if (!lc || !lc.code) return;
+            const key = String(lc.code).trim();
+            const remoteVer = currentMap.get(key);
+            if (!remoteVer) {
+              // El contrato local no existe aún en el servidor remoto -> Subir inmediatamente
+              currentMap.set(key, lc);
+              fetch(apiBase + '/api/contracts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(lc)
+              }).catch(function() {});
             } else {
-              currentMap.set(k, Object.assign({}, rc, lc));
+              // Fusionar estados locales (como firmas o estado app)
+              const merged = Object.assign({}, remoteVer, lc);
+              currentMap.set(key, merged);
             }
           });
-          const merged = Array.from(currentMap.values());
-          localStorage.setItem('brain_branding_contracts', JSON.stringify(merged));
-          localStorage.setItem('brain_branding_contracts_backup', JSON.stringify(merged));
-          window.drawContractsTable(merged);
+
+          const mergedList = Array.from(currentMap.values());
+          localStorage.setItem('brain_branding_contracts', JSON.stringify(mergedList));
+          localStorage.setItem('brain_branding_contracts_backup', JSON.stringify(mergedList));
+          window.drawContractsTable(mergedList);
         }
-      } catch(e) {}
+      } catch(e) {
+        console.warn('[CONTRACTS SYNC ERROR]', e);
+      }
     };
 
     window.handleContractFormSubmit = async function(e) {
@@ -500,6 +525,7 @@
         if (e.stopPropagation) e.stopPropagation();
       }
 
+      const apiBase = window.API_BASE || 'https://brain-branding-demo-generator.onrender.com';
       const clientNameInput = document.getElementById('contract-client-name');
       const appNameInput = document.getElementById('contract-app-name');
       const dateInput = document.getElementById('contract-date');
@@ -538,16 +564,20 @@
       };
 
       window.saveContractLocally(contract);
-      window.renderAdminContractsList();
+      window.drawContractsTable(window.getContracts());
 
-      // Post contract to backend API
+      // Guardar permanentemente en la base de datos del servidor Render
       try {
-        fetch((window.API_BASE || '') + '/api/contracts', {
+        await fetch(apiBase + '/api/contracts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(contract)
-        }).catch(function() {});
-      } catch(err) {}
+        });
+      } catch(err) {
+        console.warn('[CONTRACT BACKEND SAVE WARNING]', err);
+      }
+
+      window.renderAdminContractsList();
 
       // Send Telegram notification to L.C.I. Andrés R
       try {

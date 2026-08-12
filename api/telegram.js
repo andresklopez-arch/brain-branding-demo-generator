@@ -2313,6 +2313,17 @@ app.get('/api/contracts-list', (req, res) => {
   return res.status(200).json({ ok: true, contracts: Object.values(contractsDB) });
 });
 
+app.delete('/api/contracts/:code', (req, res) => {
+  const code = (req.params.code || '').trim();
+  if (contractsDB[code]) {
+    delete contractsDB[code];
+    saveContractsToDisk();
+    console.log(`[CONTRACT DELETED] Deleted contract code: ${code}`);
+    return res.status(200).json({ ok: true, message: 'Contrato eliminado' });
+  }
+  return res.status(404).json({ ok: false, error: 'Contrato no encontrado' });
+});
+
 app.post('/api/webhook', handleWebhookRequest);
 app.post('/api/telegram', handleWebhookRequest);
 app.post('/webhook', handleWebhookRequest);

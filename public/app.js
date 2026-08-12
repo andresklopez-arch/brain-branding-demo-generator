@@ -5023,39 +5023,45 @@ END:VCARD`;
 
   let isFetchingContracts = false;
   window.renderAdminContractsList = async () => {
-    // 1. Immediate local render
+    const apiBase = window.API_BASE || 'https://brain-branding-demo-generator.onrender.com';
     const localList = getContracts();
     drawContractsTable(localList);
 
-    // 2. Dual Sync with central server database (prevents disappearing contracts)
     if (isFetchingContracts) return;
     isFetchingContracts = true;
 
     try {
-      const res = await fetch(`${window.API_BASE}/api/contracts-list`);
+      const res = await fetch(`${apiBase}/api/contracts-list`);
       const data = await res.json();
       if (data && data.ok && Array.isArray(data.contracts)) {
         const remoteList = data.contracts;
         const currentMap = new Map();
 
-        // Put local first
-        localList.forEach(c => currentMap.set(c.code, c));
-        // Merge remote contracts
+        // 1. Cargar contratos remotos desde el servidor Render
         remoteList.forEach(rc => {
-          const lc = currentMap.get(rc.code);
-          if (!lc) {
-            currentMap.set(rc.code, rc);
+          if (rc && rc.code) currentMap.set(String(rc.code).trim(), rc);
+        });
+
+        // 2. Cargar contratos locales y AUTO-RESPALDAR al servidor Render cualquier contrato faltante
+        localList.forEach(lc => {
+          if (!lc || !lc.code) return;
+          const key = String(lc.code).trim();
+          const remoteVer = currentMap.get(key);
+          if (!remoteVer) {
+            currentMap.set(key, lc);
+            fetch(`${apiBase}/api/contracts`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(lc)
+            }).catch(() => {});
           } else {
-            if (rc.status === 'ACEPTADO') lc.status = 'ACEPTADO';
-            if (rc.acceptedAt) lc.acceptedAt = rc.acceptedAt;
-            if (rc.signatureData) lc.signatureData = rc.signatureData;
-            if (rc.appStatus) lc.appStatus = rc.appStatus;
-            currentMap.set(rc.code, { ...rc, ...lc });
+            currentMap.set(key, { ...remoteVer, ...lc });
           }
         });
 
         const mergedList = Array.from(currentMap.values());
         localStorage.setItem('brain_branding_contracts', JSON.stringify(mergedList));
+        localStorage.setItem('brain_branding_contracts_backup', JSON.stringify(mergedList));
         drawContractsTable(mergedList);
       }
     } catch(e) {
