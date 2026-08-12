@@ -1201,9 +1201,9 @@ function renderDashboardTable() {
       countdownBadge = `<span style="font-size: 9px; font-weight: 800; opacity: 0.6;">${expiryInfo.text}</span>`;
     }
 
-    const periodStr = l.currentPlan === 'PRO_ULTIMATE' || l.currentPlan === 'ENTERPRISE'
-      ? 'Mensual ($' + Math.round(Number(l.monthlyFee || 499)) + ' MXN)'
-      : (l.currentPlan || 'Mensual');
+    const calc = window.calculateAdjustedMonthlyFee ? window.calculateAdjustedMonthlyFee(l) : { formattedAdjusted: '$500.00 MXN', yearsElapsed: 0 };
+    const periodName = l.renewalPeriod || (l.currentPlan === 'PRO_ULTIMATE' || l.currentPlan === 'ENTERPRISE' ? 'Mensual' : (l.currentPlan || 'Mensual'));
+    const periodDisplay = `<div>${escapeHtml(periodName)}</div><div style="font-size: 9.5px; font-weight: 900; color: #10b981;">${calc.formattedAdjusted} <span style="font-size: 8px; opacity: 0.6; color: #a0aec0;">(+6% Año ${calc.yearsElapsed})</span></div>`;
 
     const appIcon = app.icon || 'ri-apps-fill';
     const appColor = app.color || '#10b981';
@@ -1224,7 +1224,7 @@ function renderDashboardTable() {
         </td>
         <td>${statusBadge}</td>
         <td>
-          <div style="font-size: 11px; font-weight: 800; opacity: 0.85;">${escapeHtml(periodStr)}</div>
+          <div style="font-size: 11px; font-weight: 800; opacity: 0.85;">${periodDisplay}</div>
         </td>
         <td>
           <div style="display: flex; flex-direction: column; gap: 3px;">
@@ -1237,6 +1237,9 @@ function renderDashboardTable() {
             <a href="${escapeHtml(clientUrl)}" target="_blank" class="btn btn-secondary" style="height: 30px; width: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center;" title="Abrir App en Vivo">
               <i class="ri-external-link-line" style="font-size: 13px;"></i>
             </a>
+            <button class="btn btn-secondary" style="height: 30px; padding: 0 10px; font-size: 9px; font-weight: 900; color: var(--accent); border: 1px solid rgba(0,229,255,0.3); background: rgba(0,229,255,0.05);" onclick="window.openRenewalConfigModal('${escapeHtml(l.id)}')" title="Configurar Fecha de Renovación, Período y Mensualidad (+6% Anual)">
+              <i class="ri-calendar-event-line"></i> Renovación
+            </button>
             <button class="btn btn-secondary" style="height: 30px; padding: 0 10px; font-size: 9px; font-weight: 900; color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); background: rgba(245,158,11,0.05);" onclick="window.sendRenewalNotice('${escapeHtml(l.id)}')" title="Enviar Aviso Preventivo antes de suspender">
               <i class="ri-notification-badge-fill"></i> Avisar
             </button>
@@ -2456,6 +2459,184 @@ window.toggleLicenseStatus = function(clientId, currentStatus) {
   saveToStorage();
   window.syncLicenseToFirestore(license);
   showToast(`Cliente ${license.clientName}: Estado cambiado a ${nextStatus === 'ACTIVE' ? 'ONLINE 🟢' : 'SUSPENDIDO 🔴'}.`, nextStatus === 'ACTIVE' ? 'success' : 'danger');
+  renderAll();
+};
+
+// 📈 CÁLCULO DE AUMENTO DEL 6% ANUAL Y TARIFA MENSUAL VIGENTE
+window.calculateAdjustedMonthlyFee = function(license) {
+  if (!license) return { baseFee: 500, yearsElapsed: 0, ratePercent: 6, adjustedFee: 500, formattedAdjusted: '$500.00 MXN' };
+  
+  const baseFee = Number(license.baseMonthlyFee || license.monthlyFee || 500);
+  const startStr = license.startDate || license.createdAt || '2025-01-01';
+  const startDate = new Date(startStr);
+  const now = new Date();
+  
+  let yearsElapsed = now.getFullYear() - startDate.getFullYear();
+  const mDiff = now.getMonth() - startDate.getMonth();
+  if (mDiff < 0 || (mDiff === 0 && now.getDate() < startDate.getDate())) {
+    yearsElapsed--;
+  }
+  yearsElapsed = Math.max(0, yearsElapsed);
+  
+  const rate = Number(license.annualIncreaseRate || 0.06);
+  const adjustedFee = baseFee * Math.pow(1 + rate, yearsElapsed);
+  const roundedFee = Math.round(adjustedFee * 100) / 100;
+  
+  return {
+    baseFee: baseFee,
+    yearsElapsed: yearsElapsed,
+    ratePercent: rate * 100,
+    adjustedFee: roundedFee,
+    formattedAdjusted: '$' + roundedFee.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN'
+  };
+};
+
+window.openRenewalConfigModal = function(clientId) {
+  const license = state.licenses.find(l => l.id === clientId || l.appId === clientId);
+  if (!license) return;
+
+  const overlay = document.getElementById('modal-overlay');
+  const box = document.getElementById('modal-box');
+  if (!overlay || !box) return;
+
+  const calc = window.calculateAdjustedMonthlyFee(license);
+  const currentExpiry = (license.expiryDate || license.expirationDate || '2099-12-30').split('T')[0];
+  const currentPeriod = license.renewalPeriod || 'Mensual';
+  const currentBaseFee = Number(license.baseMonthlyFee || license.monthlyFee || 500);
+  const currentStartDate = (license.startDate || license.createdAt || '2025-01-01').split('T')[0];
+
+  box.innerHTML = `
+    <div style="padding: 28px; max-width: 520px; width: 100%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px;">
+        <div>
+          <h2 style="font-size: 15px; font-weight: 900; color: var(--accent); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+            <i class="ri-calendar-event-fill"></i> Configuración de Renovación & Tarifas
+          </h2>
+          <div style="font-size: 11px; opacity: 0.6; margin-top: 2px;">Cliente: <strong>${escapeHtml(license.clientName)}</strong> (${escapeHtml(license.id)})</div>
+        </div>
+        <button onclick="closeModal()" style="background: none; border: none; color: #fff; opacity: 0.6; cursor: pointer; font-size: 22px;">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label" style="font-size: 11px; font-weight: 800;">📅 Fecha de Próxima Renovación</label>
+            <input type="date" id="ren-expiry-date" class="form-input" value="${currentExpiry}" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5);">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size: 11px; font-weight: 800;">🔄 Período de Renovación</label>
+            <select id="ren-period" class="form-input" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5); color: #fff;">
+              <option value="Mensual" ${currentPeriod === 'Mensual' ? 'selected' : ''}>Mensual</option>
+              <option value="Trimestral" ${currentPeriod === 'Trimestral' ? 'selected' : ''}>Trimestral</option>
+              <option value="Semestral" ${currentPeriod === 'Semestral' ? 'selected' : ''}>Semestral</option>
+              <option value="Anual" ${currentPeriod === 'Anual' ? 'selected' : ''}>Anual</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label" style="font-size: 11px; font-weight: 800;">💵 Mensualidad Base ($ MXN)</label>
+            <input type="number" id="ren-base-fee" class="form-input" value="${currentBaseFee}" step="10" oninput="window.updateModalFeePreview()" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5);">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size: 11px; font-weight: 800;">🗓️ Fecha Inicio Contrato</label>
+            <input type="date" id="ren-start-date" class="form-input" value="${currentStartDate}" onchange="window.updateModalFeePreview()" style="height: 38px; font-size: 11px; background: rgba(0,0,0,0.5);">
+          </div>
+        </div>
+
+        <!-- Panel en Vivo con la Fórmula del +6% Anual Acumulado -->
+        <div style="background: rgba(0, 229, 255, 0.05); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 12px; padding: 14px;" id="ren-fee-preview-panel">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px;">
+              📈 Ajuste por Inflación Anual (+6.0%)
+            </span>
+            <span style="font-size: 9px; font-weight: 800; background: rgba(0, 229, 255, 0.15); color: #fff; padding: 2px 8px; border-radius: 6px;" id="ren-years-badge">
+              Año ${calc.yearsElapsed} (${calc.yearsElapsed} año(s) transcurridos)
+            </span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <div>
+              <div style="font-size: 9px; opacity: 0.6;" id="ren-base-display">Tarifa Base Inicial: <strong>$${calc.baseFee.toLocaleString()} MXN</strong></div>
+              <div style="font-size: 9px; opacity: 0.6; margin-top: 2px;" id="ren-rate-display">Incremento Acumulado: <strong>+${(calc.yearsElapsed * 6).toFixed(1)}%</strong></div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 9px; opacity: 0.6; text-transform: uppercase;">Mensualidad Vigente:</div>
+              <div style="font-size: 16px; font-weight: 900; color: #10b981;" id="ren-adjusted-display">${calc.formattedAdjusted}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+          <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+          <button class="btn btn-primary" onclick="window.saveRenewalConfigModal('${escapeHtml(license.id)}')">
+            <i class="ri-save-3-line"></i> Guardar y Sincronizar
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  overlay.style.display = 'flex';
+};
+
+window.updateModalFeePreview = function() {
+  const baseFee = Number(document.getElementById('ren-base-fee')?.value || 500);
+  const startStr = document.getElementById('ren-start-date')?.value || '2025-01-01';
+  const startDate = new Date(startStr);
+  const now = new Date();
+
+  let yearsElapsed = now.getFullYear() - startDate.getFullYear();
+  const mDiff = now.getMonth() - startDate.getMonth();
+  if (mDiff < 0 || (mDiff === 0 && now.getDate() < startDate.getDate())) {
+    yearsElapsed--;
+  }
+  yearsElapsed = Math.max(0, yearsElapsed);
+
+  const adjusted = Math.round(baseFee * Math.pow(1.06, yearsElapsed) * 100) / 100;
+  const formatted = '$' + adjusted.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN';
+
+  const badgeEl = document.getElementById('ren-years-badge');
+  const baseEl = document.getElementById('ren-base-display');
+  const rateEl = document.getElementById('ren-rate-display');
+  const adjEl = document.getElementById('ren-adjusted-display');
+
+  if (badgeEl) badgeEl.textContent = `Año ${yearsElapsed} (${yearsElapsed} año(s) transcurridos)`;
+  if (baseEl) baseEl.innerHTML = `Tarifa Base Inicial: <strong>$${baseFee.toLocaleString()} MXN</strong>`;
+  if (rateEl) rateEl.innerHTML = `Incremento Acumulado: <strong>+${(yearsElapsed * 6).toFixed(1)}%</strong>`;
+  if (adjEl) adjEl.textContent = formatted;
+};
+
+window.saveRenewalConfigModal = function(clientId) {
+  const license = state.licenses.find(l => l.id === clientId || l.appId === clientId);
+  if (!license) return;
+
+  const newExpiry = document.getElementById('ren-expiry-date')?.value;
+  const newPeriod = document.getElementById('ren-period')?.value;
+  const newBaseFee = Number(document.getElementById('ren-base-fee')?.value || 500);
+  const newStartDate = document.getElementById('ren-start-date')?.value;
+
+  if (newExpiry) {
+    license.expiryDate = newExpiry + 'T23:59:59Z';
+    license.expirationDate = newExpiry + 'T23:59:59Z';
+  }
+  if (newPeriod) license.renewalPeriod = newPeriod;
+  if (!isNaN(newBaseFee) && newBaseFee > 0) license.baseMonthlyFee = newBaseFee;
+  if (newStartDate) license.startDate = newStartDate;
+
+  const calc = window.calculateAdjustedMonthlyFee(license);
+  license.adjustedMonthlyFee = calc.adjustedFee;
+  license.version = (license.version || 1) + 1;
+
+  saveToStorage();
+  window.syncLicenseToFirestore(license);
+
+  const tgMsg = `📅 <b>[CONFIGURACIÓN DE RENOVACIÓN ALR SAAS]</b> 📅\n\nCliente: <b>${license.clientName}</b> (${license.id})\n<b>Próxima Renovación:</b> ${newExpiry}\n<b>Período:</b> ${newPeriod}\n<b>Tarifa Base:</b> $${newBaseFee} MXN\n<b>Mensualidad Vigente (+6% Anual):</b> ${calc.formattedAdjusted}`;
+  window.sendTelegramNotification(tgMsg);
+
+  addAuditLog('ORQUESTADOR', 'CONFIGURACIÓN_RENOVACIÓN', `Se actualizó la renovación de ${license.clientName}: Vencimiento ${newExpiry}, Período ${newPeriod}, Mensualidad Vigente ${calc.formattedAdjusted}.`);
+  showToast(`¡Configuración de renovación guardada para ${license.clientName}!`, "success");
+  closeModal();
   renderAll();
 };
 
