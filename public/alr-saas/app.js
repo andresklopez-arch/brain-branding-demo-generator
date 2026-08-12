@@ -2875,6 +2875,17 @@ window.toggleLicenseStatus = function(clientId, currentStatus) {
 
   saveToStorage();
   window.syncLicenseToFirestore(license);
+
+  // ⚡ DIFUSIÓN INSTANTÁNEA MULTI-PESTAÑA EN TIEMPO REAL (0 MILISEGUNDOS)
+  try {
+    localStorage.setItem('alr_saas_license_signal', JSON.stringify({ id: license.id, status: nextStatus, timestamp: Date.now() }));
+    if ('BroadcastChannel' in window) {
+      const bc = new BroadcastChannel('alr_saas_global_channel');
+      bc.postMessage({ type: 'LICENSE_STATUS_UPDATE', id: license.id, status: nextStatus, license });
+      bc.close();
+    }
+  } catch (e) {}
+
   showToast(`Cliente ${license.clientName}: Estado cambiado a ${nextStatus === 'ACTIVE' ? 'ONLINE 🟢' : 'SUSPENDIDO 🔴'}.`, nextStatus === 'ACTIVE' ? 'success' : 'danger');
   renderAll();
 };
