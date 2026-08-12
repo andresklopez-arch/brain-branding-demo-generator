@@ -1506,18 +1506,7 @@ async function sendMorningReport8AM() {
   }
 }
 
-// 8:00 AM Cron Timer Check (Mexico City CST Timezone UTC-6)
-let lastMorningReportDate = '';
-setInterval(() => {
-  const nowCST = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
-  const todayStr = nowCST.toDateString();
-  const currentHour = nowCST.getHours();
-
-  if (currentHour === 8 && lastMorningReportDate !== todayStr) {
-    lastMorningReportDate = todayStr;
-    sendMorningReport8AM();
-  }
-}, 60 * 1000);
+// Morning report timer managed by unified Catch-Up Scheduler below
 
 // Sunday 8:00 PM Weekly Executive Conversion Report (Suggestion 3)
 async function sendWeeklyAnalyticsReport8PM() {
@@ -1817,19 +1806,46 @@ app.post('/api/conversion-alert', async (req, res) => {
   }
 });
 
-function buildDetailedAnalytics8AMReport(allVisits = []) {
+function parseVisitTimestamp(ts) {
+  if (!ts) return 0;
+  if (typeof ts === 'number') return ts;
+  let ms = new Date(ts).getTime();
+  if (!isNaN(ms) && ms > 0) return ms;
+
+  if (typeof ts === 'string') {
+    const parts = ts.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (parts) {
+      const d = parseInt(parts[1], 10);
+      const m = parseInt(parts[2], 10) - 1;
+      const y = parseInt(parts[3], 10);
+      ms = new Date(y, m, d).getTime();
+      if (!isNaN(ms) && ms > 0) return ms;
+    }
+  }
+  return 0;
+}
+
+function getActive24hVisits(allVisits = []) {
   const nowMs = Date.now();
-  const nowStr = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-  // Filter visits from the last 24 hours
-  const visits = allVisits.filter(v => {
-    const vTime = v.timestamp ? new Date(v.timestamp).getTime() : 0;
-    return vTime > 0 ? (nowMs - vTime) <= (24 * 60 * 60 * 1000) : true;
+  const cutoff = nowMs - (24 * 60 * 60 * 1000);
+  return allVisits.filter(v => {
+    const vTime = parseVisitTimestamp(v.timestamp);
+    return vTime > 0 ? vTime >= cutoff : true;
   });
+}
 
+function buildDetailedAnalytics8AMReport(allVisits = [], isScheduled8AM = false) {
+  const visits = getActive24hVisits(allVisits);
   const total = visits.length;
+  const nowStr = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const timeStr = new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
+
+  const headerTitle = isScheduled8AM
+    ? `☀️ *RESUMEN DIARIO AUTOMÁTICO DE VISITAS WEB (8:00 AM)* ☀️\n📅 *Fecha:* ${nowStr}`
+    : `📊 *INFORME DE VISITAS EN TIEMPO REAL (ÚLTIMAS 24 HORAS)* 📊\n⏰ *Generado a las:* ${timeStr} | ${nowStr}`;
+
   if (total === 0) {
-    return `☀️ *RESUMEN DIARIO DE VISITAS WEB (8:00 AM)* ☀️\n📅 *Fecha:* ${nowStr}\n\n📊 *Total de Visitas Registradas (Últimas 24h):* *0*\n\n💡 *Tip:* Las visitas se registran en tiempo real cuando un usuario ingresa al sitio web.`;
+    return `${headerTitle}\n\n📊 *Total de Visitas Registradas (Últimas 24h):* *0*\n\n💡 *Tip:* Las visitas se registran en tiempo real cuando un usuario ingresa al sitio web.`;
   }
 
   const osCounts = {};
@@ -1879,8 +1895,7 @@ function buildDetailedAnalytics8AMReport(allVisits = []) {
 
   const getPercent = (count) => ((count / total) * 100).toFixed(1);
 
-  let report = `☀️ *RESUMEN CONSOLIDADO DE VISITAS WEB (ÚLTIMAS 24 HORAS)* ☀️\n`;
-  report += `📅 *Fecha:* ${nowStr}\n`;
+  let report = `${headerTitle}\n`;
   report += `📊 *Total de Visitas Registradas (Últimas 24h):* *${total}*\n\n`;
 
   report += `📍 *DETALLE INDIVIDUAL DE CADA VISITA (HORA, SCROLL Y CLICS):*\n\n`;
@@ -2015,10 +2030,9 @@ app.post('/api/track-visit', async (req, res) => {
     }
 
     // Suggestion 2: High Traffic Alert Trigger (Fires when 24h visits reach milestones: 10, 20, 50, 100)
-    const active24hCount = visitsLog.filter(v => {
-      const vTime = v.timestamp ? new Date(v.timestamp).getTime() : 0;
-      return vTime > 0 ? (nowMs - vTime) <= (24 * 60 * 60 * 1000) : true;
-    }).length;
+    // Suggestion 2: High Traffic Alert Trigger (Fires when 24h visits reach milestones: 10, 20, 50, 100)
+    const active24hVisits = getActive24hVisits(visitsLog);
+    const active24hCount = active24hVisits.length;
 
     if ([10, 20, 50, 100].includes(active24hCount) && existingIndex === -1) {
       callTelegram('sendMessage', {
@@ -2037,75 +2051,102 @@ app.post('/api/track-visit', async (req, res) => {
 
 app.get('/api/analytics-db', (req, res) => {
   const allVisits = visitsLog.length > 0 ? visitsLog : loadVisitsFromDisk();
-  const nowMs = Date.now();
-  const visits24h = allVisits.filter(v => {
-    const vTime = v.timestamp ? new Date(v.timestamp).getTime() : 0;
-    return vTime > 0 ? (nowMs - vTime) <= (24 * 60 * 60 * 1000) : true;
-  });
+  const visits24h = getActive24hVisits(allVisits);
   const targetVisits = visits24h.length > 0 ? visits24h : allVisits.slice(-50);
   return res.status(200).json({ ok: true, visits: targetVisits, total24h: visits24h.length, totalAllTime: allVisits.length });
+});
+
+// Server Keep-Alive Ping Endpoint
+app.get('/api/keep-alive', (req, res) => {
+  checkAndTriggerMorningReports();
+  return res.status(200).json({ ok: true, status: 'ONLINE', timestamp: new Date().toISOString(), visitsCount: visitsLog.length });
 });
 
 // Local Blockchain Chain Hash State
 let lastBlockchainHash = "GENESIS_BRAIN_BRANDING_BLOCK_SAAS_2026";
 
-let lastSummaryDate = '';
-setInterval(async () => {
+// Guaranteed 8:00 AM Morning Reports Scheduler with Automatic Catch-Up on Server Wakeup
+let lastVisits8AMReportDate = '';
+let lastLeads8AMReportDate = '';
+let lastBillingCheckDate = '';
+
+async function checkAndTriggerMorningReports() {
   try {
     const now = new Date();
-    const currentDateStr = now.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' });
-    const cdmxHour = parseInt(new Intl.DateTimeFormat('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', hour12: false }).format(now), 10);
+    const cdmxDateStr = now.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' });
+    const hourStr = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Mexico_City', hour: 'numeric', hour12: false }).format(now);
+    const cdmxHour = parseInt(hourStr, 10);
 
-    // Fires at 8:00 AM CDMX time ONCE per day
-    if (cdmxHour === 8 && lastSummaryDate !== currentDateStr) {
-      lastSummaryDate = currentDateStr;
-      
+    // If CDMX time is >= 8 AM (up to 11 PM) and today's report hasn't been sent yet, send it immediately!
+    if (cdmxHour >= 8 && cdmxHour < 23) {
       // 1. Visit Analytics Report
-      const reportText = buildDetailedAnalytics8AMReport(visitsLog);
-      await callTelegram('sendMessage', {
-        chat_id: ADMIN_CHAT_ID,
-        text: reportText,
-        parse_mode: 'Markdown'
-      });
+      if (lastVisits8AMReportDate !== cdmxDateStr) {
+        lastVisits8AMReportDate = cdmxDateStr;
+        console.log(`[SCHEDULED 8AM REPORT] Dispatching 8:00 AM Visits Summary for ${cdmxDateStr} (Hour: ${cdmxHour})`);
+        const reportText = buildDetailedAnalytics8AMReport(visitsLog, true);
+        await callTelegram('sendMessage', {
+          chat_id: ADMIN_CHAT_ID,
+          text: reportText,
+          parse_mode: 'Markdown'
+        }).catch(e => console.error('[8AM VISITS REPORT ERROR]', e.message));
+      }
 
-      // 2. Daily Billing Reminders for Contracts 3 Days Prior to Due Date
-      const currentDay = now.getDate();
-      const activeContracts = Object.values(contractsDB).filter(c => c.status === 'ACEPTADO');
-
-      for (const contract of activeContracts) {
-        let dueDay = 15;
-        if (contract.date) {
-          const parts = contract.date.split('-');
-          if (parts.length === 3) dueDay = parseInt(parts[2], 10) || 15;
+      // 2. Leads & Gemini Telemetry Morning Report
+      if (lastLeads8AMReportDate !== cdmxDateStr) {
+        lastLeads8AMReportDate = cdmxDateStr;
+        console.log(`[SCHEDULED 8AM REPORT] Dispatching 8:00 AM Leads & AI Report for ${cdmxDateStr}`);
+        if (typeof sendMorningReport8AM === 'function') {
+          await sendMorningReport8AM().catch(e => console.error('[8AM LEADS REPORT ERROR]', e.message));
         }
+      }
 
-        const daysRemaining = dueDay - currentDay;
-        if (daysRemaining >= 0 && daysRemaining <= 3) {
-          const waMessage = `Hola ${contract.clientName}, te recordamos amablemente la cuota mensual de tu app ${contract.appName} ($${contract.monthlyPrice} MXN). Folio: ${contract.code}. ¡Gracias por confiar en Brain Branding!`;
-          const waLink = `https://wa.me/527712339238?text=${encodeURIComponent(waMessage)}`;
+      // 3. Daily Billing Reminders for Contracts 3 Days Prior to Due Date
+      if (lastBillingCheckDate !== cdmxDateStr) {
+        lastBillingCheckDate = cdmxDateStr;
+        const currentDay = now.getDate();
+        const activeContracts = Object.values(contractsDB).filter(c => c.status === 'ACEPTADO');
 
-          let billingMsg = `🚨 *ALERTA DIARIA DE COBRO DE MANTENIMIENTO SAAS* 🚨\n\n` +
-            `⏱️ *Estado:* Faltan *${daysRemaining === 0 ? '0 días (HOY)' : daysRemaining + ' días'}* para el vencimiento.\n` +
-            `🔢 *Folio 6D:* \`${contract.code}\`\n` +
-            `👤 *Cliente:* ${contract.clientName}\n` +
-            `📱 *App:* ${contract.appName}\n` +
-            `💳 *Mensualidad Nube:* $${contract.monthlyPrice.toLocaleString('es-MX')} MXN/mes\n` +
-            `📅 *Día de Cobro:* ${dueDay} de este mes\n` +
-            `📞 *Gestión del Dueño (Andrés R):* \`+52 771 233 9238\`\n\n` +
-            `💬 *Haz clic para enviar recordatorio por WhatsApp:* \n[Enviar Mensaje a ${contract.clientName}](${waLink})`;
+        for (const contract of activeContracts) {
+          let dueDay = 15;
+          if (contract.date) {
+            const parts = contract.date.split('-');
+            if (parts.length === 3) dueDay = parseInt(parts[2], 10) || 15;
+          }
 
-          await callTelegram('sendMessage', {
-            chat_id: ADMIN_CHAT_ID,
-            text: billingMsg,
-            parse_mode: 'Markdown'
-          });
+          const daysRemaining = dueDay - currentDay;
+          if (daysRemaining >= 0 && daysRemaining <= 3) {
+            const waMessage = `Hola ${contract.clientName}, te recordamos amablemente la cuota mensual de tu app ${contract.appName} ($${contract.monthlyPrice} MXN). Folio: ${contract.code}. ¡Gracias por confiar en Brain Branding!`;
+            const waLink = `https://wa.me/527712339238?text=${encodeURIComponent(waMessage)}`;
+
+            let billingMsg = `🚨 *ALERTA DIARIA DE COBRO DE MANTENIMIENTO SAAS* 🚨\n\n` +
+              `⏱️ *Estado:* Faltan *${daysRemaining === 0 ? '0 días (HOY)' : daysRemaining + ' días'}* para el vencimiento.\n` +
+              `🔢 *Folio 6D:* \`${contract.code}\`\n` +
+              `👤 *Cliente:* ${contract.clientName}\n` +
+              `📱 *App:* ${contract.appName}\n` +
+              `💳 *Mensualidad Nube:* $${contract.monthlyPrice.toLocaleString('es-MX')} MXN/mes\n` +
+              `📅 *Día de Cobro:* ${dueDay} de este mes\n` +
+              `📞 *Gestión del Dueño (Andrés R):* \`+52 771 233 9238\`\n\n` +
+              `💬 *Haz clic para enviar recordatorio por WhatsApp:* \n[Enviar Mensaje a ${contract.clientName}](${waLink})`;
+
+            await callTelegram('sendMessage', {
+              chat_id: ADMIN_CHAT_ID,
+              text: billingMsg,
+              parse_mode: 'Markdown'
+            });
+          }
         }
       }
     }
   } catch (e) {
     console.error('[8AM DAILY SUMMARY & BILLING ERROR]', e);
   }
-}, 60000);
+}
+
+// Run check every 60 seconds
+setInterval(checkAndTriggerMorningReports, 60 * 1000);
+
+// Also run check 5 seconds after server boot / wake up to catch up on missed reports
+setTimeout(checkAndTriggerMorningReports, 5000);
 
 // Permanent SaaS Contracts Database (Disk-backed JSON Persistence)
 const DATA_DIR = path.join(__dirname, '../data');
