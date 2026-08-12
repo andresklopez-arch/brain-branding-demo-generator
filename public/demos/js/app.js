@@ -97,7 +97,14 @@ const App = {
     });
   },
 
+  pinTimeout: null,
+
   updatePinDisplay: function() {
+    if (this.pinTimeout) {
+      clearTimeout(this.pinTimeout);
+      this.pinTimeout = null;
+    }
+
     const digits = document.querySelectorAll(".pin-digit");
     digits.forEach((d, idx) => {
       if (idx < this.enteredPin.length) {
@@ -119,8 +126,14 @@ const App = {
         badge.textContent = `✍️ Tecleando código (${this.enteredPin.length}/6 dígitos)...`;
         badge.style.color = "#a855f7";
       } else if (this.enteredPin.length === 5) {
-        badge.textContent = "🔍 Detectando NIP de Demo Personalizada (5D)...";
-        badge.style.color = "#10b981";
+        const tenant = typeof demoRegistry !== 'undefined' ? demoRegistry[this.enteredPin] : null;
+        if (tenant) {
+          badge.textContent = "🔍 Detectando NIP de Demo Personalizada (5D)...";
+          badge.style.color = "#10b981";
+        } else {
+          badge.textContent = "📜 Ingresa el 6º dígito para consultar Contrato Digital (6D)...";
+          badge.style.color = "#00f2fe";
+        }
       } else if (this.enteredPin.length === 6) {
         badge.textContent = "📜 Consultando Contrato Digital SaaS (6D)...";
         badge.style.color = "#00f2fe";
@@ -145,10 +158,12 @@ const App = {
           this.showWelcomeModal();
         }, 200);
       } else {
-        // NIP de 5 dígitos no encontrado en el registro local
-        setTimeout(() => {
-          this.handleInvalidPin(this.enteredPin);
-        }, 100);
+        // NIP de 5 dígitos no es una demo -> Dar tiempo para ingresar el 6º dígito del folio de contrato
+        this.pinTimeout = setTimeout(() => {
+          if (this.enteredPin.length === 5) {
+            this.handleInvalidPin(this.enteredPin);
+          }
+        }, 2500);
       }
     } else if (this.enteredPin.length === 6) {
       const code = this.enteredPin;
