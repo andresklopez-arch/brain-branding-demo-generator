@@ -4852,7 +4852,7 @@ END:VCARD`;
 
     // Visit tracking is saved locally and sent to backend server (instant ping + beacon on exit)
     const payloadData = JSON.stringify({ sessionId: clientSessionId, isReturning: isReturningVisitor, city, region, country, flag, source, device, isp, duration: durationStr, scroll: maxScroll, clicks: clickedElements });
-    const apiUrl = (window.API_BASE || '') + '/api/track-visit';
+    const apiUrl = (window.API_BASE || 'https://brain-branding-demo-generator.onrender.com') + '/api/track-visit';
 
     try {
       if (navigator.sendBeacon) {
