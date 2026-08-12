@@ -164,9 +164,37 @@ function sha256Sync(ascii) {
 }
 
 // 🌌 BASE DE DATOS LOCAL/SIMULADA PARA MODO AUTÓNOMO Y FALLBACK
-const DEFAULT_APPS = [];
+const DEFAULT_APPS = [
+  {
+    id: 'kuatsi',
+    name: 'Kuatsi POS & Cafetería',
+    version: 'v1.0.0',
+    status: 'RELEASED',
+    activeClients: 1,
+    icon: 'ri-cup-fill',
+    color: '#f59e0b',
+    url: 'https://kuatsi.web.app/',
+    description: 'Sistema integral de gestión para cafeterías, restaurantes, comandas, mesas y punto de venta.'
+  }
+];
 
-const DEFAULT_LICENSES = [];
+const DEFAULT_LICENSES = [
+  {
+    id: 'kuatsi_central',
+    clientName: 'Kuatsi Cafetería Central',
+    appId: 'kuatsi',
+    appName: 'Kuatsi POS & Cafetería',
+    appUrl: 'https://kuatsi.web.app/',
+    apiKey: 'ALR-KUATSI-2026-LIVE-8899',
+    status: 'ACTIVE',
+    expirationDate: '2099-12-31',
+    plan: 'PRO_ULTIMATE',
+    maxUsers: 25,
+    monthlyFee: 499,
+    createdAt: '2026-01-01',
+    notes: 'Instancia principal de Kuatsi Cafetería gestionada desde ALR SaaS Commander.'
+  }
+];
 
 // 🔐 BASE DE DATOS DE ADMINISTRADORES Y PIN DE SEGURIDAD SECURE HASHES (SHA-256)
 const SYSTEM_ADMINS = [
@@ -183,6 +211,20 @@ let currentAdmin = SYSTEM_ADMINS[0]; // Master Admin activo por defecto
 
 // 🚀 SUGERENCIA 3: PLANTILLAS DE BASES DE DATOS SEMILLA (SEED TEMPLATES)
 const SEED_TEMPLATES = {
+  kuatsi: {
+    roles: [
+      { role: 'admin', name: 'Administrador General', defaultPin: '1234' },
+      { role: 'cajero', name: 'Cajero / Punto de Venta', defaultPin: '4321' },
+      { role: 'mesero', name: 'Mesero / Atención a Mesas', defaultPin: '1111' },
+      { role: 'cocina', name: 'Barista / Cocina', defaultPin: null }
+    ],
+    services: [
+      { name: 'Bebidas & Café de Especialidad', price: 55 },
+      { name: 'Alimentos & Repostería', price: 75 },
+      { name: 'Paquetes & Combos Desayuno', price: 120 }
+    ],
+    business: { name: 'Kuatsi Cafetería Central', openTime: '07:00', closeTime: '22:00', tablesCount: 16 }
+  },
   smart_wash: {
     roles: [
       { role: 'admin', name: 'Administrador', defaultPin: '1111' },
@@ -591,6 +633,12 @@ async function loadFromStorage() {
     
     // Limpiar datos de demostración si existen para empezar limpio con datos reales
     state.licenses = state.licenses.filter(l => l.id !== 'xalpa_smart' && l.id !== 'tenatena_smart' && l.appId !== 'smart_wash' && l.appId !== 'smart_restaurant' && l.appId !== 'smart_gym');
+
+    DEFAULT_LICENSES.forEach(defaultLic => {
+      if (!state.licenses.some(l => l.id === defaultLic.id)) {
+        state.licenses.push(defaultLic);
+      }
+    });
 
     // Migración automática: Corregir enlaces de Vercel mal formados (?s= en lugar de /)
     let migratedCount = 0;
