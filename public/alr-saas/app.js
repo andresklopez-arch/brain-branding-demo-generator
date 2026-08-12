@@ -1486,6 +1486,10 @@ function renderAppsPortfolio() {
               <a href="#" onclick="event.preventDefault(); window.viewSeedTemplateSchema('${escapeHtml(app.id)}')" style="color: var(--accent); font-size: 9px; text-decoration: none; font-weight: 800; border: 1px solid rgba(0, 229, 255, 0.15); padding: 3px 8px; border-radius: 8px; background: rgba(0, 229, 255, 0.03); display: inline-flex; align-items: center; gap: 4px;" title="Ver plantilla de semilla base de la aplicación">
                 <i class="ri-code-box-line"></i> Semilla
               </a>
+              <!-- Botón Eliminar App -->
+              <button onclick="event.preventDefault(); window.deleteAppFromPortfolio('${escapeHtml(app.id)}')" style="color: var(--danger); font-size: 9px; border: 1px solid rgba(239, 68, 68, 0.3); padding: 3px 8px; border-radius: 8px; background: rgba(239, 68, 68, 0.05); cursor: pointer; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;" title="Eliminar Aplicación del Catálogo Master">
+                <i class="ri-delete-bin-line"></i> Eliminar
+              </button>
             </div>
           </div>
           <h3 style="font-weight:900; font-size:18px; margin-bottom:6px; letter-spacing:-0.5px;">${escapeHtml(app.name)}</h3>
@@ -1496,9 +1500,14 @@ function renderAppsPortfolio() {
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px solid var(--border-glass); padding-top:15px; margin-top:15px;">
           <span style="font-size:10px; font-weight:800; opacity:0.5;">CLIENTES: ${clientsCount}</span>
-          <button class="btn btn-secondary" style="height:32px; padding:0 12px; font-size:9px;" onclick="switchView('wizard'); document.getElementById('w-app-select').value='${escapeHtml(app.id)}'; window.autoGenerateSlug(document.getElementById('w-client-name').value)">
-            + Aprovisionar
-          </button>
+          <div style="display:flex; gap: 6px; align-items:center;">
+            <button class="btn btn-secondary" style="height:32px; padding:0 12px; font-size:9px;" onclick="switchView('wizard'); document.getElementById('w-app-select').value='${escapeHtml(app.id)}'; window.autoGenerateSlug(document.getElementById('w-client-name').value)">
+              + Aprovisionar
+            </button>
+            <button class="btn btn-danger-outline" style="height:32px; width:32px; padding:0; font-size:14px; display:inline-flex; align-items:center; justify-content:center;" onclick="window.deleteAppFromPortfolio('${escapeHtml(app.id)}')" title="Eliminar App del Catálogo">
+              <i class="ri-delete-bin-line"></i>
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -2530,6 +2539,38 @@ window.quickEditFee = function(clientId) {
     const input = document.getElementById('ren-base-fee');
     if (input) { input.focus(); input.select(); }
   }, 100);
+};
+
+window.deleteAppFromPortfolio = function(appId) {
+  const appIndex = state.apps.findIndex(a => a.id === appId);
+  if (appIndex === -1) {
+    showToast("Aplicación no encontrada en el catálogo.", "warning");
+    return;
+  }
+
+  const app = state.apps[appIndex];
+  const assignedClients = state.licenses.filter(l => l.appId === appId || l.id === appId);
+
+  let confirmMsg = `¿Confirmas que deseas eliminar la aplicación "${app.name}" (${app.id}) del catálogo de ALR SaaS?`;
+  if (assignedClients.length > 0) {
+    confirmMsg += `\n\n⚠️ ATENCIÓN: Hay ${assignedClients.length} cliente(s) provistos con esta app (${assignedClients.map(c => c.clientName).join(', ')}).`;
+  }
+
+  if (!confirm(confirmMsg)) return;
+
+  state.apps.splice(appIndex, 1);
+  if (typeof SEED_TEMPLATES !== 'undefined') {
+    delete SEED_TEMPLATES[appId];
+  }
+
+  addAuditLog('ORQUESTADOR', 'ELIMINAR_APP', `Se eliminó la aplicación ${app.name} (${appId}) del catálogo Master de ALR SaaS.`);
+  
+  const tgMsg = `🗑️ <b>[ELIMINACIÓN DE APP ALR SAAS]</b> 🗑️\n\nLa aplicación <b>${app.name}</b> (${app.id}) ha sido eliminada del catálogo.\n<b>Fecha:</b> ${new Date().toLocaleString()}`;
+  window.sendTelegramNotification(tgMsg);
+
+  saveToStorage();
+  showToast(`Aplicación "${app.name}" eliminada del catálogo con éxito.`, "info");
+  renderAll();
 };
 
 window.toggleLicenseStatus = function(clientId, currentStatus) {
