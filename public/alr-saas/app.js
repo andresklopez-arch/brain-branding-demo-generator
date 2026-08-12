@@ -1279,6 +1279,9 @@ function renderDashboardTable() {
             <button class="btn btn-secondary" style="height: 30px; width: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: ${isOnline ? 'var(--danger)' : 'var(--success)'};" onclick="window.toggleLicenseStatus('${escapeHtml(l.id)}', '${l.status}')" title="${isOnline ? 'Suspender Acceso' : 'Reactivar Acceso'}">
               <i class="${isOnline ? 'ri-shut-down-line' : 'ri-play-circle-line'}" style="font-size: 13px;"></i>
             </button>
+            <button class="btn btn-danger-outline" style="height: 30px; width: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center;" onclick="window.deleteLicense('${escapeHtml(l.id)}')" title="Eliminar Cliente / Mover a Papelera de Reciclaje">
+              <i class="ri-delete-bin-line" style="font-size: 13px;"></i>
+            </button>
           </div>
         </td>
       </tr>
@@ -2708,6 +2711,7 @@ window.openRenewalConfigModal = function(clientId) {
     </div>
   `;
 
+  overlay.classList.add('active');
   overlay.style.display = 'flex';
 };
 
@@ -2772,27 +2776,27 @@ window.saveRenewalConfigModal = function(clientId) {
 };
 
 window.deleteLicense = function(clientId) {
-  const license = state.licenses.find(l => l.id === clientId);
+  const license = state.licenses.find(l => l.id === clientId || l.appId === clientId);
   if (!license) return;
 
-  requestAdminVerification(`Mover a Papelera (${license.clientName})`, () => {
-    state.licenses = state.licenses.filter(l => l.id !== clientId);
-    if (!state.recycleBin) state.recycleBin = [];
-    
-    // Marcar como suspendida temporalmente en el caché e incrementar versión
-    license.status = 'SUSPENDED';
-    license.version = (license.version || 1) + 1;
+  if (!confirm(`¿Confirmas que deseas mover la licencia de "${license.clientName}" (${license.id}) a la papelera de reciclaje?`)) return;
 
-    state.recycleBin.push({
-      license: license,
-      deletedAt: new Date().toISOString()
-    });
-    addAuditLog('ORQUESTADOR', 'ELIMINACIÓN_PAPELERA', `Cliente ${license.clientName} movido a la papelera de reciclaje (retención de 45 días).`);
-    saveToStorage();
-    window.syncLicenseToFirestore(license);
-    showToast("Cliente movido a la papelera.", "success");
-    renderAll();
+  state.licenses = state.licenses.filter(l => l.id !== clientId && l.id !== license.id);
+  if (!state.recycleBin) state.recycleBin = [];
+  
+  license.status = 'SUSPENDED';
+  license.version = (license.version || 1) + 1;
+
+  state.recycleBin.push({
+    license: license,
+    deletedAt: new Date().toISOString()
   });
+
+  addAuditLog('ORQUESTADOR', 'ELIMINACIÓN_PAPELERA', `Cliente ${license.clientName} movido a la papelera de reciclaje (retención de 45 días).`);
+  saveToStorage();
+  window.syncLicenseToFirestore(license);
+  showToast(`Cliente ${license.clientName} movido a la papelera.`, "info");
+  renderAll();
 };
 
 window.restoreLicense = function(clientId) {
