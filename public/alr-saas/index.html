@@ -139,16 +139,41 @@
         <div class="saas-view active" id="view-dashboard">
           <div class="view-header">
             <div>
-              <h1 class="view-title">Panel General</h1>
-              <p class="view-subtitle">Consolidación en tiempo real de aplicaciones y gobernanza de licencias.</p>
+              <h1 class="view-title"><i class="ri-dashboard-fill" style="color: var(--accent); margin-right: 8px;"></i> Panel General Commander</h1>
+              <p class="view-subtitle">Consolidación en tiempo real de aplicaciones, estados de salud, fechas de renovación y alertas preventivas.</p>
             </div>
-            <button class="btn btn-danger-outline" style="height: 36px; padding: 0 16px; font-size: 10px; font-weight: 800; display: flex; align-items: center; gap: 6px;" onclick="window.clearExampleData()">
-              <i class="ri-delete-bin-3-line"></i> Limpiar Datos de Ejemplo
-            </button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <button class="btn btn-secondary" style="height: 36px; padding: 0 14px; font-size: 10px; font-weight: 800; display: flex; align-items: center; gap: 6px;" onclick="window.pullAllLicensesFromCloud()">
+                <i class="ri-cloud-line"></i> Sincronizar Nube
+              </button>
+              <button class="btn btn-danger-outline" style="height: 36px; padding: 0 14px; font-size: 10px; font-weight: 800; display: flex; align-items: center; gap: 6px;" onclick="window.clearExampleData()">
+                <i class="ri-delete-bin-3-line"></i> Limpiar Datos Ejemplo
+              </button>
+            </div>
           </div>
 
-          <!-- Métrica Grid -->
-          <div class="metric-grid">
+          <!-- BANNER DINÁMICO DE AVISO PREVENTIVO DE SUSPENSIÓN -->
+          <div id="dashboard-pre-suspension-alert" style="display: none; margin-bottom: 24px; padding: 16px 20px; border-radius: 16px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(245, 158, 11, 0.2); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; animation: pulse 1.5s infinite;">
+                  <i class="ri-alarm-warning-fill"></i>
+                </div>
+                <div>
+                  <div style="font-size: 13px; font-weight: 900; color: #f59e0b; letter-spacing: -0.2px;">⚠️ ALERTA PREVENTIVA DE SUSPENSIÓN DETECTADA</div>
+                  <div id="dashboard-alert-message" style="font-size: 11px; opacity: 0.8; margin-top: 2px;">Hay aplicaciones próximas a vencer en los próximos días. Envíe los avisos preventivos antes de la suspensión automática.</div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" style="height: 34px; font-size: 10px; font-weight: 900; background: #f59e0b; color: #000; border: none;" onclick="window.sendMassRenewalWarnings()">
+                  <i class="ri-notification-fill"></i> Enviar Avisos Preventivos
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grid de Métricas Principales -->
+          <div class="metric-grid" style="grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));">
             <div class="metric-card">
               <div>
                 <div class="metric-title">Apps en Catálogo</div>
@@ -172,6 +197,13 @@
             </div>
             <div class="metric-card">
               <div>
+                <div class="metric-title">Alerta / Por Vencer</div>
+                <div class="metric-value" id="dashboard-warning-clients" style="color: #f59e0b;">0</div>
+              </div>
+              <div class="metric-icon" style="color: #f59e0b;"><i class="ri-time-line"></i></div>
+            </div>
+            <div class="metric-card">
+              <div>
                 <div class="metric-title">MRR Estimado</div>
                 <div class="metric-value" id="dashboard-mrr" style="color: var(--accent);">$--</div>
               </div>
@@ -179,21 +211,33 @@
             </div>
           </div>
 
-          <!-- Grid de Secciones Especiales -->
-          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-top: 30px;">
+          <!-- Matriz Central del Panel General -->
+          <div style="display: grid; grid-template-columns: 2.2fr 1fr; gap: 24px; margin-top: 24px;">
             
-            <!-- Lista de Clientes Recientes -->
-            <div class="glass-panel">
-              <h2 style="font-size: 16px; font-weight: 900; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.5px;">Monitoreo Reciente de Licencias</h2>
+            <!-- Lista Master de Aplicaciones y Estado de Renovación -->
+            <div class="glass-panel" style="padding: 24px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                  <h2 style="font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+                    <i class="ri-apps-fill" style="color: var(--accent);"></i> Matriz Master de Aplicaciones e Instancias
+                  </h2>
+                  <p style="font-size: 11px; opacity: 0.6; margin-top: 2px;">Estado operacional, ciclos de renovación, avisos preventivos y controles de suspensión.</p>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn btn-secondary" style="height: 32px; font-size: 9px; font-weight: 800;" onclick="window.filterDashboardApps('all')">Todas</button>
+                  <button class="btn btn-secondary" style="height: 32px; font-size: 9px; font-weight: 800; color: #f59e0b;" onclick="window.filterDashboardApps('warning')">Por Vencer</button>
+                </div>
+              </div>
+
               <div style="overflow-x: auto;">
                 <table class="saas-table">
                   <thead>
                     <tr>
-                      <th>Cliente</th>
-                      <th>Aplicación Base</th>
-                      <th>Expiración</th>
-                      <th>Plan</th>
-                      <th>Estado</th>
+                      <th>Aplicación / Cliente</th>
+                      <th>Estado Operativo</th>
+                      <th>Período</th>
+                      <th>Expiración & Conteo Regresivo</th>
+                      <th style="text-align: right;">Gobernanza & Acciones</th>
                     </tr>
                   </thead>
                   <tbody id="dashboard-recent-table-body">
@@ -203,29 +247,43 @@
               </div>
             </div>
 
-            <!-- Distribución de Negocio -->
-            <div class="glass-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
-              <div>
-                <h2 style="font-size: 16px; font-weight: 900; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.5px;">Resumen Operativo</h2>
-                <div style="display: flex; flex-direction: column; gap: 16px;">
-                  <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-glass); border-radius: 16px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11px; font-weight: 900; opacity: 0.5; uppercase">Telemetría Core</span>
-                    <span style="font-size: 11px; font-weight: 900; color: var(--success);">ESTABLE</span>
+            <!-- Resumen de Control & Telemetría -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+              <div class="glass-panel" style="padding: 24px;">
+                <h2 style="font-size: 14px; font-weight: 900; margin-bottom: 18px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+                  <i class="ri-shield-check-fill" style="color: var(--success);"></i> Estado del Sistema
+                </h2>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-glass); border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 10px; font-weight: 800; opacity: 0.7; text-transform: uppercase;">Telemetría Core</span>
+                    <span style="font-size: 10px; font-weight: 900; color: var(--success);"><i class="ri-checkbox-circle-fill"></i> ESTABLE</span>
                   </div>
-                  <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-glass); border-radius: 16px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11px; font-weight: 900; opacity: 0.5; uppercase">API Gateway</span>
-                    <span style="font-size: 11px; font-weight: 900; color: var(--accent);">ACTIVO</span>
+                  <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-glass); border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 10px; font-weight: 800; opacity: 0.7; text-transform: uppercase;">API Gateway</span>
+                    <span style="font-size: 10px; font-weight: 900; color: var(--accent);"><i class="ri-flashlight-fill"></i> ONLINE</span>
                   </div>
-                  <div id="backup-telemetry-widget" style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-glass); border-radius: 16px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11px; font-weight: 900; opacity: 0.5; uppercase">Último Respaldo</span>
-                    <span id="backup-widget-status" style="font-size: 11px; font-weight: 900; color: var(--text-muted);">CARGANDO...</span>
+                  <div id="backup-telemetry-widget" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-glass); border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 10px; font-weight: 800; opacity: 0.7; text-transform: uppercase;">Último Respaldo</span>
+                    <span id="backup-widget-status" style="font-size: 10px; font-weight: 900; color: var(--text-muted);">CARGANDO...</span>
                   </div>
                 </div>
               </div>
-              <div style="margin-top: 30px; text-align: center; border-top: 1px solid var(--border-glass); padding-top: 20px;">
-                <button class="btn btn-primary" style="width: 100%; height: 44px; font-size: 10px;" onclick="switchView('wizard')">
-                  + Aprovisionar Nuevo Cliente
-                </button>
+
+              <!-- Accesos Rápidos de Gobernanza -->
+              <div class="glass-panel" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between; flex-1: 1;">
+                <div>
+                  <h2 style="font-size: 14px; font-weight: 900; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+                    <i class="ri-rocket-2-fill" style="color: var(--accent);"></i> Acceso Rápido
+                  </h2>
+                  <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="btn btn-primary" style="width: 100%; height: 42px; font-size: 10px; font-weight: 900;" onclick="switchView('wizard')">
+                      <i class="ri-magic-fill"></i> + Aprovisionar Nuevo Cliente
+                    </button>
+                    <button class="btn btn-secondary" style="width: 100%; height: 38px; font-size: 10px; font-weight: 800;" onclick="window.sendMassRenewalWarnings()">
+                      <i class="ri-notification-badge-line"></i> Notificar a Clientes
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 

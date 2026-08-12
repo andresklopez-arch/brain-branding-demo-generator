@@ -1041,20 +1041,78 @@ function renderAll() {
   populateWizardSelects();
 }
 
+window.dashboardFilter = 'all';
+
+window.filterDashboardApps = function(mode) {
+  window.dashboardFilter = mode;
+  renderDashboardTable();
+};
+
+function getDaysUntilExpiry(expiryDateStr) {
+  if (!expiryDateStr || expiryDateStr === 'Ilimitado') {
+    return { days: 9999, text: 'Vigencia Permanente', status: 'OK' };
+  }
+  const expTime = new Date(expiryDateStr).getTime();
+  if (isNaN(expTime)) {
+    return { days: 9999, text: 'Vigencia Permanente', status: 'OK' };
+  }
+  
+  const now = Date.now();
+  const diffMs = expTime - now;
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays < 0) {
+    return { days: diffDays, text: `Expiró hace ${Math.abs(diffDays)} d`, status: 'EXPIRED' };
+  } else if (diffDays === 0) {
+    return { days: 0, text: 'Vence Hoy ⚠️', status: 'CRITICAL' };
+  } else if (diffDays <= 7) {
+    return { days: diffDays, text: `Quedan ${diffDays} día(s) ⚠️`, status: 'WARNING' };
+  } else {
+    return { days: diffDays, text: `Quedan ${diffDays} día(s)`, status: 'OK' };
+  }
+}
+
 function renderMetrics() {
   const totalApps = state.apps.length;
   const totalClients = state.licenses.length;
   const activeClients = state.licenses.filter(l => l.status === 'ACTIVE').length;
   
+  let warningClientsCount = 0;
+  state.licenses.forEach(l => {
+    const expiryInfo = getDaysUntilExpiry(l.expiryDate || l.expirationDate);
+    if (expiryInfo.status === 'WARNING' || expiryInfo.status === 'CRITICAL' || expiryInfo.status === 'EXPIRED') {
+      warningClientsCount++;
+    }
+  });
+
   let totalMRR = 0;
   state.licenses.filter(l => l.status === 'ACTIVE').forEach(l => {
     totalMRR += Number(l.dailyCost || 0) * 30.4;
   });
 
-  document.getElementById('dashboard-total-apps').innerText = totalApps;
-  document.getElementById('dashboard-total-clients').innerText = totalClients;
-  document.getElementById('dashboard-active-clients').innerText = activeClients;
-  document.getElementById('dashboard-mrr').innerText = '$' + Math.round(totalMRR).toLocaleString('es-MX');
+  const totalAppsElem = document.getElementById('dashboard-total-apps');
+  const totalClientsElem = document.getElementById('dashboard-total-clients');
+  const activeClientsElem = document.getElementById('dashboard-active-clients');
+  const warningClientsElem = document.getElementById('dashboard-warning-clients');
+  const mrrElem = document.getElementById('dashboard-mrr');
+
+  if (totalAppsElem) totalAppsElem.innerText = totalApps;
+  if (totalClientsElem) totalClientsElem.innerText = totalClients;
+  if (activeClientsElem) activeClientsElem.innerText = activeClients;
+  if (warningClientsElem) warningClientsElem.innerText = warningClientsCount;
+  if (mrrElem) mrrElem.innerText = '$' + Math.round(totalMRR).toLocaleString('es-MX');
+
+  // Control del banner dinámico de alertas preventivas de suspensión
+  const alertBanner = document.getElementById('dashboard-pre-suspension-alert');
+  const alertMsg = document.getElementById('dashboard-alert-message');
+  if (alertBanner && alertMsg) {
+    if (warningClientsCount > 0) {
+      alertBanner.style.display = 'block';
+      alertMsg.innerHTML = `Hay <strong>${warningClientsCount} aplicación(es)</strong> próximas a vencer o en periodo crítico. Notifique a los establecimientos antes de la suspensión automática del servicio.`;
+    } else {
+      alertBanner.style.display = 'none';
+    }
+  }
 }
 
 function renderDashboardTable() {
@@ -1062,34 +1120,156 @@ function renderDashboardTable() {
   if (!container) return;
   
   if (state.licenses.length === 0) {
-    container.innerHTML = `<tr><td colspan="5" style="text-align:center; opacity:0.5; font-style:italic;">No hay licencias activas actualmente. <a href="#" onclick="window.pullAllLicensesFromCloud(); return false;" style="color:var(--accent); text-decoration:underline; font-weight:bold; margin-left:10px;">¿Faltan clientes? Sincronizar desde la nube</a></td></tr>`;
+    container.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 40px; opacity:0.6; font-style:italic;">No hay licencias ni aplicaciones registradas en este momento. <a href="#" onclick="window.pullAllLicensesFromCloud(); return false;" style="color:var(--accent); text-decoration:underline; font-weight:bold; margin-left:10px;">¿Faltan datos? Sincronizar desde la nube</a></td></tr>`;
     return;
   }
 
-  // Mostrar los últimos 5
-  const list = [...state.licenses].reverse().slice(0, 5);
+  let list = [...state.licenses];
+  if (window.dashboardFilter === 'warning') {
+    list = list.filter(l => {
+      const exp = getDaysUntilExpiry(l.expiryDate || l.expirationDate);
+      return exp.status === 'WARNING' || exp.status === 'CRITICAL' || exp.status === 'EXPIRED';
+    });
+  }
+
+  if (list.length === 0) {
+    container.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; opacity:0.5; font-style:italic;">No hay aplicaciones que coincidan con el filtro seleccionado.</td></tr>`;
+    return;
+  }
+
   container.innerHTML = list.map(l => {
-    const app = state.apps.find(a => a.id === l.appId) || { name: 'App Desconocida' };
-    const expiry = l.expiryDate ? new Date(l.expiryDate).toLocaleDateString() : 'Ilimitado';
-    const isPlanPaid = l.currentPlan === 'PAGADO';
-    const planBadge = isPlanPaid
-      ? `<span class="status-badge" style="background: rgba(34, 197, 94, 0.1); color: var(--success); border: 1px solid rgba(34, 197, 94, 0.2);">PAGADO</span>`
-      : `<span class="status-badge" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">SIN PAGAR</span>`;
+    const app = state.apps.find(a => a.id === l.appId) || { name: l.appName || 'Aplicación', icon: 'ri-apps-fill', color: '#10b981' };
+    const expiryDateStr = l.expiryDate || l.expirationDate;
+    const expiryInfo = getDaysUntilExpiry(expiryDateStr);
+    const dateFormatted = expiryDateStr && expiryDateStr !== 'Ilimitado' ? new Date(expiryDateStr).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Vigencia Permanente';
+
     const isOnline = l.status === 'ACTIVE';
-    const statusBadge = isOnline
-      ? `<span class="status-badge active">ONLINE</span>`
-      : `<span class="status-badge suspended">OFFLINE</span>`;
+    let statusBadge = '';
+    if (isOnline) {
+      if (expiryInfo.status === 'WARNING' || expiryInfo.status === 'CRITICAL') {
+        statusBadge = `<span class="status-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 900;"><i class="ri-error-warning-fill"></i> POR VENCER</span>`;
+      } else {
+        statusBadge = `<span class="status-badge active" style="font-weight: 900;"><i class="ri-checkbox-circle-fill"></i> LIVE / ACTIVA</span>`;
+      }
+    } else {
+      statusBadge = `<span class="status-badge suspended" style="font-weight: 900;"><i class="ri-close-circle-fill"></i> SUSPENDIDA</span>`;
+    }
+
+    let countdownBadge = '';
+    if (expiryInfo.status === 'EXPIRED') {
+      countdownBadge = `<span style="font-size: 9px; font-weight: 900; background: rgba(239,68,68,0.15); color: var(--danger); padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(239,68,68,0.3); font-family: var(--font-heading);">${expiryInfo.text}</span>`;
+    } else if (expiryInfo.status === 'WARNING' || expiryInfo.status === 'CRITICAL') {
+      countdownBadge = `<span style="font-size: 9px; font-weight: 900; background: rgba(245,158,11,0.15); color: #f59e0b; padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.3); font-family: var(--font-heading); animation: pulse 1.5s infinite;">${expiryInfo.text}</span>`;
+    } else {
+      countdownBadge = `<span style="font-size: 9px; font-weight: 800; opacity: 0.6;">${expiryInfo.text}</span>`;
+    }
+
+    const periodStr = l.currentPlan === 'PRO_ULTIMATE' || l.currentPlan === 'ENTERPRISE'
+      ? 'Mensual ($' + Math.round(Number(l.monthlyFee || 499)) + ' MXN)'
+      : (l.currentPlan || 'Mensual');
+
+    const appIcon = app.icon || 'ri-apps-fill';
+    const appColor = app.color || '#10b981';
+    const clientUrl = l.appUrl || `https://kuatsi.web.app/`;
+
     return `
       <tr>
-        <td style="font-weight: 800;">${escapeHtml(l.clientName)}</td>
-        <td style="opacity: 0.7;">${escapeHtml(app.name)}</td>
-        <td style="opacity: 0.7;">${escapeHtml(expiry)}</td>
-        <td>${planBadge}</td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 34px; height: 34px; border-radius: 10px; background: ${appColor}22; border: 1px solid ${appColor}55; color: ${appColor}; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
+              <i class="${escapeHtml(appIcon)}"></i>
+            </div>
+            <div>
+              <div style="font-weight: 900; font-size: 12px; color: #fff;">${escapeHtml(l.clientName)}</div>
+              <div style="font-size: 9.5px; opacity: 0.5; font-weight: 800; text-transform: uppercase;">${escapeHtml(app.name || l.appName)}</div>
+            </div>
+          </div>
+        </td>
         <td>${statusBadge}</td>
+        <td>
+          <div style="font-size: 11px; font-weight: 800; opacity: 0.85;">${escapeHtml(periodStr)}</div>
+        </td>
+        <td>
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 11px; font-weight: 800;">${escapeHtml(dateFormatted)}</span>
+            ${countdownBadge}
+          </div>
+        </td>
+        <td style="text-align: right;">
+          <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+            <a href="${escapeHtml(clientUrl)}" target="_blank" class="btn btn-secondary" style="height: 30px; width: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center;" title="Abrir App en Vivo">
+              <i class="ri-external-link-line" style="font-size: 13px;"></i>
+            </a>
+            <button class="btn btn-secondary" style="height: 30px; padding: 0 10px; font-size: 9px; font-weight: 900; color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); background: rgba(245,158,11,0.05);" onclick="window.sendRenewalNotice('${escapeHtml(l.id)}')" title="Enviar Aviso Preventivo antes de suspender">
+              <i class="ri-notification-badge-fill"></i> Avisar
+            </button>
+            <button class="btn btn-secondary" style="height: 30px; padding: 0 10px; font-size: 9px; font-weight: 900; color: var(--success); border: 1px solid rgba(34,197,94,0.3); background: rgba(34,197,94,0.05);" onclick="window.quickRenewLicense('${escapeHtml(l.id)}')" title="Renovar +30 Días">
+              <i class="ri-refresh-line"></i> Renovar
+            </button>
+            <button class="btn btn-secondary" style="height: 30px; width: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: ${isOnline ? 'var(--danger)' : 'var(--success)'};" onclick="window.toggleLicenseStatus('${escapeHtml(l.id)}', '${l.status}')" title="${isOnline ? 'Suspender Acceso' : 'Reactivar Acceso'}">
+              <i class="${isOnline ? 'ri-shut-down-line' : 'ri-play-circle-line'}" style="font-size: 13px;"></i>
+            </button>
+          </div>
+        </td>
       </tr>
     `;
   }).join('');
 }
+
+window.sendRenewalNotice = function(clientId) {
+  const license = state.licenses.find(l => l.id === clientId);
+  if (!license) return;
+
+  const expiryDateFormatted = license.expiryDate || license.expirationDate ? new Date(license.expiryDate || license.expirationDate).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Próximamente';
+
+  const messageText = `⚠️ *AVISO PREVENTIVO DE RENOVACIÓN - ALR SAAS*\n\nEstimado cliente *${license.clientName}*,\nLe recordamos que su suscripción para la aplicación *${license.appName}* se encuentra próxima a su fecha de renovación (*${expiryDateFormatted}*).\n\nPara garantizar la continuidad operativa de su punto de venta y evitar la suspensión automática del servicio, le solicitamos realizar la renovación a la brevedad.\n\nAtentamente,\n*ALR SaaS Central Commander*`;
+
+  if (typeof window.sendTelegramNotification === 'function') {
+    window.sendTelegramNotification(messageText, 'WARNING');
+  }
+
+  addAuditLog('GOVERNANCE', 'AVISO_PREVENTIVO', `Aviso preventivo de suspensión enviado a cliente: ${license.clientName} (${license.appName}). Fecha expiración: ${expiryDateFormatted}`);
+
+  showToast(`⚡ Aviso preventivo enviado a ${license.clientName}`, "warning");
+};
+
+window.sendMassRenewalWarnings = function() {
+  let count = 0;
+  state.licenses.forEach(l => {
+    const expiryInfo = getDaysUntilExpiry(l.expiryDate || l.expirationDate);
+    if (expiryInfo.status === 'WARNING' || expiryInfo.status === 'CRITICAL' || expiryInfo.status === 'EXPIRED') {
+      window.sendRenewalNotice(l.id);
+      count++;
+    }
+  });
+
+  if (count === 0) {
+    showToast("Todas las aplicaciones se encuentran vigentes y al día.", "success");
+  } else {
+    showToast(`Se han emitido ${count} aviso(s) preventivo(s) de suspensión.`, "warning");
+  }
+};
+
+window.quickRenewLicense = function(clientId) {
+  const license = state.licenses.find(l => l.id === clientId);
+  if (!license) return;
+
+  const currentExp = license.expiryDate || license.expirationDate ? new Date(license.expiryDate || license.expirationDate).getTime() : Date.now();
+  const baseTime = currentExp > Date.now() ? currentExp : Date.now();
+  const newExpDate = new Date(baseTime + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  license.expiryDate = newExpDate;
+  license.expirationDate = newExpDate;
+  license.status = 'ACTIVE';
+  license.version = (license.version || 1) + 1;
+
+  addAuditLog('GOVERNANCE', 'RENOVACIÓN_RÁPIDA', `Licencia renovada por +30 Días para cliente: ${license.clientName}. Nueva expiración: ${new Date(newExpDate).toLocaleDateString('es-MX')}`);
+
+  saveToStorage();
+  window.syncLicenseToFirestore(license);
+  showToast(`¡Licencia de ${license.clientName} renovada con éxito (+30 días)!`, "success");
+  renderAll();
+};
 
 function renderAppsPortfolio() {
   const container = document.getElementById('apps-portfolio-container');
