@@ -2446,22 +2446,18 @@ window.toggleLicenseStatus = function(clientId, currentStatus) {
 
   const isCurrentlyActive = (currentStatus === 'ACTIVE' || currentStatus === 'active' || currentStatus === true || license.status === 'ACTIVE' || license.status === 'active');
   const nextStatus = isCurrentlyActive ? 'SUSPENDED' : 'ACTIVE';
-  const actionLabel = nextStatus === 'ACTIVE' ? 'Activar Licencia' : 'Suspender Licencia';
 
-  requestAdminVerification(`${actionLabel} (${license.clientName})`, () => {
-    license.status = nextStatus;
-    license.version = (license.version || 1) + 1;
-    addAuditLog('API_GATEWAY', nextStatus === 'ACTIVE' ? 'ACTIVACIÓN' : 'SUSPENSIÓN', `La licencia del cliente ${license.clientName} ha sido cambiada a ${nextStatus}.`);
-    
-    // Alerta de Telegram (Sugerencia 1)
-    const tgMessage = `🔔 <b>[TELEMETRÍA ALR SAAS]</b> 🔔\n\nEl cliente <b>${license.clientName}</b> (${license.id}) ha cambiado de estado operativo.\n<b>Nuevo Estado:</b> ${nextStatus === 'ACTIVE' ? 'ONLINE (En Línea) 🟢' : 'OFFLINE (Fuera de Línea) 🔴'}\n<b>Plan actual:</b> ${license.currentPlan}\n<b>Fecha:</b> ${new Date().toLocaleString()}`;
-    window.sendTelegramNotification(tgMessage);
+  license.status = nextStatus;
+  license.version = (license.version || 1) + 1;
+  addAuditLog('API_GATEWAY', nextStatus === 'ACTIVE' ? 'ACTIVACIÓN' : 'SUSPENSIÓN', `La licencia del cliente ${license.clientName} ha sido cambiada a ${nextStatus}.`);
+  
+  const tgMessage = `🔔 <b>[TELEMETRÍA ALR SAAS]</b> 🔔\n\nEl cliente <b>${license.clientName}</b> (${license.id}) ha cambiado de estado operativo.\n<b>Nuevo Estado:</b> ${nextStatus === 'ACTIVE' ? 'ONLINE (En Línea) 🟢' : 'OFFLINE (Fuera de Línea) 🔴'}\n<b>Plan actual:</b> ${license.currentPlan}\n<b>Fecha:</b> ${new Date().toLocaleString()}`;
+  window.sendTelegramNotification(tgMessage);
 
-    saveToStorage();
-    window.syncLicenseToFirestore(license);
-    showToast(`Cliente ${license.clientName} ${nextStatus === 'ACTIVE' ? 'en línea' : 'fuera de línea'}.`, nextStatus === 'ACTIVE' ? 'success' : 'danger');
-    renderAll();
-  });
+  saveToStorage();
+  window.syncLicenseToFirestore(license);
+  showToast(`Cliente ${license.clientName}: Estado cambiado a ${nextStatus === 'ACTIVE' ? 'ONLINE 🟢' : 'SUSPENDIDO 🔴'}.`, nextStatus === 'ACTIVE' ? 'success' : 'danger');
+  renderAll();
 };
 
 window.deleteLicense = function(clientId) {
@@ -5944,33 +5940,44 @@ window.syncLicenseToFirestore = async function(license) {
 
   // 📡 RESPALDO DE SINCRONIZACIÓN INMEDIATA VÍA REST API (Garantiza propagación a Kuatsi y aplicaciones remotas)
   try {
-    const docId = license.id;
-    const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses/${docId}`;
-    const payload = {
-      fields: {
-        id: { stringValue: license.id || '' },
-        clientName: { stringValue: license.clientName || '' },
-        appName: { stringValue: license.appName || '' },
-        appId: { stringValue: license.appId || '' },
-        apiKey: { stringValue: license.apiKey || '' },
-        status: { stringValue: license.status || 'ACTIVE' },
-        expiryDate: { stringValue: license.expiryDate || license.expirationDate || '2099-12-31T23:59:59Z' },
-        expirationDate: { stringValue: license.expiryDate || license.expirationDate || '2099-12-31T23:59:59Z' },
-        currentPlan: { stringValue: license.currentPlan || 'PAGADO' },
-        dailyCost: { doubleValue: Number(license.dailyCost || 0) },
-        version: { integerValue: String(license.version || 1) },
-        lastUpdated: { stringValue: new Date().toISOString() }
+    const candidateIds = Array.from(new Set([
+      license.id,
+      license.appId,
+      'kuatsi_central',
+      'kuatsi',
+      'kuatsi-cafeteria'
+    ].filter(Boolean)));
+
+    for (const docId of candidateIds) {
+      if (license.id.includes('kuatsi') || docId.includes('kuatsi') || docId === license.id) {
+        const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses/${docId}`;
+        const payload = {
+          fields: {
+            id: { stringValue: docId },
+            clientName: { stringValue: license.clientName || '' },
+            appName: { stringValue: license.appName || '' },
+            appId: { stringValue: license.appId || '' },
+            apiKey: { stringValue: license.apiKey || '' },
+            status: { stringValue: (license.status || 'ACTIVE').toUpperCase() },
+            expiryDate: { stringValue: license.expiryDate || license.expirationDate || '2099-12-31T23:59:59Z' },
+            expirationDate: { stringValue: license.expiryDate || license.expirationDate || '2099-12-31T23:59:59Z' },
+            currentPlan: { stringValue: license.currentPlan || 'PAGADO' },
+            dailyCost: { doubleValue: Number(license.dailyCost || 0) },
+            version: { integerValue: String(license.version || 1) },
+            lastUpdated: { stringValue: new Date().toISOString() }
+          }
+        };
+        fetch(restUrl, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(res => {
+          if (res.ok) {
+            console.log(`[REST SYNC OK] Documento "${docId}" actualizado a estatus "${license.status}" en Firestore.`);
+          }
+        }).catch(e => console.warn('[REST SYNC WARN]', e));
       }
-    };
-    fetch(restUrl, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).then(res => {
-      if (res.ok) {
-        console.log(`[REST SYNC OK] Estado de licencia "${license.clientName}" (${license.status}) propagado exitosamente en Firestore.`);
-      }
-    }).catch(e => console.warn('[REST SYNC WARN]', e));
+    }
   } catch (restErr) {
     console.warn('[REST SYNC ERR]', restErr);
   }
