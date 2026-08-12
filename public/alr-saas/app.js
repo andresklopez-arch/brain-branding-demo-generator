@@ -1274,38 +1274,61 @@ function renderDashboardTable() {
         <td>
           ${(() => {
             const isPlanPaid = l.currentPlan === 'PAGADO';
-            const suspensionInfo = window.calculateNextSuspensionDate ? window.calculateNextSuspensionDate(l) : { formattedDate: dateFormatted, daysLeft: 30 };
-            if (isPlanPaid) {
-              return `
-                <div style="display: flex; flex-direction: column; gap: 3px; cursor: pointer;" onclick="window.openRenewalConfigModal('${escapeHtml(l.id)}')" title="✏️ Clic para editar la fecha de renovación contractual">
-                  <span style="font-size: 11px; font-weight: 900; color: #fff; display: inline-flex; align-items: center; gap: 4px;">
-                    Renovación: ${escapeHtml(dateFormatted)} <i class="ri-calendar-edit-line" style="font-size: 10px; color: var(--accent);"></i>
-                  </span>
-                  <span style="font-size: 9px; font-weight: 900; background: rgba(34, 197, 94, 0.15); color: #2ecc71; padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(34, 197, 94, 0.3); font-family: var(--font-heading); display: inline-flex; align-items: center; gap: 4px;" title="Cliente al día. Sin riesgo de suspensión por pago.">
-                    <i class="ri-shield-check-fill"></i> PAGADO - Sin Suspensión (${l.paymentPeriod || 'Mensual'})
-                  </span>
-                </div>
-              `;
-            } else {
-              const isOverdue = suspensionInfo.isOverdue || suspensionInfo.daysLeft <= 0;
-              const badgeBg = isOverdue ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.15)';
-              const badgeBorder = isOverdue ? 'rgba(239, 68, 68, 0.6)' : 'rgba(239, 68, 68, 0.35)';
-              const badgeColor = '#ef4444';
-              const badgeText = isOverdue 
-                ? `🔴 ¡CORTE DE SERVICIO HOY! (${l.paymentPeriod || 'Mensual'})`
-                : `🔴 Suspensión en ${suspensionInfo.daysLeft} día(s) (${l.paymentPeriod || 'Mensual'})`;
+            const suspensionInfo = window.calculateNextSuspensionDate ? window.calculateNextSuspensionDate(l) : { formattedDate: dateFormatted, daysLeft: 30, isPaid: isPlanPaid };
+            const daysLeft = suspensionInfo.daysLeft;
 
-              return `
-                <div style="display: flex; flex-direction: column; gap: 3px; cursor: pointer;" onclick="window.openRenewalConfigModal('${escapeHtml(l.id)}')" title="✏️ Clic para editar fecha o registrar pago">
-                  <span style="font-size: 11px; font-weight: 900; color: #ef4444; display: inline-flex; align-items: center; gap: 4px;">
-                    Próx. Suspensión: ${escapeHtml(suspensionInfo.formattedDate)} <i class="ri-alarm-warning-line" style="font-size: 10px; color: #ef4444;"></i>
-                  </span>
-                  <span style="font-size: 9px; font-weight: 900; background: ${badgeBg}; color: ${badgeColor}; padding: 2px 8px; border-radius: 10px; border: 1px solid ${badgeBorder}; font-family: var(--font-heading); animation: pulse 1.5s infinite;">
-                    ${badgeText}
-                  </span>
-                </div>
-              `;
+            let color = '#2ecc71';
+            let bg = 'rgba(46, 204, 113, 0.15)';
+            let border = 'rgba(46, 204, 113, 0.35)';
+            let icon = 'ri-shield-check-fill';
+            let badgeText = '';
+
+            if (isPlanPaid || daysLeft > 15) {
+              // 🟢 VERDE (SEGURO / AL DÍA: Más de 15 días o PAGADO)
+              color = '#2ecc71';
+              bg = 'rgba(46, 204, 113, 0.15)';
+              border = 'rgba(46, 204, 113, 0.35)';
+              icon = 'ri-shield-check-fill';
+              badgeText = isPlanPaid 
+                ? `🟢 PAGADO - Sin Suspensión (${l.paymentPeriod || 'Mensual'})`
+                : `🟢 AL DÍA: Suspensión en ${daysLeft} día(s) (${l.paymentPeriod || 'Mensual'})`;
+            } else if (daysLeft >= 8 && daysLeft <= 15) {
+              // 🟡 ÁMBAR / AMARILLO (PRECAUCIÓN: entre 8 y 15 días)
+              color = '#f1c40f';
+              bg = 'rgba(241, 196, 15, 0.18)';
+              border = 'rgba(241, 196, 15, 0.45)';
+              icon = 'ri-error-warning-fill';
+              badgeText = `🟡 PRECAUCIÓN: Suspensión en ${daysLeft} día(s) (${l.paymentPeriod || 'Mensual'})`;
+            } else if (daysLeft >= 4 && daysLeft <= 7) {
+              // 🟠 NARANJA (URGENTE / ALERTA DE CORTE: entre 4 y 7 días)
+              color = '#e67e22';
+              bg = 'rgba(230, 126, 34, 0.22)';
+              border = 'rgba(230, 126, 34, 0.55)';
+              icon = 'ri-alarm-warning-fill';
+              badgeText = `🟠 ALERTA: Suspensión en ${daysLeft} día(s) (${l.paymentPeriod || 'Mensual'})`;
+            } else {
+              // 🔴 ROJO (CRÍTICO / SUSPENSIÓN INMINENTE O CORTE HOY: 3 días o menos / vencido)
+              color = '#ef4444';
+              bg = 'rgba(239, 68, 68, 0.25)';
+              border = 'rgba(239, 68, 68, 0.6)';
+              icon = 'ri-close-circle-fill';
+              badgeText = daysLeft <= 0 
+                ? `🔴 ¡CORTE DE SERVICIO HOY! (${l.paymentPeriod || 'Mensual'})`
+                : `🔴 URGENTE: Suspensión en ${daysLeft} día(s) (${l.paymentPeriod || 'Mensual'})`;
             }
+
+            const animationStyle = (daysLeft <= 15 && !isPlanPaid) ? 'animation: pulse 1.5s infinite;' : '';
+
+            return `
+              <div style="display: flex; flex-direction: column; gap: 3px; cursor: pointer;" onclick="window.openPaymentMonthsModal('${escapeHtml(l.id)}')" title="💳 Clic para registrar meses pagados y gestionar suspensión">
+                <span style="font-size: 11px; font-weight: 900; color: ${isPlanPaid ? '#fff' : color}; display: inline-flex; align-items: center; gap: 4px;">
+                  ${isPlanPaid ? `Renovación: ${escapeHtml(dateFormatted)}` : `Próx. Suspensión: ${escapeHtml(suspensionInfo.formattedDate)}`} <i class="ri-wallet-3-line" style="font-size: 10px; color: var(--accent);"></i>
+                </span>
+                <span style="font-size: 9px; font-weight: 900; background: ${bg}; color: ${color}; padding: 2px 8px; border-radius: 10px; border: 1px solid ${border}; font-family: var(--font-heading); display: inline-flex; align-items: center; gap: 4px; ${animationStyle}">
+                  <i class="${icon}"></i> ${badgeText}
+                </span>
+              </div>
+            `;
           })()}
         </td>
         <td style="text-align: right;">
@@ -2610,6 +2633,139 @@ window.togglePlanStatus = function(clientId) {
 
   saveToStorage();
   window.syncLicenseToFirestore(license);
+  renderAll();
+};
+
+// 💳 TARJETA MODAL PARA REGISTRO DE MESES PAGADOS & SEMÁFORO DE SUSPENSIÓN (VERDE, ÁMBAR, NARANJA, ROJO)
+window.openPaymentMonthsModal = function(clientId) {
+  const license = state.licenses.find(l => l.id === clientId || l.appId === clientId);
+  if (!license) return;
+
+  const overlay = document.getElementById('modal-overlay');
+  const box = document.getElementById('modal-box');
+  if (!overlay || !box) return;
+
+  const calc = window.calculateAdjustedMonthlyFee(license);
+  const suspensionInfo = window.calculateNextSuspensionDate(license);
+  const isPaid = (license.currentPlan === 'PAGADO');
+
+  let badgeColor = '#2ecc71';
+  let badgeLabel = '🟢 SEGURO / AL DÍA (MÁS DE 15 DÍAS)';
+  if (!isPaid) {
+    if (suspensionInfo.daysLeft > 15) { badgeColor = '#2ecc71'; badgeLabel = '🟢 SEGURO / AL DÍA (MÁS DE 15 DÍAS)'; }
+    else if (suspensionInfo.daysLeft >= 8) { badgeColor = '#f1c40f'; badgeLabel = '🟡 ÁMBAR - PRECAUCIÓN (8 A 15 DÍAS)'; }
+    else if (suspensionInfo.daysLeft >= 4) { badgeColor = '#e67e22'; badgeLabel = '🟠 NARANJA - URGENTE (4 A 7 DÍAS)'; }
+    else { badgeColor = '#ef4444'; badgeLabel = '🔴 ROJO - SUSPENSIÓN INMINENTE / CORTE (3 DÍAS O MENOS)'; }
+  }
+
+  box.innerHTML = `
+    <div style="padding: 26px; max-width: 560px; width: 100%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px;">
+        <div>
+          <h2 style="font-size: 15px; font-weight: 900; color: var(--accent); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+            <i class="ri-wallet-3-fill"></i> Registro de Pagos & Abono de Meses
+          </h2>
+          <div style="font-size: 11px; opacity: 0.6; margin-top: 2px;">Cliente: <strong>${escapeHtml(license.clientName)}</strong> (${escapeHtml(license.id)})</div>
+        </div>
+        <button onclick="closeModal()" style="background: none; border: none; color: #fff; opacity: 0.6; cursor: pointer; font-size: 22px;">&times;</button>
+      </div>
+
+      <!-- Tarjeta del Semáforo de Estado de Pago y Suspensión -->
+      <div style="background: rgba(0, 0, 0, 0.45); border: 1.5px solid ${badgeColor}; border-radius: 14px; padding: 14px; margin-bottom: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: ${badgeColor}; letter-spacing: 0.5px;">
+            ${badgeLabel}
+          </span>
+          <span style="font-size: 9px; font-weight: 900; background: ${badgeColor}22; color: ${badgeColor}; padding: 3px 10px; border-radius: 12px; border: 1px solid ${badgeColor}44;">
+            ${isPaid ? '🛡️ Sin Riesgo de Suspensión' : `🔴 Corte: ${suspensionInfo.formattedDate} (${suspensionInfo.daysLeft}d restantes)`}
+          </span>
+        </div>
+        <div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">
+          Mensualidad Base / Ajustada (+6%): <strong style="color:#10b981;">${calc.formattedAdjusted}</strong> | Frecuencia: <strong>${license.paymentPeriod || 'Mensual'}</strong>
+        </div>
+      </div>
+
+      <!-- Selector Rápido de Meses Abonados -->
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <label style="font-size: 11px; font-weight: 800; color: #fff;">💳 Selecciona los Meses o Períodos a Registrar como Pagados:</label>
+        
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          <button class="btn btn-secondary" onclick="window.processPaymentMonths('${escapeHtml(license.id)}', 1)" style="height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.08);">
+            <span style="font-size: 11px; font-weight: 900; color: #2ecc71;">+1 Mes</span>
+            <span style="font-size: 8.5px; opacity: 0.7; color: #a0aec0;">$${(calc.adjustedFee * 1).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2})} MXN</span>
+          </button>
+          
+          <button class="btn btn-secondary" onclick="window.processPaymentMonths('${escapeHtml(license.id)}', 2)" style="height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.08);">
+            <span style="font-size: 11px; font-weight: 900; color: #2ecc71;">+2 Meses</span>
+            <span style="font-size: 8.5px; opacity: 0.7; color: #a0aec0;">$${(calc.adjustedFee * 2).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2})} MXN</span>
+          </button>
+          
+          <button class="btn btn-secondary" onclick="window.processPaymentMonths('${escapeHtml(license.id)}', 3)" style="height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.08);">
+            <span style="font-size: 11px; font-weight: 900; color: #2ecc71;">+3 Meses (Trim.)</span>
+            <span style="font-size: 8.5px; opacity: 0.7; color: #a0aec0;">$${(calc.adjustedFee * 3).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2})} MXN</span>
+          </button>
+          
+          <button class="btn btn-secondary" onclick="window.processPaymentMonths('${escapeHtml(license.id)}', 6)" style="height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-color: rgba(0,229,255,0.3); background: rgba(0,229,255,0.08);">
+            <span style="font-size: 11px; font-weight: 900; color: var(--accent);">+6 Meses (Sem.)</span>
+            <span style="font-size: 8.5px; opacity: 0.7; color: #a0aec0;">$${(calc.adjustedFee * 6).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2})} MXN</span>
+          </button>
+          
+          <button class="btn btn-secondary" onclick="window.processPaymentMonths('${escapeHtml(license.id)}', 12)" style="height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-color: rgba(0,229,255,0.3); background: rgba(0,229,255,0.08);">
+            <span style="font-size: 11px; font-weight: 900; color: var(--accent);">+12 Meses (1 Año)</span>
+            <span style="font-size: 8.5px; opacity: 0.7; color: #a0aec0;">$${(calc.adjustedFee * 12).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2})} MXN</span>
+          </button>
+
+          <button class="btn btn-secondary" onclick="window.togglePlanStatus('${escapeHtml(license.id)}'); closeModal();" style="height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-color: ${isPaid ? 'rgba(239,68,68,0.4)' : 'rgba(34,197,94,0.4)'}; background: ${isPaid ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)'};">
+            <span style="font-size: 10px; font-weight: 900; color: ${isPaid ? '#ef4444' : '#2ecc71'};">
+              ${isPaid ? 'Marcar NO_PAGADO 🔴' : 'Marcar PAGADO 🟢'}
+            </span>
+            <span style="font-size: 8px; opacity: 0.7;">Cambio Manual 1-Clic</span>
+          </button>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; border-top: 1px solid var(--border-glass); padding-top: 14px;">
+          <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  overlay.classList.add('active');
+  overlay.style.display = 'flex';
+};
+
+window.processPaymentMonths = function(clientId, monthsCount) {
+  const license = state.licenses.find(l => l.id === clientId || l.appId === clientId);
+  if (!license) return;
+
+  const calc = window.calculateAdjustedMonthlyFee(license);
+  const totalPaid = Math.round(calc.adjustedFee * monthsCount * 100) / 100;
+  const formattedTotal = '$' + totalPaid.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN';
+
+  const now = new Date();
+  const currentExp = (license.expiryDate || license.expirationDate) ? new Date(license.expiryDate || license.expirationDate) : now;
+  const baseDate = (currentExp && !isNaN(currentExp.getTime()) && currentExp > now) ? currentExp : now;
+  
+  baseDate.setMonth(baseDate.getMonth() + monthsCount);
+  const newExpiryIso = baseDate.toISOString();
+
+  license.expiryDate = newExpiryIso;
+  license.expirationDate = newExpiryIso;
+  license.currentPlan = 'PAGADO';
+  if (license.status === 'SUSPENDED') {
+    license.status = 'ACTIVE';
+  }
+  license.version = (license.version || 1) + 1;
+
+  addAuditLog('FINANZAS', 'REGISTRO_PAGO_ADELANTADO', `Registrado pago de ${monthsCount} mes(es) por ${formattedTotal} para ${license.clientName}. Nueva fecha de vigencia: ${baseDate.toLocaleDateString('es-MX')}.`);
+  
+  const tgMsg = `💰 <b>[PAGO REGISTRADO ALR SAAS]</b> 💰\n\nCliente: <b>${license.clientName}</b> (${license.id})\n<b>Meses Abonados:</b> ${monthsCount} mes(es)\n<b>Monto Total Recibido:</b> <b>${formattedTotal}</b>\n<b>Estatus:</b> PAGADO 🟢 (Suspensión Desactivada)\n<b>Nueva Fecha Límite:</b> ${baseDate.toLocaleDateString('es-MX')}`;
+  window.sendTelegramNotification(tgMsg);
+
+  saveToStorage();
+  window.syncLicenseToFirestore(license);
+  showToast(`¡Pago de ${monthsCount} mes(es) ($${totalPaid.toLocaleString('es-MX')} MXN) registrado con éxito para ${license.clientName}! 🟢`, "success");
+  closeModal();
   renderAll();
 };
 
