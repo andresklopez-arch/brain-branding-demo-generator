@@ -1303,6 +1303,37 @@ async function handleWebhookRequest(req, res) {
           return res.status(200).json({ ok: true });
         }
 
+        if (cmdLower.startsWith('/visitas_') || cmdLower.startsWith('/visita')) {
+          let cityQuery = cmdLower.replace('/visitas_', '').replace('/visita', '').trim();
+          if (cityQuery.startsWith('_')) cityQuery = cityQuery.substring(1);
+          if (!cityQuery) cityQuery = 'pachuca';
+
+          const allVisits = visitsLog.length > 0 ? visitsLog : loadVisitsFromDisk();
+          const cityVisits = allVisits.filter(v => {
+            const c = (v.city || '').toLowerCase();
+            const r = (v.region || '').toLowerCase();
+            return c.includes(cityQuery) || r.includes(cityQuery);
+          });
+
+          const timeStr = new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
+          let reply = `🗺️ *REPORTE FILTRADO DE VISITAS: "${cityQuery.toUpperCase()}"* 🗺️\n⏰ *Generado:* ${timeStr}\n\n`;
+          reply += `📊 *Total Coincidencias:* *${cityVisits.length} visitas*\n`;
+          reply += `⏱️ *Permanencia Promedio:* *${calculateAverageDuration(cityVisits)}*\n\n`;
+
+          if (cityVisits.length > 0) {
+            reply += `📍 *Detalle de Visitas:* \n`;
+            cityVisits.slice(-10).reverse().forEach((v, i) => {
+              reply += `${i + 1}. ${v.flag || '🇲🇽'} *${v.city || 'México'}* (${v.time || 'N/A'})\n`;
+              reply += `   📱 *Equipo:* ${v.device || 'Móvil'} | 📜 *Scroll:* ${v.scroll || 0}%\n`;
+            });
+          } else {
+            reply += `ℹ️ *No se encontraron visitas registradas para esa ubicación.*`;
+          }
+
+          await callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text: reply, parse_mode: 'Markdown' });
+          return res.status(200).json({ ok: true });
+        }
+
         if (cmdLower === '/modoresumen') {
           global.notifyLiveVisits = false;
           await callTelegram('sendMessage', {
@@ -2207,6 +2238,27 @@ function checkTrafficSpike(city, device) {
   } catch (e) {}
 }
 
+let firstVisitAlertDate = '';
+function checkFirstVisitOfDay(city, region, flag, device, source) {
+  try {
+    const todayCDMX = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' });
+    if (firstVisitAlertDate !== todayCDMX) {
+      firstVisitAlertDate = todayCDMX;
+      const timeStr = new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
+      callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: `🌅 *¡PRIMERA VISITA DEL DÍA REGISTRADA EN TU WEB!* 🌅\n\n` +
+              `📅 *Fecha:* ${todayCDMX} | ⏰ *Hora:* ${timeStr}\n` +
+              `📍 *Origen Geográfico:* ${city || 'México'}, ${region || ''} ${flag || '🇲🇽'}\n` +
+              `📱 *Dispositivo:* ${device || 'Móvil'}\n` +
+              `🎯 *Fuente:* ${source || 'Directo'}\n\n` +
+              `💬 *Tip:* El tráfico del día ha comenzado. Escribe /hoy para consultar la actividad.`,
+        parse_mode: 'Markdown'
+      }).catch(function(){});
+    }
+  } catch (e) {}
+}
+
 app.post('/api/track-visit', async (req, res) => {
   try {
     let bodyData = req.body;
@@ -2257,9 +2309,10 @@ app.post('/api/track-visit', async (req, res) => {
       }).catch(function(){});
     }
 
-    // Suggestion 1: Spike Traffic Detector
+    // Suggestion 1: Spike & First Visit of Day Detector
     if (existingIndex === -1) {
       checkTrafficSpike(city, device);
+      checkFirstVisitOfDay(city, region, flag, device, source);
     }
 
     // Suggestion 2: High Traffic Alert Trigger (Fires when 24h visits reach milestones: 10, 20, 50, 100)

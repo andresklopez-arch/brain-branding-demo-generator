@@ -218,10 +218,33 @@ function purgeOldVisits(maxDays = 30) {
   }
 }
 
-// Run visits purge check every 12 hours
+function createDailyVisitsBackup() {
+  try {
+    const visits = loadVisitsFromDisk();
+    if (!Array.isArray(visits) || visits.length === 0) return;
+    
+    const cdmxDateStr = new Date().toISOString().split('T')[0];
+    const BACKUP_DIR = path.join(DATA_DIR, 'backups');
+    if (!fs.existsSync(BACKUP_DIR)) {
+      fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    }
+
+    const backupFile = path.join(BACKUP_DIR, `visits_backup_${cdmxDateStr}.json`);
+    fs.writeFileSync(backupFile, JSON.stringify(visits, null, 2), 'utf8');
+    console.log(`[BACKUP] Saved daily visits snapshot to ${backupFile}`);
+  } catch (e) {
+    console.error('[BACKUP ERROR]', e.message);
+  }
+}
+
+// Run visits purge and daily backup check every 12 hours
 setInterval(() => {
   purgeOldVisits(30);
+  createDailyVisitsBackup();
 }, 12 * 60 * 60 * 1000);
+
+// Also run backup on startup
+setTimeout(createDailyVisitsBackup, 10000);
 
 module.exports = {
   getHistory,
@@ -235,5 +258,6 @@ module.exports = {
   saveMetricsToDisk,
   loadVisitsFromDisk,
   saveVisitsToDisk,
-  purgeOldVisits
+  purgeOldVisits,
+  createDailyVisitsBackup
 };
