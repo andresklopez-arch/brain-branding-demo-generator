@@ -6765,9 +6765,17 @@ window.syncLicenseToFirestore = async function(license) {
       'kuatsi-cafeteria'
     ].filter(Boolean)));
 
+    const fieldsToMask = [
+      'id', 'clientName', 'appName', 'appId', 'apiKey', 'status', 
+      'expiryDate', 'expirationDate', 'currentPlan', 'renewalPeriod', 
+      'paymentPeriod', 'baseMonthlyFee', 'adjustedMonthlyFee', 
+      'startDate', 'dailyCost', 'version', 'lastUpdated'
+    ];
+    const updateMaskQuery = fieldsToMask.map(f => `updateMask.fieldPaths=${f}`).join('&');
+
     for (const docId of candidateIds) {
       if (license.id.includes('kuatsi') || docId.includes('kuatsi') || docId === license.id) {
-        const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses/${docId}`;
+        const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses/${docId}?${updateMaskQuery}`;
         const payload = {
           fields: {
             id: { stringValue: docId },
@@ -6795,7 +6803,7 @@ window.syncLicenseToFirestore = async function(license) {
           body: JSON.stringify(payload)
         }).then(res => {
           if (res.ok) {
-            console.log(`[REST SYNC OK] Documento "${docId}" actualizado a estatus "${license.status}" en Firestore.`);
+            console.log(`[REST SYNC OK] Documento "${docId}" persistido inmutablemente en Firestore con updateMask.`);
           }
         }).catch(e => console.warn('[REST SYNC WARN]', e));
       }
