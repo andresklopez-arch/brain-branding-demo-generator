@@ -2406,7 +2406,8 @@ window.toggleLicenseStatus = function(clientId, currentStatus) {
   const license = state.licenses.find(l => l.id === clientId);
   if (!license) return;
 
-  const nextStatus = currentStatus ? 'SUSPENDED' : 'ACTIVE';
+  const isCurrentlyActive = (currentStatus === 'ACTIVE' || currentStatus === 'active' || currentStatus === true || license.status === 'ACTIVE' || license.status === 'active');
+  const nextStatus = isCurrentlyActive ? 'SUSPENDED' : 'ACTIVE';
   const actionLabel = nextStatus === 'ACTIVE' ? 'Activar Licencia' : 'Suspender Licencia';
 
   requestAdminVerification(`${actionLabel} (${license.clientName})`, () => {
