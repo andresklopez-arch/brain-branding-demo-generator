@@ -233,14 +233,14 @@ body {
 }
 
 .saas-header {
-  height: 70px;
+  height: 56px;
   border-bottom: 1px solid var(--border-glass);
-  background: rgba(3, 5, 9, 0.3);
+  background: rgba(3, 5, 9, 0.4);
   backdrop-filter: blur(20px);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 32px;
+  padding: 0 24px;
   position: sticky;
   top: 0;
   z-index: 90;
@@ -270,11 +270,45 @@ body {
 }
 
 .saas-main {
-  padding: 24px 32px;
+  padding: 16px 24px;
   max-width: 100%;
   width: 100%;
   margin: 0 auto;
   flex: 1;
+}
+
+/* ⚡ ULTRA-COMPACT METRIC RIBBON (Cinta Micro-Informativa) */
+.metric-ribbon {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  padding: 8px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.metric-ribbon-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.metric-ribbon-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-ribbon-val {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--text-white);
 }
 
 /* 🖼️ ULTRA COMPACT METRICS GRID & CARDS */

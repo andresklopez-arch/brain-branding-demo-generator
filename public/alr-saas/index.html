@@ -139,98 +139,89 @@
         
         <!-- ==================== VISTA: PANEL GENERAL ==================== -->
         <div class="saas-view active" id="view-dashboard">
-          <div class="view-header" style="margin-bottom: 20px;">
-            <div>
-              <h1 class="view-title"><i class="ri-dashboard-fill" style="color: var(--accent); margin-right: 8px;"></i> Panel General Commander</h1>
-              <p class="view-subtitle">Consolidación en tiempo real de aplicaciones, estados de salud, fechas de renovación y alertas preventivas.</p>
+          
+          <!-- CABECERA ULTRA-COMPACTA EN 1 SOLA LÍNEA -->
+          <div class="view-header" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <h1 class="view-title" style="font-size: 14px; font-weight: 900; margin: 0; display: flex; align-items: center; gap: 6px; letter-spacing: -0.2px;">
+                <i class="ri-dashboard-fill" style="color: var(--accent);"></i> PANEL GENERAL COMMANDER
+              </h1>
             </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-              <button class="btn btn-secondary" style="height: 36px; padding: 0 14px; font-size: 10px; font-weight: 800; display: flex; align-items: center; gap: 6px; color: var(--danger); border-color: rgba(239,68,68,0.3);" onclick="window.runAutoSuspensionCron(false)">
-                <i class="ri-timer-flash-line"></i> Cron de Suspensión
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button class="btn btn-secondary" style="height: 30px; padding: 0 10px; font-size: 9px; font-weight: 800; display: flex; align-items: center; gap: 5px; color: var(--danger); border-color: rgba(239,68,68,0.3);" onclick="window.runAutoSuspensionCron(false)" title="Ejecutar Verificación de Suspensión">
+                <i class="ri-timer-flash-line"></i> Cron Suspensión
               </button>
-              <button class="btn btn-secondary" style="height: 36px; padding: 0 14px; font-size: 10px; font-weight: 800; display: flex; align-items: center; gap: 6px;" onclick="window.pullAllLicensesFromCloud()">
+              <button class="btn btn-secondary" style="height: 30px; padding: 0 10px; font-size: 9px; font-weight: 800; display: flex; align-items: center; gap: 5px;" onclick="window.pullAllLicensesFromCloud()">
                 <i class="ri-cloud-line"></i> Sincronizar Nube
               </button>
-              <button class="btn btn-danger-outline" style="height: 36px; padding: 0 14px; font-size: 10px; font-weight: 800; display: flex; align-items: center; gap: 6px;" onclick="window.clearExampleData()">
-                <i class="ri-delete-bin-3-line"></i> Limpiar Datos Ejemplo
+              <button class="btn btn-danger-outline" style="height: 30px; padding: 0 10px; font-size: 9px; font-weight: 800; display: flex; align-items: center; gap: 5px;" onclick="window.clearExampleData()">
+                <i class="ri-delete-bin-3-line"></i> Limpiar Ejemplo
               </button>
             </div>
           </div>
 
           <!-- BANNER DINÁMICO DE AVISO PREVENTIVO DE SUSPENSIÓN -->
-          <div id="dashboard-pre-suspension-alert" style="display: none; margin-bottom: 20px; padding: 14px 18px; border-radius: 14px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);">
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(245, 158, 11, 0.2); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; animation: pulse 1.5s infinite;">
-                  <i class="ri-alarm-warning-fill"></i>
-                </div>
-                <div>
-                  <div style="font-size: 12px; font-weight: 900; color: #f59e0b; letter-spacing: -0.2px;">⚠️ ALERTA PREVENTIVA DE SUSPENSIÓN DETECTADA</div>
-                  <div id="dashboard-alert-message" style="font-size: 10.5px; opacity: 0.85; margin-top: 2px;">Hay aplicaciones próximas a vencer en los próximos días. Envíe los avisos preventivos antes de la suspensión automática.</div>
-                </div>
-              </div>
-              <div style="display: flex; gap: 10px;">
-                <button class="btn btn-primary" style="height: 32px; font-size: 9.5px; font-weight: 900; background: #f59e0b; color: #000; border: none;" onclick="window.sendMassRenewalWarnings()">
-                  <i class="ri-notification-fill"></i> Enviar Avisos Preventivos
-                </button>
-                <button class="btn btn-secondary" style="height: 32px; font-size: 9.5px; font-weight: 900; color: var(--danger); border-color: rgba(239,68,68,0.4);" onclick="window.runAutoSuspensionCron(false)">
-                  <i class="ri-shut-down-line"></i> Ejecutar Cron
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Grid de Métricas Principales (Ultra-Compacto) -->
-          <div class="metric-grid-compact">
-            <div class="metric-card-compact">
-              <div>
-                <div class="metric-title">Apps Catálogo</div>
-                <div class="metric-value" id="dashboard-total-apps">0</div>
-              </div>
-              <div class="metric-icon"><i class="ri-grid-line"></i></div>
-            </div>
-            <div class="metric-card-compact">
-              <div>
-                <div class="metric-title">Clientes</div>
-                <div class="metric-value" id="dashboard-total-clients">0</div>
-              </div>
-              <div class="metric-icon"><i class="ri-team-line"></i></div>
-            </div>
-            <div class="metric-card-compact">
-              <div>
-                <div class="metric-title">Apps Live</div>
-                <div class="metric-value" id="dashboard-active-clients" style="color: var(--success);">0</div>
-              </div>
-              <div class="metric-icon" style="color: var(--success);"><i class="ri-flashlight-line"></i></div>
-            </div>
-            <div class="metric-card-compact">
-              <div>
-                <div class="metric-title">Por Vencer</div>
-                <div class="metric-value" id="dashboard-warning-clients" style="color: #f59e0b;">0</div>
-              </div>
-              <div class="metric-icon" style="color: #f59e0b;"><i class="ri-time-line"></i></div>
-            </div>
-            <div class="metric-card-compact">
-              <div>
-                <div class="metric-title">MRR Estimado</div>
-                <div class="metric-value" id="dashboard-mrr" style="color: var(--accent);">$--</div>
-              </div>
-              <div class="metric-icon" style="color: var(--accent);"><i class="ri-money-dollar-box-line"></i></div>
-            </div>
-          </div>
-
-          <!-- Matriz Central del Panel General (Ancho Completo 100%) -->
-          <div class="glass-panel" style="padding: 24px; margin-top: 10px; width: 100%;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-              <div>
-                <h2 style="font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-                  <i class="ri-apps-fill" style="color: var(--accent);"></i> Matriz Master de Aplicaciones e Instancias
-                </h2>
-                <p style="font-size: 11px; opacity: 0.6; margin-top: 2px;">Estado operacional, ciclos de renovación, avisos preventivos y controles de suspensión.</p>
+          <div id="dashboard-pre-suspension-alert" style="display: none; margin-bottom: 10px; padding: 10px 14px; border-radius: 12px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="ri-alarm-warning-fill" style="color: #f59e0b; font-size: 16px;"></i>
+                <div style="font-size: 11px; font-weight: 900; color: #f59e0b;">⚠️ ALERTA PREVENTIVA: <span id="dashboard-alert-message" style="font-weight: 600; color: #fff;">Hay aplicaciones próximas a vencer.</span></div>
               </div>
               <div style="display: flex; gap: 8px;">
-                <button class="btn btn-secondary" style="height: 32px; font-size: 9px; font-weight: 800;" onclick="window.filterDashboardApps('all')">Todas</button>
-                <button class="btn btn-secondary" style="height: 32px; font-size: 9px; font-weight: 800; color: #f59e0b;" onclick="window.filterDashboardApps('warning')">Por Vencer</button>
+                <button class="btn btn-primary" style="height: 26px; font-size: 9px; font-weight: 900; background: #f59e0b; color: #000; border: none; padding: 0 10px;" onclick="window.sendMassRenewalWarnings()">
+                  Avisar a Todos
+                </button>
+                <button class="btn btn-secondary" style="height: 26px; font-size: 9px; font-weight: 900; color: var(--danger); border-color: rgba(239,68,68,0.4); padding: 0 10px;" onclick="window.runAutoSuspensionCron(false)">
+                  Ejecutar Cron
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- CINTA DE MÉTRICAS ULTRA-COMPACTA (1 Sola Fila Horizontal) -->
+          <div class="metric-ribbon">
+            <div class="metric-ribbon-item">
+              <i class="ri-grid-line" style="color: var(--accent);"></i>
+              <span class="metric-ribbon-label">Apps Catálogo:</span>
+              <span class="metric-ribbon-val" id="dashboard-total-apps">0</span>
+            </div>
+            <div style="width: 1px; height: 16px; background: var(--border-glass);"></div>
+            <div class="metric-ribbon-item">
+              <i class="ri-team-line" style="color: var(--text-muted);"></i>
+              <span class="metric-ribbon-label">Clientes:</span>
+              <span class="metric-ribbon-val" id="dashboard-total-clients">0</span>
+            </div>
+            <div style="width: 1px; height: 16px; background: var(--border-glass);"></div>
+            <div class="metric-ribbon-item">
+              <i class="ri-flashlight-line" style="color: var(--success);"></i>
+              <span class="metric-ribbon-label">Apps Live:</span>
+              <span class="metric-ribbon-val" id="dashboard-active-clients" style="color: var(--success);">0</span>
+            </div>
+            <div style="width: 1px; height: 16px; background: var(--border-glass);"></div>
+            <div class="metric-ribbon-item">
+              <i class="ri-time-line" style="color: #f59e0b;"></i>
+              <span class="metric-ribbon-label">Por Vencer:</span>
+              <span class="metric-ribbon-val" id="dashboard-warning-clients" style="color: #f59e0b;">0</span>
+            </div>
+            <div style="width: 1px; height: 16px; background: var(--border-glass);"></div>
+            <div class="metric-ribbon-item">
+              <i class="ri-money-dollar-box-line" style="color: var(--accent);"></i>
+              <span class="metric-ribbon-label">MRR Estimado:</span>
+              <span class="metric-ribbon-val" id="dashboard-mrr" style="color: var(--accent);">$--</span>
+            </div>
+          </div>
+
+          <!-- MATRIZ CENTRAL DE APLICACIONES (DE INMEDIATO VISIBLE) -->
+          <div class="glass-panel" style="padding: 16px 20px; margin-top: 6px; width: 100%;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h2 style="font-size: 13.5px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; margin: 0;">
+                  <i class="ri-apps-fill" style="color: var(--accent);"></i> Matriz Master de Aplicaciones e Instancias
+                </h2>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-secondary" style="height: 28px; padding: 0 10px; font-size: 9px; font-weight: 800;" onclick="window.filterDashboardApps('all')">Todas</button>
+                <button class="btn btn-secondary" style="height: 28px; padding: 0 10px; font-size: 9px; font-weight: 800; color: #f59e0b;" onclick="window.filterDashboardApps('warning')">Por Vencer</button>
               </div>
             </div>
 
