@@ -166,23 +166,47 @@ const App = {
         }, 2500);
       }
     } else if (this.enteredPin.length === 6) {
-      const code = this.enteredPin;
-      const apiBase = window.API_BASE || 'https://brain-branding-demo-generator.onrender.com';
-      
-      fetch(`${apiBase}/api/contracts/${code}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.ok && data.contract) {
-            this.failedAttempts = 0;
-            window.location.href = `https://brainbranding.com.mx/?contrato=${code}`;
-          } else {
-            this.handleInvalidPin(code);
-          }
-        })
-        .catch(() => {
-          window.location.href = `https://brainbranding.com.mx/?contrato=${code}`;
-        });
+      this.verifyAndRedirectContract(this.enteredPin);
     }
+  },
+
+  verifyAndRedirectContract: function(code) {
+    const cleanCode = String(code).trim();
+
+    // 1. Verificar contratos locales en localStorage de forma instantánea
+    let localContracts = [];
+    try {
+      const raw = localStorage.getItem('brain_branding_contracts');
+      const backupRaw = localStorage.getItem('brain_branding_contracts_backup');
+      if (raw) localContracts = JSON.parse(raw);
+      if ((!localContracts || !localContracts.length) && backupRaw) localContracts = JSON.parse(backupRaw);
+    } catch(e) {}
+
+    const isLocalMatch = Array.isArray(localContracts) && localContracts.some(c => c && String(c.code).trim() === cleanCode);
+    if (isLocalMatch) {
+      this.failedAttempts = 0;
+      window.location.href = `https://brainbranding.com.mx/?contrato=${cleanCode}`;
+      return;
+    }
+
+    // 2. Consultar servidor central Render API
+    const apiBase = window.API_BASE || 'https://brain-branding-demo-generator.onrender.com';
+    fetch(`${apiBase}/api/contracts/${cleanCode}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.ok && data.contract) {
+          this.failedAttempts = 0;
+          window.location.href = `https://brainbranding.com.mx/?contrato=${cleanCode}`;
+        } else {
+          // Redirigir al visor principal de contratos para que app.js lo resuelva o muestre detalle
+          window.location.href = `https://brainbranding.com.mx/?contrato=${cleanCode}`;
+        }
+      })
+      .catch(() => {
+        // En caso de falla de red o tiempo de espera, redirigir directamente al visor
+        window.location.href = `https://brainbranding.com.mx/?contrato=${cleanCode}`;
+      });
+  },
   },
 
   handleInvalidPin: function(code) {
