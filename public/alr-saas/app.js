@@ -2437,26 +2437,81 @@ window.closeModal = function() {
 
 // ⚡ ACCIONES DE LICENCIAMIENTO (Remote control con autorización de doble factor)
 window.togglePlanStatus = function(clientId) {
-  const license = state.licenses.find(l => l.id === clientId);
+  const license = state.licenses.find(l => l.id === clientId || l.appId === clientId) || state.licenses[0];
   if (!license) return;
 
   const nextPlan = license.currentPlan === 'PAGADO' ? 'NO_PAGADO' : 'PAGADO';
-  const actionLabel = nextPlan === 'PAGADO' ? 'Marcar como PAGADO' : 'Marcar como SIN PAGAR';
+  license.currentPlan = nextPlan;
+  license.version = (license.version || 1) + 1;
+  addAuditLog('ORQUESTADOR', nextPlan === 'PAGADO' ? 'FACTURACIÓN_ALTA' : 'FACTURACIÓN_SUSPENSIÓN', `El plan del cliente ${license.clientName} se ha cambiado a ${nextPlan}.`);
+  
+  const tgMessage = `💰 <b>[FACTURACIÓN ALR SAAS]</b> 💰\n\nEl plan de suscripción del cliente <b>${license.clientName}</b> (${license.id}) ha sido actualizado.\n<b>Nuevo Plan:</b> ${nextPlan === 'PAGADO' ? 'PAGADO 🟢' : 'SIN PAGAR 🔴'}\n<b>Fecha:</b> ${new Date().toLocaleString()}`;
+  window.sendTelegramNotification(tgMessage);
 
-  requestAdminVerification(`${actionLabel} (${license.clientName})`, () => {
-    license.currentPlan = nextPlan;
-    license.version = (license.version || 1) + 1;
-    addAuditLog('ORQUESTADOR', nextPlan === 'PAGADO' ? 'FACTURACIÓN_ALTA' : 'FACTURACIÓN_SUSPENSIÓN', `El plan del cliente ${license.clientName} se ha cambiado a ${nextPlan}.`);
-    
-    // Alerta de Telegram (Sugerencia 1)
-    const tgMessage = `💰 <b>[FACTURACIÓN ALR SAAS]</b> 💰\n\nEl plan de suscripción del cliente <b>${license.clientName}</b> (${license.id}) ha sido actualizado.\n<b>Nuevo Plan:</b> ${nextPlan === 'PAGADO' ? 'PAGADO 🟢' : 'SIN PAGAR 🔴'}\n<b>Fecha:</b> ${new Date().toLocaleString()}`;
-    window.sendTelegramNotification(tgMessage);
+  saveToStorage();
+  window.syncLicenseToFirestore(license);
+  showToast(`Cliente ${license.clientName} marcado como ${nextPlan === 'PAGADO' ? 'PAGADO 🟢' : 'SIN PAGAR 🔴'}.`, nextPlan === 'PAGADO' ? 'success' : 'warning');
+  renderAll();
+};
 
-    saveToStorage();
-    window.syncLicenseToFirestore(license);
-    showToast(`Cliente ${license.clientName} marcado como ${nextPlan === 'PAGADO' ? 'pagado' : 'sin pagar'}.`, nextPlan === 'PAGADO' ? 'success' : 'warning');
-    renderAll();
-  });
+// ⚡ EDICIONES RÁPIDAS DIRECTAS (DIRECT 1-CLICK EDITORS)
+
+window.quickEditExpiryDate = function(clientId) {
+  const license = state.licenses.find(l => l.id === clientId || l.appId === clientId) || state.licenses[0];
+  if (!license) { showToast("Cliente no encontrado", "danger"); return; }
+
+  const currentExpiry = (license.expiryDate || license.expirationDate || '2099-12-30').split('T')[0];
+  const newDate = prompt(`Editar Fecha de Próxima Renovación para ${license.clientName}:\n(Formato: AAAA-MM-DD)`, currentExpiry);
+
+  if (!newDate || newDate.trim() === '' || newDate === currentExpiry) return;
+
+  license.expiryDate = newDate + 'T23:59:59Z';
+  license.expirationDate = newDate + 'T23:59:59Z';
+  license.version = (license.version || 1) + 1;
+
+  saveToStorage();
+  window.syncLicenseToFirestore(license);
+  showToast(`Fecha de renovación actualizada a ${newDate} para ${license.clientName}.`, "success");
+  renderAll();
+};
+
+window.quickEditPeriod = function(clientId) {
+  const license = state.licenses.find(l => l.id === clientId || l.appId === clientId) || state.licenses[0];
+  if (!license) { showToast("Cliente no encontrado", "danger"); return; }
+
+  const currentPeriod = license.renewalPeriod || 'Mensual';
+  const periods = ['Mensual', 'Trimestral', 'Semestral', 'Anual'];
+  const nextIndex = (periods.indexOf(currentPeriod) + 1) % periods.length;
+  const newPeriod = periods[nextIndex];
+
+  license.renewalPeriod = newPeriod;
+  license.version = (license.version || 1) + 1;
+
+  saveToStorage();
+  window.syncLicenseToFirestore(license);
+  showToast(`Período de renovación cambiado a "${newPeriod}" para ${license.clientName}.`, "success");
+  renderAll();
+};
+
+window.quickEditFee = function(clientId) {
+  const license = state.licenses.find(l => l.id === clientId || l.appId === clientId) || state.licenses[0];
+  if (!license) { showToast("Cliente no encontrado", "danger"); return; }
+
+  const currentBase = Number(license.baseMonthlyFee || license.monthlyFee || 500);
+  const inputStr = prompt(`Ingresar nueva Mensualidad Base ($ MXN) para ${license.clientName}:\n(Se aplicará automáticamente el incremento del +6% anual acumulado)`, currentBase);
+
+  const newBase = Number(inputStr);
+  if (isNaN(newBase) || newBase <= 0 || inputStr === null) return;
+
+  license.baseMonthlyFee = newBase;
+  const calc = window.calculateAdjustedMonthlyFee(license);
+  license.adjustedMonthlyFee = calc.adjustedFee;
+  license.version = (license.version || 1) + 1;
+
+  saveToStorage();
+  window.syncLicenseToFirestore(license);
+  showToast(`Mensualidad base actualizada a $${newBase} MXN (Vigente: ${calc.formattedAdjusted}) para ${license.clientName}.`, "success");
+  renderAll();
 };
 
 window.toggleLicenseStatus = function(clientId, currentStatus) {
