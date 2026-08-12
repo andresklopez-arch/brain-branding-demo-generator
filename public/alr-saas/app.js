@@ -2866,40 +2866,19 @@ window.toggleLicenseStatus = function(clientId, currentStatus) {
 
   saveToStorage();
 
-  // ======================================================
-  // ⚡ GOBERNANZA VÍA CLOUD FUNCTION (Firebase Admin SDK)
-  // Escritura autoritativa sin restricciones de CORS/auth.
-  // Fallback: PATCH directo si la función no responde.
-  // ======================================================
-  const CLOUD_FN_URL = 'https://us-central1-brain-branding.cloudfunctions.net/setLicenseStatus';
-  const ALR_SECRET = 'alr-saas-master-2025-brain';
-
-  fetch(CLOUD_FN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      licenseId: license.id,
-      status: nextStatus,
-      callerKey: ALR_SECRET
-    })
-  }).then(async res => {
-    if (res.ok) {
-      const data = await res.json();
-      console.log(`[ALR SAAS CLOUD FN] ✅ Cloud Function OK → ${nextStatus}`, data.updatedDocs);
-    } else {
-      const errBody = await res.text();
-      console.warn(`[ALR SAAS CLOUD FN] ⚠️ HTTP ${res.status} — usando fallback PATCH directo:`, errBody);
-      // 🔁 Fallback: PATCH directo a Firestore REST si la función falla
-      window._syncStatusDirectPatch(nextStatus);
+  // ================================================================
+  // ⚡ ESCRITURA EN FIRESTORE VÍA FIREBASE SDK v8 (GOVERNANCE DB)
+  // Sin CORS. Sin restricciones de auth. Batch commit directo.
+  // Fallback automático a PATCH REST si el SDK no está disponible.
+  // ================================================================
+  window.writeGovernanceStatus(license.id, nextStatus).then(ok => {
+    if (ok) {
+      console.log(`[ALR SAAS TOGGLE] ✅ Firestore actualizado → ${nextStatus}`);
     }
-  }).catch(e => {
-    console.warn('[ALR SAAS CLOUD FN] ⚠️ Cloud Function no disponible — usando fallback:', e.message);
-    // 🔁 Fallback: PATCH directo a Firestore REST
-    window._syncStatusDirectPatch(nextStatus);
   });
 
-  // Sincronizar resto de campos (no bloqueante)
-  setTimeout(() => window.syncLicenseToFirestore(license), 800);
+  // Sincronizar resto de campos (no bloqueante, 1 segundo después)
+  setTimeout(() => window.syncLicenseToFirestore(license), 1000);
 
   // ⚡ DIFUSIÓN INSTANTÁNEA MULTI-PESTAÑA EN TIEMPO REAL (0 MILISEGUNDOS)
   try {
@@ -4462,6 +4441,85 @@ window.FIREBASE_CONFIG_RAW = '';
 window.FIREBASE_SYNC_ENABLED = false;
 window.firebaseApp = null;
 window.firestoreDb = null;
+
+// ================================================================
+// 🔐 FIREBASE GOVERNANCE DB — Inicialización Autónoma ALR SaaS
+// Instancia dedicada para escritura de licencias en Firestore.
+// SIEMPRE activa. NO depende de configuración del usuario.
+// Usa el Firebase SDK v8 cargado en el <head> del HTML.
+// ================================================================
+function initGovernanceFirebase() {
+  try {
+    const GOVERNANCE_CONFIG = {
+      apiKey: "AIzaSyC7yYMeYSVCiqVbLnBHGsv_UfCeVqGF3bI",
+      authDomain: "brain-branding.firebaseapp.com",
+      projectId: "brain-branding",
+      storageBucket: "brain-branding.appspot.com",
+      messagingSenderId: "464083309532",
+      appId: "1:464083309532:web:99b83aeb55af0b3e29b64e"
+    };
+
+    if (typeof firebase === 'undefined' || !firebase.initializeApp) {
+      console.error('[ALR GOVERNANCE] ❌ Firebase SDK v8 no disponible — intentando en 500ms.');
+      setTimeout(initGovernanceFirebase, 500);
+      return;
+    }
+
+    const govAppName = 'alr-saas-governance';
+    const existing = firebase.apps.find(a => a.name === govAppName);
+    const govApp = existing || firebase.initializeApp(GOVERNANCE_CONFIG, govAppName);
+
+    window.governanceDb = govApp.firestore();
+    console.log('[ALR GOVERNANCE] ✅ Firestore Governance DB listo para escritura.');
+
+  } catch (e) {
+    console.error('[ALR GOVERNANCE] ❌ Error:', e.message);
+    window.governanceDb = null;
+  }
+}
+
+// Inicializar cuando el DOM esté listo (garantiza que los scripts del <head> ya cargaron)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initGovernanceFirebase);
+} else {
+  initGovernanceFirebase();
+}
+
+// Función centralizada de escritura de licencias en Firestore (usa governanceDb)
+window.writeGovernanceStatus = async function(licenseId, status) {
+  if (!window.governanceDb) {
+    console.warn('[ALR GOVERNANCE] ⚠️ governanceDb no disponible, usando PATCH REST como fallback.');
+    window._syncStatusDirectPatch(status);
+    return false;
+  }
+
+  const docIds = Array.from(new Set([
+    'kuatsi_central', 'kuatsi', 'kuatsi-cafeteria',
+    ...(licenseId ? [licenseId] : [])
+  ]));
+
+  const timestamp = new Date().toISOString();
+  const batch = window.governanceDb.batch();
+
+  for (const docId of docIds) {
+    const ref = window.governanceDb.collection('master_licenses').doc(docId);
+    batch.update(ref, {
+      status: status,
+      lastUpdated: timestamp,
+      lastGovernedBy: 'ALR_SAAS_COMMANDER'
+    });
+  }
+
+  try {
+    await batch.commit();
+    console.log(`[ALR GOVERNANCE] ✅ Batch commit OK → "${status}" en docs: ${docIds.join(', ')}`);
+    return true;
+  } catch (e) {
+    console.error('[ALR GOVERNANCE] ❌ Batch commit falló:', e.message, '— usando PATCH REST fallback.');
+    window._syncStatusDirectPatch(status);
+    return false;
+  }
+};
 
 // Ejecutar hidratación inicial (fallback base)
 window.rehydrateDecryptedSettings();
