@@ -1255,12 +1255,41 @@ function renderDashboardTable() {
           </div>
         </td>
         <td>
-          <div style="display: flex; flex-direction: column; gap: 3px; cursor: pointer;" onclick="window.openRenewalConfigModal('${escapeHtml(l.id)}')" title="✏️ Clic para editar la fecha de renovación">
-            <span style="font-size: 11px; font-weight: 900; color: #fff; display: inline-flex; align-items: center; gap: 4px;">
-              ${escapeHtml(dateFormatted)} <i class="ri-calendar-edit-line" style="font-size: 10px; color: var(--accent);"></i>
-            </span>
-            ${countdownBadge}
-          </div>
+          ${(() => {
+            const isPlanPaid = l.currentPlan === 'PAGADO';
+            const suspensionInfo = window.calculateNextSuspensionDate ? window.calculateNextSuspensionDate(l) : { formattedDate: dateFormatted, daysLeft: 30 };
+            if (isPlanPaid) {
+              return `
+                <div style="display: flex; flex-direction: column; gap: 3px; cursor: pointer;" onclick="window.openRenewalConfigModal('${escapeHtml(l.id)}')" title="✏️ Clic para editar la fecha de renovación contractual">
+                  <span style="font-size: 11px; font-weight: 900; color: #fff; display: inline-flex; align-items: center; gap: 4px;">
+                    Renovación: ${escapeHtml(dateFormatted)} <i class="ri-calendar-edit-line" style="font-size: 10px; color: var(--accent);"></i>
+                  </span>
+                  <span style="font-size: 9px; font-weight: 900; background: rgba(34, 197, 94, 0.15); color: #2ecc71; padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(34, 197, 94, 0.3); font-family: var(--font-heading); display: inline-flex; align-items: center; gap: 4px;" title="Cliente al día. Sin riesgo de suspensión por pago.">
+                    <i class="ri-shield-check-fill"></i> PAGADO - Sin Suspensión (${l.paymentPeriod || 'Mensual'})
+                  </span>
+                </div>
+              `;
+            } else {
+              const isOverdue = suspensionInfo.isOverdue || suspensionInfo.daysLeft <= 0;
+              const badgeBg = isOverdue ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.15)';
+              const badgeBorder = isOverdue ? 'rgba(239, 68, 68, 0.6)' : 'rgba(239, 68, 68, 0.35)';
+              const badgeColor = '#ef4444';
+              const badgeText = isOverdue 
+                ? `🔴 ¡CORTE DE SERVICIO HOY! (${l.paymentPeriod || 'Mensual'})`
+                : `🔴 Suspensión en ${suspensionInfo.daysLeft} día(s) (${l.paymentPeriod || 'Mensual'})`;
+
+              return `
+                <div style="display: flex; flex-direction: column; gap: 3px; cursor: pointer;" onclick="window.openRenewalConfigModal('${escapeHtml(l.id)}')" title="✏️ Clic para editar fecha o registrar pago">
+                  <span style="font-size: 11px; font-weight: 900; color: #ef4444; display: inline-flex; align-items: center; gap: 4px;">
+                    Próx. Suspensión: ${escapeHtml(suspensionInfo.formattedDate)} <i class="ri-alarm-warning-line" style="font-size: 10px; color: #ef4444;"></i>
+                  </span>
+                  <span style="font-size: 9px; font-weight: 900; background: ${badgeBg}; color: ${badgeColor}; padding: 2px 8px; border-radius: 10px; border: 1px solid ${badgeBorder}; font-family: var(--font-heading); animation: pulse 1.5s infinite;">
+                    ${badgeText}
+                  </span>
+                </div>
+              `;
+            }
+          })()}
         </td>
         <td style="text-align: right;">
           <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
@@ -2476,21 +2505,94 @@ window.closeModal = function() {
 };
 
 // ⚡ ACCIONES DE LICENCIAMIENTO (Remote control con autorización de doble factor)
+window.calculateNextSuspensionDate = function(license) {
+  if (!license) return { isPaid: false, nextSuspensionDate: null, formattedDate: 'Sin Fecha', daysLeft: 999, isOverdue: false };
+
+  const isPaid = (license.currentPlan === 'PAGADO');
+  if (isPaid) {
+    return {
+      isPaid: true,
+      nextSuspensionDate: null,
+      formattedDate: 'Sin Suspensión (Pagado)',
+      daysLeft: 9999,
+      isOverdue: false
+    };
+  }
+
+  const startStr = (license.startDate || license.createdAt || new Date().toISOString()).split('T')[0];
+  const parts = startStr.split('-');
+  let baseDate = new Date();
+  if (parts.length === 3) {
+    baseDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  }
+  
+  const now = new Date();
+  const period = license.paymentPeriod || 'Mensual';
+
+  let nextDueDate = new Date(baseDate);
+  while (nextDueDate <= now) {
+    if (period === 'Quincenal') {
+      nextDueDate.setDate(nextDueDate.getDate() + 15);
+    } else if (period === 'Mensual') {
+      nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+    } else if (period === 'Trimestral') {
+      nextDueDate.setMonth(nextDueDate.getMonth() + 3);
+    } else if (period === 'Semestral') {
+      nextDueDate.setMonth(nextDueDate.getMonth() + 6);
+    } else if (period === 'Anual') {
+      nextDueDate.setFullYear(nextDueDate.getFullYear() + 1);
+    } else {
+      nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+    }
+  }
+
+  if (license.paymentDueDate) {
+    const explicitDate = new Date(license.paymentDueDate);
+    if (!isNaN(explicitDate.getTime())) {
+      nextDueDate = explicitDate;
+    }
+  }
+
+  const diffMs = nextDueDate.getTime() - now.getTime();
+  const daysLeft = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  const isOverdue = daysLeft <= 0;
+
+  const formattedDate = nextDueDate.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
+
+  return {
+    isPaid: false,
+    nextSuspensionDate: nextDueDate,
+    formattedDate,
+    daysLeft,
+    isOverdue
+  };
+};
+
 window.togglePlanStatus = function(clientId) {
   const license = state.licenses.find(l => l.id === clientId || l.appId === clientId) || state.licenses[0];
   if (!license) return;
 
   const nextPlan = license.currentPlan === 'PAGADO' ? 'NO_PAGADO' : 'PAGADO';
   license.currentPlan = nextPlan;
+
+  if (nextPlan === 'PAGADO') {
+    if (license.status === 'SUSPENDED') {
+      license.status = 'ACTIVE';
+    }
+    showToast(`¡Pago verificado para ${license.clientName}! Suspensión desactivada 🟢`, "success");
+  } else {
+    const suspensionInfo = window.calculateNextSuspensionDate(license);
+    showToast(`Cliente ${license.clientName} marcado como NO_PAGADO. Próxima suspensión: ${suspensionInfo.formattedDate}`, "warning");
+  }
+
   license.version = (license.version || 1) + 1;
-  addAuditLog('ORQUESTADOR', nextPlan === 'PAGADO' ? 'FACTURACIÓN_ALTA' : 'FACTURACIÓN_SUSPENSIÓN', `El plan del cliente ${license.clientName} se ha cambiado a ${nextPlan}.`);
+  addAuditLog('ORQUESTADOR', nextPlan === 'PAGADO' ? 'FACTURACIÓN_ALTA' : 'FACTURACIÓN_SUSPENSIÓN', `El estatus de pago de ${license.clientName} cambió a ${nextPlan}.`);
   
-  const tgMessage = `💰 <b>[FACTURACIÓN ALR SAAS]</b> 💰\n\nEl plan de suscripción del cliente <b>${license.clientName}</b> (${license.id}) ha sido actualizado.\n<b>Nuevo Plan:</b> ${nextPlan === 'PAGADO' ? 'PAGADO 🟢' : 'SIN PAGAR 🔴'}\n<b>Fecha:</b> ${new Date().toLocaleString()}`;
+  const tgMessage = `💰 <b>[ESTATUS DE PAGO ALR SAAS]</b> 💰\n\nCliente: <b>${license.clientName}</b> (${license.id})\n<b>Nuevo Estatus:</b> ${nextPlan === 'PAGADO' ? 'PAGADO 🟢 (Sin riesgo de suspensión)' : 'NO_PAGADO 🔴 (Próxima suspensión en curso)'}\n<b>Frecuencia de Pago:</b> ${license.paymentPeriod || 'Mensual'}\n<b>Fecha:</b> ${new Date().toLocaleString()}`;
   window.sendTelegramNotification(tgMessage);
 
   saveToStorage();
   window.syncLicenseToFirestore(license);
-  showToast(`Cliente ${license.clientName} marcado como ${nextPlan === 'PAGADO' ? 'PAGADO 🟢' : 'SIN PAGAR 🔴'}.`, nextPlan === 'PAGADO' ? 'success' : 'warning');
   renderAll();
 };
 
@@ -3339,6 +3441,28 @@ window.runAutoSuspensionCron = function(silent = false) {
 
           window.syncLicenseToFirestore(l);
         }
+      }
+    }
+
+    // 🔴 Verificación de Suspensión por impago si currentPlan !== PAGADO
+    const isPaid = (l.currentPlan === 'PAGADO');
+    if (!isPaid && l.status === 'ACTIVE') {
+      const suspensionInfo = window.calculateNextSuspensionDate ? window.calculateNextSuspensionDate(l) : { daysLeft: 30, isOverdue: false };
+      if (suspensionInfo.isOverdue || suspensionInfo.daysLeft <= 0) {
+        l.status = 'SUSPENDED';
+        l.inGracePeriod = false;
+        l.version = (l.version || 1) + 1;
+        suspendedCount++;
+        updated = true;
+
+        const logMsg = `SUSPENSIÓN AUTOMÁTICA POR NO_PAGADO: El cliente ${l.clientName} (${l.appName}) fue suspendido por no contar con pago registrado y alcanzar su fecha límite de pago bajo frecuencia (${l.paymentPeriod || 'Mensual'}).`;
+        addAuditLog('AUTO_SUSPENSION_CRON', 'SUSPENSIÓN_AUTOMÁTICA', logMsg);
+
+        if (typeof window.sendTelegramNotification === 'function') {
+          window.sendTelegramNotification(`🛑 <b>[SUSPENSIÓN AUTOMÁTICA POR IMPAGO ALR SAAS]</b>\n\nEl cliente <b>${l.clientName}</b> (${l.appName}) ha sido suspendido al contar con estatus NO_PAGADO y alcanzar la fecha límite de pago.`, 'DANGER');
+        }
+
+        window.syncLicenseToFirestore(l);
       }
     }
   });
