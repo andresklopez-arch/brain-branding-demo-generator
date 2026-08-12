@@ -2683,6 +2683,74 @@ window.onWizardStartDateOrPeriodChange = function() {
   }
 };
 
+window.sendAnnualIncreaseAdvanceNotice = function(clientId) {
+  const license = state.licenses.find(l => l.id === clientId || l.appId === clientId);
+  if (!license) return;
+
+  const calc = window.calculateAdjustedMonthlyFee(license);
+  const startStr = (license.startDate || license.createdAt || '2025-01-01').split('T')[0];
+  const parts = startStr.split('-');
+  let startDate = new Date();
+  if (parts.length === 3) {
+    startDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  }
+  const now = new Date();
+
+  const nextAnniversaryYear = now.getFullYear() + (now.getMonth() > startDate.getMonth() || (now.getMonth() === startDate.getMonth() && now.getDate() >= startDate.getDate()) ? 1 : 0);
+  const nextAnniversaryDate = new Date(nextAnniversaryYear, startDate.getMonth(), startDate.getDate());
+  
+  const diffTime = nextAnniversaryDate.getTime() - now.getTime();
+  const daysUntilAnniversary = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+
+  const yearsInNextAnniversary = nextAnniversaryYear - startDate.getFullYear();
+  const baseFee = Number(license.baseMonthlyFee || license.monthlyFee || 500);
+  const nextFee = Math.round(baseFee * Math.pow(1.06, yearsInNextAnniversary) * 100) / 100;
+  const formattedNextFee = '$' + nextFee.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN';
+
+  const dateFormatted = nextAnniversaryDate.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const messageText = `📈 <b>[AVISO ANTICIPADO DE INCREMENTO ANUAL (+6.0%)]</b> 📈\n\nEstimado cliente <b>${escapeHtml(license.clientName)}</b>,\n\nLe informamos con 15 días de anticipación que su contrato para <b>${escapeHtml(license.appName || license.clientName)}</b> cumplirá un nuevo aniversario el <b>${dateFormatted}</b> (faltan ${daysUntilAnniversary} día(s)).\n\nDe acuerdo con la cláusula de ajuste por inflación anual (+6.0% acumulado):\n• <b>Mensualidad Actual (Año ${calc.yearsElapsed}):</b> ${calc.formattedAdjusted}\n• <b>Nueva Mensualidad (Año ${yearsInNextAnniversary}):</b> <b>${formattedNextFee}</b>\n\nAtentamente,\n<b>ALR SaaS Governance & Finance Orquestador</b>`;
+
+  if (typeof window.sendTelegramNotification === 'function') {
+    window.sendTelegramNotification(messageText, 'INFO');
+  }
+
+  addAuditLog('FINANZAS', 'AVISO_INCREMENTO_ANUAL', `Aviso de incremento del +6% enviado a ${license.clientName}. Próxima cuota: ${formattedNextFee} el ${dateFormatted}.`);
+  showToast(`🔔 Aviso de incremento del +6% enviado a ${license.clientName} (${daysUntilAnniversary} días restantes)`, "warning");
+};
+
+window.checkAndSendAnnualIncreaseReminders = function() {
+  let count = 0;
+  const now = new Date();
+
+  state.licenses.forEach(license => {
+    const startStr = (license.startDate || license.createdAt || '2025-01-01').split('T')[0];
+    const parts = startStr.split('-');
+    let startDate = new Date();
+    if (parts.length === 3) {
+      startDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    }
+
+    const nextAnniversaryYear = now.getFullYear() + (now.getMonth() > startDate.getMonth() || (now.getMonth() === startDate.getMonth() && now.getDate() >= startDate.getDate()) ? 1 : 0);
+    const nextAnniversaryDate = new Date(nextAnniversaryYear, startDate.getMonth(), startDate.getDate());
+    
+    const diffTime = nextAnniversaryDate.getTime() - now.getTime();
+    const daysUntilAnniversary = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (daysUntilAnniversary <= 15 && daysUntilAnniversary >= 0) {
+      if (license.lastAnnualNoticeYear !== nextAnniversaryYear) {
+        license.lastAnnualNoticeYear = nextAnniversaryYear;
+        window.sendAnnualIncreaseAdvanceNotice(license.id);
+        count++;
+      }
+    }
+  });
+
+  if (count > 0) {
+    saveToStorage();
+  }
+};
+
 window.openRenewalConfigModal = function(clientId) {
   const license = state.licenses.find(l => l.id === clientId || l.appId === clientId);
   if (!license) return;
@@ -2782,11 +2850,16 @@ window.openRenewalConfigModal = function(clientId) {
           </div>
         </div>
 
-        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px;">
-          <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-          <button class="btn btn-primary" onclick="window.saveRenewalConfigModal('${escapeHtml(license.id)}')">
-            <i class="ri-save-3-line"></i> Guardar y Sincronizar
+        <div style="display: flex; gap: 10px; justify-content: space-between; align-items: center; margin-top: 6px;">
+          <button class="btn btn-secondary" style="font-size: 10px; font-weight: 800; color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); background: rgba(245,158,11,0.05);" onclick="window.sendAnnualIncreaseAdvanceNotice('${escapeHtml(license.id)}')">
+            <i class="ri-notification-3-line"></i> 🔔 Enviar Aviso +6% (15 Días Antes)
           </button>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="window.saveRenewalConfigModal('${escapeHtml(license.id)}')">
+              <i class="ri-save-3-line"></i> Guardar y Sincronizar
+            </button>
+          </div>
         </div>
       </div>
     </div>
