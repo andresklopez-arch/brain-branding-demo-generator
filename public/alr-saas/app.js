@@ -1184,12 +1184,12 @@ function renderDashboardTable() {
     let statusBadge = '';
     if (isOnline) {
       if (expiryInfo.status === 'WARNING' || expiryInfo.status === 'CRITICAL') {
-        statusBadge = `<span class="status-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 900;"><i class="ri-error-warning-fill"></i> POR VENCER</span>`;
+        statusBadge = `<span class="status-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 900; cursor: pointer;"><i class="ri-error-warning-fill"></i> POR VENCER <i class="ri-pencil-fill" style="font-size: 8px;"></i></span>`;
       } else {
-        statusBadge = `<span class="status-badge active" style="font-weight: 900;"><i class="ri-checkbox-circle-fill"></i> LIVE / ACTIVA</span>`;
+        statusBadge = `<span class="status-badge active" style="font-weight: 900; cursor: pointer;"><i class="ri-checkbox-circle-fill"></i> LIVE / ACTIVA <i class="ri-pencil-fill" style="font-size: 8px; margin-left: 2px;"></i></span>`;
       }
     } else {
-      statusBadge = `<span class="status-badge suspended" style="font-weight: 900;"><i class="ri-close-circle-fill"></i> SUSPENDIDA</span>`;
+      statusBadge = `<span class="status-badge suspended" style="font-weight: 900; cursor: pointer;"><i class="ri-close-circle-fill"></i> SUSPENDIDA <i class="ri-pencil-fill" style="font-size: 8px; margin-left: 2px;"></i></span>`;
     }
 
     let countdownBadge = '';
@@ -1201,9 +1201,13 @@ function renderDashboardTable() {
       countdownBadge = `<span style="font-size: 9px; font-weight: 800; opacity: 0.6;">${expiryInfo.text}</span>`;
     }
 
+    const isPlanPaid = l.currentPlan === 'PAGADO';
+    const planBadge = isPlanPaid
+      ? `<span class="status-badge" style="background: rgba(34, 197, 94, 0.15); color: #2ecc71; border: 1px solid rgba(34, 197, 94, 0.3); font-weight: 900; padding: 2px 8px; border-radius: 6px; cursor: pointer;" title="✏️ Clic para cambiar estatus de pago (PAGADO / NO_PAGADO)">PAGADO <i class="ri-pencil-fill" style="font-size: 8px;"></i></span>`
+      : `<span class="status-badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-weight: 900; padding: 2px 8px; border-radius: 6px; cursor: pointer;" title="✏️ Clic para cambiar estatus de pago (PAGADO / NO_PAGADO)">NO_PAGADO <i class="ri-pencil-fill" style="font-size: 8px;"></i></span>`;
+
     const calc = window.calculateAdjustedMonthlyFee ? window.calculateAdjustedMonthlyFee(l) : { formattedAdjusted: '$500.00 MXN', yearsElapsed: 0 };
-    const periodName = l.renewalPeriod || (l.currentPlan === 'PRO_ULTIMATE' || l.currentPlan === 'ENTERPRISE' ? 'Mensual' : (l.currentPlan || 'Mensual'));
-    const periodDisplay = `<div>${escapeHtml(periodName)}</div><div style="font-size: 9.5px; font-weight: 900; color: #10b981;">${calc.formattedAdjusted} <span style="font-size: 8px; opacity: 0.6; color: #a0aec0;">(+6% Año ${calc.yearsElapsed})</span></div>`;
+    const periodName = l.renewalPeriod || (l.currentPlan === 'PRO_ULTIMATE' || l.currentPlan === 'ENTERPRISE' ? 'Mensual' : 'Mensual');
 
     const appIcon = app.icon || 'ri-apps-fill';
     const appColor = app.color || '#10b981';
@@ -1222,13 +1226,26 @@ function renderDashboardTable() {
             </div>
           </div>
         </td>
-        <td>${statusBadge}</td>
         <td>
-          <div style="font-size: 11px; font-weight: 800; opacity: 0.85;">${periodDisplay}</div>
+          <div style="cursor: pointer; display: inline-block;" onclick="window.toggleLicenseStatus('${escapeHtml(l.id)}', '${l.status}')" title="✏️ Clic para cambiar estado operativo (Suspender / Activar)">
+            ${statusBadge}
+          </div>
         </td>
         <td>
-          <div style="display: flex; flex-direction: column; gap: 3px;">
-            <span style="font-size: 11px; font-weight: 800;">${escapeHtml(dateFormatted)}</span>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div onclick="window.togglePlanStatus('${escapeHtml(l.id)}')" style="display: inline-block;">
+              ${planBadge}
+            </div>
+            <div onclick="window.openRenewalConfigModal('${escapeHtml(l.id)}')" style="font-size: 9.5px; font-weight: 900; color: #10b981; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;" title="✏️ Clic para editar mensualidad base e incremento del +6%">
+              ${calc.formattedAdjusted} <span style="font-size: 8px; opacity: 0.6; color: #a0aec0;">(+6% Año ${calc.yearsElapsed})</span> <i class="ri-edit-line" style="font-size: 10px; color: var(--accent);"></i>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div style="display: flex; flex-direction: column; gap: 3px; cursor: pointer;" onclick="window.openRenewalConfigModal('${escapeHtml(l.id)}')" title="✏️ Clic para editar la fecha de renovación">
+            <span style="font-size: 11px; font-weight: 900; color: #fff; display: inline-flex; align-items: center; gap: 4px;">
+              ${escapeHtml(dateFormatted)} <i class="ri-calendar-edit-line" style="font-size: 10px; color: var(--accent);"></i>
+            </span>
             ${countdownBadge}
           </div>
         </td>
