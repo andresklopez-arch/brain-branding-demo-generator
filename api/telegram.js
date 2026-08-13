@@ -2125,19 +2125,21 @@ function getVisitsTrendComparison(allVisits = []) {
   return `${icon} *Variación vs. Día Anterior:* *${sign}${pct}%* (*${current24h}* hoy vs. *${previous24h}* ayer)`;
 }
 
-function buildDetailedAnalytics8AMReport(allVisits = [], isScheduled8AM = false) {
+function buildDetailedAnalytics8AMReport(allVisits = [], customHeader = null) {
   const visits = getActive24hVisits(allVisits);
   const total = visits.length;
   const nowStr = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const timeStr = new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
 
-  const headerTitle = isScheduled8AM
-    ? `☀️ *RESUMEN DIARIO AUTOMÁTICO DE VISITAS WEB (8:00 AM)* ☀️\n📅 *Fecha:* ${nowStr}`
-    : `📊 *INFORME DE VISITAS EN TIEMPO REAL (ÚLTIMAS 24 HORAS)* 📊\n⏰ *Generado a las:* ${timeStr} | ${nowStr}`;
+  let headerTitle = `📊 *INFORME DE VISITAS EN TIEMPO REAL (ÚLTIMAS 24 HORAS)* 📊\n⏰ *Generado a las:* ${timeStr} | ${nowStr}`;
+  if (customHeader) {
+    headerTitle = `${customHeader}\n📅 *Fecha:* ${nowStr}`;
+  }
 
   if (total === 0) {
     return `${headerTitle}\n\n📊 *Total de Visitas Registradas (Últimas 24h):* *0*\n\n💡 *Tip:* Las visitas se registran en tiempo real cuando un usuario ingresa al sitio web.`;
   }
+
 
   const osCounts = {};
   const browserCounts = {};
@@ -2686,10 +2688,8 @@ setInterval(() => {
 // Local Blockchain Chain Hash State
 let lastBlockchainHash = "GENESIS_BRAIN_BRANDING_BLOCK_SAAS_2026";
 
-// Guaranteed 8:00 AM Morning Reports Scheduler with Automatic Catch-Up on Server Wakeup
-let lastVisits8AMReportDate = '';
-let lastLeads8AMReportDate = '';
-let lastBillingCheckDate = '';
+// Programador Automático de Reportes cada 8 Horas (6:00 AM, 2:00 PM y 10:00 PM)
+const sentReportSlots = new Set();
 
 async function checkAndTriggerMorningReports() {
   try {
@@ -2698,70 +2698,78 @@ async function checkAndTriggerMorningReports() {
     const hourStr = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Mexico_City', hour: 'numeric', hour12: false }).format(now);
     const cdmxHour = parseInt(hourStr, 10);
 
-    // If CDMX time is >= 8 AM (up to 11 PM) and today's report hasn't been sent yet, send it immediately!
-    if (cdmxHour >= 8 && cdmxHour < 23) {
-      // 1. Visit Analytics Report
-      if (lastVisits8AMReportDate !== cdmxDateStr) {
-        lastVisits8AMReportDate = cdmxDateStr;
-        console.log(`[SCHEDULED 8AM REPORT] Dispatching 8:00 AM Visits Summary for ${cdmxDateStr} (Hour: ${cdmxHour})`);
-        const reportText = buildDetailedAnalytics8AMReport(visitsLog, true);
-        await callTelegram('sendMessage', {
-          chat_id: ADMIN_CHAT_ID,
-          text: reportText,
-          parse_mode: 'Markdown'
-        }).catch(e => console.error('[8AM VISITS REPORT ERROR]', e.message));
-      }
+    // Horarios de reporte: 6 (6:00 AM), 14 (2:00 PM), 22 (10:00 PM)
+    const targetHours = [6, 14, 22];
 
-      // 2. Leads & Gemini Telemetry Morning Report
-      if (lastLeads8AMReportDate !== cdmxDateStr) {
-        lastLeads8AMReportDate = cdmxDateStr;
-        console.log(`[SCHEDULED 8AM REPORT] Dispatching 8:00 AM Leads & AI Report for ${cdmxDateStr}`);
-        if (typeof sendMorningReport8AM === 'function') {
-          await sendMorningReport8AM().catch(e => console.error('[8AM LEADS REPORT ERROR]', e.message));
-        }
-      }
+    for (const targetH of targetHours) {
+      // Si la hora actual es igual o posterior a la hora objetivo (margen de gracia de hasta 3h si el servidor estuvo inactivo)
+      if (cdmxHour >= targetH && cdmxHour < targetH + 3) {
+        const slotKey = `${cdmxDateStr}_slot_${targetH}`;
 
-      // 3. Daily Billing Reminders for Contracts 3 Days Prior to Due Date
-      if (lastBillingCheckDate !== cdmxDateStr) {
-        lastBillingCheckDate = cdmxDateStr;
-        const currentDay = now.getDate();
-        const activeContracts = Object.values(contractsDB).filter(c => c.status === 'ACEPTADO');
+        if (!sentReportSlots.has(slotKey)) {
+          sentReportSlots.add(slotKey);
+          console.log(`[SCHEDULED 8H REPORT] Enviando reporte automático slot ${targetH}:00 para ${cdmxDateStr} (Hora actual: ${cdmxHour})`);
 
-        for (const contract of activeContracts) {
-          let dueDay = 15;
-          if (contract.date) {
-            const parts = contract.date.split('-');
-            if (parts.length === 3) dueDay = parseInt(parts[2], 10) || 15;
-          }
+          let slotHeader = `☀️ *RESUMEN AUTOMÁTICO DE VISITAS WEB (MATUTINO 6:00 AM)* ☀️`;
+          if (targetH === 14) slotHeader = `🌤️ *RESUMEN AUTOMÁTICO DE VISITAS WEB (VESPERTINO 2:00 PM)* 🌤️`;
+          if (targetH === 22) slotHeader = `🌙 *RESUMEN AUTOMÁTICO DE VISITAS WEB (NOCTURNO 10:00 PM)* 🌙`;
 
-          const daysRemaining = dueDay - currentDay;
-          if (daysRemaining >= 0 && daysRemaining <= 3) {
-            const waMessage = `Hola ${contract.clientName}, te recordamos amablemente la cuota mensual de tu app ${contract.appName} ($${contract.monthlyPrice} MXN). Folio: ${contract.code}. ¡Gracias por confiar en Brain Branding!`;
-            const waLink = `https://wa.me/527712339238?text=${encodeURIComponent(waMessage)}`;
+          const reportText = buildDetailedAnalytics8AMReport(visitsLog, slotHeader);
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: reportText,
+            parse_mode: 'Markdown'
+          }).catch(e => console.error('[8H VISITS REPORT ERROR]', e.message));
 
-            let billingMsg = `🚨 *ALERTA DIARIA DE COBRO DE MANTENIMIENTO SAAS* 🚨\n\n` +
-              `⏱️ *Estado:* Faltan *${daysRemaining === 0 ? '0 días (HOY)' : daysRemaining + ' días'}* para el vencimiento.\n` +
-              `🔢 *Folio 6D:* \`${contract.code}\`\n` +
-              `👤 *Cliente:* ${contract.clientName}\n` +
-              `📱 *App:* ${contract.appName}\n` +
-              `💳 *Mensualidad Nube:* $${contract.monthlyPrice.toLocaleString('es-MX')} MXN/mes\n` +
-              `📅 *Día de Cobro:* ${dueDay} de este mes\n` +
-              `📞 *Gestión del Dueño (Andrés R):* \`+52 771 233 9238\`\n\n` +
-              `💬 *Haz clic para enviar recordatorio por WhatsApp:* \n[Enviar Mensaje a ${contract.clientName}](${waLink})`;
-
-            await callTelegram('sendMessage', {
-              chat_id: ADMIN_CHAT_ID,
-              text: billingMsg,
-              parse_mode: 'Markdown'
-            });
+          // Enviar también informe de prospectos IA en el slot de las 6:00 AM
+          if (targetH === 6 && typeof sendMorningReport8AM === 'function') {
+            await sendMorningReport8AM().catch(e => console.error('[6AM LEADS REPORT ERROR]', e.message));
           }
         }
       }
     }
+
+    // Cobro diario a clientes (3 días antes del vencimiento) a las 8:00 AM
+    if (cdmxHour >= 8 && cdmxHour < 23 && lastBillingCheckDate !== cdmxDateStr) {
+      lastBillingCheckDate = cdmxDateStr;
+      const currentDay = now.getDate();
+      const activeContracts = Object.values(contractsDB).filter(c => c.status === 'ACEPTADO');
+
+      for (const contract of activeContracts) {
+        let dueDay = 15;
+        if (contract.date) {
+          const parts = contract.date.split('-');
+          if (parts.length === 3) dueDay = parseInt(parts[2], 10) || 15;
+        }
+
+        const daysRemaining = dueDay - currentDay;
+        if (daysRemaining >= 0 && daysRemaining <= 3) {
+          const waMessage = `Hola ${contract.clientName}, te recordamos amablemente la cuota mensual de tu app ${contract.appName} ($${contract.monthlyPrice} MXN). Folio: ${contract.code}. ¡Gracias por confiar en Brain Branding!`;
+          const waLink = `https://wa.me/527712339238?text=${encodeURIComponent(waMessage)}`;
+
+          let billingMsg = `🚨 *ALERTA DIARIA DE COBRO DE MANTENIMIENTO SAAS* 🚨\n\n` +
+            `⏱️ *Estado:* Faltan *${daysRemaining === 0 ? '0 días (HOY)' : daysRemaining + ' días'}* para el vencimiento.\n` +
+            `🔢 *Folio 6D:* \`${contract.code}\`\n` +
+            `👤 *Cliente:* ${contract.clientName}\n` +
+            `📱 *App:* ${contract.appName}\n` +
+            `💳 *Mensualidad Nube:* $${contract.monthlyPrice.toLocaleString('es-MX')} MXN/mes\n` +
+            `📅 *Día de Cobro:* ${dueDay} de este mes\n` +
+            `📞 *Gestión del Dueño (Andrés R):* \`+52 771 233 9238\`\n\n` +
+            `💬 *Haz clic para enviar recordatorio por WhatsApp:* \n[Enviar Mensaje a ${contract.clientName}](${waLink})`;
+
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: billingMsg,
+            parse_mode: 'Markdown'
+          });
+        }
+      }
+    }
   } catch (e) {
-    console.error('[8AM DAILY SUMMARY & BILLING ERROR]', e);
+    console.error('[SCHEDULED REPORTS ERROR]', e);
   }
 }
+
 
 // Run check every 60 seconds
 setInterval(checkAndTriggerMorningReports, 60 * 1000);
