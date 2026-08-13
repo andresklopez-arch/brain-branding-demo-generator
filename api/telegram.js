@@ -134,17 +134,11 @@ const kb = {
 
 const userStates = {};
 const conversationHistory = {};
-const { loadVisitsFromDisk, saveVisitsToDisk } = require('./historyStore.js');
+const { loadVisitsFromDisk, saveVisitsToDisk, loadIgnoredIpsFromDisk, saveIgnoredIpsToDisk } = require('./historyStore.js');
 const visitsLog = loadVisitsFromDisk();
-if (visitsLog.length === 0) {
-  const seedVisits = [
-    { sessionId: 'sess_init_1', isReturning: false, city: 'Pachuca de Soto', region: 'Hidalgo', country: 'México', flag: '🇲🇽', source: 'Acceso Directo Web 🌐', device: 'Android Móvil 📱', isp: 'Telmex', duration: '3 min 12 seg', scroll: 85, clicks: ['Botón Demo', 'Ver Precios'], time: '10:15', timestamp: new Date(Date.now() - 3600000).toISOString() },
-    { sessionId: 'sess_init_2', isReturning: true, city: 'Ciudad de México', region: 'CDMX', country: 'México', flag: '🇲🇽', source: 'Google Search 🔍', device: 'iPhone (iOS) 📱', isp: 'Izzi', duration: '5 min 40 seg', scroll: 95, clicks: ['Contacto WhatsApp', 'Agendar Cita'], time: '11:05', timestamp: new Date(Date.now() - 1800000).toISOString() },
-    { sessionId: 'sess_init_3', isReturning: false, city: 'Toluca', region: 'Estado de México', country: 'México', flag: '🇲🇽', source: 'Instagram Ads 📲', device: 'Windows PC 💻', isp: 'Totalplay', duration: '2 min 10 seg', scroll: 70, clicks: ['Ver Catálogo'], time: '11:40', timestamp: new Date(Date.now() - 600000).toISOString() }
-  ];
-  visitsLog.push(...seedVisits);
-  saveVisitsToDisk(visitsLog);
-}
+const ignoredAdminIps = new Set(loadIgnoredIpsFromDisk());
+const notifiedSessionsHighIntent = new Set();
+
 
 function normalizeText(text) {
   return (text || '')
@@ -1209,7 +1203,81 @@ async function handleWebhookRequest(req, res) {
           return res.status(200).json({ ok: true });
         }
 
+        if (cmdLower === '/miip' || cmdLower === '/ignorarmiip') {
+          const adminIp = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim();
+          if (adminIp) {
+            ignoredAdminIps.add(adminIp);
+            saveIgnoredIpsToDisk(Array.from(ignoredAdminIps));
+            await callTelegram('sendMessage', {
+              chat_id: ADMIN_CHAT_ID,
+              text: `🛡️ *IP DE ADMINISTRADOR REGISTRADA E IGNORADA* 🛡️\n\nTu dirección IP (\`${adminIp}\`) ha sido añadida a la lista de exclusión.\n\n✅ *Efecto:* A partir de ahora, tus visitas a la web no alterarán las estadísticas ni generarán alertas de navegación.`,
+              parse_mode: 'Markdown'
+            });
+          } else {
+            await callTelegram('sendMessage', {
+              chat_id: ADMIN_CHAT_ID,
+              text: `⚠️ No se pudo determinar la IP del servidor. Usa \`/agregarip <tu_ip>\` para ingresarla manualmente.`,
+              parse_mode: 'Markdown'
+            });
+          }
+          return res.status(200).json({ ok: true });
+        }
+
+        if (cmdLower.startsWith('/agregarip')) {
+          const parts = text.split(/\s+/);
+          const newIp = (parts[1] || '').trim();
+          if (newIp) {
+            ignoredAdminIps.add(newIp);
+            saveIgnoredIpsToDisk(Array.from(ignoredAdminIps));
+            await callTelegram('sendMessage', {
+              chat_id: ADMIN_CHAT_ID,
+              text: `✅ *IP agregada a la lista de ignorados:* \`${newIp}\``,
+              parse_mode: 'Markdown'
+            });
+          } else {
+            await callTelegram('sendMessage', {
+              chat_id: ADMIN_CHAT_ID,
+              text: `⚠️ Uso: \`/agregarip 192.168.1.1\``,
+              parse_mode: 'Markdown'
+            });
+          }
+          return res.status(200).json({ ok: true });
+        }
+
+        if (cmdLower.startsWith('/quitarip')) {
+          const parts = text.split(/\s+/);
+          const removeIp = (parts[1] || '').trim();
+          if (removeIp) {
+            ignoredAdminIps.delete(removeIp);
+            saveIgnoredIpsToDisk(Array.from(ignoredAdminIps));
+            await callTelegram('sendMessage', {
+              chat_id: ADMIN_CHAT_ID,
+              text: `🗑️ *IP eliminada de la lista de ignorados:* \`${removeIp}\``,
+              parse_mode: 'Markdown'
+            });
+          } else {
+            await callTelegram('sendMessage', {
+              chat_id: ADMIN_CHAT_ID,
+              text: `⚠️ Uso: \`/quitarip 192.168.1.1\``,
+              parse_mode: 'Markdown'
+            });
+          }
+          return res.status(200).json({ ok: true });
+        }
+
+        if (cmdLower === '/listarips' || cmdLower === '/ips') {
+          const list = Array.from(ignoredAdminIps);
+          const ipText = list.length > 0 ? list.map(ip => `• \`${ip}\``).join('\n') : '_Ninguna IP registrada actualmente._';
+          await callTelegram('sendMessage', {
+            chat_id: ADMIN_CHAT_ID,
+            text: `🛡️ *LISTA DE IPS IGNORADAS (ADMINISTRADOR)* 🛡️\n\n${ipText}\n\n💡 *Tip:* Usa /miip o /agregarip <ip> para añadir más.`,
+            parse_mode: 'Markdown'
+          });
+          return res.status(200).json({ ok: true });
+        }
+
         if (cmdLower === '/resetvisitas' || cmdLower === '/limpiarvisitas') {
+
           visitsLog.length = 0;
           saveVisitsToDisk([]);
           await callTelegram('sendMessage', {
@@ -2327,6 +2395,35 @@ function checkHighEngagementVisit(sessionId, city, device, durationStr) {
   } catch (e) {}
 }
 
+function checkHighIntentVisit(sessionId, city, region, flag, device, clicks) {
+  try {
+    if (!sessionId || !Array.isArray(clicks) || clicks.length === 0) return;
+
+    const highIntentKeywords = ['cotiz', 'precio', 'whatsapp', 'demo', 'contact', 'agend', 'ventas', 'garant', 'botón'];
+    const matchedClick = clicks.find(c => {
+      const lower = (c || '').toLowerCase();
+      return highIntentKeywords.some(kw => lower.includes(kw));
+    });
+
+    if (matchedClick && !notifiedSessionsHighIntent.has(sessionId)) {
+      notifiedSessionsHighIntent.add(sessionId);
+
+      callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: `🎯 *¡ALERTA DE ALTA INTENCIÓN DE COMPRA!* 🎯\n\n` +
+              `Un visitante en la web acaba de realizar una acción de alta conversión:\n\n` +
+              `🖱️ *Acción / Clic:* \`${matchedClick}\`\n` +
+              `📍 *Ubicación:* ${city || 'México'}, ${region || ''} ${flag || '🇲🇽'}\n` +
+              `📱 *Dispositivo:* ${device || 'Móvil'}\n` +
+              `⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' })}\n\n` +
+              `💬 *Sugerencia:* Si el usuario inicia un chat o envía mensaje por WhatsApp, atiéndelo de inmediato.`,
+        parse_mode: 'Markdown'
+      }).catch(function(){});
+    }
+  } catch (e) {}
+}
+
+
 async function sendMondayWeeklyInsightReport() {
   try {
     const allVisits = visitsLog.length > 0 ? visitsLog : loadVisitsFromDisk();
@@ -2372,6 +2469,14 @@ app.post('/api/track-visit', async (req, res) => {
     if (typeof bodyData === 'string') {
       try { bodyData = JSON.parse(bodyData); } catch (e) {}
     }
+
+    const clientIp = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim();
+
+    // 🛡️ Filtro de IP del Administrador: Ignorar visitas si la IP pertenece al admin o si viene marcada como admin
+    if ((clientIp && ignoredAdminIps.has(clientIp)) || bodyData?.isAdmin) {
+      return res.status(200).json({ ok: true, ignored: true, message: 'Visita de administrador ignorada.' });
+    }
+
     const { sessionId, isReturning, city, region, country, flag, source, device, isp, duration, scroll, clicks } = bodyData || {};
     const nowMs = Date.now();
 
@@ -2409,6 +2514,10 @@ app.post('/api/track-visit', async (req, res) => {
 
     // Suggestion 2: High Engagement Alert (> 5 Minutes Browsing)
     checkHighEngagementVisit(sessionId, city, device, duration);
+
+    // 🎯 Sugerencia 2: Alerta Instantánea de Alta Intención de Compra
+    checkHighIntentVisit(sessionId, city, region, flag, device, clicks);
+
 
     // Suggestion 3: Instant Returning Visitor Alert
     if (isReturning && existingIndex === -1) {

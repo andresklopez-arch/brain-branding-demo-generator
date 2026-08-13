@@ -237,6 +237,23 @@ function createDailyVisitsBackup() {
   }
 }
 
+const IGNORED_IPS_FILE = path.join(DATA_DIR, 'ignored_ips.json');
+
+function loadIgnoredIpsFromDisk() {
+  try {
+    if (fs.existsSync(IGNORED_IPS_FILE)) {
+      return JSON.parse(fs.readFileSync(IGNORED_IPS_FILE, 'utf8')) || [];
+    }
+  } catch (e) {}
+  return [];
+}
+
+function saveIgnoredIpsToDisk(ips) {
+  try {
+    fs.writeFileSync(IGNORED_IPS_FILE, JSON.stringify(ips, null, 2), 'utf8');
+  } catch (e) {}
+}
+
 // Run visits purge and daily backup check every 12 hours
 setInterval(() => {
   purgeOldVisits(30);
@@ -258,6 +275,9 @@ module.exports = {
   saveMetricsToDisk,
   loadVisitsFromDisk,
   saveVisitsToDisk,
+  loadIgnoredIpsFromDisk,
+  saveIgnoredIpsToDisk,
   purgeOldVisits,
   createDailyVisitsBackup
 };
+
