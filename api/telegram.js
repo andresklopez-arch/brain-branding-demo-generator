@@ -2689,26 +2689,50 @@ setInterval(() => {
 let lastBlockchainHash = "GENESIS_BRAIN_BRANDING_BLOCK_SAAS_2026";
 
 // Programador Automático de Reportes cada 8 Horas (6:00 AM, 2:00 PM y 10:00 PM)
-const sentReportSlots = new Set();
+
+// Cargar slots enviados guardados en disco para evitar duplicados entre reinicios
+const SENT_SLOTS_FILE = path.join(DATA_DIR, 'sent_report_slots.json');
+let sentReportSlotsArray = [];
+try {
+  if (fs.existsSync(SENT_SLOTS_FILE)) {
+    sentReportSlotsArray = JSON.parse(fs.readFileSync(SENT_SLOTS_FILE, 'utf8')) || [];
+  }
+} catch (e) {}
+const sentReportSlots = new Set(sentReportSlotsArray);
+
+function saveSentReportSlotsToDisk() {
+  try {
+    const list = Array.from(sentReportSlots).slice(-100);
+    fs.writeFileSync(SENT_SLOTS_FILE, JSON.stringify(list, null, 2), 'utf8');
+  } catch (e) {}
+}
+
+let isReportExecuting = false;
 
 async function checkAndTriggerMorningReports() {
+  if (isReportExecuting) return;
+  isReportExecuting = true;
+
   try {
     const now = new Date();
     const cdmxDateStr = now.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' });
     const hourStr = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Mexico_City', hour: 'numeric', hour12: false }).format(now);
     const cdmxHour = parseInt(hourStr, 10);
 
-    // Horarios de reporte: 6 (6:00 AM), 14 (2:00 PM), 22 (10:00 PM)
+    // Horarios exactos de reporte: 6 (6:00 AM), 14 (2:00 PM), 22 (10:00 PM)
     const targetHours = [6, 14, 22];
 
     for (const targetH of targetHours) {
-      // Si la hora actual es igual o posterior a la hora objetivo (margen de gracia de hasta 3h si el servidor estuvo inactivo)
-      if (cdmxHour >= targetH && cdmxHour < targetH + 3) {
+      // Disparar ÚNICAMENTE durante la hora exacta del slot (ej: 06:xx, 14:xx, 22:xx)
+      if (cdmxHour === targetH) {
         const slotKey = `${cdmxDateStr}_slot_${targetH}`;
 
         if (!sentReportSlots.has(slotKey)) {
+          // Candado síncrono INMEDIATO antes de llamadas asíncronas
           sentReportSlots.add(slotKey);
-          console.log(`[SCHEDULED 8H REPORT] Enviando reporte automático slot ${targetH}:00 para ${cdmxDateStr} (Hora actual: ${cdmxHour})`);
+          saveSentReportSlotsToDisk();
+
+          console.log(`[SCHEDULED 8H REPORT] Disparando reporte automático slot ${targetH}:00 hrs para ${cdmxDateStr}`);
 
           let slotHeader = `☀️ *RESUMEN AUTOMÁTICO DE VISITAS WEB (MATUTINO 6:00 AM)* ☀️`;
           if (targetH === 14) slotHeader = `🌤️ *RESUMEN AUTOMÁTICO DE VISITAS WEB (VESPERTINO 2:00 PM)* 🌤️`;
@@ -2721,13 +2745,14 @@ async function checkAndTriggerMorningReports() {
             parse_mode: 'Markdown'
           }).catch(e => console.error('[8H VISITS REPORT ERROR]', e.message));
 
-          // Enviar también informe de prospectos IA en el slot de las 6:00 AM
+          // Enviar también informe de prospectos IA en el slot matutino de las 6:00 AM
           if (targetH === 6 && typeof sendMorningReport8AM === 'function') {
             await sendMorningReport8AM().catch(e => console.error('[6AM LEADS REPORT ERROR]', e.message));
           }
         }
       }
     }
+
 
     // Cobro diario a clientes (3 días antes del vencimiento) a las 8:00 AM
     if (cdmxHour >= 8 && cdmxHour < 23 && lastBillingCheckDate !== cdmxDateStr) {
@@ -2767,8 +2792,11 @@ async function checkAndTriggerMorningReports() {
     }
   } catch (e) {
     console.error('[SCHEDULED REPORTS ERROR]', e);
+  } finally {
+    isReportExecuting = false;
   }
 }
+
 
 
 // Run check every 60 seconds
