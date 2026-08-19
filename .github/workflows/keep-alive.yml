@@ -15,5 +15,17 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping keep-alive endpoint
-        run: curl -sf --max-time 30 "https://brain-branding-demo-generator.onrender.com/api/keep-alive" || true
+      # Antes esto siempre terminaba "exitosamente" (con `|| true`) sin
+      # importar si el servidor respondía o no — un deploy roto (como el
+      # bug de DATA_DIR que tumbaba el servidor en cada arranque) podía
+      # pasar desapercibido indefinidamente. Ahora, si el servidor no
+      # responde tras 2 intentos, este paso falla de verdad, y GitHub
+      # manda un correo automático al dueño del repositorio avisando que
+      # el workflow programado falló — sin necesidad de configurar ningún
+      # secreto adicional.
+      - name: Ping keep-alive endpoint (con reintento)
+        run: |
+          curl -sf --max-time 30 "https://brain-branding-demo-generator.onrender.com/api/keep-alive" && exit 0
+          echo "Primer intento falló, reintentando en 20s..."
+          sleep 20
+          curl -sf --max-time 30 "https://brain-branding-demo-generator.onrender.com/api/keep-alive"

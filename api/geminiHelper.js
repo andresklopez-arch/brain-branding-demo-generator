@@ -318,11 +318,30 @@ async function generateLeadBriefing(history = []) {
   return summary || "Prospecto interesado en soluciones tecnológicas de Brain Branding.";
 }
 
+// Prueba real y mínima del motor de IA al arrancar el servidor. Antes,
+// cuando Google retiraba un modelo (como pasó con 2.0/2.5-flash), el bot
+// simplemente empezaba a usar el respaldo por reglas fijas para SIEMPRE,
+// sin ningún aviso — nadie se enteraba hasta notar que las respuestas ya
+// no sonaban a IA real. Esto llama a testGeminiConnection() una vez al
+// arrancar (ver api/telegram.js) y avisa por Telegram si Gemini no
+// responde, para detectarlo el mismo día en vez de semanas después.
+async function testGeminiConnection() {
+  if (!getApiKey()) {
+    return { ok: false, reason: 'NO_API_KEY' };
+  }
+  const reply = await getGeminiReply('Responde únicamente con la palabra: OK', 'Sistema', 'startup_healthcheck', []);
+  if (reply) {
+    return { ok: true, model: geminiMetrics.lastUsedModel };
+  }
+  return { ok: false, reason: 'ALL_MODELS_FAILED' };
+}
+
 module.exports = {
   getGeminiReply,
   sanitizeUserPrompt,
   geminiMetrics,
   setSecurityAlertCallback,
   withRetry,
-  generateLeadBriefing
+  generateLeadBriefing,
+  testGeminiConnection
 };

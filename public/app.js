@@ -4440,7 +4440,10 @@ END:VCARD`;
     return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  // Pre-filled Master Knowledge Base Text
+  // ⚠️ ESTA es la copia que de verdad queda vigente en el navegador (app.js
+  // se carga al final de index.html, así que esta asignación pisa la que
+  // hay arriba en el <script> inicial de index.html). Si necesitas
+  // actualizar el texto por defecto del bot, edítalo AQUÍ.
   window.DEFAULT_BUSINESS_FEATURES = `# BRAIN BRANDING — REGLAS Y CARACTERÍSTICAS DEL NEGOCIO (KNOWLEDGE BASE)
 
 ## 🏢 1. INFORMACIÓN CORPORATIVA

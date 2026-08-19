@@ -35,6 +35,14 @@
     }
 
 
+    // ⚠️ app.js se carga al final del body (<script src="app.js">, ya
+    // cerca de </body>) y REDEFINE window.DEFAULT_BUSINESS_FEATURES con su
+    // propio texto — esa reasignación tardía es la que realmente queda
+    // vigente en el navegador. Editar el texto de aquí abajo NO tiene
+    // ningún efecto real; el texto que hay que editar es el de
+    // "initAdminDashboard" en app.js. Se deja aquí solo como valor
+    // temprano por si algún código llega a leerlo antes de que app.js
+    // termine de cargar.
     window.DEFAULT_BUSINESS_FEATURES = `# BRAIN BRANDING — REGLAS Y CARACTERÍSTICAS DEL NEGOCIO (KNOWLEDGE BASE)
 
 ## 🏢 1. INFORMACIÓN CORPORATIVA
@@ -183,13 +191,28 @@
       // (/api/admin/request-2fa y /api/admin/verify-2fa); el navegador
       // nunca ve el código real ni el token del bot de Telegram.
       if (!window._is2FAActive) {
-        // STEP 1: CHECK MASTER PASSWORD
-        const hash = await window.sha256Hex(passVal);
+        // STEP 1: CHECK MASTER PASSWORD — verificado en el servidor
+        // (/api/admin/verify-password), no comparando el hash aquí en el
+        // navegador. Antes cualquiera con devtools podía saltarse esta
+        // comparación por completo (ej. llamando directo a la siguiente
+        // función) sin conocer la contraseña real; ahora el servidor es la
+        // única fuente de verdad, con límite de intentos igual que el OTP.
+        if (loginError) loginError.style.display = 'none';
+        if (loginSubmitBtn) loginSubmitBtn.disabled = true;
 
-        if (hash === "5f746de363014fcf4c725d94e0ade7189b0fd6142d2a8484316946262fa7abd0") {
-          if (loginError) loginError.style.display = 'none';
-          if (loginSubmitBtn) loginSubmitBtn.disabled = true;
+        let passData;
+        try {
+          const passRes = await fetch((window.API_BASE || '') + '/api/admin/verify-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: passVal })
+          });
+          passData = await passRes.json();
+        } catch (err) {
+          passData = { ok: false, error: 'No se pudo conectar con el servidor.' };
+        }
 
+        if (passData.ok) {
           let data;
           try {
             const res = await fetch((window.API_BASE || '') + '/api/admin/request-2fa', { method: 'POST' });
@@ -220,8 +243,9 @@
             setTimeout(function() { otpIn.focus(); }, 150);
           }
         } else {
+          if (loginSubmitBtn) loginSubmitBtn.disabled = false;
           if (loginError) {
-            loginError.innerText = 'Contraseña incorrecta';
+            loginError.innerText = passData.error || 'Contraseña incorrecta';
             loginError.style.display = 'block';
           }
           if (passIn) {

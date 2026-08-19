@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
-const { getGeminiReply, geminiMetrics, setSecurityAlertCallback, generateLeadBriefing } = require('./geminiHelper.js');
+const { getGeminiReply, geminiMetrics, setSecurityAlertCallback, generateLeadBriefing, testGeminiConnection } = require('./geminiHelper.js');
 const { getHistory, addTurn } = require('./historyStore.js');
 
 // Declarado aquí arriba (no donde se usaba antes, ~2760 líneas más abajo)
@@ -119,14 +119,57 @@ app.options('/api/governance/set-status', (req, res) => {
   res.status(204).end();
 });
 
+// Antes esta contraseña solo se comparaba EN EL NAVEGADOR (index.html
+// tenía el hash escrito ahí y comparaba con crypto.subtle.digest del
+// lado del cliente) — cualquiera podía saltarse esa comparación entera
+// con las herramientas de desarrollador, sin pasar nunca por un
+// servidor. Se admite ADMIN_PASSWORD_HASH por variable de entorno (con
+// el mismo hash actual como respaldo, para no invalidar la contraseña
+// existente sin coordinarlo primero).
+const ADMIN_PASS_HASH = process.env.ADMIN_PASSWORD_HASH || "5f746de363014fcf4c725d94e0ade7189b0fd6142d2a8484316946262fa7abd0";
+
+let adminPasswordFailCount = 0;
+let adminPasswordLockedUntil = 0;
+
+// Verificación real del paso 1 del login admin (contraseña maestra) — el
+// paso 2 (OTP por Telegram) ya pasaba por el servidor desde antes
+// (/api/admin/request-2fa y /api/admin/verify-2fa); ahora el paso 1
+// también, cerrando el hueco de que alguien con devtools abiertos podía
+// forzar el avance al 2FA sin conocer la contraseña real.
+app.post('/api/admin/verify-password', (req, res) => {
+  if (Date.now() < adminPasswordLockedUntil) {
+    const minsLeft = Math.ceil((adminPasswordLockedUntil - Date.now()) / 60000);
+    return res.status(429).json({ ok: false, error: `⛔ Bloqueado por intentos fallidos. Reintenta en ${minsLeft} min.` });
+  }
+
+  const { password } = req.body || {};
+  const hash = crypto.createHash('sha256').update(String(password || '')).digest('hex');
+
+  if (hash !== ADMIN_PASS_HASH) {
+    adminPasswordFailCount++;
+    if (adminPasswordFailCount >= 5) {
+      adminPasswordLockedUntil = Date.now() + 15 * 60 * 1000;
+      adminPasswordFailCount = 0;
+      callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: '🚨 *ALERTA DE SEGURIDAD — CONTRASEÑA ADMIN* 🚨\n\nSe registraron 5 intentos fallidos consecutivos de contraseña del panel admin. Acceso bloqueado 15 minutos.',
+        parse_mode: 'Markdown'
+      }).catch(() => {});
+      return res.status(429).json({ ok: false, error: '🚨 Demasiados intentos fallidos. Bloqueado 15 minutos.' });
+    }
+    return res.status(401).json({ ok: false, error: 'Contraseña incorrecta.' });
+  }
+
+  adminPasswordFailCount = 0;
+  return res.status(200).json({ ok: true });
+});
+
 // Base de conocimiento personalizada del bot — antes el panel admin solo
 // la guardaba en localStorage del navegador y el bot real nunca la leía.
 // GET es público (es contenido de negocio, no un secreto) para que el
 // admin lo pueda precargar en el editor; POST exige la contraseña maestra
 // del panel (mismo hash que ya se usa para entrar al panel) para que no
 // cualquiera pueda reescribir las instrucciones que recibe la IA.
-const ADMIN_PASS_HASH = "5f746de363014fcf4c725d94e0ade7189b0fd6142d2a8484316946262fa7abd0";
-
 app.get('/api/knowledge-base', (req, res) => {
   const text = loadKnowledgeBase();
   return res.status(200).json({ ok: true, text, isCustom: !!text });
@@ -3230,6 +3273,30 @@ app.listen(PORT, async () => {
     } catch (e) {
       console.warn('[AUTO-WEBHOOK WARN] Failed to auto-link Webhook:', e.message);
     }
+  }
+
+  // Prueba real del motor de Gemini al arrancar — antes, si Google
+  // retiraba un modelo (como pasó hoy con 2.0/2.5-flash), el bot se
+  // quedaba usando el respaldo por reglas fijas de forma silenciosa e
+  // indefinida, sin ningún aviso.
+  try {
+    const health = await testGeminiConnection();
+    if (health.ok) {
+      console.log(`[GEMINI HEALTHCHECK] OK — modelo activo: ${health.model}`);
+    } else {
+      console.warn(`[GEMINI HEALTHCHECK] FALLÓ — razón: ${health.reason}`);
+      callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: `🚨 *ALERTA: EL MOTOR DE IA (GEMINI) NO RESPONDIÓ AL ARRANCAR* 🚨\n\n` +
+          (health.reason === 'NO_API_KEY'
+            ? `No hay ninguna \`GEMINI_API_KEY\` configurada en el servidor — el bot está usando solo respuestas por reglas fijas, no IA real.`
+            : `Los modelos configurados fallaron al responder. Es posible que Google haya retirado el modelo actual (ya pasó antes) o que la llave de API ya no sea válida. El bot está usando el respaldo por reglas fijas mientras tanto.`) +
+          `\n\n_Revisa Render → Environment → GEMINI_API_KEY, o pide que se actualicen los modelos en api/geminiHelper.js._`,
+        parse_mode: 'Markdown'
+      }).catch(() => {});
+    }
+  } catch (e) {
+    console.warn('[GEMINI HEALTHCHECK] Excepción:', e.message);
   }
 });
 
