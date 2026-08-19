@@ -6,6 +6,35 @@ const fs = require('fs');
 const { getGeminiReply, geminiMetrics, setSecurityAlertCallback, generateLeadBriefing } = require('./geminiHelper.js');
 const { getHistory, addTurn } = require('./historyStore.js');
 
+// Declarado aquí arriba (no donde se usaba antes, ~2760 líneas más abajo)
+// para que cualquier código del archivo lo pueda usar sin caer en el mismo
+// bug de "usado antes de declararse" que ya tumbaba el servidor en cada
+// arranque (ver DATA_DIR/lastBillingCheckDate).
+const DATA_DIR = path.join(__dirname, '../data');
+try {
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+} catch (e) {}
+
+const KB_FILE = path.join(DATA_DIR, 'knowledge_base.txt');
+
+// Antes el editor de "Base de Conocimiento" del panel admin solo guardaba
+// en localStorage del navegador — el bot real (que corre aquí, en el
+// servidor) nunca tenía forma de leerlo, así que cualquier cosa que el
+// admin editara ahí no tenía ningún efecto real en las respuestas del bot,
+// aunque el mensaje de confirmación decía "los bots consultarán estos
+// datos de inmediato".
+function loadKnowledgeBase() {
+  try {
+    if (fs.existsSync(KB_FILE)) {
+      const text = fs.readFileSync(KB_FILE, 'utf8').trim();
+      if (text) return text;
+    }
+  } catch (e) {
+    console.warn('[KB] Error leyendo base de conocimiento personalizada:', e.message);
+  }
+  return '';
+}
+
 const app = express();
 // Guarda el cuerpo crudo (bytes exactos) de cada request — lo necesita
 // verifyMetaSignature en whatsapp.js para calcular el HMAC real de Meta.
@@ -88,6 +117,38 @@ app.options('/api/governance/set-status', (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.status(204).end();
+});
+
+// Base de conocimiento personalizada del bot — antes el panel admin solo
+// la guardaba en localStorage del navegador y el bot real nunca la leía.
+// GET es público (es contenido de negocio, no un secreto) para que el
+// admin lo pueda precargar en el editor; POST exige la contraseña maestra
+// del panel (mismo hash que ya se usa para entrar al panel) para que no
+// cualquiera pueda reescribir las instrucciones que recibe la IA.
+const ADMIN_PASS_HASH = "5f746de363014fcf4c725d94e0ade7189b0fd6142d2a8484316946262fa7abd0";
+
+app.get('/api/knowledge-base', (req, res) => {
+  const text = loadKnowledgeBase();
+  return res.status(200).json({ ok: true, text, isCustom: !!text });
+});
+
+app.post('/api/knowledge-base', (req, res) => {
+  const { text, password } = req.body || {};
+  if (typeof text !== 'string') {
+    return res.status(400).json({ ok: false, error: 'Falta el texto de la base de conocimiento.' });
+  }
+  const hash = crypto.createHash('sha256').update(String(password || '')).digest('hex');
+  if (hash !== ADMIN_PASS_HASH) {
+    return res.status(403).json({ ok: false, error: 'Contraseña incorrecta.' });
+  }
+  try {
+    fs.writeFileSync(KB_FILE, text.trim(), 'utf8');
+    console.log('[KB] Base de conocimiento actualizada por el admin.');
+    return res.status(200).json({ ok: true });
+  } catch (e) {
+    console.error('[KB] Error al guardar:', e.message);
+    return res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // Serve static web app files directly with anti-caching headers
@@ -1501,7 +1562,7 @@ async function handleWebhookRequest(req, res) {
         await callTelegram('sendChatAction', { chat_id: chatId, action: 'typing' });
         
         const history = getHistory(chatId);
-        let reply = await getGeminiReply(userText, firstName, chatId, history);
+        let reply = await getGeminiReply(userText, firstName, chatId, history, loadKnowledgeBase());
         if (!reply) {
           reply = generateHumanReply(chatId, firstName, userText);
         }
@@ -2760,14 +2821,7 @@ setInterval(() => {
 let lastBlockchainHash = "GENESIS_BRAIN_BRANDING_BLOCK_SAAS_2026";
 
 // Programador Automático de Reportes cada 8 Horas (6:00 AM, 2:00 PM y 10:00 PM)
-
-// DATA_DIR se usa aquí abajo pero antes se declaraba ~115 líneas más
-// adelante (línea 2880 original) — con `const`, referenciarla antes de su
-// declaración lanza un ReferenceError ("Cannot access before
-// initialization") en cuanto arranca el proceso, y como esto corre a nivel
-// de módulo (no dentro de una función), tumbaba el servidor completo en
-// cada arranque en frío. Se declara aquí, antes de su primer uso.
-const DATA_DIR = path.join(__dirname, '../data');
+// (DATA_DIR ahora se declara arriba, cerca del tope del archivo)
 
 // Cargar slots enviados guardados en disco para evitar duplicados entre reinicios
 const SENT_SLOTS_FILE = path.join(DATA_DIR, 'sent_report_slots.json');

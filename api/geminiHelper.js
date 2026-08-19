@@ -217,7 +217,11 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
     }
   });
 
-  const modelsToTry = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
+  // Antes probaba 2.0-flash primero y solo caía a 2.5-flash (más nuevo y
+  // capaz) si 2.0 fallaba — es decir, toda respuesta exitosa normal usaba
+  // el modelo más viejo de los tres. Se prueba el mejor primero y se
+  // degrada solo si de verdad falla.
+  const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
 
   for (const model of modelsToTry) {
     try {

@@ -7,8 +7,24 @@
 const express = require('express');
 const https = require('https');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const { getGeminiReply } = require('./geminiHelper.js');
 const { getHistory, addTurn } = require('./historyStore.js');
+
+// Misma base de conocimiento editable desde el panel admin que usa
+// api/telegram.js (mismo archivo en disco, ver KB_FILE ahí) — antes el
+// bot de WhatsApp ni siquiera tenía la posibilidad de recibirla.
+const KB_FILE = path.join(__dirname, '../data/knowledge_base.txt');
+function loadKnowledgeBase() {
+  try {
+    if (fs.existsSync(KB_FILE)) {
+      const text = fs.readFileSync(KB_FILE, 'utf8').trim();
+      if (text) return text;
+    }
+  } catch (e) {}
+  return '';
+}
 
 const router = express.Router();
 router.use(express.json());
@@ -144,7 +160,7 @@ async function generateHumanWhatsappReply(phone, name, userText) {
   const history = getHistory(phone);
 
   // Try Gemini AI response first
-  const geminiReply = await getGeminiReply(userText, name, phone, history);
+  const geminiReply = await getGeminiReply(userText, name, phone, history, loadKnowledgeBase());
   if (geminiReply) {
     addTurn(phone, 'user', userText);
     addTurn(phone, 'model', geminiReply);

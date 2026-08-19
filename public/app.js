@@ -4479,10 +4479,24 @@ END:VCARD`;
 
     if (!loginModal || !dashboardModal) return;
 
-    // Load saved KB features from localStorage or default
+    // Precarga desde localStorage mientras llega la respuesta real del
+    // servidor (fuente de verdad — ver /api/knowledge-base más abajo).
     const savedKB = localStorage.getItem('brain_branding_kb_features') || DEFAULT_BUSINESS_FEATURES;
     if (kbEditor) kbEditor.value = savedKB;
     window.customKnowledgeBaseText = savedKB;
+
+    const apiBaseKB = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:3000'
+      : 'https://brain-branding-demo-generator.onrender.com';
+    fetch(apiBaseKB + '/api/knowledge-base')
+      .then(r => r.json())
+      .then(data => {
+        const serverKB = (data && data.isCustom && data.text) ? data.text : DEFAULT_BUSINESS_FEATURES;
+        if (kbEditor) kbEditor.value = serverKB;
+        window.customKnowledgeBaseText = serverKB;
+        localStorage.setItem('brain_branding_kb_features', serverKB);
+      })
+      .catch(() => {});
 
     const openLoginModal = () => {
       loginModal.style.display = 'flex';
@@ -4660,22 +4674,48 @@ END:VCARD`;
       });
     }
 
-    // Save edited business features
+    // Save edited business features — antes esto SOLO guardaba en
+    // localStorage del navegador (el bot real, corriendo en el servidor,
+    // jamás llegaba a leerlo) mientras el mensaje de confirmación decía
+    // falsamente "los bots consultarán estos datos de inmediato". Ahora sí
+    // se manda al servidor (/api/knowledge-base), que es lo que de verdad
+    // lee el bot en cada respuesta.
     if (kbSaveBtn) {
-      kbSaveBtn.addEventListener('click', () => {
+      kbSaveBtn.addEventListener('click', async () => {
         const textToSave = (kbEditor ? kbEditor.value : '').trim();
-        localStorage.setItem('brain_branding_kb_features', textToSave);
-        window.customKnowledgeBaseText = textToSave;
+        const password = window.prompt('Confirma tu contraseña de administrador para guardar los cambios:');
+        if (!password) return;
 
-        // Show green toast notification
-        const toast = document.createElement('div');
-        toast.style.cssText = 'position:fixed; bottom:40px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #10b981, #059669); color:#fff; padding:14px 28px; border-radius:30px; font-weight:800; font-size:14px; z-index:999999; box-shadow:0 10px 35px rgba(16,185,129,0.5); transition:all 0.3s ease; pointer-events:none; border:1px solid rgba(255,255,255,0.2);';
-        toast.textContent = '💾 ¡Características del negocio guardadas con éxito! Los bots consultarán estos datos de inmediato. 🚀';
-        document.body.appendChild(toast);
-        setTimeout(() => {
-          toast.style.opacity = '0';
-          setTimeout(() => toast.remove(), 300);
-        }, 3500);
+        kbSaveBtn.disabled = true;
+        try {
+          const res = await fetch(apiBaseKB + '/api/knowledge-base', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: textToSave, password })
+          });
+          const data = await res.json();
+          kbSaveBtn.disabled = false;
+
+          if (!data.ok) {
+            alert('❌ ' + (data.error || 'No se pudo guardar la base de conocimiento.'));
+            return;
+          }
+
+          localStorage.setItem('brain_branding_kb_features', textToSave);
+          window.customKnowledgeBaseText = textToSave;
+
+          const toast = document.createElement('div');
+          toast.style.cssText = 'position:fixed; bottom:40px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #10b981, #059669); color:#fff; padding:14px 28px; border-radius:30px; font-weight:800; font-size:14px; z-index:999999; box-shadow:0 10px 35px rgba(16,185,129,0.5); transition:all 0.3s ease; pointer-events:none; border:1px solid rgba(255,255,255,0.2);';
+          toast.textContent = '💾 ¡Características del negocio guardadas en el servidor! Los bots ya consultan estos datos. 🚀';
+          document.body.appendChild(toast);
+          setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+          }, 3500);
+        } catch (e) {
+          kbSaveBtn.disabled = false;
+          alert('❌ No se pudo conectar con el servidor para guardar.');
+        }
       });
     }
 
