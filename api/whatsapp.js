@@ -43,15 +43,28 @@ const kb = {
 const conversationHistory = {};
 
 function verifyMetaSignature(req, res, next) {
+  // TODO: mientras WHATSAPP_APP_SECRET no esté configurado en Render, esto
+  // deja pasar cualquier POST sin verificar (igual que antes) — hay que
+  // configurarlo para que esta protección realmente entre en efecto.
   const appSecret = process.env.WHATSAPP_APP_SECRET;
   if (!appSecret) return next();
+
   const signature = req.headers['x-hub-signature-256'];
-  if (!signature) {
+  if (!signature || !req.rawBody) {
     return res.status(401).send('Signature missing');
   }
-  const hmac = crypto.createHmac('sha256', appSecret);
-  const digest = 'sha256=' + (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
-  if (crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest))) {
+
+  // Antes esto nunca llamaba a .update()/.digest() en el HMAC, y comparaba
+  // la firma de Meta contra JSON.stringify(req.body) (ni siquiera un HMAC
+  // real, y además el body ya venía re-serializado por express.json, no
+  // los bytes exactos que Meta firmó) — la verificación real de Meta
+  // SIEMPRE fallaba. req.rawBody lo captura telegram.js en el parser
+  // express.json() de más arriba, antes de que se pierdan los bytes
+  // originales.
+  const expectedDigest = 'sha256=' + crypto.createHmac('sha256', appSecret).update(req.rawBody).digest('hex');
+  const expectedBuf = Buffer.from(expectedDigest);
+  const providedBuf = Buffer.from(signature);
+  if (expectedBuf.length === providedBuf.length && crypto.timingSafeEqual(expectedBuf, providedBuf)) {
     return next();
   }
   return res.status(401).send('Signature mismatch');

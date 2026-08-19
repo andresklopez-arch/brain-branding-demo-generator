@@ -7,7 +7,12 @@ const { getGeminiReply, geminiMetrics, setSecurityAlertCallback, generateLeadBri
 const { getHistory, addTurn } = require('./historyStore.js');
 
 const app = express();
-app.use(express.json({ limit: '10mb' }));
+// Guarda el cuerpo crudo (bytes exactos) de cada request — lo necesita
+// verifyMetaSignature en whatsapp.js para calcular el HMAC real de Meta.
+// El router de WhatsApp se monta más abajo (app.use(whatsappApp.router)),
+// así que para cuando llega ahí el body ya fue parseado aquí; sin esto no
+// hay forma de recuperar los bytes originales que Meta firmó.
+app.use(express.json({ limit: '10mb', verify: (req, res, buf) => { req.rawBody = buf; } }));
 app.use(express.text({ type: '*/*', limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -719,6 +724,13 @@ function generateHumanReply(chatId, userName, userText) {
 
 const OWNER_PHONE = '+52 771 233 9238';
 const ADMIN_CHAT_ID = '8337803949';
+// Si se configura, Telegram manda este valor de vuelta en el header
+// X-Telegram-Bot-Api-Secret-Token en cada entrega real del webhook — sin
+// esto, el endpoint le creía a CUALQUIER POST que le llegara (nadie
+// verificaba que en verdad viniera de Telegram). TODO: configurar esta
+// variable en Render para activar la verificación (ver setup-webhook más
+// abajo, que registra este mismo valor con Telegram al arrancar).
+const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || null;
 
 const pausedChats = {};
 const { loadProspectsFromDisk, saveProspectsToDisk } = require('./historyStore.js');
@@ -917,6 +929,10 @@ async function notifyOwner(chatId, firstName, username, userText) {
 
 async function handleWebhookRequest(req, res) {
   try {
+    if (TELEGRAM_WEBHOOK_SECRET && req.headers['x-telegram-bot-api-secret-token'] !== TELEGRAM_WEBHOOK_SECRET) {
+      return res.status(401).json({ ok: false, error: 'Invalid secret token' });
+    }
+
     const update = req.body || {};
 
     // Handle Inline Button Clicks (callback_query)
@@ -1811,12 +1827,13 @@ app.get('/api/telegram/setup-webhook', async (req, res) => {
     
     const result = await callTelegram('setWebhook', {
       url: webhookUrl,
-      drop_pending_updates: false
+      drop_pending_updates: false,
+      ...(TELEGRAM_WEBHOOK_SECRET ? { secret_token: TELEGRAM_WEBHOOK_SECRET } : {})
     });
-    
+
     return res.status(200).json({
       ok: true,
-      message: `Webhook de Telegram configurado exitosamente`,
+      message: `Webhook de Telegram configurado exitosamente${TELEGRAM_WEBHOOK_SECRET ? ' (con secret_token)' : ' (SIN secret_token — configura TELEGRAM_WEBHOOK_SECRET para activar la verificación)'}`,
       webhookUrl,
       result
     });
@@ -3128,8 +3145,12 @@ app.listen(PORT, async () => {
     try {
       const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL;
       const webhookUrl = `${baseUrl}/api/webhook`;
-      await callTelegram('setWebhook', { url: webhookUrl, drop_pending_updates: false });
-      console.log(`[AUTO-WEBHOOK] Webhook successfully linked to ${webhookUrl}`);
+      await callTelegram('setWebhook', {
+        url: webhookUrl,
+        drop_pending_updates: false,
+        ...(TELEGRAM_WEBHOOK_SECRET ? { secret_token: TELEGRAM_WEBHOOK_SECRET } : {})
+      });
+      console.log(`[AUTO-WEBHOOK] Webhook successfully linked to ${webhookUrl}${TELEGRAM_WEBHOOK_SECRET ? ' with secret_token' : ' WITHOUT secret_token (set TELEGRAM_WEBHOOK_SECRET env var to enable)'}`);
     } catch (e) {
       console.warn('[AUTO-WEBHOOK WARN] Failed to auto-link Webhook:', e.message);
     }
