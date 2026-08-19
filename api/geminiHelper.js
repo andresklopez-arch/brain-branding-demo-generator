@@ -225,11 +225,15 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
     }
   });
 
-  // Antes probaba 2.0-flash primero y solo caía a 2.5-flash (más nuevo y
-  // capaz) si 2.0 fallaba — es decir, toda respuesta exitosa normal usaba
-  // el modelo más viejo de los tres. Se prueba el mejor primero y se
-  // degrada solo si de verdad falla.
-  const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  // Los 3 modelos que tenía esta lista antes (2.0-flash, 2.5-flash,
+  // 1.5-flash) dejaron de estar disponibles para llaves de API nuevas —
+  // cualquier respuesta exitosa habría sido imposible con una llave
+  // recién creada, cayendo siempre al respaldo por reglas fijas.
+  // "gemini-flash-latest" es un alias que Google mantiene apuntando al
+  // modelo flash vigente más reciente, así que aunque Google retire
+  // gemini-3.6-flash/3.5-flash más adelante, este alias sigue funcionando
+  // sin tener que volver a tocar este código.
+  const modelsToTry = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.5-flash'];
 
   for (const model of modelsToTry) {
     try {
