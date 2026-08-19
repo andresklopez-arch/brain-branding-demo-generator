@@ -4,6 +4,37 @@
  */
 (function() {
   const startTime = Date.now();
+
+  // El backend (/api/track-visit) ya tenía lógica para no duplicar una
+  // misma visita (busca por sessionId), pero este archivo NUNCA mandaba
+  // ese campo — cada carga de página (inicial, recarga, y el reporte de
+  // salida/5-min) se registraba como una visita nueva e independiente sin
+  // forma de saber que eran la misma persona. Una sola visita real podía
+  // inflar el conteo a 2-3+ "visitas" en los reportes. sessionStorage dura
+  // solo mientras la pestaña sigue abierta — que es exactamente el alcance
+  // de "una sesión" que necesita el backend.
+  const sessionId = (function() {
+    try {
+      let id = sessionStorage.getItem('bb_session_id');
+      if (!id) {
+        id = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+        sessionStorage.setItem('bb_session_id', id);
+      }
+      return id;
+    } catch (e) {
+      return 'sess_' + Date.now();
+    }
+  })();
+
+  // Misma causa: "isReturning" nunca se mandaba, así que la alerta de
+  // "cliente recurrente" (ya programada en el servidor) jamás se disparaba.
+  // localStorage sí persiste entre sesiones/pestañas, a diferencia de
+  // sessionStorage arriba.
+  let isReturning = false;
+  try {
+    isReturning = localStorage.getItem('bb_visited_before') === 'true';
+    localStorage.setItem('bb_visited_before', 'true');
+  } catch (e) {}
   let maxScroll = 0;
   let clickedElements = [];
   let sectionTime = {
@@ -115,6 +146,8 @@
       const device = getDetailedDeviceInfo();
 
       const initialRecord = {
+        sessionId,
+        isReturning,
         time: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
         city,
         region,
@@ -304,7 +337,7 @@
     fetch((window.API_BASE || 'https://brain-branding-demo-generator.onrender.com') + '/api/track-visit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ city, region, country, flag, source, device, isp, duration: durationStr, scroll: maxScroll, clicks: clickedElements })
+      body: JSON.stringify({ sessionId, isReturning, city, region, country, flag, source, device, isp, duration: durationStr, scroll: maxScroll, clicks: clickedElements })
     }).catch(function(){});
   };
 
