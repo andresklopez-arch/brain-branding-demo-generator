@@ -100,32 +100,27 @@
       }, 1000);
     };
 
-    window.resendTelegramOTP = function() {
+    // El código 2FA ya nunca se genera ni se envía desde el navegador — el
+    // servidor (/api/admin/request-2fa) es la única fuente de verdad, así
+    // el token real del bot de Telegram no necesita viajar al cliente.
+    window.resendTelegramOTP = async function() {
       if (Date.now() < window._lockoutUntil) {
         alert('⛔ Acceso bloqueado temporalmente por demasiados intentos fallidos.');
         return;
       }
-      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-      window._generatedOTP = otpCode;
-      window._otpExpiresAt = Date.now() + 10 * 60 * 1000;
-      window.startOTPTimer();
-
-      const otpMsg = `🔑 *CÓDIGO DE AUTENTICACIÓN 2FA (RETRANSMISIÓN)* 🔑\n\n` +
-        `Tu nuevo código de verificación único de 6 dígitos es: *\`${otpCode}\`*\n\n` +
-        `⏱️ *Validez:* 10 Minutos.\n` +
-        `_Solicitado por: L.C.I. Andrés López Rebollo_`;
-
-      fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: '8337803949',
-          text: otpMsg,
-          parse_mode: 'Markdown'
-        })
-      }).catch(function() {});
-
-      alert('📲 Nuevo código 2FA enviado a tu Telegram.');
+      try {
+        const res = await fetch((window.API_BASE || '') + '/api/admin/request-2fa', { method: 'POST' });
+        const data = await res.json();
+        if (!data.ok) {
+          alert('❌ ' + (data.error || 'No se pudo reenviar el código.'));
+          return;
+        }
+        window._otpExpiresAt = Date.now() + 5 * 60 * 1000;
+        window.startOTPTimer();
+        alert('📲 Nuevo código 2FA enviado a tu Telegram.');
+      } catch (e) {
+        alert('❌ No se pudo conectar con el servidor para reenviar el código.');
+      }
     };
 
     // Immediate inline Admin Login opener & submit handler (Full 2FA Telegram OTP)
@@ -180,17 +175,39 @@
         return false;
       }
 
+      // Antes esta función aceptaba una contraseña maestra y códigos OTP
+      // fijos escritos en el código fuente ('56932396', '569323', '999888')
+      // que saltaban por completo el login y el 2FA — cualquiera que abriera
+      // "Ver código fuente" entraba directo al panel admin. Ahora el OTP se
+      // genera, envía y verifica siempre en el servidor
+      // (/api/admin/request-2fa y /api/admin/verify-2fa); el navegador
+      // nunca ve el código real ni el token del bot de Telegram.
       if (!window._is2FAActive) {
         // STEP 1: CHECK MASTER PASSWORD
         const hash = await window.sha256Hex(passVal);
 
-        if (hash === "5f746de363014fcf4c725d94e0ade7189b0fd6142d2a8484316946262fa7abd0" || passVal === '56932396' || passVal === '56932396!') {
+        if (hash === "5f746de363014fcf4c725d94e0ade7189b0fd6142d2a8484316946262fa7abd0") {
           if (loginError) loginError.style.display = 'none';
+          if (loginSubmitBtn) loginSubmitBtn.disabled = true;
 
-          // Generate 6-digit random 2FA OTP code
-          const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-          window._generatedOTP = otpCode;
-          window._otpExpiresAt = Date.now() + 10 * 60 * 1000;
+          let data;
+          try {
+            const res = await fetch((window.API_BASE || '') + '/api/admin/request-2fa', { method: 'POST' });
+            data = await res.json();
+          } catch (err) {
+            data = { ok: false, error: 'No se pudo conectar con el servidor.' };
+          }
+          if (loginSubmitBtn) loginSubmitBtn.disabled = false;
+
+          if (!data.ok) {
+            if (loginError) {
+              loginError.innerText = data.error || 'No se pudo enviar el código 2FA.';
+              loginError.style.display = 'block';
+            }
+            return false;
+          }
+
+          window._otpExpiresAt = Date.now() + 5 * 60 * 1000;
           window.startOTPTimer();
 
           // Immediate Non-blocking UI Transition to Step 2
@@ -202,30 +219,6 @@
             otpIn.value = '';
             setTimeout(function() { otpIn.focus(); }, 150);
           }
-
-          // Dispatch 6-digit OTP code to Andrés R's Telegram (8337803949)
-          const otpMsg = `🔑 *CÓDIGO DE AUTENTICACIÓN 2FA (PANEL ADMIN)* 🔑\n\n` +
-            `Tu código de verificación único de 6 dígitos es: *\`${otpCode}\`*\n\n` +
-            `⏱️ *Validez:* 10 Minutos.\n` +
-            `🛡️ Si no solicitaste este código, tu portal se encuentra protegido.\n\n` +
-            `_Desde: Brain Branding Panel Admin (L.C.I. Andrés López Rebollo)_`;
-
-          fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: '8337803949',
-              text: otpMsg,
-              parse_mode: 'Markdown'
-            })
-          }).catch(function() {
-            fetch((window.API_BASE || '') + '/api/telegram/send-otp', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ code: otpCode })
-            }).catch(function() {});
-          });
-
         } else {
           if (loginError) {
             loginError.innerText = 'Contraseña incorrecta';
@@ -237,15 +230,24 @@
           }
         }
       } else {
-        // STEP 2: VERIFY 6-DIGIT TELEGRAM OTP CODE
-        const isOtpValid = (window._generatedOTP && otpVal === window._generatedOTP && Date.now() <= window._otpExpiresAt) ||
-                           otpVal === '569323' || otpVal === '999888' || otpVal === '56932396';
+        // STEP 2: VERIFY 6-DIGIT TELEGRAM OTP CODE (validado por el servidor)
+        let data;
+        try {
+          const res = await fetch((window.API_BASE || '') + '/api/admin/verify-2fa', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ otp: otpVal })
+          });
+          data = await res.json();
+        } catch (err) {
+          data = { ok: false, error: 'No se pudo conectar con el servidor para verificar el código.' };
+        }
 
-        if (isOtpValid) {
+        if (data.ok) {
           if (otpError) otpError.style.display = 'none';
           window._is2FAActive = false;
-          window._generatedOTP = null;
-          window._failedOtpCount = 0;
+          window._adminToken = data.adminToken;
+          try { sessionStorage.setItem('brain_branding_admin_token', data.adminToken); } catch (e) {}
           if (window._otpInterval) clearInterval(window._otpInterval);
 
           if (loginModal) loginModal.style.display = 'none';
@@ -261,46 +263,16 @@
 
           if (window.renderAdminAnalytics) window.renderAdminAnalytics();
           if (window.renderAdminContractsList) window.renderAdminContractsList();
-
-          // Telegram Security Alert on Access Granted
-          fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: '8337803949',
-              text: '🟢 *ACCESO 2FA AUTORIZADO AL PANEL ADMIN* 🟢\n\nEl administrador L.C.I. Andrés López Rebollo ha completado exitosamente la verificación 2FA por Telegram.',
-              parse_mode: 'Markdown'
-            })
-          }).catch(function() {});
+          // La alerta de "acceso concedido" ya la manda el servidor al
+          // validar el OTP (ver /api/admin/verify-2fa).
         } else {
-          window._failedOtpCount = (window._failedOtpCount || 0) + 1;
-
-          if (window._failedOtpCount >= 3) {
-            window._lockoutUntil = Date.now() + 15 * 60 * 1000;
-            window._failedOtpCount = 0;
-
-            fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                chat_id: '8337803949',
-                text: '🚨 *ALERTA DE SEGURIDAD 2FA — BLOQUEO TEMPORAL DE 15 MIN* 🚨\n\nSe han registrado 3 intentos fallidos consecutivos de código 2FA. El acceso se ha bloqueado por 15 minutos.',
-                parse_mode: 'Markdown'
-              })
-            }).catch(function() {});
-
-            if (otpError) {
-              otpError.innerText = '🚨 3 intentos fallidos. Acceso bloqueado por 15 minutos por seguridad.';
-              otpError.style.display = 'block';
-            }
-          } else {
-            const left = 3 - window._failedOtpCount;
-            if (otpError) {
-              otpError.innerText = `Código 2FA incorrecto. Te quedan ${left} intento(s).`;
-              otpError.style.display = 'block';
-            }
+          if (data.lockedMinutes) {
+            window._lockoutUntil = Date.now() + data.lockedMinutes * 60000;
           }
-
+          if (otpError) {
+            otpError.innerText = data.error || 'Código 2FA incorrecto.';
+            otpError.style.display = 'block';
+          }
           if (otpIn) {
             otpIn.classList.add('shake-input');
             setTimeout(function() { otpIn.classList.remove('shake-input'); }, 450);
@@ -465,23 +437,12 @@
       // Re-draw table immediately
       window.drawContractsTable(updatedList);
 
-      // Async DELETE call to Render API server
+      // Async DELETE call to Render API server — el servidor ya manda la
+      // notificación de Telegram al eliminar (antes se duplicaba aquí con
+      // el token del bot embebido en este HTML público).
       try {
         fetch((window.API_BASE || '') + '/api/contracts/' + codeStr, {
           method: 'DELETE'
-        }).catch(function() {});
-      } catch(e) {}
-
-      // Telegram notification
-      try {
-        fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: '8337803949',
-            text: '🗑️ *CONTRATO ELIMINADO* 🗑️\n\nEl folio de contrato `' + codeStr + '` (' + clientName + ') fue eliminado por L.C.I. Andrés López Rebollo.',
-            parse_mode: 'Markdown'
-          })
         }).catch(function() {});
       } catch(e) {}
 
@@ -595,24 +556,9 @@
 
       window.renderAdminContractsList();
 
-      // Send Telegram notification to L.C.I. Andrés R
-      try {
-        fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: '8337803949',
-            text: '📜 *NUEVO CONTRATO DIGITAL EMITIDO (6 DÍGITOS)* 📜\n\n' +
-              '• *Folio 6D:* `' + code + '`\n' +
-              '• *Cliente:* ' + clientName + '\n' +
-              '• *Software:* ' + appName + '\n' +
-              '• *Desarrollo:* $' + initialPrice + ' MXN\n' +
-              '• *Mensualidad:* $' + monthlyPrice + ' MXN/mes\n\n' +
-              '_Emitido por: L.C.I. Andrés López Rebollo_',
-            parse_mode: 'Markdown'
-          })
-        }).catch(function() {});
-      } catch(err) {}
+      // El servidor (POST /api/contracts arriba) ya manda su propia
+      // notificación de Telegram al guardar el contrato — antes se
+      // duplicaba aquí con el token del bot embebido en este HTML público.
 
       if (clientNameInput) clientNameInput.value = '';
       if (appNameInput) appNameInput.value = '';

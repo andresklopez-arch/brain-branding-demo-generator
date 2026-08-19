@@ -3,6 +3,19 @@ window.API_BASE = (window.location.hostname === 'localhost' || window.location.h
   ? ''
   : 'https://brain-branding-demo-generator.onrender.com';
 
+// Neutraliza HTML antes de insertar texto de origen externo (ej. ?negocio=
+// en la URL) en innerHTML. Antes ?negocio=<img src=x onerror=...> ejecutaba
+// JS arbitrario en el navegador de cualquiera que abriera ese link, sin
+// necesidad de hacer clic en nada.
+window.escapeHtml = function(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
 // Force Service Worker & Browser Cache Update to ensure latest feature release (v30.0.0)
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(registrations => {
@@ -3978,7 +3991,13 @@ END:VCARD`;
       input.value = name;
     }
 
-    const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+    // capitalizedName se inserta más abajo en decenas de bloques HTML (chat
+    // simulado, mockup del POS, folletos) vía innerHTML — se sanitiza aquí,
+    // en el origen, para no tener que escapar cada uno de esos sitios por
+    // separado. `name`/`lowerName` (sin escapar) solo se usan para el campo
+    // de texto del input y para detectar el giro del negocio, nunca se
+    // insertan como HTML.
+    const capitalizedName = window.escapeHtml(name.charAt(0).toUpperCase() + name.slice(1));
     const lowerName = name.toLowerCase();
 
     // Auto-unlock POS boot screen

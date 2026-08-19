@@ -1878,14 +1878,34 @@ app.get('/api/admin/otp-status', (req, res) => {
   return res.status(200).json({ ok: true, message: 'OTP endpoint activo v2', hasOTP: !!currentAdminOTP });
 });
 
+// Antes el panel admin (public/index.html) generaba y "verificaba" el OTP
+// enteramente en el navegador, con códigos de respaldo fijos en el código
+// fuente ('569323', '999888', '56932396') que saltaban el 2FA por completo,
+// y mandaba el mensaje de Telegram directo desde el cliente con el token
+// del bot embebido. Estos dos endpoints son la única fuente de verdad
+// ahora: el navegador nunca ve el código real ni el token del bot, y el
+// límite de intentos/bloqueo se aplica aquí, no con un contador en JS del
+// navegador que cualquiera podía resetear recargando la página.
+let otpRequestLockedUntil = 0;
+let otpVerifyFailCount = 0;
+let otpVerifyLockedUntil = 0;
+const OTP_REQUEST_MIN_INTERVAL_MS = 20 * 1000; // evita spamear el Telegram del admin con reenvíos
+
 // Endpoint 1: Request 2FA OTP Code to Telegram
 app.post('/api/admin/request-2fa', async (req, res) => {
   try {
+    if (Date.now() < otpRequestLockedUntil) {
+      const secsLeft = Math.ceil((otpRequestLockedUntil - Date.now()) / 1000);
+      return res.status(429).json({ ok: false, error: `Espera ${secsLeft}s antes de pedir otro código.` });
+    }
+    otpRequestLockedUntil = Date.now() + OTP_REQUEST_MIN_INTERVAL_MS;
+
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     currentAdminOTP = {
       code,
       expiresAt: Date.now() + 5 * 60 * 1000 // 5 Minutes Validity
     };
+    otpVerifyFailCount = 0;
 
     console.log(`[2FA OTP GENERATED] Code: ${code} | Sending to chat: ${ADMIN_CHAT_ID}`);
 
@@ -1916,7 +1936,12 @@ app.post('/api/admin/request-2fa', async (req, res) => {
 });
 
 // Endpoint 2: Verify 2FA OTP Code
-app.post('/api/admin/verify-2fa', (req, res) => {
+app.post('/api/admin/verify-2fa', async (req, res) => {
+  if (Date.now() < otpVerifyLockedUntil) {
+    const minsLeft = Math.ceil((otpVerifyLockedUntil - Date.now()) / 60000);
+    return res.status(429).json({ ok: false, error: `⛔ Bloqueado por intentos fallidos. Reintenta en ${minsLeft} min.`, lockedMinutes: minsLeft });
+  }
+
   const { otp } = req.body || {};
   if (!currentAdminOTP) {
     return res.status(400).json({ ok: false, error: 'Solicita un código 2FA primero.' });
@@ -1928,13 +1953,33 @@ app.post('/api/admin/verify-2fa', (req, res) => {
   }
 
   if (String(otp).trim() !== currentAdminOTP.code) {
-    return res.status(400).json({ ok: false, error: 'Código 2FA incorrecto.' });
+    otpVerifyFailCount++;
+    if (otpVerifyFailCount >= 3) {
+      otpVerifyLockedUntil = Date.now() + 15 * 60 * 1000;
+      otpVerifyFailCount = 0;
+      currentAdminOTP = null;
+      callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: '🚨 *ALERTA DE SEGURIDAD 2FA — BLOQUEO TEMPORAL DE 15 MIN* 🚨\n\nSe han registrado 3 intentos fallidos consecutivos de código 2FA. El acceso se ha bloqueado por 15 minutos.',
+        parse_mode: 'Markdown'
+      }).catch(() => {});
+      return res.status(429).json({ ok: false, error: '🚨 3 intentos fallidos. Acceso bloqueado por 15 minutos por seguridad.', lockedMinutes: 15 });
+    }
+    return res.status(400).json({ ok: false, error: `Código 2FA incorrecto. Te quedan ${3 - otpVerifyFailCount} intento(s).` });
   }
 
   currentAdminOTP = null;
+  otpVerifyFailCount = 0;
   const adminToken = generateHmacSeal(`ADMIN_AUTH_GRANTED_${Date.now()}`);
 
   console.log(`[2FA VERIFIED] Admin access granted with token ${adminToken}`);
+
+  callTelegram('sendMessage', {
+    chat_id: ADMIN_CHAT_ID,
+    text: '🟢 *ACCESO 2FA AUTORIZADO AL PANEL ADMIN* 🟢\n\nEl administrador L.C.I. Andrés López Rebollo ha completado exitosamente la verificación 2FA por Telegram.',
+    parse_mode: 'Markdown'
+  }).catch(() => {});
+
   return res.status(200).json({ ok: true, adminToken });
 });
 
@@ -3033,9 +3078,21 @@ app.get('/api/contracts-list', (req, res) => {
 app.delete('/api/contracts/:code', (req, res) => {
   const code = (req.params.code || '').trim();
   if (contractsDB[code]) {
+    const deleted = contractsDB[code];
     delete contractsDB[code];
     saveContractsToDisk();
     console.log(`[CONTRACT DELETED] Deleted contract code: ${code}`);
+
+    // Antes esta notificación la mandaba el navegador directo a la API de
+    // Telegram con el token del bot embebido en el HTML público — se movió
+    // aquí junto a la acción real, igual que ya hacía la creación de
+    // contratos arriba.
+    callTelegram('sendMessage', {
+      chat_id: ADMIN_CHAT_ID,
+      text: `🗑️ *CONTRATO ELIMINADO* 🗑️\n\nEl folio de contrato \`${code}\` (${deleted.clientName || 'Sin nombre'}) fue eliminado del panel admin.`,
+      parse_mode: 'Markdown'
+    }).catch(() => {});
+
     return res.status(200).json({ ok: true, message: 'Contrato eliminado' });
   }
   return res.status(404).json({ ok: false, error: 'Contrato no encontrado' });

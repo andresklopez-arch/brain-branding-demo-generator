@@ -20,11 +20,17 @@
     gtag('config', 'G-S95H6FBDRN');
     gtag('event', 'conversion', {'send_to': 'AW-11158652391/conversion'});
 
-    // Instant direct Telegram alert ping to Andrés R (+52 771 233 9238 / Chat ID 8337803949)
+    // El aviso de Telegram ahora lo manda el servidor (antes esta página
+    // pública traía el token del bot escrito directo en el HTML).
     (function() {
-      const msg = encodeURIComponent("🔥 🎯 ¡NUEVA CITA CONFIRMADA EN TU WEB!\n\nPágina: /confirmacion.html\nOrigen: Google Ads Citas\nHora: " + new Date().toLocaleTimeString('es-MX'));
-      fetch('https://api.telegram.org/bot8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M/sendMessage?chat_id=8337803949&text=' + msg)
-        .catch(function(err){ console.warn('[Telegram Alert Ping Error]', err); });
+      const apiBase = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3000'
+        : 'https://brain-branding-demo-generator.onrender.com';
+      fetch(apiBase + '/api/conversion-alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page: '/confirmacion.html', source: 'Google Ads Citas' })
+      }).catch(function(err){ console.warn('[Conversion Alert Error]', err); });
     })();
   </script>
 </head>
