@@ -3414,7 +3414,7 @@ END:VCARD`;
     ];
 
     const webLogs = [
-      '[SUCCESS] Lighthouse audit completed in 0.4s. 100/100 scores verified.',
+      '[SUCCESS] Lighthouse audit completed in 0.4s. 98+ scores verified.',
       '[THEME] Visual mode changed: Dark / Light theme synchronization active.',
       '[CHECKOUT] Stripe API token verification: coupon BRAIN20 successfully applied.',
       '[SEO] Google index crawler status: verified site indexing Rank #1.',
@@ -3997,7 +3997,8 @@ END:VCARD`;
     // separado. `name`/`lowerName` (sin escapar) solo se usan para el campo
     // de texto del input y para detectar el giro del negocio, nunca se
     // insertan como HTML.
-    const capitalizedName = window.escapeHtml(name.charAt(0).toUpperCase() + name.slice(1));
+    const titleCased = name.replace(/\b\w/g, (c) => c.toUpperCase());
+    const capitalizedName = window.escapeHtml(titleCased);
     const lowerName = name.toLowerCase();
 
     // Auto-unlock POS boot screen
@@ -4020,7 +4021,7 @@ END:VCARD`;
         { name: 'Show en Vivo (1 Hora)', price: 3500, icon: '🪗' },
         { name: 'Serenata Especial (5 Canciones)', price: 1800, icon: '🎵' },
         { name: 'Equipo Audio & Luces Pro', price: 2500, icon: '🔊' },
-        { name: 'Show Completo Evento (3 Hours)', price: 9500, icon: '🎤' }
+        { name: 'Show Completo Evento (3 Horas)', price: 9500, icon: '🎤' }
       ];
       customChatScenarios = [
         [
@@ -4032,7 +4033,7 @@ END:VCARD`;
       ];
       webSubtitle = `Brochure interactivo de contratación, repertorio en vivo, disponibilidad de fechas y cotizaciones instantáneas para ${capitalizedName}.`;
       brochureCards = [
-        { title: 'Show en Vivo 3 Horas', price: '$9,500.00', desc: 'Audio profesional, luces LED y repertorio norteño completo.', icon: '🪗' },
+        { title: 'Show Completo Evento (3 Horas)', price: '$9,500.00', desc: 'Audio profesional, luces LED y repertorio norteño completo.', icon: '🪗' },
         { title: 'Serenata Express', price: '$1,800.00', desc: '5 temas a elegir con vestuario de gala e interpretación en vivo.', icon: '🎵' },
         { title: 'Sonido e Iluminación', price: '$2,500.00', desc: 'Planta de luz y equipo de alta fidelidad para 300 personas.', icon: '🔊' }
       ];
@@ -4269,7 +4270,7 @@ END:VCARD`;
 
           <!-- Live Score & Security Badge -->
           <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); padding:8px 12px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#10b981; font-weight:bold;">
-            <span>⚡ Google Lighthouse Score: 100/100</span>
+            <span>⚡ Google Lighthouse Score: 98+</span>
             <span>🔒 Conexión SSL Segura</span>
           </div>
         </div>
@@ -4303,7 +4304,7 @@ END:VCARD`;
     // Show Toast
     const toast = document.createElement('div');
     toast.style.cssText = 'position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:rgba(0,229,255,0.95); color:#000; padding:12px 24px; border-radius:30px; font-weight:bold; font-size:14px; z-index:99999; box-shadow:0 10px 30px rgba(0,229,255,0.5); transition:all 0.3s; pointer-events:none;';
-    toast.textContent = `🚀 ¡Simulaciones en vivo activadas al 1000% para "${capitalizedName}"!`;
+    toast.textContent = `🚀 ¡Simulaciones en vivo activadas para "${capitalizedName}"!`;
     document.body.appendChild(toast);
     setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3200);
   };

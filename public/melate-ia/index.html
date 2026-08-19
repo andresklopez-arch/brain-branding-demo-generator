@@ -35,14 +35,14 @@
                     </div>
                     
                     <div class="header-status-area" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <!-- El icono de configurar backend y el botón de sincronizar eran
+                             controles de desarrollo (apuntan a un servidor local tipo
+                             localhost/ngrok) sin sentido para un visitante público — la
+                             app ya funciona sola con su base de datos local. -->
                         <div class="status-indicator-inline" style="display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); padding:6px 12px; border-radius:20px; font-size:11px;">
                             <div class="status-dot green" style="width:8px; height:8px; border-radius:50%; background:var(--emerald); box-shadow:0 0 8px var(--emerald);"></div>
                             <span id="latest-db-info" style="color:var(--text-secondary);">Sorteos: -- | Último: --</span>
-                            <span onclick="configureApiUrl()" style="cursor:pointer; opacity:0.6; font-size:12px; margin-left:5px;" title="Configurar URL del Servidor Backend">⚙️</span>
                         </div>
-                        <button class="btn btn-secondary btn-sync-inline" id="btn-sync-database" onclick="triggerManualUpdate()" style="font-size:11px; padding:6px 12px; margin:0; display:flex; align-items:center; gap:6px; height:auto; width:auto; border-radius:20px;">
-                            🔄 Sincronizar
-                        </button>
                     </div>
                 </div>
 
