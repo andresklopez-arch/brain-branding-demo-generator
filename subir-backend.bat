@@ -6,9 +6,6 @@ setlocal enabledelayedexpansion
 ::  Brain Branding — Deploy SOLO BACKEND (Render via GitHub)
 :: ═══════════════════════════════════════════════════════════
 
-set TG_TOKEN=8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M
-set TG_CHAT=8337803949
-
 echo [BACKEND] Subiendo cambios del servidor a GitHub...
 git add api/ package.json >nul 2>&1
 git diff --cached --quiet
@@ -23,8 +20,6 @@ git push origin main >nul 2>&1
 echo [OK] Backend en GitHub. Render redespliegará automaticamente.
 
 :notify
-for /f "tokens=*" %%d in ('powershell -command "Get-Date -Format \"dd/MM/yyyy HH:mm\""') do set T=%%d
-set MSG=⚙️ *BACKEND ACTUALIZADO* (Render)%%0A%%0A📦 GitHub push completado%%0A🤖 Render redespliegue automático iniciado%%0A⏰ %T%
-
-powershell -command "Invoke-RestMethod -Uri 'https://api.telegram.org/bot%TG_TOKEN%/sendMessage' -Method POST -ContentType 'application/json' -Body ('{\"chat_id\":\"%TG_CHAT%\",\"text\":\"%MSG%\",\"parse_mode\":\"Markdown\"}' -replace '%%0A',[char]10)" >nul 2>&1
-echo [OK] Notificación enviada a Telegram.
+for /f "tokens=*" %%d in ('powershell -command "Get-Date -Format \"HH:mm\""') do set T=%%d
+powershell -command "Invoke-RestMethod -Uri 'https://brain-branding-demo-generator.onrender.com/api/deploy-notify' -Method POST -ContentType 'application/json' -Body '{\"backend\":\"ok\",\"timestamp\":\"%T%\"}'" >nul 2>&1
+echo [OK] Notificación enviada a Telegram (via servidor, ya no con el token embebido aqui).

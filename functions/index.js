@@ -2,7 +2,12 @@ const functions = require('firebase-functions');
 const https = require('https');
 const kb = require('./knowledge_base');
 
-const TELEGRAM_TOKEN = '8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M';
+// Ver la misma nota en api/telegram.js — el token ya no vive en texto
+// plano en el código. Esta función de Firebase parece no recibir tráfico
+// real hoy (api/telegram.js re-registra el webhook hacia Render en cada
+// arranque, apuntando el bot para allá), pero se corrige igual por
+// higiene del repositorio.
+const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 
 // In-memory conversation state per chat
 const conversationHistory = {};

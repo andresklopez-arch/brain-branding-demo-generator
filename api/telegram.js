@@ -119,7 +119,16 @@ app.use((req, res, next) => {
   next();
 });
 
-const TELEGRAM_TOKEN = '8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M';
+// El token real vivía escrito en texto plano aquí, en un repositorio
+// público de GitHub — cualquiera con el link tenía control total del bot
+// (leer mensajes, mandar como si fuera el bot, cambiar el webhook). Ahora
+// se exige por variable de entorno; sin ella el bot simplemente no podrá
+// mandar/recibir mensajes de Telegram (el resto del sitio sigue
+// funcionando normal).
+const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+if (!TELEGRAM_TOKEN) {
+  console.error('[FATAL] TELEGRAM_BOT_TOKEN no está configurado como variable de entorno. El bot de Telegram no podrá enviar ni recibir mensajes hasta que se configure.');
+}
 
 const kb = {
   agencia: {
@@ -2752,6 +2761,14 @@ let lastBlockchainHash = "GENESIS_BRAIN_BRANDING_BLOCK_SAAS_2026";
 
 // Programador Automático de Reportes cada 8 Horas (6:00 AM, 2:00 PM y 10:00 PM)
 
+// DATA_DIR se usa aquí abajo pero antes se declaraba ~115 líneas más
+// adelante (línea 2880 original) — con `const`, referenciarla antes de su
+// declaración lanza un ReferenceError ("Cannot access before
+// initialization") en cuanto arranca el proceso, y como esto corre a nivel
+// de módulo (no dentro de una función), tumbaba el servidor completo en
+// cada arranque en frío. Se declara aquí, antes de su primer uso.
+const DATA_DIR = path.join(__dirname, '../data');
+
 // Cargar slots enviados guardados en disco para evitar duplicados entre reinicios
 const SENT_SLOTS_FILE = path.join(DATA_DIR, 'sent_report_slots.json');
 let sentReportSlotsArray = [];
@@ -2868,7 +2885,7 @@ setInterval(checkAndTriggerMorningReports, 60 * 1000);
 setTimeout(checkAndTriggerMorningReports, 5000);
 
 // Permanent SaaS Contracts Database (Disk-backed JSON Persistence)
-const DATA_DIR = path.join(__dirname, '../data');
+// DATA_DIR ya se declaró más arriba (la necesitaba SENT_SLOTS_FILE primero).
 const CONTRACTS_FILE = path.join(DATA_DIR, 'contracts.json');
 const contractsDB = {};
 

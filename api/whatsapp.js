@@ -19,7 +19,7 @@ app.use(router);
 
 const OWNER_PHONE = '+52 771 233 9238';
 const ADMIN_CHAT_ID = '8337803949';
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 const pausedWhatsapp = {};
 const whatsappProspectLogs = [];

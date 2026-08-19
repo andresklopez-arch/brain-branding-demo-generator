@@ -6,21 +6,16 @@ setlocal enabledelayedexpansion
 ::  Brain Branding — Deploy SOLO FRONTEND (Firebase Hosting)
 :: ═══════════════════════════════════════════════════════════
 
-set TG_TOKEN=8926335223:AAGIjytPf5xBciwizz2FvgiO-CM-viCA50M
-set TG_CHAT=8337803949
-
 echo [FRONTEND] Desplegando public/ a Firebase Hosting...
 firebase deploy --only hosting
 if errorlevel 1 (
     echo [ERROR] Firebase deploy falló. Ejecuta: firebase login
-    set STATUS=❌ FALLÓ
+    set STATUS=fail
 ) else (
     echo [OK] Firebase Hosting actualizado.
-    set STATUS=✅ OK
+    set STATUS=ok
 )
 
-for /f "tokens=*" %%d in ('powershell -command "Get-Date -Format \"dd/MM/yyyy HH:mm\""') do set T=%%d
-set MSG=🌐 *FRONTEND ACTUALIZADO* (Firebase Hosting)%%0A%%0A📦 Estado: %STATUS%%%0A🔗 https://brainbranding.com.mx%%0A⏰ %T%
-
-powershell -command "Invoke-RestMethod -Uri 'https://api.telegram.org/bot%TG_TOKEN%/sendMessage' -Method POST -ContentType 'application/json' -Body ('{\"chat_id\":\"%TG_CHAT%\",\"text\":\"%MSG%\",\"parse_mode\":\"Markdown\"}' -replace '%%0A',[char]10)" >nul 2>&1
-echo [OK] Notificación enviada a Telegram.
+for /f "tokens=*" %%d in ('powershell -command "Get-Date -Format \"HH:mm\""') do set T=%%d
+powershell -command "Invoke-RestMethod -Uri 'https://brain-branding-demo-generator.onrender.com/api/deploy-notify' -Method POST -ContentType 'application/json' -Body '{\"firebase\":\"%STATUS%\",\"timestamp\":\"%T%\"}'" >nul 2>&1
+echo [OK] Notificación enviada a Telegram (via servidor, ya no con el token embebido aqui).
