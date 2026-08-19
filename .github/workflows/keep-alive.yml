@@ -1,0 +1,19 @@
+name: Keep Backend Awake
+
+# El servidor de Render (plan gratuito) se duerme tras 15 min sin
+# visitas. Si está dormido justo a las 6:00/14:00/22:00 (hora CDMX), los
+# reportes automáticos de Telegram nunca se disparan porque el reloj
+# interno del proceso no corre mientras está dormido. Este workflow lo
+# despierta cada 10 minutos, las 24 horas, sin depender de un servicio
+# externo ni de tráfico real de visitantes.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping keep-alive endpoint
+        run: curl -sf --max-time 30 "https://brain-branding-demo-generator.onrender.com/api/keep-alive" || true

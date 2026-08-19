@@ -511,7 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const operation = document.getElementById('contact-operation').value.trim();
       
       // WhatsApp pre-filled link
-      const phone = "525638165507"; // WhatsApp comercial
+      const phone = "527712339238"; // WhatsApp comercial
       const text = `Hola *Brain Branding*, realicé el diagnóstico de mi negocio en la web:\n\n1. *Giro:* ${vertical}\n2. *Funciones que requiero:* ${desc}\n3. *Operación actual:* ${operation}\n\nMi nombre es *${name}* de la empresa *${business}*. Quedo a la espera de mi propuesta personalizada.`;
       
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -4081,6 +4081,116 @@ END:VCARD`;
         { title: 'Aplicación de Vacunas', price: '$450.00', desc: 'Esquema completo con certificado de vacunación oficial.', icon: '💉' },
         { title: 'Control Crecimiento', price: '$500.00', desc: 'Evaluación nutricional, somatometría y recomendaciones.', icon: '📏' }
       ];
+    } else if (lowerName.includes('restaurante') || lowerName.includes('comida') || lowerName.includes('cocina') || lowerName.includes('antojitos') || lowerName.includes('cafeteria') || lowerName.includes('cafe ') || lowerName.includes('pizzeria') || lowerName.includes('mariscos') || lowerName.includes('taqueria')) {
+      industry = 'Restaurante & Comida a Domicilio 🍽️🍕';
+      posItems = [
+        { name: 'Menú del Día', price: 120, icon: '🍽️' },
+        { name: 'Combo Familiar (4 Personas)', price: 450, icon: '🍔' },
+        { name: 'Pedido a Domicilio Exprés', price: 180, icon: '🛵' },
+        { name: 'Paquete para Eventos (20 Personas)', price: 3500, icon: '🎉' }
+      ];
+      customChatScenarios = [
+        [
+          { sender: 'user', text: `Hola, quiero pedir a domicilio en ${capitalizedName}` },
+          { sender: 'bot', text: `¡Hola! 🍽️ Bienvenido a **${capitalizedName}**. Con gusto tomamos tu pedido. ¿Prefieres ver el menú del día o el combo familiar para 4 personas?` },
+          { sender: 'user', text: `El combo familiar, ¿cuánto tarda la entrega?` },
+          { sender: 'bot', text: `¡Excelente elección! El Combo Familiar de **${capitalizedName}** cuesta **$450.00 MXN** y llega en 30-40 minutos. ¿Me confirmas tu dirección para iniciar el pedido? 🛵` }
+        ]
+      ];
+      webSubtitle = `Menú digital interactivo, pedidos a domicilio 24/7 y reservaciones automáticas para ${capitalizedName}.`;
+      brochureCards = [
+        { title: 'Combo Familiar', price: '$450.00', desc: 'Platillo principal, guarniciones y bebidas para 4 personas.', icon: '🍔' },
+        { title: 'Pedido a Domicilio Exprés', price: '$180.00', desc: 'Entrega en 30-40 minutos con seguimiento en tiempo real.', icon: '🛵' },
+        { title: 'Paquete para Eventos', price: '$3,500.00', desc: 'Menú completo para 20 personas, ideal para celebraciones.', icon: '🎉' }
+      ];
+    } else if (lowerName.includes('salon') || lowerName.includes('belleza') || lowerName.includes('estetica') || lowerName.includes('peluqueria') || lowerName.includes('spa') || lowerName.includes('unas') || lowerName.includes('barberia') || lowerName.includes('manicure')) {
+      industry = 'Salón de Belleza & Estética 💇‍♀️💅';
+      posItems = [
+        { name: 'Corte y Peinado', price: 250, icon: '💇‍♀️' },
+        { name: 'Manicure y Pedicure', price: 350, icon: '💅' },
+        { name: 'Coloración Completa', price: 800, icon: '🎨' },
+        { name: 'Paquete Novia (Peinado + Maquillaje)', price: 1800, icon: '👰' }
+      ];
+      customChatScenarios = [
+        [
+          { sender: 'user', text: `Hola, quisiera agendar una cita en ${capitalizedName}` },
+          { sender: 'bot', text: `¡Hola! 💇‍♀️ Bienvenida a **${capitalizedName}**. Con gusto agendamos tu cita. ¿Buscas corte y peinado, o algo especial como coloración?` },
+          { sender: 'user', text: `Coloración completa, ¿tienen espacio esta semana?` },
+          { sender: 'bot', text: `¡Sí! La Coloración Completa en **${capitalizedName}** tiene un costo de **$800.00 MXN** y tenemos espacio el jueves a las 11:00 AM o el viernes a las 3:00 PM. ¿Cuál prefieres? 🎉` }
+        ]
+      ];
+      webSubtitle = `Agenda de citas 24/7, catálogo de servicios y recordatorios automáticos por WhatsApp para ${capitalizedName}.`;
+      brochureCards = [
+        { title: 'Corte y Peinado', price: '$250.00', desc: 'Estilismo personalizado con productos profesionales.', icon: '💇‍♀️' },
+        { title: 'Manicure y Pedicure', price: '$350.00', desc: 'Tratamiento completo con esmaltado de larga duración.', icon: '💅' },
+        { title: 'Paquete Novia', price: '$1,800.00', desc: 'Peinado y maquillaje profesional para el gran día.', icon: '👰' }
+      ];
+    } else if (lowerName.includes('taller') || lowerName.includes('mecanico') || lowerName.includes('automotriz') || lowerName.includes('refaccion') || lowerName.includes('llantera')) {
+      industry = 'Taller Mecánico & Auto Servicio 🔧🚗';
+      posItems = [
+        { name: 'Cambio de Aceite y Filtro', price: 450, icon: '🛢️' },
+        { name: 'Afinación Mayor', price: 1200, icon: '🔧' },
+        { name: 'Diagnóstico Computarizado', price: 350, icon: '💻' },
+        { name: 'Balanceo y Rotación de Llantas', price: 280, icon: '🚗' }
+      ];
+      customChatScenarios = [
+        [
+          { sender: 'user', text: `Hola, necesito llevar mi carro a ${capitalizedName} para revisión` },
+          { sender: 'bot', text: `¡Hola! 🔧 Bienvenido a **${capitalizedName}**. Con gusto agendamos tu servicio. ¿Es cambio de aceite, afinación o algo más específico?` },
+          { sender: 'user', text: `Creo que necesita afinación mayor` },
+          { sender: 'bot', text: `¡Perfecto! La Afinación Mayor en **${capitalizedName}** tiene un costo de **$1,200.00 MXN** e incluye diagnóstico computarizado sin costo extra. ¿Traes el vehículo hoy o mañana? 🚗` }
+        ]
+      ];
+      webSubtitle = `Agendamiento de servicios, cotizaciones instantáneas y recordatorios de mantenimiento para ${capitalizedName}.`;
+      brochureCards = [
+        { title: 'Afinación Mayor', price: '$1,200.00', desc: 'Revisión completa de motor, bujías y filtros.', icon: '🔧' },
+        { title: 'Diagnóstico Computarizado', price: '$350.00', desc: 'Escaneo electrónico completo con reporte detallado.', icon: '💻' },
+        { title: 'Cambio de Aceite', price: '$450.00', desc: 'Aceite sintético de alta calidad y filtro nuevo.', icon: '🛢️' }
+      ];
+    } else if (lowerName.includes('dentista') || lowerName.includes('dental') || lowerName.includes('odontolog') || lowerName.includes('ortodoncia')) {
+      industry = 'Consultorio Dental & Estética Bucal 🦷😁';
+      posItems = [
+        { name: 'Limpieza Dental', price: 500, icon: '🦷' },
+        { name: 'Consulta y Diagnóstico', price: 350, icon: '🩺' },
+        { name: 'Blanqueamiento Dental', price: 1800, icon: '😁' },
+        { name: 'Ortodoncia (Mensualidad)', price: 900, icon: '🦷' }
+      ];
+      customChatScenarios = [
+        [
+          { sender: 'user', text: `Hola, quisiera agendar una limpieza dental en ${capitalizedName}` },
+          { sender: 'bot', text: `¡Hola! 🦷 Bienvenido al Consultorio Dental **${capitalizedName}**. Con gusto agendamos tu limpieza. ¿Prefieres esta semana o la próxima?` },
+          { sender: 'user', text: `Esta semana, lo antes posible` },
+          { sender: 'bot', text: `¡Listo! La Limpieza Dental en **${capitalizedName}** tiene un costo de **$500.00 MXN** y tenemos espacio mañana a las 10:00 AM. ¿Te la confirmo? 😁` }
+        ]
+      ];
+      webSubtitle = `Agenda de citas dentales 24/7, expedientes clínicos digitales y recordatorios automáticos para ${capitalizedName}.`;
+      brochureCards = [
+        { title: 'Limpieza Dental', price: '$500.00', desc: 'Profilaxis completa con revisión general de encías.', icon: '🦷' },
+        { title: 'Blanqueamiento Dental', price: '$1,800.00', desc: 'Tratamiento profesional con resultados visibles desde la primera sesión.', icon: '😁' },
+        { title: 'Ortodoncia', price: '$900.00/mes', desc: 'Plan de brackets o alineadores con seguimiento mensual.', icon: '🦷' }
+      ];
+    } else if (lowerName.includes('gimnasio') || lowerName.includes('gym') || lowerName.includes('fitness') || lowerName.includes('crossfit')) {
+      industry = 'Gimnasio & Centro Fitness 💪🏋️';
+      posItems = [
+        { name: 'Mensualidad Individual', price: 450, icon: '💪' },
+        { name: 'Plan Trimestral', price: 1200, icon: '🏋️' },
+        { name: 'Entrenador Personal (Sesión)', price: 250, icon: '🥇' },
+        { name: 'Clase Grupal (Zumba / Spinning)', price: 80, icon: '🔥' }
+      ];
+      customChatScenarios = [
+        [
+          { sender: 'user', text: `Hola, quiero información de membresías en ${capitalizedName}` },
+          { sender: 'bot', text: `¡Hola! 💪 Bienvenido a **${capitalizedName}**. Tenemos planes mensuales y trimestrales con acceso a todas las áreas. ¿Buscas mensualidad individual o el plan trimestral con descuento?` },
+          { sender: 'user', text: `El plan trimestral, ¿qué incluye?` },
+          { sender: 'bot', text: `¡Excelente! El Plan Trimestral de **${capitalizedName}** cuesta **$1,200.00 MXN** e incluye acceso ilimitado, clases grupales y una evaluación física inicial. ¿Te inscribimos hoy? 🏋️` }
+        ]
+      ];
+      webSubtitle = `Gestión de membresías, control de acceso y clases grupales con reservación en línea para ${capitalizedName}.`;
+      brochureCards = [
+        { title: 'Plan Trimestral', price: '$1,200.00', desc: 'Acceso ilimitado por 3 meses con evaluación física incluida.', icon: '🏋️' },
+        { title: 'Entrenador Personal', price: '$250.00', desc: 'Sesión individual con rutina personalizada.', icon: '🥇' },
+        { title: 'Clases Grupales', price: '$80.00', desc: 'Zumba, spinning y funcional con instructores certificados.', icon: '🔥' }
+      ];
     } else {
       industry = `Brochure Corporativo Digital - ${capitalizedName}`;
       posItems = [
@@ -4350,7 +4460,7 @@ END:VCARD`;
 - Activación Inicial: Cuota plana de desarrollo e implementación a la medida.
 - Mantenimiento Nube: 10% mensual para servidor resiliente, respaldos diarios automáticos, actualizaciones y soporte técnico 24/7.
 - Garantía Cero Riesgo: Garantía de Satisfacción por contrato y entregables por fases con visto bueno previo.
-- Bono Acción Rápida: Primeros 2 meses de mantenimiento en la nube 100% GRATIS al contratar esta semana.
+- Bono Acción Rápida: Primeros 2 meses de mantenimiento en la nube 100% GRATIS al contratar.
 
 ## 🎯 4. REGLAS PARA BOTS Y ASESORÍA CONSULTIVA
 - Tono conversacional 100% humano, profesional, empático y directo al retorno de inversión (ROI).
@@ -5000,7 +5110,7 @@ END:VCARD`;
       appName: 'Sistema POS Taller Don Pepe',
       date: '2026-08-10',
       initialPrice: 4500,
-      monthlyPrice: 290,
+      monthlyPrice: 450,
       status: 'PENDIENTE',
       acceptedAt: null,
       appStatus: 'ONLINE',
@@ -5315,7 +5425,7 @@ END:VCARD`;
     if (clausePayDay) clausePayDay.textContent = payDayNum;
 
     // Calculate 6% annual increase and next year date
-    const monthlyNum = parseFloat(contract.monthlyPrice) || 290;
+    const monthlyNum = parseFloat(contract.monthlyPrice) || 450;
     const nextYearMonthlyNum = (monthlyNum * 1.06).toFixed(2);
     const nextYearPriceFormatted = `$${Number(nextYearMonthlyNum).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN/mes`;
     
@@ -5526,7 +5636,7 @@ END:VCARD`;
         const appName = document.getElementById('contract-app-name').value.trim();
         const date = document.getElementById('contract-date').value;
         const initialPrice = parseFloat(document.getElementById('contract-initial-price').value) || 4500;
-        const monthlyPrice = parseFloat(document.getElementById('contract-monthly-price').value) || 290;
+        const monthlyPrice = parseFloat(document.getElementById('contract-monthly-price').value) || 450;
 
         if (!clientName || !appName) {
           alert('Por favor ingresa el nombre del contratante y de la app.');
