@@ -2787,6 +2787,11 @@ function saveSentReportSlotsToDisk() {
 }
 
 let isReportExecuting = false;
+// Nunca se declaraba — cada llamada a checkAndTriggerMorningReports (corre
+// cada 60s) tronaba con ReferenceError en cuanto llegaba a esta línea, así
+// que el cobro automático de contratos por vencer nunca llegó a correr ni
+// una sola vez.
+let lastBillingCheckDate = null;
 
 async function checkAndTriggerMorningReports() {
   if (isReportExecuting) return;
