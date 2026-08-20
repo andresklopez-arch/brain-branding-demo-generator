@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
-const { getGeminiReply, geminiMetrics, setSecurityAlertCallback, setTruncationAlertCallback, generateLeadBriefing, testGeminiConnection } = require('./geminiHelper.js');
+const { getGeminiReply, geminiMetrics, setSecurityAlertCallback, setTruncationAlertCallback, generateLeadBriefing, testGeminiConnection, extractAppointmentInfo } = require('./geminiHelper.js');
 const { getHistory, addTurn } = require('./historyStore.js');
 
 // Declarado aquí arriba (no donde se usaba antes, ~2760 líneas más abajo)
@@ -896,8 +896,9 @@ const ADMIN_CHAT_ID = '8337803949';
 const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || null;
 
 const pausedChats = {};
-const { loadProspectsFromDisk, saveProspectsToDisk } = require('./historyStore.js');
+const { loadProspectsFromDisk, saveProspectsToDisk, loadAppointmentsFromDisk, saveAppointmentsToDisk } = require('./historyStore.js');
 const prospectLogs = loadProspectsFromDisk();
+let appointments = loadAppointmentsFromDisk();
 const userRateLimits = {};
 
 function sanitizeReply(text) {
@@ -1002,6 +1003,96 @@ function buildGoogleCalendarLink(name, phone, giro, scheduleStr) {
   const title = encodeURIComponent(`Llamada Brain Branding - ${name || 'Prospecto'}`);
   const details = encodeURIComponent(`Cliente: ${name || 'Prospecto'}\nTeléfono: +${phone}\nGiro: ${giro || 'General'}\nHorario: ${scheduleStr}`);
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}`;
+}
+
+// Fecha CDMX en formato YYYY-MM-DD, con offset de días opcional (0=hoy,
+// 1=mañana). Se usa new Date().toLocaleDateString('en-CA', {timeZone})
+// en vez de parsear un string de vuelta a Date (frágil) porque en-CA ya
+// da directamente el formato YYYY-MM-DD.
+function getCdmxDateISO(daysOffset = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + daysOffset);
+  return d.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+}
+
+function resolveAppointmentDate(dayLabel) {
+  if (dayLabel === 'hoy') return getCdmxDateISO(0);
+  if (dayLabel === 'mañana') return getCdmxDateISO(1);
+  return null;
+}
+
+// Pre-filtro barato antes de gastar una llamada extra de Gemini
+// (extractAppointmentInfo): solo vale la pena analizar la respuesta del
+// bot si de plano suena a que confirmó una cita con una hora concreta.
+const APPOINTMENT_HINT_REGEX = /(agendad|confirmad|queda(?:\s+registrada)?\s+(?:tu\s+|la\s+)?(?:cita|llamada)|te\s+marco|te\s+llamo)/i;
+const APPOINTMENT_TIME_HINT_REGEX = /\d{1,2}(:\d{2})?\s*(am|pm|hrs?)\b/i;
+
+// No se espera (fire-and-forget) para no retrasar la respuesta al
+// cliente — es una notificación al admin, no algo que el cliente necesite
+// que termine antes de recibir su mensaje.
+async function detectAndTrackAppointment(chatId, firstName, username, reply) {
+  if (!APPOINTMENT_HINT_REGEX.test(reply) || !APPOINTMENT_TIME_HINT_REGEX.test(reply)) return;
+
+  try {
+    const info = await extractAppointmentInfo(reply);
+    if (!info || !info.isAppointment) return;
+
+    const state = userStates[chatId] || {};
+    const dateISO = resolveAppointmentDate(info.dayLabel);
+    const time24h = (info.time24h || '').trim() || null;
+
+    // Choque = mismo día + misma hora exacta para OTRO chatId. No puede
+    // prevenir el choque antes de que el bot lo ofrezca (el bot no tiene
+    // acceso a un calendario real), pero sí avisa de inmediato para que
+    // Andrés lo resuelva a mano con ambos prospectos.
+    const conflict = (dateISO && time24h)
+      ? appointments.find(a => a.dateISO === dateISO && a.time24h === time24h && a.chatId !== chatId && a.status !== 'cancelada')
+      : null;
+
+    const entry = {
+      id: `${chatId}_${Date.now()}`,
+      chatId,
+      name: firstName || 'Prospecto',
+      username: username || 'Sin username',
+      phone: state.phone || null,
+      giro: state.giro || 'No especificado',
+      dayLabel: info.dayLabel,
+      dateISO,
+      time24h,
+      rawReply: reply.substring(0, 300),
+      status: 'confirmada',
+      createdAt: new Date().toISOString()
+    };
+    appointments.push(entry);
+    if (appointments.length > 500) appointments.shift();
+    saveAppointmentsToDisk(appointments);
+
+    const whenLabel = dateISO ? `${dateISO}${time24h ? ' ' + time24h : ''}` : (info.dayLabel || 'sin definir');
+
+    await callTelegram('sendMessage', {
+      chat_id: ADMIN_CHAT_ID,
+      text: `📅 *NUEVA CITA CONFIRMADA POR EL BOT* 📅\n\n` +
+        `👤 *Cliente:* ${entry.name} (${entry.username !== 'Sin username' ? '@' + entry.username : 'sin username'})\n` +
+        `📞 *Teléfono:* ${entry.phone ? '+' + entry.phone : 'No proporcionado aún'}\n` +
+        `🏢 *Giro:* ${entry.giro}\n` +
+        `🗓️ *Cuándo:* ${whenLabel}\n` +
+        `🆔 *Chat ID:* \`${chatId}\`\n\n` +
+        `💬 *Tip:* Usa /agenda para ver todas las citas próximas.`,
+      parse_mode: 'Markdown'
+    }).catch(() => {});
+
+    if (conflict) {
+      await callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: `⚠️ *POSIBLE CHOQUE DE CITAS* ⚠️\n\n` +
+          `El bot acaba de confirmarle a *${entry.name}* el mismo horario (*${whenLabel}*) que ya tenía *${conflict.name}* (chat \`${conflict.chatId}\`).\n\n` +
+          `Revisa manualmente con ambos prospectos cuál horario es el correcto — el bot no puede re-agendar por sí mismo.`,
+        parse_mode: 'Markdown'
+      }).catch(() => {});
+    }
+  } catch (e) {
+    console.warn('[APPOINTMENT DETECT ERROR]', e.message);
+  }
 }
 
 async function notifyOwner(chatId, firstName, username, userText) {
@@ -1375,6 +1466,33 @@ async function handleWebhookRequest(req, res) {
           return res.status(200).json({ ok: true });
         }
 
+        if (cmdLower === '/agenda' || cmdLower === '/citas') {
+          const todayISO = getCdmxDateISO(0);
+          const upcoming = appointments
+            .filter(a => a.status !== 'cancelada' && (!a.dateISO || a.dateISO >= todayISO))
+            .sort((a, b) => (a.dateISO || '9999-99-99').localeCompare(b.dateISO || '9999-99-99') || (a.time24h || '99:99').localeCompare(b.time24h || '99:99'));
+
+          if (upcoming.length === 0) {
+            await callTelegram('sendMessage', {
+              chat_id: ADMIN_CHAT_ID,
+              text: '📅 No hay citas próximas registradas todavía. Se registran automáticamente cuando el bot confirma una cita/llamada con un prospecto.',
+              parse_mode: 'Markdown'
+            });
+            return res.status(200).json({ ok: true });
+          }
+
+          let agendaMsg = `📅 *AGENDA DE CITAS PRÓXIMAS* 📅\n\n`;
+          upcoming.forEach((a, idx) => {
+            const sameSlot = upcoming.filter(b => a.dateISO && b.dateISO === a.dateISO && b.time24h === a.time24h && b.chatId !== a.chatId);
+            const conflictTag = sameSlot.length > 0 ? ' ⚠️ *POSIBLE CHOQUE*' : '';
+            const whenLabel = a.dateISO ? `${a.dateISO}${a.time24h ? ' ' + a.time24h : ''}` : (a.dayLabel || 'sin definir');
+            agendaMsg += `${idx + 1}. *${a.name}* — ${whenLabel}${conflictTag}\n   📞 ${a.phone ? '+' + a.phone : 'sin teléfono'} | 🏢 ${a.giro}\n   💬 \`/responder ${a.chatId} \`\n\n`;
+          });
+
+          await callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text: agendaMsg.substring(0, 4000), parse_mode: 'Markdown' });
+          return res.status(200).json({ ok: true });
+        }
+
         if (cmdLower === '/estado' || cmdLower === '/health' || cmdLower === '/status') {
           const uptimeHours = (process.uptime() / 3600).toFixed(2);
           const memUsageMb = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1);
@@ -1715,6 +1833,8 @@ async function handleWebhookRequest(req, res) {
           parse_mode: 'Markdown',
           reply_markup: replyMarkup
         });
+
+        detectAndTrackAppointment(chatId, firstName, username, reply).catch(() => {});
       }
     }
     res.status(200).json({ ok: true, message: 'Brain Branding 24/7 Webhook Active' });

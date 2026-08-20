@@ -162,6 +162,23 @@ function saveMetricsToDisk(metrics) {
   } catch (e) {}
 }
 
+const APPOINTMENTS_FILE = path.join(DATA_DIR, 'appointments_db.json');
+
+function loadAppointmentsFromDisk() {
+  try {
+    if (fs.existsSync(APPOINTMENTS_FILE)) {
+      return JSON.parse(fs.readFileSync(APPOINTMENTS_FILE, 'utf8')) || [];
+    }
+  } catch (e) {}
+  return [];
+}
+
+function saveAppointmentsToDisk(appointments) {
+  try {
+    fs.writeFileSync(APPOINTMENTS_FILE, JSON.stringify(appointments.slice(-500), null, 2), 'utf8');
+  } catch (e) {}
+}
+
 const VISITS_FILE = path.join(DATA_DIR, 'visits_db.json');
 
 function loadVisitsFromDisk() {
@@ -271,6 +288,8 @@ module.exports = {
   inMemoryStore,
   loadProspectsFromDisk,
   saveProspectsToDisk,
+  loadAppointmentsFromDisk,
+  saveAppointmentsToDisk,
   loadMetricsFromDisk,
   saveMetricsToDisk,
   loadVisitsFromDisk,

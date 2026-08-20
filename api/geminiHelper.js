@@ -207,8 +207,9 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
    - Eres Andrés R, una persona real. Si te preguntan directamente "¿eres un bot?", "¿es una IA?", "¿hablo con una persona?" o similar, respóndelo con naturalidad y calidez humana ("Sí, soy Andrés, aquí atendiendo personalmente 🙂 ¿en qué te puedo ayudar?"), sin mentir de forma robótica ni sonar a script, pero tampoco confirmando tecnicismos de IA/modelos/prompts. Redirige rápido y con gusto hacia la conversación comercial.
    - Nunca menciones "modelo de lenguaje", "IA generativa", "prompt", "Gemini" ni nada técnico sobre tu propio funcionamiento.
 
-7. CIERRE DE DOBLE ALTERNATIVA PARA CONTACTO DIRECTO:
-   - Para agendar o canalizar con Andrés R, ofrece siempre 2 alternativas directas: "¿Prefieres que agendemos una llamada rápida hoy por la tarde a las 4:00 PM o te queda mejor mañana por la mañana a las 11:00 AM?"
+7. CIERRE PREGUNTANDO EL HORARIO QUE EL PROSPECTO PREFIERA (PROHIBIDO OFRECER SIEMPRE EL MISMO HORARIO FIJO):
+   - Para agendar o canalizar con Andrés R, PREGUNTA directamente qué día y hora le acomoda al prospecto en vez de proponer tú un horario fijo. Antes esta instrucción decía "ofrece siempre hoy 4:00 PM o mañana 11:00 AM" — eso causaba que TODOS los prospectos del día recibieran la misma oferta de horario, generando citas encimadas a la misma hora sin que nadie se diera cuenta. Ejemplo correcto: "¡Perfecto! ¿Qué día y hora te acomoda mejor para una llamada rápida de 10 minutos?"
+   - Solo si el prospecto responde con algo vago ("cuando puedas", "tú dime"), ahí sí ofrece 2 alternativas concretas como respaldo, pero varíalas según la hora actual de la conversación en vez de repetir siempre "4:00 PM" y "11:00 AM".
 
 8. TARIFAS Y SOLUCIONES DE REFERENCIA:
    - Asistentes de IA 24/7 para WhatsApp y Telegram ($3,500 - $4,500 MXN pago único de integración).
@@ -401,6 +402,67 @@ async function testGeminiConnection() {
   return { ok: true, model: geminiMetrics.lastUsedModel };
 }
 
+// Extrae de la respuesta del bot si acaba de confirmar una cita/llamada y
+// a qué hora, usando salida JSON forzada (responseSchema) en vez de un
+// regex sobre lenguaje natural en español (poco confiable con "hoy por la
+// tarde a las 4", "mañana a primera hora", etc.). Se llama solo cuando el
+// texto de la respuesta ya tiene pinta de confirmar una cita (ver
+// APPOINTMENT_HINT_REGEX en telegram.js) para no gastar una llamada extra
+// de Gemini en cada mensaje.
+async function extractAppointmentInfo(replyText) {
+  const apiKey = getApiKey();
+  if (!apiKey) return null;
+
+  const payload = JSON.stringify({
+    contents: [{
+      role: 'user',
+      parts: [{ text: `Analiza este mensaje de un asistente de citas y determina si confirma una cita o llamada concreta con el cliente, y a qué hora. Mensaje:\n"""${replyText}"""` }]
+    }],
+    generationConfig: {
+      temperature: 0,
+      maxOutputTokens: 200,
+      thinkingConfig: { thinkingBudget: 0 },
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: 'OBJECT',
+        properties: {
+          isAppointment: { type: 'BOOLEAN' },
+          dayLabel: { type: 'STRING', enum: ['hoy', 'mañana', 'otro', 'sin_definir'] },
+          time24h: { type: 'STRING', description: 'Hora en formato HH:MM de 24 horas, o cadena vacía si no se menciona una hora concreta.' }
+        },
+        required: ['isAppointment', 'dayLabel']
+      }
+    }
+  });
+
+  return new Promise((resolve) => {
+    const req = https.request({
+      hostname: 'generativelanguage.googleapis.com',
+      port: 443,
+      path: `/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) return resolve(JSON.parse(text));
+        } catch (e) {
+          console.warn('[APPOINTMENT EXTRACT ERROR]', e.message);
+        }
+        resolve(null);
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.setTimeout(6000, () => { req.destroy(); resolve(null); });
+    req.write(payload);
+    req.end();
+  });
+}
+
 module.exports = {
   getGeminiReply,
   sanitizeUserPrompt,
@@ -409,5 +471,6 @@ module.exports = {
   setTruncationAlertCallback,
   withRetry,
   generateLeadBriefing,
-  testGeminiConnection
+  testGeminiConnection,
+  extractAppointmentInfo
 };
