@@ -63,17 +63,34 @@ const DemoApp = {
   currentArea: "Laboratorio y Químicos",
   SYNC_API_URL: "https://brain-branding-demo-generator.onrender.com/api/serolab/save-requirement",
 
-  init() {
+  async init() {
     this.loadSavedState();
     this.renderModules('all');
     this.updateCounters();
+
+    // Sincronización en segundo plano con el servidor central de Brain Branding
+    try {
+      const res = await fetch("https://brain-branding-demo-generator.onrender.com/api/serolab/requirements");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.requirements && Object.keys(data.requirements).length > 0) {
+          // Unir datos de la nube con datos locales más recientes
+          this.userRequirements = { ...data.requirements, ...this.userRequirements };
+          this.saveState();
+          this.renderModules('all');
+          this.updateCounters();
+        }
+      }
+    } catch (e) {
+      console.log("Modo offline activo:", e);
+    }
   },
 
   setCollaboratorArea(area) {
     this.currentArea = area;
     const status = document.getElementById("saveStatusBar");
     if (status) {
-      status.innerHTML = `<span>👤 Aportando como: <b>${area}</b>. Tus comentarios se etiquetarán con tu área y se notificarán a Brain Branding.</span>`;
+      status.innerHTML = `<span>👤 Aportando como: <b>${area}</b>. Tus comentarios se etiquetarán con tu área y se notificarán de inmediato a Brain Branding.</span>`;
     }
   },
 
