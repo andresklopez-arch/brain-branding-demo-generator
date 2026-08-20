@@ -1994,9 +1994,15 @@ app.get('/api/telegram/setup-webhook', async (req, res) => {
       ...(TELEGRAM_WEBHOOK_SECRET ? { secret_token: TELEGRAM_WEBHOOK_SECRET } : {})
     });
 
-    return res.status(200).json({
-      ok: true,
-      message: `Webhook de Telegram configurado exitosamente${TELEGRAM_WEBHOOK_SECRET ? ' (con secret_token)' : ' (SIN secret_token — configura TELEGRAM_WEBHOOK_SECRET para activar la verificación)'}`,
+    // Antes esto decia "configurado exitosamente" sin importar si Telegram
+    // realmente aceptaba la llamada (ej. con un token invalido, Telegram
+    // responde ok:false pero callTelegram() no lanza excepcion) - `ok` y el
+    // mensaje ahora reflejan lo que Telegram contesto de verdad.
+    return res.status(result && result.ok ? 200 : 502).json({
+      ok: !!(result && result.ok),
+      message: result && result.ok
+        ? `Webhook de Telegram configurado exitosamente${TELEGRAM_WEBHOOK_SECRET ? ' (con secret_token)' : ' (SIN secret_token — configura TELEGRAM_WEBHOOK_SECRET para activar la verificación)'}`
+        : `Telegram RECHAZÓ la configuración del webhook — revisa TELEGRAM_BOT_TOKEN en Render: ${result && result.description ? result.description : 'error desconocido'}`,
       webhookUrl,
       result
     });
@@ -3325,12 +3331,20 @@ app.listen(PORT, async () => {
     try {
       const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL;
       const webhookUrl = `${baseUrl}/api/webhook`;
-      await callTelegram('setWebhook', {
+      const webhookResult = await callTelegram('setWebhook', {
         url: webhookUrl,
         drop_pending_updates: false,
         ...(TELEGRAM_WEBHOOK_SECRET ? { secret_token: TELEGRAM_WEBHOOK_SECRET } : {})
       });
-      console.log(`[AUTO-WEBHOOK] Webhook successfully linked to ${webhookUrl}${TELEGRAM_WEBHOOK_SECRET ? ' with secret_token' : ' WITHOUT secret_token (set TELEGRAM_WEBHOOK_SECRET env var to enable)'}`);
+      // Antes esto se imprimia como "successfully linked" sin revisar
+      // webhookResult.ok - con un token invalido, callTelegram() resuelve
+      // (no lanza excepcion) con {ok:false,...}, asi que el log mentia
+      // diciendo exito justo cuando Telegram habia rechazado la llamada.
+      if (webhookResult && webhookResult.ok) {
+        console.log(`[AUTO-WEBHOOK] Webhook successfully linked to ${webhookUrl}${TELEGRAM_WEBHOOK_SECRET ? ' with secret_token' : ' WITHOUT secret_token (set TELEGRAM_WEBHOOK_SECRET env var to enable)'}`);
+      } else {
+        console.warn(`[AUTO-WEBHOOK WARN] Telegram rechazó el registro del webhook: ${webhookResult && webhookResult.description}`);
+      }
     } catch (e) {
       console.warn('[AUTO-WEBHOOK WARN] Failed to auto-link Webhook:', e.message);
     }
