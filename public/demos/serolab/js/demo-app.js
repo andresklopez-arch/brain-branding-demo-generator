@@ -1,8 +1,7 @@
 /* ============================================================
-   BRAIN BRANDING - LOGICA DE LA APLICACIÓN INTERACTIVA DE DEMO
+   BRAIN BRANDING - LOGICA DE LA APLICACIÓN INTERACTIVA v2.1
    ============================================================ */
 
-// 1. PIN GATE LOGIC
 const PinGate = {
   enteredPin: "",
   validPins: ["72217", "20260", "20261", "2026", "84927"],
@@ -38,14 +37,14 @@ const PinGate = {
   submit() {
     const helper = document.getElementById("pinHelperText");
     if (this.validPins.includes(this.enteredPin) || this.enteredPin === "2026") {
-      helper.innerHTML = "<span style='color: #2DD4BF;'>✓ ¡Acceso Autorizado! Cargando configuración de SERO LAB...</span>";
+      helper.innerHTML = "<span style='color: #2DD4BF; font-weight: 700;'>✓ ¡Acceso Autorizado! Cargando configuración de SERO LAB...</span>";
       setTimeout(() => {
         document.getElementById("pinOverlay").style.display = "none";
         document.getElementById("mainApp").style.display = "block";
         DemoApp.init();
-      }, 500);
+      }, 400);
     } else {
-      helper.innerHTML = "<span style='color: #EF4444;'>❌ NIP Incorrecto. Prueba con 72217 o 20260</span>";
+      helper.innerHTML = "<span style='color: #EF4444; font-weight: 700;'>❌ NIP Incorrecto. Verifica con el equipo de Brain Branding</span>";
       this.enteredPin = "";
       this.updateDisplay();
     }
@@ -58,18 +57,26 @@ const PinGate = {
   }
 };
 
-// 2. DEMO APP CONTROLLER
 const DemoApp = {
   userRequirements: {},
+  currentArea: "Laboratorio y Químicos",
 
   init() {
     this.loadSavedState();
     this.renderModules('all');
-    this.updateProgress();
+    this.updateCounters();
+  },
+
+  setCollaboratorArea(area) {
+    this.currentArea = area;
+    const status = document.getElementById("saveStatusBar");
+    if (status) {
+      status.innerHTML = `<span>👤 Aportando como: <b>${area}</b>. Tus comentarios se etiquetarán con tu área.</span>`;
+    }
   },
 
   loadSavedState() {
-    const saved = localStorage.getItem("serolab_demo_requirements");
+    const saved = localStorage.getItem("serolab_lims_requirements_v2");
     if (saved) {
       try {
         this.userRequirements = JSON.parse(saved);
@@ -80,8 +87,8 @@ const DemoApp = {
   },
 
   saveState() {
-    localStorage.setItem("serolab_demo_requirements", JSON.stringify(this.userRequirements));
-    this.updateProgress();
+    localStorage.setItem("serolab_lims_requirements_v2", JSON.stringify(this.userRequirements));
+    this.updateCounters();
   },
 
   filterCategory(cat) {
@@ -100,7 +107,9 @@ const DemoApp = {
     filtered.forEach(m => {
       const savedData = this.userRequirements[m.id] || {
         uso: m.defaultUso,
-        deseo: m.defaultDeseo
+        deseo: m.defaultDeseo,
+        submodules: [],
+        authorArea: this.currentArea
       };
 
       const isConfigured = Boolean(this.userRequirements[m.id]);
@@ -108,8 +117,34 @@ const DemoApp = {
       card.className = `module-card ${isConfigured ? 'configured' : ''}`;
       card.id = `card-${m.id}`;
 
+      // Batería de sugerencias HTML
+      let adviceItemsHtml = "";
+      m.advices.forEach(adv => {
+        adviceItemsHtml += `
+          <div class="advice-item">
+            <span>💡 ${adv}</span>
+            <button class="btn-add-advice" onclick="DemoApp.appendAdvice('${m.id}', '${adv.replace(/'/g, "\\'")}')">
+              + Agregar
+            </button>
+          </div>
+        `;
+      });
+
+      // Submódulos Checkbox List
+      let submodulesHtml = "";
+      m.submodules.forEach(sub => {
+        const isChecked = savedData.submodules && savedData.submodules.includes(sub);
+        submodulesHtml += `
+          <label class="submod-item">
+            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="DemoApp.toggleSubmodule('${m.id}', '${sub.replace(/'/g, "\\'")}', this.checked)">
+            <span>${sub}</span>
+          </label>
+        `;
+      });
+
       card.innerHTML = `
         <div>
+          <!-- Header -->
           <div class="mod-header">
             <div class="mod-title-group">
               <div class="mod-icon">${m.icon}</div>
@@ -123,38 +158,51 @@ const DemoApp = {
             </span>
           </div>
 
-          <!-- Comparativa -->
-          <div class="comp-panel">
-            <div class="comp-label current">🔴 Qué hace su app actual (Labtivity)</div>
-            <div class="comp-text">${m.currentApp}</div>
+          <!-- DIFERENCIADORES VISUALES CLAROS -->
+          <div class="diff-box legacy">
+            <div class="diff-tag legacy-tag">🔴 LO QUE YA TIENEN HOY EN LABTIVITY:</div>
+            <div class="diff-text">${m.currentApp}</div>
           </div>
 
-          <div class="comp-panel" style="border-color: rgba(45, 212, 191, 0.3);">
-            <div class="comp-label better">⚡ Cómo lo moderniza Brain Branding</div>
-            <div class="comp-text" style="color: #E2E8F0;">${m.brainBetter}</div>
+          <div class="diff-box better">
+            <div class="diff-tag better-tag">🚀 LA TRANSFORMACIÓN BRAIN BRANDING (LIMS 4.0):</div>
+            <div class="diff-text">${m.brainBetter}</div>
           </div>
 
-          <!-- Campos Interactivos para el Prospecto -->
+          <!-- Formularios Interactivos -->
           <div class="input-block">
-            <label>1. ¿En qué lo ocupan actualmente en SERO LAB? <span>(Personalizable)</span></label>
-            <textarea class="custom-textarea" id="uso-${m.id}" placeholder="Escribe cómo usan este módulo..." oninput="DemoApp.handleInputChange('${m.id}')">${savedData.uso}</textarea>
+            <label>1. ¿Cómo se opera hoy este módulo en tu área? <span>(Personalizable)</span></label>
+            <textarea class="custom-textarea" id="uso-${m.id}" placeholder="Describe el uso actual en SERO LAB..." oninput="DemoApp.handleInputChange('${m.id}')">${savedData.uso}</textarea>
           </div>
 
           <div class="input-block">
-            <label>2. ¿Qué necesitan o les gustaría que haga de más? <span>(Requerimientos)</span></label>
-            <textarea class="custom-textarea" id="deseo-${m.id}" placeholder="Escribe qué quisieras agregar o mejorar..." oninput="DemoApp.handleInputChange('${m.id}')">${savedData.deseo}</textarea>
+            <label>2. ¿Qué necesitas o te gustaría que haga de más? <span>(Requerimientos)</span></label>
+            <textarea class="custom-textarea" id="deseo-${m.id}" placeholder="Escribe tus requerimientos y mejoras..." oninput="DemoApp.handleInputChange('${m.id}')">${savedData.deseo}</textarea>
           </div>
 
-          <!-- Live AI Advice Box -->
-          <div class="ai-advice-box" id="advice-${m.id}">
-            <div class="ai-advice-header">
-              <span>🧠 SUGERENCIA TECNOLÓGICA BRAIN BRANDING</span>
+          <!-- Batería de Sugerencias Tecnológicas de IA -->
+          <div class="advice-section">
+            <div class="advice-title">🧠 BATERÍA DE SUGERENCIAS TECNOLÓGICAS BRAIN BRANDING:</div>
+            <div class="advice-list">
+              ${adviceItemsHtml}
             </div>
-            <div class="ai-advice-text">${m.aiAdvice}</div>
-            <button class="btn-apply-advice" onclick="DemoApp.applyAdvice('${m.id}')">
-              + Agregar recomendación a mi solicitud
-            </button>
           </div>
+
+          <!-- Submódulos y Funciones Opcionales -->
+          <div class="submodules-section">
+            <div class="submod-title">🧩 SUBMÓDULOS & FUNCIONES AVANZADAS SELECCIONABLES:</div>
+            <div class="submod-options">
+              ${submodulesHtml}
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Card with Save Button -->
+        <div class="card-footer-action">
+          <span class="author-tag" id="author-${m.id}">Área: <b>${savedData.authorArea || this.currentArea}</b></span>
+          <button class="btn-card-save" id="btn-save-${m.id}" onclick="DemoApp.saveSingleModule('${m.id}')">
+            💾 Guardar este Módulo
+          </button>
         </div>
       `;
 
@@ -166,9 +214,13 @@ const DemoApp = {
     const usoVal = document.getElementById(`uso-${modId}`).value;
     const deseoVal = document.getElementById(`deseo-${modId}`).value;
 
+    const existing = this.userRequirements[modId] || { submodules: [] };
+
     this.userRequirements[modId] = {
+      ...existing,
       uso: usoVal,
       deseo: deseoVal,
+      authorArea: this.currentArea,
       updatedAt: new Date().toISOString()
     };
 
@@ -178,31 +230,81 @@ const DemoApp = {
     this.saveState();
   },
 
-  applyAdvice(modId) {
-    const mod = SEROLAB_MODULES.find(m => m.id === modId);
-    if (!mod) return;
-
+  appendAdvice(modId, text) {
     const deseoArea = document.getElementById(`deseo-${modId}`);
     if (deseoArea) {
-      if (!deseoArea.value.includes(mod.aiAdvice)) {
-        deseoArea.value = deseoArea.value ? `${deseoArea.value}\n\n• ${mod.aiAdvice}` : `• ${mod.aiAdvice}`;
+      if (!deseoArea.value.includes(text)) {
+        deseoArea.value = deseoArea.value ? `${deseoArea.value}\n\n• [Sugerencia IA] ${text}` : `• [Sugerencia IA] ${text}`;
         this.handleInputChange(modId);
+        this.showSaveFeedback(modId);
       }
     }
   },
 
-  updateProgress() {
+  toggleSubmodule(modId, subName, isChecked) {
+    if (!this.userRequirements[modId]) {
+      const mod = SEROLAB_MODULES.find(m => m.id === modId);
+      this.userRequirements[modId] = {
+        uso: mod.defaultUso,
+        deseo: mod.defaultDeseo,
+        submodules: [],
+        authorArea: this.currentArea
+      };
+    }
+
+    if (!this.userRequirements[modId].submodules) {
+      this.userRequirements[modId].submodules = [];
+    }
+
+    if (isChecked) {
+      if (!this.userRequirements[modId].submodules.includes(subName)) {
+        this.userRequirements[modId].submodules.push(subName);
+      }
+    } else {
+      this.userRequirements[modId].submodules = this.userRequirements[modId].submodules.filter(s => s !== subName);
+    }
+
+    this.saveState();
+    this.showSaveFeedback(modId);
+  },
+
+  saveSingleModule(modId) {
+    this.handleInputChange(modId);
+    this.showSaveFeedback(modId);
+  },
+
+  showSaveFeedback(modId) {
+    const btn = document.getElementById(`btn-save-${modId}`);
+    if (btn) {
+      const originalText = btn.innerHTML;
+      btn.innerHTML = "✓ ¡Guardado en tu sesión!";
+      btn.classList.add("saved");
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove("saved");
+      }, 1500);
+    }
+
+    const statusBar = document.getElementById("saveStatusBar");
+    if (statusBar) {
+      statusBar.innerHTML = `<span>✓ Módulo guardado correctamente con tu área (<b>${this.currentArea}</b>) a las ${new Date().toLocaleTimeString()}</span>`;
+    }
+  },
+
+  updateCounters() {
     const count = Object.keys(this.userRequirements).length;
-    const total = SEROLAB_MODULES.length;
-    const pct = Math.round((count / total) * 100);
-
-    const fill = document.getElementById("progressFill");
-    const pctTxt = document.getElementById("progressPercent");
     const badge = document.getElementById("reqCountBadge");
+    const statConfigured = document.getElementById("statConfiguredCount");
+    const statSubmods = document.getElementById("statSubmodulesCount");
 
-    if (fill) fill.style.width = `${pct}%`;
-    if (pctTxt) pctTxt.textContent = `${pct}% (${count}/${total})`;
+    let totalSubmods = 0;
+    Object.values(this.userRequirements).forEach(r => {
+      if (r.submodules) totalSubmods += r.submodules.length;
+    });
+
     if (badge) badge.textContent = `${count}`;
+    if (statConfigured) statConfigured.textContent = `${count} / 18`;
+    if (statSubmods) statSubmods.textContent = `${totalSubmods}`;
   },
 
   openSummaryModal() {
@@ -210,29 +312,44 @@ const DemoApp = {
     const body = document.getElementById("modalBodyContent");
     const totalTxt = document.getElementById("totalReqsText");
 
-    const keys = Object.keys(this.userRequirements);
-    if (keys.length === 0) {
-      // Auto pre-populate all with defaults if user hasn't touched yet
+    // Auto prepopulate if empty
+    if (Object.keys(this.userRequirements).length === 0) {
       SEROLAB_MODULES.forEach(m => {
-        this.userRequirements[m.id] = { uso: m.defaultUso, deseo: m.defaultDeseo };
+        this.userRequirements[m.id] = {
+          uso: m.defaultUso,
+          deseo: m.defaultDeseo,
+          submodules: m.submodules.slice(0, 2),
+          authorArea: this.currentArea
+        };
       });
       this.saveState();
     }
 
     body.innerHTML = "";
     SEROLAB_MODULES.forEach(m => {
-      const data = this.userRequirements[m.id] || { uso: m.defaultUso, deseo: m.defaultDeseo };
+      const data = this.userRequirements[m.id] || {
+        uso: m.defaultUso,
+        deseo: m.defaultDeseo,
+        submodules: [],
+        authorArea: "General"
+      };
+
+      const subList = data.submodules && data.submodules.length > 0
+        ? data.submodules.map(s => `✓ ${s}`).join(" | ")
+        : "Ninguno seleccionado";
+
       const item = document.createElement("div");
       item.className = "summary-item";
       item.innerHTML = `
-        <h4>${m.icon} ${m.name} (${m.category.toUpperCase()})</h4>
+        <h4>${m.icon} ${m.name} (${m.category.toUpperCase()}) — <font color="#94A3B8">Área: ${data.authorArea || 'General'}</font></h4>
         <p><b>Uso Actual en SERO LAB:</b> ${data.uso}</p>
-        <p><b>Requerimientos & Mejoras Solicitadas:</b> <span style="color: #2DD4BF;">${data.deseo}</span></p>
+        <p><b>Requerimientos & Deseos:</b> <span style="color: #2DD4BF;">${data.deseo}</span></p>
+        <div class="summary-submods"><b>Submódulos Seleccionados:</b> ${subList}</div>
       `;
       body.appendChild(item);
     });
 
-    totalTxt.textContent = `Has diagnosticado y configurado los ${SEROLAB_MODULES.length} módulos.`;
+    totalTxt.textContent = `Consolidado de los 18 módulos para SERO LAB Grupo Diagnóstico.`;
     modal.style.display = "flex";
   },
 
@@ -250,27 +367,36 @@ const DemoApp = {
 
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `Requerimientos_SEROLAB_BrainBranding_${Date.now()}.json`);
+    downloadAnchor.setAttribute("download", `Expediente_Requerimientos_SEROLAB_BrainBranding_${Date.now()}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
   },
 
   sendViaWhatsApp() {
-    let msg = `*SOLICITUD DE REQUERIMIENTOS LIMS & ERP - SERO LAB GRUPO DIAGNÓSTICO*\n`;
-    msg += `_Preparado a través del Configurador Interactivo de Brain Branding_\n\n`;
+    let msg = `*EXPEDIENTE DE REQUERIMIENTOS LIMS 4.0 - SERO LAB GRUPO DIAGNÓSTICO*\n`;
+    msg += `_Levantamiento Multidisciplinario para Brain Branding_\n\n`;
 
     SEROLAB_MODULES.forEach(m => {
-      const req = this.userRequirements[m.id] || { uso: m.defaultUso, deseo: m.defaultDeseo };
-      msg += `📌 *${m.name}*\n`;
+      const req = this.userRequirements[m.id] || {
+        uso: m.defaultUso,
+        deseo: m.defaultDeseo,
+        submodules: [],
+        authorArea: "General"
+      };
+
+      msg += `📌 *${m.name}* (${req.authorArea || 'General'})\n`;
       msg += `• Uso: ${req.uso}\n`;
-      msg += `• Solicitud: ${req.deseo}\n\n`;
+      msg += `• Solicitud: ${req.deseo}\n`;
+      if (req.submodules && req.submodules.length > 0) {
+        msg += `• Submódulos: ${req.submodules.join(", ")}\n`;
+      }
+      msg += `\n`;
     });
 
-    msg += `🚀 *Esperamos su retroalimentación para iniciar el desarrollo.*`;
+    msg += `🚀 *Enviado desde el Configurador Interactivo de Brain Branding.*`;
 
     const encoded = encodeURIComponent(msg);
-    // WhatsApp URL (can be user or company number)
     const waUrl = `https://wa.me/527221793328?text=${encoded}`;
     window.open(waUrl, "_blank");
   }
