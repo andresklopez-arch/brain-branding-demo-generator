@@ -67,6 +67,21 @@ const checks = [
     },
   },
   {
+    // A diferencia del check de arriba (que solo avisa), este SI falla el
+    // smoke-check: telegramOk:false significa que TELEGRAM_BOT_TOKEN esta
+    // invalido/revocado ahora mismo, y ni el chat ni los reportes
+    // automaticos de las 6/14/22 hrs pueden funcionar aunque el servidor
+    // responda 200 OK en todo lo demas (asi paso el 2026-08-20).
+    name: 'El token de Telegram es válido (chat y reportes automáticos funcionan)',
+    run: async () => {
+      const res = await fetch(`${API}/api/keep-alive`);
+      const json = await res.json();
+      if (!json.telegramOk) {
+        throw new Error(`TELEGRAM_BOT_TOKEN invalido/revocado en Render: ${JSON.stringify(json.telegramError)}`);
+      }
+    },
+  },
+  {
     name: 'Webhook de Telegram rechaza secreto inválido en /api/governance',
     run: async () => {
       const res = await fetch(`${API}/api/governance/set-status`, {

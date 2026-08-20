@@ -334,6 +334,18 @@ function getUniqueReply(chatId, candidateReply, fallbackOptions = []) {
   return candidateReply;
 }
 
+// Estado del ultimo error de AUTENTICACION (error_code 401) contra la API
+// de Telegram — a diferencia de otros errores de Telegram (bot bloqueado
+// por el usuario, callback query expirado, etc., que son normales y no
+// significan que el bot este roto), un 401 significa que TELEGRAM_BOT_TOKEN
+// es invalido/revocado y NINGUNA llamada a Telegram va a funcionar hasta
+// que se corrija en Render. Antes esto no se revisaba en ningun lado:
+// callTelegram() resolvia igual con {ok:false,...} y el resto del codigo
+// nunca inspeccionaba `.ok`, asi que un token invalido dejaba el bot (chats
+// Y reportes automaticos, que usan la misma funcion) completamente mudo
+// sin ningun error visible en logs ni alertas.
+let lastTelegramAuthError = null;
+
 function callTelegram(method, data) {
   return new Promise((resolve, reject) => {
     const postData = JSON.stringify(data);
@@ -352,7 +364,23 @@ function callTelegram(method, data) {
       let body = '';
       res.on('data', c => body += c);
       res.on('end', () => {
-        try { resolve(JSON.parse(body)); } catch (e) { resolve({ ok: false }); }
+        let parsed;
+        try { parsed = JSON.parse(body); } catch (e) { parsed = { ok: false }; }
+
+        if (parsed.ok === false) {
+          console.error(`[TELEGRAM API ERROR] ${method} ->`, parsed.error_code, parsed.description);
+          if (parsed.error_code === 401) {
+            lastTelegramAuthError = {
+              method,
+              description: parsed.description || 'Unauthorized',
+              timestamp: new Date().toISOString(),
+            };
+          }
+        } else if (parsed.ok === true) {
+          lastTelegramAuthError = null;
+        }
+
+        resolve(parsed);
       });
     });
 
@@ -2849,7 +2877,18 @@ app.get('/api/analytics/dashboard', (req, res) => {
 // Server Keep-Alive Ping Endpoint
 app.get('/api/keep-alive', (req, res) => {
   checkAndTriggerMorningReports();
-  return res.status(200).json({ ok: true, status: 'ONLINE', timestamp: new Date().toISOString(), visitsCount: visitsLog.length });
+  return res.status(200).json({
+    ok: true,
+    status: 'ONLINE',
+    timestamp: new Date().toISOString(),
+    visitsCount: visitsLog.length,
+    // false si TELEGRAM_BOT_TOKEN esta invalido/revocado ahora mismo — ver
+    // lastTelegramAuthError arriba. El workflow de keep-alive en GitHub
+    // Actions revisa este campo para avisar por correo si el bot se quedo
+    // mudo (chats Y reportes automaticos), no solo si el servidor responde.
+    telegramOk: !lastTelegramAuthError,
+    telegramError: lastTelegramAuthError,
+  });
 });
 
 // Internal Self-Ping / Keep-Alive Runner (Pings every 8 minutes to prevent Render sleep)
