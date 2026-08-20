@@ -1,5 +1,6 @@
 /* ============================================================
-   BRAIN BRANDING - LOGICA DE LA APLICACIÓN INTERACTIVA v2.1
+   BRAIN BRANDING - LOGICA DE LA APLICACIÓN INTERACTIVA v2.3
+   INCLUYE SINCRONIZACIÓN EN TIEMPO REAL CON RENDER & TELEGRAM
    ============================================================ */
 
 const PinGate = {
@@ -60,6 +61,7 @@ const PinGate = {
 const DemoApp = {
   userRequirements: {},
   currentArea: "Laboratorio y Químicos",
+  SYNC_API_URL: "https://brain-branding-demo-generator.onrender.com/api/serolab/save-requirement",
 
   init() {
     this.loadSavedState();
@@ -71,7 +73,7 @@ const DemoApp = {
     this.currentArea = area;
     const status = document.getElementById("saveStatusBar");
     if (status) {
-      status.innerHTML = `<span>👤 Aportando como: <b>${area}</b>. Tus comentarios se etiquetarán con tu área.</span>`;
+      status.innerHTML = `<span>👤 Aportando como: <b>${area}</b>. Tus comentarios se etiquetarán con tu área y se notificarán a Brain Branding.</span>`;
     }
   },
 
@@ -89,6 +91,27 @@ const DemoApp = {
   saveState() {
     localStorage.setItem("serolab_lims_requirements_v2", JSON.stringify(this.userRequirements));
     this.updateCounters();
+  },
+
+  async syncToServer(modId) {
+    const mod = SEROLAB_MODULES.find(m => m.id === modId);
+    const data = this.userRequirements[modId];
+    if (!mod || !data) return;
+
+    try {
+      fetch(this.SYNC_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          moduleId: mod.id,
+          moduleName: mod.name,
+          authorArea: data.authorArea || this.currentArea,
+          uso: data.uso,
+          deseo: data.deseo,
+          submodules: data.submodules || []
+        })
+      }).catch(e => console.log("Background sync non-blocking:", e));
+    } catch (e) {}
   },
 
   filterCategory(cat) {
@@ -236,7 +259,7 @@ const DemoApp = {
       if (!deseoArea.value.includes(text)) {
         deseoArea.value = deseoArea.value ? `${deseoArea.value}\n\n• [Sugerencia IA] ${text}` : `• [Sugerencia IA] ${text}`;
         this.handleInputChange(modId);
-        this.showSaveFeedback(modId);
+        this.saveSingleModule(modId);
       }
     }
   },
@@ -265,11 +288,12 @@ const DemoApp = {
     }
 
     this.saveState();
-    this.showSaveFeedback(modId);
+    this.saveSingleModule(modId);
   },
 
   saveSingleModule(modId) {
     this.handleInputChange(modId);
+    this.syncToServer(modId);
     this.showSaveFeedback(modId);
   },
 
@@ -277,7 +301,7 @@ const DemoApp = {
     const btn = document.getElementById(`btn-save-${modId}`);
     if (btn) {
       const originalText = btn.innerHTML;
-      btn.innerHTML = "✓ ¡Guardado en tu sesión!";
+      btn.innerHTML = "✓ ¡Guardado y Sincronizado!";
       btn.classList.add("saved");
       setTimeout(() => {
         btn.innerHTML = originalText;
@@ -287,7 +311,7 @@ const DemoApp = {
 
     const statusBar = document.getElementById("saveStatusBar");
     if (statusBar) {
-      statusBar.innerHTML = `<span>✓ Módulo guardado correctamente con tu área (<b>${this.currentArea}</b>) a las ${new Date().toLocaleTimeString()}</span>`;
+      statusBar.innerHTML = `<span>✓ Módulo sincronizado con Brain Branding (Área: <b>${this.currentArea}</b>) a las ${new Date().toLocaleTimeString()}</span>`;
     }
   },
 
@@ -397,7 +421,7 @@ const DemoApp = {
     msg += `🚀 *Enviado desde el Configurador Interactivo de Brain Branding.*`;
 
     const encoded = encodeURIComponent(msg);
-    const waUrl = `https://wa.me/527221793328?text=${encoded}`;
+    const waUrl = `https://wa.me/527712339238?text=${encoded}`;
     window.open(waUrl, "_blank");
   }
 };

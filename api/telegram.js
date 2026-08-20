@@ -413,6 +413,77 @@ function callTelegram(method, data) {
   });
 }
 
+// ================================================================
+// 🔬 SERO LAB LIMS 4.0 REQUIREMENTS SYNC & REALTIME ALERTS API
+// ================================================================
+const SEROLAB_REQS_FILE = path.join(DATA_DIR, 'serolab_requirements.json');
+
+function loadSeroLabRequirements() {
+  try {
+    if (fs.existsSync(SEROLAB_REQS_FILE)) {
+      return JSON.parse(fs.readFileSync(SEROLAB_REQS_FILE, 'utf8'));
+    }
+  } catch (e) {}
+  return {};
+}
+
+function saveSeroLabRequirements(data) {
+  try {
+    fs.writeFileSync(SEROLAB_REQS_FILE, JSON.stringify(data, null, 2), 'utf8');
+  } catch (e) {
+    console.warn('[SERO LAB] Error guardando requerimientos:', e.message);
+  }
+}
+
+app.post('/api/serolab/save-requirement', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(204).end();
+
+  const { moduleId, moduleName, authorArea, uso, deseo, submodules } = req.body || {};
+  if (!moduleId) return res.status(400).json({ ok: false, error: 'moduleId is required' });
+
+  const currentReqs = loadSeroLabRequirements();
+  currentReqs[moduleId] = {
+    moduleId,
+    moduleName: moduleName || moduleId,
+    authorArea: authorArea || 'General',
+    uso: uso || '',
+    deseo: deseo || '',
+    submodules: Array.isArray(submodules) ? submodules : [],
+    updatedAt: new Date().toISOString()
+  };
+  saveSeroLabRequirements(currentReqs);
+
+  // Real-time Telegram notification to Andres
+  const submodsText = Array.isArray(submodules) && submodules.length > 0
+    ? `\n🧩 *Submódulos Elegidos:* ${submodules.join(', ')}`
+    : '';
+
+  const msgText = `🔔 *SERO LAB GUARDÓ UN MÓDULO* 🔔\n\n` +
+    `📂 *Módulo:* ${moduleName || moduleId}\n` +
+    `👤 *Área / Puesto:* ${authorArea || 'General'}\n\n` +
+    `✍️ *Uso Actual:* ${uso || 'Sin especificar'}\n` +
+    `🚀 *Requerimientos:* ${deseo || 'Sin especificar'}${submodsText}\n\n` +
+    `📊 _Progreso:_ ${Object.keys(currentReqs).length}/18 Módulos Nutridos\n` +
+    `🌐 _Ver Panel Completo:_ https://brainbranding.com.mx/demos/serolab/admin.html`;
+
+  callTelegram('sendMessage', {
+    chat_id: ADMIN_CHAT_ID,
+    text: msgText,
+    parse_mode: 'Markdown'
+  }).catch(() => {});
+
+  return res.status(200).json({ ok: true, total: Object.keys(currentReqs).length, timestamp: new Date().toISOString() });
+});
+
+app.get('/api/serolab/requirements', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const data = loadSeroLabRequirements();
+  return res.status(200).json({ ok: true, requirements: data, count: Object.keys(data).length, timestamp: new Date().toISOString() });
+});
+
 function getDropReason(clean) {
   if (clean.includes('caro') || clean.includes('costoso') || clean.includes('presupuesto')) return 'PRECIO_ELEVADO';
   if (clean.includes('socio') || clean.includes('jefe') || clean.includes('equipo')) return 'APROBACION_TERCEROS';
