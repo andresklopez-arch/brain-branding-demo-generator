@@ -221,7 +221,14 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
     ],
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 700
+      // maxOutputTokens: 700 se agotaba con el "thinking" interno de los
+      // modelos gemini-3.x/flash-latest (ese razonamiento consume del MISMO
+      // presupuesto que el texto visible), dejando respuestas cortadas a
+      // media frase como "...para que" sin terminar. thinkingBudget: 0
+      // desactiva ese razonamiento oculto (no hace falta para chat
+      // conversacional corto) y el límite sube a 1024 como margen extra.
+      maxOutputTokens: 1024,
+      thinkingConfig: { thinkingBudget: 0 }
     }
   });
 
