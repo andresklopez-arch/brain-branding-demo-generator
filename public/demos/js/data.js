@@ -25,6 +25,30 @@ const demoRegistry = {
     welcomeText: "Control inteligente de existencias, código de barras y catálogo digital de prendas."
   },
 
+  // NIP de SERO LAB Grupo Diagnóstico (LIMS & ERP 4.0)
+  "72217": {
+    clientId: "serolab-lims",
+    clientName: "SERO LAB",
+    businessName: "SERO LAB Grupo Diagnóstico",
+    createdDate: "2026-08-20",
+    expirationDays: 90,
+    redirectUrl: "serolab/index.html",
+    welcomeTitle: "¡Bienvenido equipo de SERO LAB al Configurador LIMS & ERP de Brain Branding!",
+    welcomeText: "Diagnóstico interactivo de los 14 módulos de Labtivity y configuración de requerimientos a la medida con IA."
+  },
+
+  // NIP Alternativo 20260 para SERO LAB
+  "20260": {
+    clientId: "serolab-lims",
+    clientName: "SERO LAB",
+    businessName: "SERO LAB Grupo Diagnóstico",
+    createdDate: "2026-08-20",
+    expirationDays: 90,
+    redirectUrl: "serolab/index.html",
+    welcomeTitle: "¡Bienvenido equipo de SERO LAB al Configurador LIMS & ERP de Brain Branding!",
+    welcomeText: "Diagnóstico interactivo de los 14 módulos de Labtivity y configuración de requerimientos a la medida con IA."
+  },
+
   // NIP de Carlos (Demo Distribuidora Logística)
   "91823": {
     clientId: "carlos-logistica",

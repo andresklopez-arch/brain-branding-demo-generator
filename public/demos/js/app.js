@@ -145,6 +145,13 @@ const App = {
       if (tenant) {
         this.failedAttempts = 0;
         
+        if (tenant.redirectUrl) {
+          setTimeout(() => {
+            window.location.href = tenant.redirectUrl;
+          }, 300);
+          return;
+        }
+
         const welcomeTitle = document.querySelector(".welcome-title");
         const welcomeText = document.querySelector(".welcome-text");
         const hubSub = document.querySelector(".hub-sub");

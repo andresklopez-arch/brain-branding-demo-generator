@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Brain Branding | Demo Diagnóstico & Configurador LIMS para SERO LAB</title>
+  
+  <meta name="description" content="Demo interactivo para diagnóstico, levantamiento de requerimientos y modernización de software de laboratorio clínico para SERO LAB Grupo Diagnóstico por Brain Branding.">
+  <meta name="author" content="Brain Branding Software Engineering">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="css/demo-styles.css">
+</head>
+<body>
+
+  <!-- ==================== PIN GATE OVERLAY ==================== -->
+  <div class="pin-overlay" id="pinOverlay">
+    <div class="pin-card">
+      <div class="pin-badge">🔐 ACCESO PRIVADO A DEMO INTERACTIVA</div>
+      <div class="pin-brand">
+        <span class="brain-icon">🧠</span>
+        <h2>BRAIN BRANDING</h2>
+      </div>
+      <p class="pin-subtitle">Configurador y Diagnóstico de Software LIMS 4.0 para <b>SERO LAB Grupo Diagnóstico</b></p>
+      
+      <div class="pin-inputs" id="pinDisplay">
+        <div class="pin-box"></div>
+        <div class="pin-box"></div>
+        <div class="pin-box"></div>
+        <div class="pin-box"></div>
+        <div class="pin-box"></div>
+      </div>
+
+      <div class="pin-helper" id="pinHelperText">
+        Ingresa tu NIP de 5 dígitos (NIP asignado: <b>72217</b> ó <b>20260</b>)
+      </div>
+
+      <div class="keypad">
+        <button class="key-btn" onclick="PinGate.press('1')">1</button>
+        <button class="key-btn" onclick="PinGate.press('2')">2</button>
+        <button class="key-btn" onclick="PinGate.press('3')">3</button>
+        <button class="key-btn" onclick="PinGate.press('4')">4</button>
+        <button class="key-btn" onclick="PinGate.press('5')">5</button>
+        <button class="key-btn" onclick="PinGate.press('6')">6</button>
+        <button class="key-btn" onclick="PinGate.press('7')">7</button>
+        <button class="key-btn" onclick="PinGate.press('8')">8</button>
+        <button class="key-btn" onclick="PinGate.press('9')">9</button>
+        <button class="key-btn action-key" onclick="PinGate.clear()">⌫</button>
+        <button class="key-btn" onclick="PinGate.press('0')">0</button>
+        <button class="key-btn action-key enter-btn" onclick="PinGate.submit()">✓</button>
+      </div>
+
+      <div class="direct-quick-btn">
+        <button onclick="PinGate.quickUnlock('72217')">⚡ Desbloquear Demo de SERO LAB Directamente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MAIN DEMO APP ==================== -->
+  <div class="app-container" id="mainApp" style="display: none;">
+    
+    <!-- Top Header -->
+    <header class="top-nav">
+      <div class="nav-left">
+        <div class="brand-tag">
+          <span class="logo-brain">🧠</span>
+          <div>
+            <h1>BRAIN BRANDING</h1>
+            <span>Ingeniería de Software & LIMS 4.0</span>
+          </div>
+        </div>
+        <div class="client-pill">
+          <span class="pulse-dot"></span>
+          Cliente: <b>SERO LAB Grupo Diagnóstico</b> (Base: Labtivity)
+        </div>
+      </div>
+      <div class="nav-right">
+        <div class="progress-container">
+          <div class="progress-label">Progreso del Diagnóstico: <span id="progressPercent">0%</span></div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="DemoApp.openSummaryModal()">
+          📋 Ver Resumen & Enviar (<span id="reqCountBadge">0</span>)
+        </button>
+      </div>
+    </header>
+
+    <!-- Welcome Hero Banner -->
+    <section class="hero-banner">
+      <div class="hero-content">
+        <h2>🔬 Diagnóstico & Levantamiento de Requerimientos a la Medida</h2>
+        <p>A continuación te mostramos cada uno de los <b>14 módulos actuales de tu software (Labtivity)</b> y las <b>nuevas herramientas que podemos agregarte (Ventas, CRM, Contabilidad SAT y ERP)</b>. Cuéntanos cómo lo usas y qué te gustaría que haga de más; nuestra IA te dará sugerencias en tiempo real.</p>
+      </div>
+      <div class="hero-quick-stats">
+        <div class="stat-box">
+          <span class="stat-num">18</span>
+          <span class="stat-txt">Módulos Analizados</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num">&lt; 45s</span>
+          <span class="stat-txt">Admisión Express</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num">100%</span>
+          <span class="stat-txt">Cloud & WhatsApp</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Category Filter Tabs -->
+    <div class="category-tabs">
+      <button class="cat-btn active" data-filter="all" onclick="DemoApp.filterCategory('all')">Todos los Módulos (18)</button>
+      <button class="cat-btn" data-filter="recepcion" onclick="DemoApp.filterCategory('recepcion')">1. Recepción & Comercial</button>
+      <button class="cat-btn" data-filter="lims" onclick="DemoApp.filterCategory('lims')">2. LIMS Operativo & Estudios</button>
+      <button class="cat-btn" data-filter="finanzas" onclick="DemoApp.filterCategory('finanzas')">3. Caja & Facturación CFDI</button>
+      <button class="cat-btn" data-filter="erp" onclick="DemoApp.filterCategory('erp')">4. ERP, Contabilidad & P&L</button>
+    </div>
+
+    <!-- Modules Interactive Feed -->
+    <main class="modules-grid" id="modulesGrid">
+      <!-- Injected by JavaScript -->
+    </main>
+
+  </div>
+
+  <!-- ==================== MODAL DE RESUMEN Y ENVÍO ==================== -->
+  <div class="modal-backdrop" id="summaryModal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <span class="badge-modal">RESUMEN EJECUTIVO DE REQUERIMIENTOS</span>
+          <h2>Tu Configuración Personalizada para SERO LAB</h2>
+        </div>
+        <button class="close-btn" onclick="DemoApp.closeSummaryModal()">✕</button>
+      </div>
+      
+      <div class="modal-body" id="modalBodyContent">
+        <!-- Injected by JS -->
+      </div>
+
+      <div class="modal-footer">
+        <div class="footer-left">
+          <span id="totalReqsText">Has personalizado 0 módulos.</span>
+        </div>
+        <div class="footer-actions">
+          <button class="btn-secondary" onclick="DemoApp.exportJSON()">💾 Descargar Diagnóstico (JSON)</button>
+          <button class="btn-whatsapp" onclick="DemoApp.sendViaWhatsApp()">
+            📲 Enviar a Brain Branding por WhatsApp
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/modules-data.js"></script>
+  <script src="js/demo-app.js"></script>
+</body>
+</html>
