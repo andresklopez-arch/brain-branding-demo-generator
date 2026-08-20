@@ -3595,6 +3595,15 @@ app.listen(PORT, async () => {
     const health = await testGeminiConnection();
     if (health.ok) {
       console.log(`[GEMINI HEALTHCHECK] OK — modelo activo: ${health.model}`);
+      callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: `✅ *MOTOR DE IA (GEMINI) EN LÍNEA Y OPERATIVO* ✅\n\n` +
+          `• *Modelo Conectado:* \`${health.model}\`\n` +
+          `• *Estado:* Asistente 24/7 de WhatsApp y Telegram listo con IA fluida.\n` +
+          `• *Resiliencia:* Multi-fallback automático y Circuit Breaker activos.\n\n` +
+          `_Todo el flujo conversacional está funcionando con éxito._`,
+        parse_mode: 'Markdown'
+      }).catch(() => {});
     } else {
       console.warn(`[GEMINI HEALTHCHECK] FALLÓ — razón: ${health.reason}`);
       callTelegram('sendMessage', {

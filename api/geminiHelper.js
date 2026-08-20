@@ -140,6 +140,19 @@ async function withRetry(fn, maxRetries = 3, initialDelay = 500) {
   return null;
 }
 
+const failedModelsBlacklist = new Map(); // model -> timestamp (12h TTL)
+const MODEL_BLACKLIST_TTL_MS = 12 * 60 * 60 * 1000;
+
+function isModelBlacklisted(model) {
+  const ts = failedModelsBlacklist.get(model);
+  if (!ts) return false;
+  if (Date.now() - ts > MODEL_BLACKLIST_TTL_MS) {
+    failedModelsBlacklist.delete(model);
+    return false;
+  }
+  return true;
+}
+
 async function getGeminiReply(userText, userName, contextId, history = [], customInstruction = '') {
   const sanitized = sanitizeUserPrompt(userText, contextId);
   if (sanitized === "SECURITY_INJECTION_DETECTED") {
@@ -196,7 +209,7 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
      Confirma que todos los desarrollos de Brain Branding son 100% deducibles de impuestos y emitimos factura fiscal CFDI 4.0 a persona física o moral.
 
 4. PERSUASIÓN CON PRUEBA SOCIAL Y ANCLAJE DE RETORNO DE INVERSIÓN (ROI):
-   - Explica el retorno de inversión rápido antes de mencionar presupuestos (ej. "Nuestros clientes recuperan la inversión en el primer mes porque el bot vende las 24 horas y evita perder prospectos").
+   - Explica el retorno de inversión rápido antes de mencionar presupuestos (ej. "Nuestros clientes recuperan la inversión en el primer mes porque el bot vende las 2 horas y evita perder prospectos").
    - Utiliza referencias a casos reales por giro (Restaurantes, Talleres, Clínicas, Autolavados, Purificadoras, Tortillerías, Imprentas) — estos son solo EJEMPLOS ilustrativos, no una lista cerrada.
 
 5. DOMINIO DE CUALQUIER GIRO DE NEGOCIO (NO SOLO LOS EJEMPLOS ANTERIORES):
@@ -218,24 +231,20 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
      * Aplicaciones Móviles de Venta y Pedidos para Clientes con pagos con tarjeta (Stripe, Mercado Pago, Clip, CoDi).
      * Notificaciones Push Ilimitadas a Pantalla de Bloqueo (fidelización de clientes, promociones y recordatorios directos).
      * Publicación Llave en Mano en Google Play Store y Apple App Store.
-     * Apps PWA de Instalación Instantánea en 1 Clic desde el navegador (ahorran el 30% de comisión de tiendas).
-     * Apps Operativas para Empleados (Repartidores, Doctores, Mecánicos, Vendedores de campo) con modo offline.
-   - Desarrollos Web y Software a la Medida (Cotización por módulos según necesidades).
+     * Integración con Impresoras Térmicas Bluetooth y Códigos QR.
 
-9. TONO Y ESTILO:
-   - Profesional, cálido, fluido, seguro de sí mismo y 100% humano. Prohibido usar menús numéricos rígidos o respuestas robóticas. Máximo 2 o 3 párrafos cortos por respuesta.`;
+9. INSTRUCCIONES DE CONTACTO Y COMUNICACIÓN:
+   - Nombre oficial de la empresa: Brain Branding ("Empoderando Marcas, Reprogramando Mentes").
+   - Web oficial: brainbranding.com.mx
+   - Estilo: Dinámico, ejecutivo, persuasivo, ultra-profesional y cálido. Usa emojis con elegancia visual (🚀, 💡, 📊, ⚡, 📱, 🎯).
+   - Al canalizar a una llamada o reunión con el Ing. Andrés R: solicita amablemente nombre, giro del negocio y su horario preferido para confirmar en la agenda.`;
 
-  const systemInstruction = customInstruction ? `${baseInstruction}\n\n${customInstruction}` : baseInstruction;
+  const systemInstruction = customInstruction ? `${baseInstruction}\n\nINSTRUCCIÓN ESPECÍFICA ACTUAL:\n${customInstruction}` : baseInstruction;
 
-  const geminiHistory = [];
-  if (Array.isArray(history)) {
-    for (const item of history.slice(-8)) {
-      geminiHistory.push({
-        role: item.role === 'user' ? 'user' : 'model',
-        parts: [{ text: item.text || item.content || '' }]
-      });
-    }
-  }
+  const geminiHistory = (history || []).map(turn => ({
+    role: turn.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: turn.text || '' }]
+  }));
 
   const payload = JSON.stringify({
     systemInstruction: { parts: [{ text: systemInstruction }] },
@@ -245,11 +254,6 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
     ],
     generationConfig: {
       temperature: 0.7,
-      // maxOutputTokens: 700 se agotaba con el "thinking" interno de los
-      // modelos gemini-3.x/flash-latest (ese razonamiento consume del MISMO
-      // presupuesto que el texto visible), dejando respuestas cortadas a
-      // media frase como "...para que" sin terminar. thinkingBudget: 0
-      // desactiva ese razonamiento oculto (no hace falta para chat
       // conversacional corto) y el límite sube a 1024 como margen extra.
       maxOutputTokens: 1024,
       thinkingConfig: { thinkingBudget: 0 }
@@ -323,6 +327,7 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
                     if ((!history || history.length <= 1) && finishReason !== 'MAX_TOKENS') {
                       frequencyCache.set(cacheKey, { reply: text.trim(), timestamp: Date.now() });
                     }
+                    failedModelsBlacklist.delete(model);
                     return resolve(text.trim());
                   }
                 } catch (e) {
@@ -330,6 +335,9 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
                 }
               } else {
                 console.warn(`[GEMINI WARN] Model ${model} returned HTTP ${res.statusCode}`);
+                if (res.statusCode === 404 || res.statusCode === 400) {
+                  failedModelsBlacklist.set(model, Date.now());
+                }
               }
               resolve(null);
             });
