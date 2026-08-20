@@ -262,9 +262,15 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
   // recién creada, cayendo siempre al respaldo por reglas fijas.
   // "gemini-flash-latest" es un alias que Google mantiene apuntando al
   // modelo flash vigente más reciente, así que aunque Google retire
-  // gemini-3.6-flash/3.5-flash más adelante, este alias sigue funcionando
-  // sin tener que volver a tocar este código.
-  const modelsToTry = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.5-flash'];
+  // Modelos oficiales vigentes en Google Generative Language API con fallback multinivel
+  const modelsToTry = [
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-2.5-flash',
+    'gemini-1.5-pro',
+    'gemini-2.0-flash-lite',
+    'gemini-flash-latest'
+  ];
 
   for (const model of modelsToTry) {
     try {
@@ -439,7 +445,7 @@ async function extractAppointmentInfo(replyText) {
     const req = https.request({
       hostname: 'generativelanguage.googleapis.com',
       port: 443,
-      path: `/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
+      path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
     }, (res) => {
