@@ -13,6 +13,7 @@ const geminiMetrics = {
   totalCalls: 0,
   successfulCalls: 0,
   failedCalls: 0,
+  truncatedReplies: 0,
   blockedInjections: 0,
   cacheHits: 0,
   averageLatencyMs: 0,
@@ -262,7 +263,20 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
               if (res.statusCode >= 200 && res.statusCode < 300) {
                 try {
                   const json = JSON.parse(data);
-                  const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+                  const candidate = json?.candidates?.[0];
+                  const text = candidate?.content?.parts?.[0]?.text;
+                  const finishReason = candidate?.finishReason;
+                  // MAX_TOKENS significa que el presupuesto de
+                  // maxOutputTokens se agotó a medio texto (el bug que
+                  // dejaba respuestas cortadas como "...para que" sin
+                  // terminar, ver commit 1748167). Se detecta y registra
+                  // aquí en vez de esperar a que un cliente reporte un
+                  // mensaje incompleto.
+                  if (finishReason === 'MAX_TOKENS') {
+                    geminiMetrics.truncatedReplies++;
+                    console.warn(`[GEMINI WARN] Model ${model} alcanzó MAX_TOKENS para contexto ${contextId} — respuesta posiblemente incompleta`);
+                    recordLog({ status: 'TRUNCATED', model, contextId, snippet: (text || '').substring(0, 40) });
+                  }
                   if (text && text.trim()) {
                     const latency = Date.now() - startTime;
                     geminiMetrics.successfulCalls++;
@@ -271,9 +285,12 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
                     geminiMetrics.lastUsedModel = model;
                     recordLog({ status: 'OK', model, latencyMs: latency, contextId });
                     console.log(`[GEMINI SUCCESS] Model ${model} responded in ${latency}ms for context ${contextId}`);
-                    
-                    // Save to frequency cache for single turn queries
-                    if (!history || history.length <= 1) {
+
+                    // No cachear una respuesta cortada — si no, se le
+                    // repetiría el mismo mensaje incompleto a cualquier
+                    // otro cliente que pregunte algo parecido hasta que
+                    // expire el TTL de 1 hora.
+                    if ((!history || history.length <= 1) && finishReason !== 'MAX_TOKENS') {
                       frequencyCache.set(cacheKey, { reply: text.trim(), timestamp: Date.now() });
                     }
                     return resolve(text.trim());

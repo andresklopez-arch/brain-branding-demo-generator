@@ -1322,26 +1322,44 @@ async function handleWebhookRequest(req, res) {
         }
 
         if (cmdLower === '/exportarcsv' || cmdLower === '/csv') {
-          let csv = 'Nombre,Username,ChatID,Clasificacion,Giro,Fecha\n';
-          prospectLogs.forEach(p => {
-            csv += `"${p.name}","${p.username}","${p.chatId}","${p.temp}","${p.giro || ''}","${p.timestamp}"\n`;
-          });
+          const header = 'Nombre,Username,ChatID,Clasificacion,Giro,Fecha\n';
+          const rows = prospectLogs.map(p => `"${p.name}","${p.username}","${p.chatId}","${p.temp}","${p.giro || ''}","${p.timestamp}"`);
+          // Antes se cortaba con substring(0, 3500), pudiendo partir una
+          // fila a la mitad y sin avisar cuántos registros se perdieron.
+          // Ahora se incluyen solo filas completas y se informa cuántas
+          // quedaron fuera por el límite de tamaño de mensaje de Telegram.
+          let csv = header;
+          let included = 0;
+          for (const row of rows) {
+            if (csv.length + row.length + 1 > 3500) break;
+            csv += row + '\n';
+            included++;
+          }
+          const omitted = rows.length - included;
+          const footer = omitted > 0 ? `\n\n⚠️ ${omitted} registro(s) omitido(s) por límite de tamaño de mensaje de Telegram.` : '';
           await callTelegram('sendMessage', {
             chat_id: ADMIN_CHAT_ID,
-            text: `📊 *EXPORTACIÓN DE PROSPECTOS CSV* 📊\n\n\`\`\`csv\n${csv.substring(0, 3500)}\n\`\`\``,
+            text: `📊 *EXPORTACIÓN DE PROSPECTOS CSV* 📊\n\n\`\`\`csv\n${csv}\n\`\`\`${footer}`,
             parse_mode: 'Markdown'
           });
           return res.status(200).json({ ok: true });
         }
 
         if (cmdLower === '/exportarvisitas' || cmdLower === '/csvvisitas') {
-          let csv = 'Fecha,Hora,Ciudad,Region,Pais,Dispositivo,Origen,Duracion,Scroll,Clics,Recurrente\n';
-          visitsLog.forEach(v => {
-            csv += `"${v.timestamp || ''}","${v.time || ''}","${v.city || ''}","${v.region || ''}","${v.country || ''}","${v.device || ''}","${v.source || ''}","${v.duration || ''}","${v.scroll || 0}%","${(v.clicks || []).join(';')}","${v.isReturning ? 'SI' : 'NO'}"\n`;
-          });
+          const header = 'Fecha,Hora,Ciudad,Region,Pais,Dispositivo,Origen,Duracion,Scroll,Clics,Recurrente\n';
+          const rows = visitsLog.map(v => `"${v.timestamp || ''}","${v.time || ''}","${v.city || ''}","${v.region || ''}","${v.country || ''}","${v.device || ''}","${v.source || ''}","${v.duration || ''}","${v.scroll || 0}%","${(v.clicks || []).join(';')}","${v.isReturning ? 'SI' : 'NO'}"`);
+          let csv = header;
+          let included = 0;
+          for (const row of rows) {
+            if (csv.length + row.length + 1 > 3500) break;
+            csv += row + '\n';
+            included++;
+          }
+          const omitted = rows.length - included;
+          const footer = omitted > 0 ? `\n\n⚠️ ${omitted} registro(s) omitido(s) por límite de tamaño de mensaje de Telegram.` : '';
           await callTelegram('sendMessage', {
             chat_id: ADMIN_CHAT_ID,
-            text: `🌐 *EXPORTACIÓN DE VISITAS WEB CSV (ÚLTIMAS 24H)* 🌐\n\n\`\`\`csv\n${csv.substring(0, 3500)}\n\`\`\``,
+            text: `🌐 *EXPORTACIÓN DE VISITAS WEB CSV (ÚLTIMAS 24H)* 🌐\n\n\`\`\`csv\n${csv}\n\`\`\`${footer}`,
             parse_mode: 'Markdown'
           });
           return res.status(200).json({ ok: true });
@@ -2032,6 +2050,47 @@ app.get('/api/admin/gemini-metrics', (req, res) => {
     ok: true,
     metrics: geminiMetrics
   });
+});
+
+// El healthcheck de testGeminiConnection() antes solo corría una vez al
+// arrancar el proceso. En el plan gratuito de Render, keep-alive.yml
+// mantiene el proceso despierto cada 10 min, así que en la práctica podía
+// pasar semanas sin que este chequeo volviera a correr — si Google
+// retiraba un modelo a medio día, nadie se enteraba hasta que un cliente
+// notara respuestas robotizadas por el respaldo de reglas fijas. Este
+// endpoint permite disparar el mismo chequeo bajo demanda (ver
+// .github/workflows/gemini-healthcheck.yml, que lo llama una vez al día).
+app.get('/api/admin/gemini-healthcheck', async (req, res) => {
+  try {
+    const health = await testGeminiConnection();
+    if (!health.ok) {
+      callTelegram('sendMessage', {
+        chat_id: ADMIN_CHAT_ID,
+        text: `🚨 *ALERTA: CHEQUEO DIARIO DE GEMINI FALLÓ* 🚨\n\nRazón: \`${health.reason}\`\n\nEl bot podría llevar horas usando solo respuestas por reglas fijas (sin IA real) sin que nadie lo notara. Revisa Render → Environment → GEMINI_API_KEY, o si Google retiró el modelo actual.`,
+        parse_mode: 'Markdown'
+      }).catch(() => {});
+    }
+    return res.status(health.ok ? 200 : 503).json(health);
+  } catch (e) {
+    return res.status(500).json({ ok: false, reason: e.message });
+  }
+});
+
+// Endpoint interno de diagnóstico usado por scripts/smoke-check.js para
+// confirmar que las respuestas largas de Gemini ya no se cortan a media
+// frase por agotar maxOutputTokens con "thinking" interno (ver commit
+// 1748167). Usa un prompt fijo (no viene del usuario) para no exponer un
+// generador de texto arbitrario públicamente.
+app.get('/api/admin/test-gemini-reply', async (req, res) => {
+  const truncatedBefore = geminiMetrics.truncatedReplies;
+  const reply = await getGeminiReply(
+    'Explica en detalle, con al menos 3 beneficios concretos y ejemplos, por qué una veterinaria pequeña debería contratar un asistente de IA 24/7 para WhatsApp de Brain Branding.',
+    'SmokeCheck',
+    'smoke_check_truncation',
+    []
+  );
+  const truncated = geminiMetrics.truncatedReplies > truncatedBefore;
+  return res.status(200).json({ ok: !!reply, truncated, reply });
 });
 
 // Configure automatic security alerts for repeated prompt injection attacks & Auto IP-Ban

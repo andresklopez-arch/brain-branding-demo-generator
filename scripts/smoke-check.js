@@ -82,6 +82,27 @@ const checks = [
     },
   },
   {
+    // Antes maxOutputTokens:700 se compartía con el "thinking" interno de
+    // los modelos gemini-3.x/flash-latest, y si el modelo pensaba de más
+    // el bot mandaba respuestas cortadas a media frase (ej. "...para
+    // que", visto en producción el 2026-08-20 con un spa de perros). Se
+    // arregló en el commit 1748167 (thinkingBudget:0 + maxOutputTokens
+    // más alto); este check llama a un prompt largo real para detectar
+    // si el bug reaparece en el futuro.
+    name: 'Las respuestas largas de Gemini no se cortan a media frase',
+    run: async () => {
+      const res = await fetch(`${API}/api/admin/test-gemini-reply`);
+      const json = await res.json();
+      if (!json.ok) {
+        console.warn('  ⚠️  No se pudo generar una respuesta de prueba (revisa GEMINI_API_KEY) — no se pudo validar el corte de respuesta.');
+        return;
+      }
+      if (json.truncated) {
+        throw new Error('Gemini alcanzó MAX_TOKENS y la respuesta llegó incompleta — revisa maxOutputTokens/thinkingConfig en api/geminiHelper.js.');
+      }
+    },
+  },
+  {
     name: 'Webhook de Telegram rechaza secreto inválido en /api/governance',
     run: async () => {
       const res = await fetch(`${API}/api/governance/set-status`, {
