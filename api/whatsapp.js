@@ -35,7 +35,10 @@ app.use(router);
 
 const OWNER_PHONE = '+52 771 233 9238';
 const ADMIN_CHAT_ID = '8337803949';
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+// Mismo saneo que api/telegram.js: quita espacios/saltos de linea que se
+// hayan colado al copiar el token (ver el fix del 2026-08-20 ahi para el
+// detalle completo).
+const TELEGRAM_BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '').replace(/\s+/g, '');
 
 const pausedWhatsapp = {};
 const whatsappProspectLogs = [];

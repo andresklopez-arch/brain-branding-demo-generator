@@ -229,9 +229,18 @@ app.use((req, res, next) => {
 // se exige por variable de entorno; sin ella el bot simplemente no podrá
 // mandar/recibir mensajes de Telegram (el resto del sitio sigue
 // funcionando normal).
-const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+// Se quita cualquier espacio/salto de linea que se haya colado al copiar y
+// pegar el token (paso EXACTAMENTE lo que tumbo el bot el 2026-08-20: un
+// espacio en medio del token volvia invalida la URL de la API de Telegram
+// con "Request path contains unescaped characters", un error que ni
+// siquiera llegaba a callTelegram() para poder detectarlo ahi). Un token
+// real de Telegram nunca lleva espacios, asi que quitarlos siempre es
+// seguro.
+const TELEGRAM_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '').replace(/\s+/g, '');
 if (!TELEGRAM_TOKEN) {
   console.error('[FATAL] TELEGRAM_BOT_TOKEN no está configurado como variable de entorno. El bot de Telegram no podrá enviar ni recibir mensajes hasta que se configure.');
+} else if (!/^\d+:[A-Za-z0-9_-]+$/.test(TELEGRAM_TOKEN)) {
+  console.error(`[FATAL] TELEGRAM_BOT_TOKEN no tiene el formato esperado de Telegram (numero:letras) tras quitar espacios — revisa que se haya copiado completo y sin caracteres extra. Valor actual (longitud ${TELEGRAM_TOKEN.length}): "${TELEGRAM_TOKEN}"`);
 }
 
 const kb = {
@@ -334,16 +343,18 @@ function getUniqueReply(chatId, candidateReply, fallbackOptions = []) {
   return candidateReply;
 }
 
-// Estado del ultimo error de AUTENTICACION (error_code 401) contra la API
-// de Telegram — a diferencia de otros errores de Telegram (bot bloqueado
-// por el usuario, callback query expirado, etc., que son normales y no
-// significan que el bot este roto), un 401 significa que TELEGRAM_BOT_TOKEN
-// es invalido/revocado y NINGUNA llamada a Telegram va a funcionar hasta
-// que se corrija en Render. Antes esto no se revisaba en ningun lado:
-// callTelegram() resolvia igual con {ok:false,...} y el resto del codigo
-// nunca inspeccionaba `.ok`, asi que un token invalido dejaba el bot (chats
-// Y reportes automaticos, que usan la misma funcion) completamente mudo
-// sin ningun error visible en logs ni alertas.
+// Estado del ultimo error de TOKEN (error_code 401, o un error sincrono al
+// construir el request como "unescaped characters" por espacios colados en
+// el token) contra la API de Telegram — a diferencia de otros errores de
+// Telegram (bot bloqueado por el usuario, callback query expirado, etc.,
+// que son normales y no significan que el bot este roto), esto significa
+// que TELEGRAM_BOT_TOKEN es invalido/revocado/malformado y NINGUNA llamada
+// a Telegram va a funcionar hasta que se corrija en Render. Antes esto no
+// se revisaba en ningun lado: callTelegram() resolvia igual con
+// {ok:false,...} (o ni siquiera eso, en el caso del error sincrono) y el
+// resto del codigo nunca inspeccionaba `.ok`, asi que un token roto dejaba
+// el bot (chats Y reportes automaticos, que usan la misma funcion)
+// completamente mudo sin ningun error visible en logs ni alertas.
 let lastTelegramAuthError = null;
 
 function callTelegram(method, data) {
@@ -360,29 +371,40 @@ function callTelegram(method, data) {
       }
     };
 
-    const req = https.request(options, (res) => {
-      let body = '';
-      res.on('data', c => body += c);
-      res.on('end', () => {
-        let parsed;
-        try { parsed = JSON.parse(body); } catch (e) { parsed = { ok: false }; }
+    let req;
+    try {
+      req = https.request(options, (res) => {
+        let body = '';
+        res.on('data', c => body += c);
+        res.on('end', () => {
+          let parsed;
+          try { parsed = JSON.parse(body); } catch (e) { parsed = { ok: false }; }
 
-        if (parsed.ok === false) {
-          console.error(`[TELEGRAM API ERROR] ${method} ->`, parsed.error_code, parsed.description);
-          if (parsed.error_code === 401) {
-            lastTelegramAuthError = {
-              method,
-              description: parsed.description || 'Unauthorized',
-              timestamp: new Date().toISOString(),
-            };
+          if (parsed.ok === false) {
+            console.error(`[TELEGRAM API ERROR] ${method} ->`, parsed.error_code, parsed.description);
+            if (parsed.error_code === 401) {
+              lastTelegramAuthError = {
+                method,
+                description: parsed.description || 'Unauthorized',
+                timestamp: new Date().toISOString(),
+              };
+            }
+          } else if (parsed.ok === true) {
+            lastTelegramAuthError = null;
           }
-        } else if (parsed.ok === true) {
-          lastTelegramAuthError = null;
-        }
 
-        resolve(parsed);
+          resolve(parsed);
+        });
       });
-    });
+    } catch (e) {
+      // Errores sincronos al construir el request (ej. "Request path
+      // contains unescaped characters" por un token con espacios) nunca
+      // llegan a la respuesta HTTP de arriba — se capturan aqui para que
+      // tambien queden reflejados en /api/keep-alive, no solo en logs.
+      console.error(`[TELEGRAM REQUEST ERROR] ${method} ->`, e.message);
+      lastTelegramAuthError = { method, description: e.message, timestamp: new Date().toISOString() };
+      return reject(e);
+    }
 
     req.on('error', err => reject(err));
     req.write(postData);
