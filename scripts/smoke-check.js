@@ -6,6 +6,11 @@
 
 const SITE = 'https://brainbranding.com.mx';
 const API = 'https://brain-branding-demo-generator.onrender.com';
+// Mismo secreto que ALR_GOVERNANCE_SECRET en api/telegram.js — los
+// endpoints /api/admin/test-gemini-reply y /api/admin/gemini-healthcheck
+// lo exigen para no dejarlos abiertos a que cualquiera los dispare y
+// gaste cuota de la API key de Gemini.
+const CALLER_KEY = 'alr-saas-master-2025-brain';
 
 const checks = [
   {
@@ -91,7 +96,7 @@ const checks = [
     // si el bug reaparece en el futuro.
     name: 'Las respuestas largas de Gemini no se cortan a media frase',
     run: async () => {
-      const res = await fetch(`${API}/api/admin/test-gemini-reply`);
+      const res = await fetch(`${API}/api/admin/test-gemini-reply?callerKey=${CALLER_KEY}`);
       const json = await res.json();
       if (!json.ok) {
         console.warn('  ⚠️  No se pudo generar una respuesta de prueba (revisa GEMINI_API_KEY) — no se pudo validar el corte de respuesta.');

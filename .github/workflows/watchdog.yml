@@ -1,0 +1,62 @@
+name: Brain Branding Watchdog
+
+# Antes eran dos workflows separados (keep-alive.yml y
+# gemini-healthcheck.yml) con crons distintos apuntando al mismo dominio.
+# Se consolidan aquí en un solo archivo: cada job corre solo cuando lo
+# dispara SU cron (github.event.schedule), así que el comportamiento es
+# idéntico al de antes, solo con un archivo menos que mantener.
+on:
+  schedule:
+    - cron: "*/10 * * * *" # keep-alive, cada 10 min, 24/7
+    - cron: "0 13 * * *"   # gemini healthcheck diario, 7:00 AM hora CDMX (UTC-6)
+  workflow_dispatch: {}
+
+jobs:
+  keep-alive:
+    # El servidor de Render (plan gratuito) se duerme tras 15 min sin
+    # visitas. Si está dormido justo a las 6:00/14:00/22:00 (hora CDMX),
+    # los reportes automáticos de Telegram nunca se disparan porque el
+    # reloj interno del proceso no corre mientras está dormido. Este job
+    # lo despierta cada 10 minutos, las 24 horas, sin depender de un
+    # servicio externo ni de tráfico real de visitantes.
+    #
+    # También sirve como monitor del bot de Telegram: si TELEGRAM_BOT_TOKEN
+    # se invalida o revoca, el servidor sigue respondiendo 200 OK (el bug
+    # NO es "servidor caído") pero el chat y los reportes automáticos se
+    # quedan completamente mudos. Este job revisa el campo "telegramOk" de
+    # /api/keep-alive y falla (avisando por correo) si eso pasa, en vez de
+    # depender de que alguien note manualmente que "hola" no responde.
+    if: github.event.schedule == '*/10 * * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping keep-alive endpoint y verificar que Telegram responda
+        run: |
+          check() {
+            body="$(curl -sf --max-time 30 "https://brain-branding-demo-generator.onrender.com/api/keep-alive")" || return 1
+            echo "$body"
+            echo "$body" | grep -q '"telegramOk":true'
+          }
+          check && exit 0
+          echo "Primer intento falló (servidor caído o Telegram roto), reintentando en 20s..."
+          sleep 20
+          check
+
+  gemini-healthcheck:
+    # testGeminiConnection() solo corría una vez al arrancar el proceso
+    # (api/telegram.js). Con keep-alive manteniendo el proceso despierto
+    # 24/7, en la práctica podían pasar semanas sin que ese chequeo
+    # volviera a correr — si Google retiraba el modelo activo a medio día
+    # (ya pasó antes con 2.0-flash/1.5-flash), nadie se enteraba hasta que
+    # un cliente notara respuestas robotizadas por el respaldo de reglas
+    # fijas. Este job llama al mismo chequeo una vez al día sin reiniciar
+    # el servidor, y desde el commit que agregó test-gemini-reply también
+    # valida que las respuestas largas no lleguen cortadas a media frase
+    # por agotar maxOutputTokens.
+    if: github.event.schedule == '0 13 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ejecutar chequeo diario del motor de IA (Gemini)
+        # El mismo secreto ya vive hardcodeado en api/telegram.js
+        # (ALR_GOVERNANCE_SECRET) — no se gana nada moviéndolo a un GitHub
+        # Secret aquí mientras siga expuesto en el código fuente.
+        run: curl -sf --max-time 30 "https://brain-branding-demo-generator.onrender.com/api/admin/gemini-healthcheck?callerKey=alr-saas-master-2025-brain"

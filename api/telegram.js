@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
-const { getGeminiReply, geminiMetrics, setSecurityAlertCallback, generateLeadBriefing, testGeminiConnection } = require('./geminiHelper.js');
+const { getGeminiReply, geminiMetrics, setSecurityAlertCallback, setTruncationAlertCallback, generateLeadBriefing, testGeminiConnection } = require('./geminiHelper.js');
 const { getHistory, addTurn } = require('./historyStore.js');
 
 // Declarado aquí arriba (no donde se usaba antes, ~2760 líneas más abajo)
@@ -966,6 +966,16 @@ function getLeadTemperature(text) {
   return '❄️ *LEAD FRÍO (Contacto Inicial / Saludo)*';
 }
 
+// Limita el largo de un campo individual antes de meterlo en una fila de
+// CSV para /exportarcsv y /exportarvisitas. Sin esto, un solo campo muy
+// largo (ej. un "giro" o una lista de "clics" larga) podía hacer que esa
+// fila completa por sí sola superara el límite de 3500 caracteres del
+// mensaje de Telegram y se saltara entera sin aviso.
+function truncCsvField(value, max = 200) {
+  const str = String(value ?? '');
+  return str.length > max ? str.substring(0, max) + '…' : str;
+}
+
 // Universal Phone Normalizer (Suggestion 3)
 function normalizePhoneNumber(rawInput) {
   if (!rawInput) return '';
@@ -1323,7 +1333,7 @@ async function handleWebhookRequest(req, res) {
 
         if (cmdLower === '/exportarcsv' || cmdLower === '/csv') {
           const header = 'Nombre,Username,ChatID,Clasificacion,Giro,Fecha\n';
-          const rows = prospectLogs.map(p => `"${p.name}","${p.username}","${p.chatId}","${p.temp}","${p.giro || ''}","${p.timestamp}"`);
+          const rows = prospectLogs.map(p => `"${truncCsvField(p.name)}","${truncCsvField(p.username)}","${p.chatId}","${p.temp}","${truncCsvField(p.giro || '')}","${p.timestamp}"`);
           // Antes se cortaba con substring(0, 3500), pudiendo partir una
           // fila a la mitad y sin avisar cuántos registros se perdieron.
           // Ahora se incluyen solo filas completas y se informa cuántas
@@ -1347,7 +1357,7 @@ async function handleWebhookRequest(req, res) {
 
         if (cmdLower === '/exportarvisitas' || cmdLower === '/csvvisitas') {
           const header = 'Fecha,Hora,Ciudad,Region,Pais,Dispositivo,Origen,Duracion,Scroll,Clics,Recurrente\n';
-          const rows = visitsLog.map(v => `"${v.timestamp || ''}","${v.time || ''}","${v.city || ''}","${v.region || ''}","${v.country || ''}","${v.device || ''}","${v.source || ''}","${v.duration || ''}","${v.scroll || 0}%","${(v.clicks || []).join(';')}","${v.isReturning ? 'SI' : 'NO'}"`);
+          const rows = visitsLog.map(v => `"${v.timestamp || ''}","${v.time || ''}","${truncCsvField(v.city || '')}","${truncCsvField(v.region || '')}","${truncCsvField(v.country || '')}","${truncCsvField(v.device || '')}","${truncCsvField(v.source || '')}","${truncCsvField(v.duration || '')}","${v.scroll || 0}%","${truncCsvField((v.clicks || []).join(';'))}","${v.isReturning ? 'SI' : 'NO'}"`);
           let csv = header;
           let included = 0;
           for (const row of rows) {
@@ -2061,6 +2071,12 @@ app.get('/api/admin/gemini-metrics', (req, res) => {
 // endpoint permite disparar el mismo chequeo bajo demanda (ver
 // .github/workflows/gemini-healthcheck.yml, que lo llama una vez al día).
 app.get('/api/admin/gemini-healthcheck', async (req, res) => {
+  // Reusa el mismo secreto de /api/governance/set-status — sin esto,
+  // cualquiera que descubriera la URL podía dispararlo en bucle y gastar
+  // cuota de la API key de Gemini.
+  if (req.query.callerKey !== ALR_GOVERNANCE_SECRET) {
+    return res.status(403).json({ ok: false, error: 'Not authorized.' });
+  }
   try {
     const health = await testGeminiConnection();
     if (!health.ok) {
@@ -2082,6 +2098,9 @@ app.get('/api/admin/gemini-healthcheck', async (req, res) => {
 // 1748167). Usa un prompt fijo (no viene del usuario) para no exponer un
 // generador de texto arbitrario públicamente.
 app.get('/api/admin/test-gemini-reply', async (req, res) => {
+  if (req.query.callerKey !== ALR_GOVERNANCE_SECRET) {
+    return res.status(403).json({ ok: false, error: 'Not authorized.' });
+  }
   const truncatedBefore = geminiMetrics.truncatedReplies;
   const reply = await getGeminiReply(
     'Explica en detalle, con al menos 3 beneficios concretos y ejemplos, por qué una veterinaria pequeña debería contratar un asistente de IA 24/7 para WhatsApp de Brain Branding.',
@@ -2116,6 +2135,17 @@ setSecurityAlertCallback(async (contextId, snippet, count) => {
   } catch (e) {
     console.error('[SECURITY CALLBACK ERROR]', e.message);
   }
+});
+
+// Avisa por Telegram si los cortes de respuesta de Gemini (MAX_TOKENS) se
+// acumulan en poco tiempo, en vez de depender de revisar
+// /api/admin/gemini-metrics manualmente.
+setTruncationAlertCallback((count) => {
+  callTelegram('sendMessage', {
+    chat_id: ADMIN_CHAT_ID,
+    text: `⚠️ *ALERTA: RESPUESTAS DE IA CORTÁNDOSE* ⚠️\n\nSe detectaron *${count} respuestas cortadas* (MAX_TOKENS) de Gemini en la última hora — clientes podrían estar recibiendo mensajes incompletos a media frase.\n\nRevisa \`maxOutputTokens\`/\`thinkingConfig\` en \`api/geminiHelper.js\` o usa /estado para más contexto.`,
+    parse_mode: 'Markdown'
+  }).catch(() => {});
 });
 
 // Health check — confirms OTP routes are alive on Render

@@ -32,6 +32,28 @@ function setSecurityAlertCallback(cb) {
   onSecurityAlertCallback = cb;
 }
 
+// Avisa cuando los cortes de respuesta (MAX_TOKENS) se acumulan en poco
+// tiempo, en vez de depender de revisar /api/admin/gemini-metrics a mano.
+const TRUNCATION_ALERT_THRESHOLD = 3;
+const TRUNCATION_ALERT_WINDOW_MS = 60 * 60 * 1000; // 1 hora
+let truncationTimestamps = [];
+let onTruncationAlertCallback = null;
+
+function setTruncationAlertCallback(cb) {
+  onTruncationAlertCallback = cb;
+}
+
+function trackTruncation() {
+  const now = Date.now();
+  truncationTimestamps.push(now);
+  truncationTimestamps = truncationTimestamps.filter(t => now - t < TRUNCATION_ALERT_WINDOW_MS);
+  // Se dispara justo al cruzar el umbral (no en cada corte posterior) para
+  // no inundar el chat de admin con la misma alerta una y otra vez.
+  if (truncationTimestamps.length === TRUNCATION_ALERT_THRESHOLD && typeof onTruncationAlertCallback === 'function') {
+    onTruncationAlertCallback(truncationTimestamps.length);
+  }
+}
+
 function recordLog(entry) {
   geminiMetrics.recentLogs.push({
     ...entry,
@@ -276,6 +298,7 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
                     geminiMetrics.truncatedReplies++;
                     console.warn(`[GEMINI WARN] Model ${model} alcanzó MAX_TOKENS para contexto ${contextId} — respuesta posiblemente incompleta`);
                     recordLog({ status: 'TRUNCATED', model, contextId, snippet: (text || '').substring(0, 40) });
+                    trackTruncation();
                   }
                   if (text && text.trim()) {
                     const latency = Date.now() - startTime;
@@ -354,10 +377,28 @@ async function testGeminiConnection() {
     return { ok: false, reason: 'NO_API_KEY' };
   }
   const reply = await getGeminiReply('Responde únicamente con la palabra: OK', 'Sistema', 'startup_healthcheck', []);
-  if (reply) {
-    return { ok: true, model: geminiMetrics.lastUsedModel };
+  if (!reply) {
+    return { ok: false, reason: 'ALL_MODELS_FAILED' };
   }
-  return { ok: false, reason: 'ALL_MODELS_FAILED' };
+
+  // Además de "¿Gemini responde?", valida que una respuesta larga real no
+  // llegue cortada a media frase por agotar maxOutputTokens con el
+  // thinking interno del modelo (el mismo bug del commit 1748167). Antes
+  // esto solo lo cubría /api/admin/test-gemini-reply por separado; ahora
+  // el chequeo diario (gemini-healthcheck.yml) valida ambas cosas en una
+  // sola llamada y una sola alerta.
+  const truncatedBefore = geminiMetrics.truncatedReplies;
+  await getGeminiReply(
+    'Explica en detalle, con al menos 3 beneficios concretos y ejemplos, por qué una veterinaria pequeña debería contratar un asistente de IA 24/7 para WhatsApp de Brain Branding.',
+    'Sistema',
+    'startup_healthcheck_truncation',
+    []
+  );
+  if (geminiMetrics.truncatedReplies > truncatedBefore) {
+    return { ok: false, reason: 'TRUNCATED_REPLY', model: geminiMetrics.lastUsedModel };
+  }
+
+  return { ok: true, model: geminiMetrics.lastUsedModel };
 }
 
 module.exports = {
@@ -365,6 +406,7 @@ module.exports = {
   sanitizeUserPrompt,
   geminiMetrics,
   setSecurityAlertCallback,
+  setTruncationAlertCallback,
   withRetry,
   generateLeadBriefing,
   testGeminiConnection
