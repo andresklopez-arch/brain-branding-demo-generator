@@ -4,6 +4,7 @@ const https = require('https');
 const path = require('path');
 const fs = require('fs');
 const { getGeminiReply, geminiMetrics, setSecurityAlertCallback, setTruncationAlertCallback, generateLeadBriefing, testGeminiConnection, extractAppointmentInfo } = require('./geminiHelper.js');
+const googleCalendar = require('./googleCalendar.js');
 const { getHistory, addTurn } = require('./historyStore.js');
 
 // Declarado aquí arriba (no donde se usaba antes, ~2760 líneas más abajo)
@@ -1041,13 +1042,15 @@ async function detectAndTrackAppointment(chatId, firstName, username, reply) {
     const dateISO = resolveAppointmentDate(info.dayLabel);
     const time24h = (info.time24h || '').trim() || null;
 
-    // Choque = mismo día + misma hora exacta para OTRO chatId. No puede
-    // prevenir el choque antes de que el bot lo ofrezca (el bot no tiene
-    // acceso a un calendario real), pero sí avisa de inmediato para que
-    // Andrés lo resuelva a mano con ambos prospectos.
-    const conflict = (dateISO && time24h)
+    // Choque interno = mismo día + misma hora exacta para OTRO chatId ya
+    // registrado por el bot. Choque de calendario = lo mismo pero contra
+    // el calendario REAL de Andrés (googleCalendar.js) — detecta también
+    // compromisos que él puso a mano, que el registro interno nunca
+    // podría ver.
+    const internalConflict = (dateISO && time24h)
       ? appointments.find(a => a.dateISO === dateISO && a.time24h === time24h && a.chatId !== chatId && a.status !== 'cancelada')
       : null;
+    const calendarCheck = await googleCalendar.checkCalendarConflict(dateISO, time24h);
 
     const entry = {
       id: `${chatId}_${Date.now()}`,
@@ -1061,13 +1064,26 @@ async function detectAndTrackAppointment(chatId, firstName, username, reply) {
       time24h,
       rawReply: reply.substring(0, 300),
       status: 'confirmada',
+      calendarEventUrl: null,
       createdAt: new Date().toISOString()
     };
+
+    // Si hay calendario conectado, el evento se crea de todas formas
+    // (aunque haya choque) — Andrés necesita verlo en su calendario para
+    // poder resolver el choque manualmente, no que quede invisible.
+    entry.calendarEventUrl = await googleCalendar.createCalendarEvent({
+      summary: `Cita Brain Branding - ${entry.name}`,
+      description: `Teléfono: ${entry.phone ? '+' + entry.phone : 'No proporcionado'}\nGiro: ${entry.giro}\nChat ID: ${chatId}\nOrigen: Telegram Bot`,
+      dateISO,
+      time24h
+    });
+
     appointments.push(entry);
     if (appointments.length > 500) appointments.shift();
     saveAppointmentsToDisk(appointments);
 
     const whenLabel = dateISO ? `${dateISO}${time24h ? ' ' + time24h : ''}` : (info.dayLabel || 'sin definir');
+    const calendarLine = entry.calendarEventUrl ? `\n🔗 *Ver en Google Calendar:* [Abrir evento](${entry.calendarEventUrl})` : '';
 
     await callTelegram('sendMessage', {
       chat_id: ADMIN_CHAT_ID,
@@ -1076,17 +1092,20 @@ async function detectAndTrackAppointment(chatId, firstName, username, reply) {
         `📞 *Teléfono:* ${entry.phone ? '+' + entry.phone : 'No proporcionado aún'}\n` +
         `🏢 *Giro:* ${entry.giro}\n` +
         `🗓️ *Cuándo:* ${whenLabel}\n` +
-        `🆔 *Chat ID:* \`${chatId}\`\n\n` +
+        `🆔 *Chat ID:* \`${chatId}\`${calendarLine}\n\n` +
         `💬 *Tip:* Usa /agenda para ver todas las citas próximas.`,
       parse_mode: 'Markdown'
     }).catch(() => {});
 
-    if (conflict) {
+    if (internalConflict || calendarCheck.busy) {
+      const contra = internalConflict
+        ? `otra cita del bot con *${internalConflict.name}* (chat \`${internalConflict.chatId}\`)`
+        : `algo que ya estaba en el calendario real de Andrés (puesto a mano o de otra fuente)`;
       await callTelegram('sendMessage', {
         chat_id: ADMIN_CHAT_ID,
         text: `⚠️ *POSIBLE CHOQUE DE CITAS* ⚠️\n\n` +
-          `El bot acaba de confirmarle a *${entry.name}* el mismo horario (*${whenLabel}*) que ya tenía *${conflict.name}* (chat \`${conflict.chatId}\`).\n\n` +
-          `Revisa manualmente con ambos prospectos cuál horario es el correcto — el bot no puede re-agendar por sí mismo.`,
+          `El bot acaba de confirmarle a *${entry.name}* el horario *${whenLabel}*, que choca con ${contra}.\n\n` +
+          `Revisa manualmente cuál horario es el correcto — el bot no puede re-agendar por sí mismo.`,
         parse_mode: 'Markdown'
       }).catch(() => {});
     }
@@ -1486,7 +1505,8 @@ async function handleWebhookRequest(req, res) {
             const sameSlot = upcoming.filter(b => a.dateISO && b.dateISO === a.dateISO && b.time24h === a.time24h && b.chatId !== a.chatId);
             const conflictTag = sameSlot.length > 0 ? ' ⚠️ *POSIBLE CHOQUE*' : '';
             const whenLabel = a.dateISO ? `${a.dateISO}${a.time24h ? ' ' + a.time24h : ''}` : (a.dayLabel || 'sin definir');
-            agendaMsg += `${idx + 1}. *${a.name}* — ${whenLabel}${conflictTag}\n   📞 ${a.phone ? '+' + a.phone : 'sin teléfono'} | 🏢 ${a.giro}\n   💬 \`/responder ${a.chatId} \`\n\n`;
+            const calendarLink = a.calendarEventUrl ? ` | [Ver en Calendar](${a.calendarEventUrl})` : '';
+            agendaMsg += `${idx + 1}. *${a.name}* — ${whenLabel}${conflictTag}\n   📞 ${a.phone ? '+' + a.phone : 'sin teléfono'} | 🏢 ${a.giro}${calendarLink}\n   💬 \`/responder ${a.chatId} \`\n\n`;
           });
 
           await callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text: agendaMsg.substring(0, 4000), parse_mode: 'Markdown' });
@@ -1801,7 +1821,15 @@ async function handleWebhookRequest(req, res) {
         await callTelegram('sendChatAction', { chat_id: chatId, action: 'typing' });
         
         const history = getHistory(chatId);
-        let reply = await getGeminiReply(userText, firstName, chatId, history, loadKnowledgeBase());
+        // Antes el bot solo se enteraba de un choque de horarios DESPUÉS
+        // de ya haberlo ofrecido (ver detectAndTrackAppointment más
+        // abajo). Si hay un calendario real conectado (googleCalendar.js),
+        // se le informan los horarios ya ocupados de Andrés ANTES de
+        // generar la respuesta, para que evite proponerlos desde el
+        // principio en vez de solo avisar del choque después.
+        const busySlotsInfo = await googleCalendar.getBusySlotsSummary();
+        const customInstruction = [loadKnowledgeBase(), busySlotsInfo].filter(Boolean).join('\n\n');
+        let reply = await getGeminiReply(userText, firstName, chatId, history, customInstruction);
         if (!reply) {
           reply = generateHumanReply(chatId, firstName, userText);
         }
@@ -3581,6 +3609,12 @@ app.listen(PORT, async () => {
     }
   } catch (e) {
     console.warn('[GEMINI HEALTHCHECK] Excepción:', e.message);
+  }
+
+  if (googleCalendar.isConfigured()) {
+    console.log('[GOOGLE CALENDAR] Integración activa — el bot revisará disponibilidad real y creará eventos al confirmar citas.');
+  } else {
+    console.log('[GOOGLE CALENDAR] No configurado (GOOGLE_CALENDAR_CLIENT_EMAIL/PRIVATE_KEY/ID) — el bot sigue funcionando normal, solo sin prevención de choques contra el calendario real.');
   }
 });
 
