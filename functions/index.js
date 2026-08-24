@@ -226,6 +226,7 @@ exports.telegramWebhook = functions.https.onRequest(async (req, res) => {
 // ============================================================
 
 const admin = require('firebase-admin');
+const { authenticator } = require('otplib');
 
 // Inicializar Firebase Admin solo si aún no está inicializado
 if (!admin.apps.length) {
@@ -258,22 +259,123 @@ function alrSafeEqual(a, b) {
   return nodeCrypto.timingSafeEqual(ha, hb);
 }
 
-// --- verifyAlrAdminAccess({ pin }) -----------------------------------
+// --- Rate limiting server-side por IP ---------------------------------
+// Antes el límite de 5 intentos/5min sólo vivía en variables del propio
+// navegador (window.LOCK_ATTEMPTS) -- trivial de resetear recargando la
+// página o llamando la Cloud Function directo. Esto lleva la cuenta en
+// Firestore, por IP de origen, independiente de lo que haga el cliente.
+const LOGIN_ATTEMPTS_COLLECTION = 'alr_login_attempts';
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_MS = 5 * 60 * 1000;
+
+function getClientIp(request) {
+  const raw = request.rawRequest;
+  const fwd = raw?.headers?.['x-forwarded-for'];
+  const ip = (typeof fwd === 'string' ? fwd.split(',')[0].trim() : null) || raw?.ip || 'unknown';
+  // Los `:`/`.` son válidos en un doc id de Firestore, pero se sanitiza
+  // igual por si acaso (IPv6 trae muchos ":").
+  return ip.replace(/[^a-zA-Z0-9.:_-]/g, '_').slice(0, 200) || 'unknown';
+}
+
+async function checkAndConsumeRateLimit(ip) {
+  const ref = adminDb.collection(LOGIN_ATTEMPTS_COLLECTION).doc(ip);
+  const snap = await ref.get();
+  const data = snap.exists ? snap.data() : {};
+  if (data.lockedUntil && data.lockedUntil > Date.now()) {
+    const remainingSec = Math.ceil((data.lockedUntil - Date.now()) / 1000);
+    throw new HttpsError('resource-exhausted', `Demasiados intentos fallidos. Espera ${remainingSec}s.`);
+  }
+  return { ref, failCount: data.failCount || 0 };
+}
+
+async function registerFailedAttempt(ref, failCount) {
+  const nextCount = failCount + 1;
+  const update = { failCount: nextCount, lastAttempt: Date.now() };
+  if (nextCount >= MAX_FAILED_ATTEMPTS) {
+    update.lockedUntil = Date.now() + LOCKOUT_MS;
+  }
+  await ref.set(update, { merge: true });
+}
+
+async function clearRateLimit(ref) {
+  await ref.delete().catch(() => {});
+}
+
+// --- verifyAlrAdminAccess({ pin, totpCode?, username? }) ---------------
 // Puerta de entrada única al panel ALR SaaS Commander. Requiere sesión
-// anónima de Firebase Auth ya iniciada (ver app.js). Si el PIN
-// coincide, asigna el claim alrSuperAdmin:true al UID actual -- ese
+// anónima de Firebase Auth ya iniciada (ver app.js). Si el PIN coincide
+// (y el código TOTP también, cuando el operador ya enroló 2FA real vía
+// enrollTotp), asigna el claim alrSuperAdmin:true al UID actual -- ese
 // claim es lo único que firestore.rules exige para tocar
 // master_licenses.
 exports.verifyAlrAdminAccess = onCall({ region: ALR_REGION, secrets: [ALR_ADMIN_PIN] }, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new HttpsError('unauthenticated', 'Requiere sesión anónima activa.');
 
+  const ip = getClientIp(request);
+  const { ref: rateLimitRef, failCount } = await checkAndConsumeRateLimit(ip);
+
+  const pin = String(data?.pin || '');
+  const username = String(data?.username || 'Master Admin');
+
+  if (!pin || !alrSafeEqual(pin, ALR_ADMIN_PIN.value())) {
+    await registerFailedAttempt(rateLimitRef, failCount);
+    throw new HttpsError('permission-denied', 'PIN inválido.');
+  }
+
+  // Si el operador ya enroló un TOTP real (ver enrollTotp), exigirlo
+  // además del PIN -- reemplaza el "2FA" anterior, cuya semilla era una
+  // constante pública (MASTER_LEDGER_SALT en app.js) y no protegía nada.
+  const totpSnap = await adminDb.collection('alr_admin_totp').doc(username).get();
+  if (totpSnap.exists) {
+    const totpCode = String(data?.totpCode || '');
+    const secret = totpSnap.data().secret;
+    const totpValid = totpCode.length === 6 && authenticator.verify({ token: totpCode, secret });
+    if (!totpValid) {
+      await registerFailedAttempt(rateLimitRef, failCount);
+      throw new HttpsError('permission-denied', totpCode ? 'Código 2FA inválido.' : 'Falta el código 2FA.');
+    }
+  }
+
+  await clearRateLimit(rateLimitRef);
+  await admin.auth().setCustomUserClaims(auth.uid, { alrSuperAdmin: true });
+  return { ok: true, totpRequired: totpSnap.exists };
+});
+
+// --- enrollTotp({ username? }) ------------------------------------------
+// Genera un secreto TOTP real (RFC 6238) por operador y lo guarda en
+// Firestore -- solo el Admin SDK (aquí) lo lee o lo escribe, nunca el
+// cliente. Requiere que quien llama YA tenga el claim alrSuperAdmin
+// (es decir, ya pasó verifyAlrAdminAccess con el PIN) -- habilitar 2FA
+// no puede ser en sí mismo la puerta de entrada.
+exports.enrollTotp = onCall({ region: ALR_REGION }, async (request) => {
+  const { auth, data } = request;
+  if (!auth || auth.token?.alrSuperAdmin !== true) {
+    throw new HttpsError('permission-denied', 'Requiere sesión de administrador activa.');
+  }
+  const username = String(data?.username || 'Master Admin');
+  const secret = authenticator.generateSecret();
+  await adminDb.collection('alr_admin_totp').doc(username).set({
+    secret,
+    enrolledAt: new Date().toISOString(),
+  });
+  const otpauthUri = authenticator.keyuri(username, 'ALR SaaS Commander', secret);
+  return { ok: true, secret, otpauthUri };
+});
+
+// --- disableTotp({ username? }) ------------------------------------------
+// Por si el operador pierde el dispositivo -- requiere el PIN vigente
+// (no solo el claim ya emitido) para que un navegador con sesión abierta
+// pero robado no pueda apagar el segundo factor por su cuenta.
+exports.disableTotp = onCall({ region: ALR_REGION, secrets: [ALR_ADMIN_PIN] }, async (request) => {
+  const { auth, data } = request;
+  if (!auth) throw new HttpsError('unauthenticated', 'Requiere sesión anónima activa.');
   const pin = String(data?.pin || '');
   if (!pin || !alrSafeEqual(pin, ALR_ADMIN_PIN.value())) {
     throw new HttpsError('permission-denied', 'PIN inválido.');
   }
-
-  await admin.auth().setCustomUserClaims(auth.uid, { alrSuperAdmin: true });
+  const username = String(data?.username || 'Master Admin');
+  await adminDb.collection('alr_admin_totp').doc(username).delete();
   return { ok: true };
 });
 

@@ -1,0 +1,149 @@
+// Prueba de humo end-to-end contra los emuladores (Auth 9099, Firestore
+// 8080, Functions 5001). No toca producción. Corre vía:
+//   npm run test:alr-saas
+// (requiere functions/.secret.local con ALR_ADMIN_PIN=947261 -- el CI lo
+// genera solo, ver .github/workflows/alr-saas-tests.yml).
+const admin = require("firebase-admin");
+
+const PROJECT_ID = "brain-branding";
+const API_KEY = "fake-api-key";
+const TEST_PIN = "947261";
+const AUTH_BASE = `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1`;
+const TOKEN_BASE = `http://127.0.0.1:9099/securetoken.googleapis.com/v1`;
+const FUNCTIONS_BASE = `http://127.0.0.1:5001/${PROJECT_ID}/us-central1`;
+const FIRESTORE_DOCS_BASE = `http://127.0.0.1:8080/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+
+process.env.FIRESTORE_EMULATOR_HOST = "127.0.0.1:8080";
+process.env.FIREBASE_AUTH_EMULATOR_HOST = "127.0.0.1:9099";
+admin.initializeApp({ projectId: PROJECT_ID });
+const db = admin.firestore();
+
+let passed = 0, failed = 0;
+function check(label, cond, detail) {
+  if (cond) { console.log(`✅ ${label}`); passed++; }
+  else { console.error(`❌ ${label}${detail ? " — " + detail : ""}`); failed++; }
+}
+
+async function signInAnon() {
+  const res = await fetch(`${AUTH_BASE}/accounts:signUp?key=${API_KEY}`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ returnSecureToken: true }),
+  });
+  return res.json();
+}
+async function refreshIdToken(refreshToken) {
+  const res = await fetch(`${TOKEN_BASE}/token?key=${API_KEY}`, {
+    method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=refresh_token&refresh_token=${refreshToken}`,
+  });
+  const json = await res.json();
+  return json.id_token;
+}
+async function callFunction(name, idToken, data) {
+  const res = await fetch(`${FUNCTIONS_BASE}/${name}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}) },
+    body: JSON.stringify({ data }),
+  });
+  return { status: res.status, json: await res.json() };
+}
+async function firestoreGet(idToken, path) {
+  const res = await fetch(`${FIRESTORE_DOCS_BASE}/${path}`, { headers: idToken ? { Authorization: `Bearer ${idToken}` } : {} });
+  return { status: res.status, json: await res.json() };
+}
+async function firestoreSet(idToken, path, fields) {
+  const res = await fetch(`${FIRESTORE_DOCS_BASE}/${path}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}) },
+    body: JSON.stringify({ fields }),
+  });
+  return { status: res.status, json: await res.json() };
+}
+
+(async () => {
+  await db.doc("master_licenses/testclient").set({
+    clientName: "Test Client SA",
+    status: "SUSPENDED",
+    gracePeriodHours: 48,
+  });
+  await db.doc("master_licenses/testclient/secrets/apiKey").set({ value: "sec_super_secret_should_never_leak" });
+
+  // --- verifyAlrAdminAccess: PIN básico ---
+  const u1 = await signInAnon();
+  const wrongPin = await callFunction("verifyAlrAdminAccess", u1.idToken, { pin: "000000" });
+  check("verifyAlrAdminAccess con PIN incorrecto deniega", wrongPin.status !== 200 || !!wrongPin.json.error);
+
+  const u2 = await signInAnon();
+  const rightPin = await callFunction("verifyAlrAdminAccess", u2.idToken, { pin: TEST_PIN, username: "SmokeAdmin" });
+  check("verifyAlrAdminAccess con PIN correcto responde ok", rightPin.status === 200 && rightPin.json.result?.ok, JSON.stringify(rightPin.json));
+
+  // --- getPublicLicenseStatus: expone SOLO status/gracePeriodHours ---
+  const statusRes = await fetch(`${FUNCTIONS_BASE}/getPublicLicenseStatus?appId=testclient`);
+  const statusJson = await statusRes.json();
+  check("getPublicLicenseStatus devuelve el status real", statusJson.status === "SUSPENDED");
+  check("getPublicLicenseStatus NO expone apiKey ni clientName", !("apiKey" in statusJson) && !("clientName" in statusJson));
+
+  const missingRes = await fetch(`${FUNCTIONS_BASE}/getPublicLicenseStatus?appId=no_existe`);
+  const missingJson = await missingRes.json();
+  check("getPublicLicenseStatus con appId inexistente falla abierto (ACTIVE)", missingJson.status === "ACTIVE");
+
+  // --- firestore.rules: sin claim ---
+  const anon = await signInAnon();
+  const anonRead = await firestoreGet(anon.idToken, "master_licenses/testclient");
+  check("Sesión anónima SIN claim NO puede leer master_licenses", anonRead.status === 403 || !!anonRead.json.error);
+  const anonWrite = await firestoreSet(anon.idToken, "master_licenses/testclient", { status: { stringValue: "ACTIVE" } });
+  check("Sesión anónima SIN claim NO puede escribir master_licenses", anonWrite.status === 403 || !!anonWrite.json.error);
+  const anonSecretRead = await firestoreGet(anon.idToken, "master_licenses/testclient/secrets/apiKey");
+  check("Sesión anónima SIN claim NO puede leer la subcolección secrets/apiKey", anonSecretRead.status === 403 || !!anonSecretRead.json.error);
+
+  // --- firestore.rules: con claim (tras verifyAlrAdminAccess) ---
+  const admin2 = await signInAnon();
+  await callFunction("verifyAlrAdminAccess", admin2.idToken, { pin: TEST_PIN, username: "SmokeAdmin2" });
+  const adminFreshToken = await refreshIdToken(admin2.refreshToken);
+  const adminRead = await firestoreGet(adminFreshToken, "master_licenses/testclient");
+  check("Con claim alrSuperAdmin SÍ puede leer master_licenses", adminRead.status === 200);
+  const adminSecretRead = await firestoreGet(adminFreshToken, "master_licenses/testclient/secrets/apiKey");
+  check("Con claim alrSuperAdmin SÍ puede leer secrets/apiKey", adminSecretRead.status === 200);
+
+  // --- TOTP real ---
+  const totpUser = "TotpSmokeAdmin";
+  const enrollRes = await callFunction("enrollTotp", adminFreshToken, { username: totpUser });
+  check("enrollTotp (con claim alrSuperAdmin) responde ok con un secreto", enrollRes.status === 200 && !!enrollRes.json.result?.secret, JSON.stringify(enrollRes.json));
+
+  const noClaimUser = await signInAnon();
+  const enrollDenied = await callFunction("enrollTotp", noClaimUser.idToken, { username: "otro" });
+  check("enrollTotp SIN claim alrSuperAdmin es denegado", enrollDenied.status !== 200 || !!enrollDenied.json.error);
+
+  if (enrollRes.json.result?.secret) {
+    const { authenticator } = require("otplib");
+    const secret = enrollRes.json.result.secret;
+    const validCode = authenticator.generate(secret);
+
+    const u3 = await signInAnon();
+    const pinOnlyAfterEnroll = await callFunction("verifyAlrAdminAccess", u3.idToken, { pin: TEST_PIN, username: totpUser });
+    check("Tras enrolar TOTP, el PIN solo (sin código) ya no basta", pinOnlyAfterEnroll.status !== 200 || !!pinOnlyAfterEnroll.json.error, JSON.stringify(pinOnlyAfterEnroll.json));
+
+    const u4 = await signInAnon();
+    const pinPlusTotp = await callFunction("verifyAlrAdminAccess", u4.idToken, { pin: TEST_PIN, totpCode: validCode, username: totpUser });
+    check("PIN + código TOTP válido sí autoriza", pinPlusTotp.status === 200 && pinPlusTotp.json.result?.ok, JSON.stringify(pinPlusTotp.json));
+
+    const disableRes = await callFunction("disableTotp", await refreshIdToken(u4.refreshToken), { pin: TEST_PIN, username: totpUser });
+    check("disableTotp con PIN correcto responde ok", disableRes.status === 200 && disableRes.json.result?.ok, JSON.stringify(disableRes.json));
+
+    const u5 = await signInAnon();
+    const pinOnlyAfterDisable = await callFunction("verifyAlrAdminAccess", u5.idToken, { pin: TEST_PIN, username: totpUser });
+    check("Tras desactivar TOTP, el PIN solo vuelve a bastar", pinOnlyAfterDisable.status === 200 && pinOnlyAfterDisable.json.result?.ok, JSON.stringify(pinOnlyAfterDisable.json));
+  }
+
+  // --- Rate limiting server-side (por IP) ---
+  const rateLimitUser = "RateLimitSmokeAdmin";
+  let lastResult = null;
+  for (let i = 0; i < 6; i++) {
+    const u = await signInAnon();
+    lastResult = await callFunction("verifyAlrAdminAccess", u.idToken, { pin: "000000", username: rateLimitUser });
+  }
+  check("Tras 6 intentos fallidos seguidos, la función bloquea por rate-limit (resource-exhausted)", lastResult.status !== 200 && /intentos fallidos/i.test(lastResult.json.error?.message || ""), JSON.stringify(lastResult.json));
+
+  console.log(`\n${passed} prueba(s) pasaron, ${failed} fallaron.`);
+  process.exit(failed > 0 ? 1 : 0);
+})().catch(e => { console.error("Error inesperado:", e); process.exit(1); });

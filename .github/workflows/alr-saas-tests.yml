@@ -1,0 +1,45 @@
+name: ALR SaaS (auth/licencias/reglas)
+
+# Corre en cada push y cada Pull Request para detectar ANTES de desplegar
+# si un cambio a firestore.rules, functions/index.js o alr-saas/app.js
+# rompe el aislamiento de licencias, el login (PIN/2FA/rate-limit) o el
+# filtrado de campos sensibles en getPublicLicenseStatus. Usa un PIN de
+# prueba fijo contra los emuladores -- nunca toca producción ni el
+# ALR_ADMIN_PIN real.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-alr-saas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Instalar dependencias (raíz)
+        run: npm ci
+
+      - name: Instalar dependencias (functions)
+        run: npm ci
+        working-directory: functions
+
+      - name: Instalar Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Configurar PIN de prueba para el emulador
+        run: echo "ALR_ADMIN_PIN=947261" > functions/.secret.local
+
+      - name: Correr suite de humo contra emuladores
+        run: npm run test:alr-saas

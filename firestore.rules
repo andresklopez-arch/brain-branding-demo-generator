@@ -21,6 +21,16 @@ service cloud.firestore {
 
     match /master_licenses/{licenseId} {
       allow read, write: if isAlrSuperAdmin();
+
+      // apiKey (el secreto que firma/protege la licencia de cada
+      // cliente) vive aparte del documento principal -- mismo control de
+      // acceso (isAlrSuperAdmin), pero así un futuro bug que exponga
+      // master_licenses/{id} por error no arrastra el apiKey con él.
+      // Las subcolecciones NO heredan la regla del documento padre en
+      // Firestore, necesitan su propio match.
+      match /secrets/{docId} {
+        allow read, write: if isAlrSuperAdmin();
+      }
     }
 
     // Colecciones propias de la consola.

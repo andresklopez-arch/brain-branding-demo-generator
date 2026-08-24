@@ -820,14 +820,25 @@ window.pullAllLicensesFromCloud = async function(silent = false) {
     // internet). Ahora usa governanceDb, protegido por el claim
     // alrSuperAdmin que asigna verifyAlrAdminAccess.
     const snap = await window.governanceDb.collection('master_licenses').get();
-    const pulledLicenses = snap.docs.map(doc => {
+    const pulledLicenses = await Promise.all(snap.docs.map(async doc => {
       const d = doc.data() || {};
+      // apiKey vive en la subcolección secrets/apiKey (ver
+      // syncLicenseToFirestore); se hace fallback al campo viejo del
+      // documento principal para licencias que aún no se han vuelto a
+      // guardar desde el cambio.
+      let apiKey = d.apiKey || '';
+      try {
+        const secretSnap = await doc.ref.collection('secrets').doc('apiKey').get();
+        if (secretSnap.exists) apiKey = secretSnap.data().value || apiKey;
+      } catch (e) {
+        console.warn(`[ALR GOVERNANCE] No se pudo leer apiKey de ${doc.id}:`, e.message);
+      }
       return {
         id: doc.id,
         clientName: d.clientName || 'Cliente',
         appName: d.appName || 'Aplicación',
         appId: d.appId || doc.id,
-        apiKey: d.apiKey || '',
+        apiKey,
         expiryDate: d.expiryDate || d.expirationDate || '2099-12-31T23:59:59Z',
         expirationDate: d.expiryDate || d.expirationDate || '2099-12-31T23:59:59Z',
         currentPlan: d.currentPlan || 'PAGADO',
@@ -840,7 +851,7 @@ window.pullAllLicensesFromCloud = async function(silent = false) {
         status: String(d.status || 'ACTIVE').toUpperCase(),
         version: Number(d.version || 1)
       };
-    });
+    }));
 
     if (pulledLicenses.length > 0) {
       state.licenses = pulledLicenses;
@@ -3683,9 +3694,13 @@ window.requestAdminVerification = function(actionName, onConfirm) {
         <label class="form-label">Perfil</label>
         <select id="auth-admin-select" class="form-input">${adminsHtml}</select>
       </div>
-      <div class="form-group" style="text-align:left; margin-bottom:24px;">
+      <div class="form-group" style="text-align:left; margin-bottom:16px;">
         <label class="form-label">PIN de Administrador</label>
         <input type="password" id="auth-admin-pin" class="form-input" maxlength="6" style="text-align:center; letter-spacing:6px;" onkeydown="if(event.key==='Enter') window.verifyAdminCredentials('${safeActionName}')">
+      </div>
+      <div class="form-group" style="text-align:left; margin-bottom:24px;">
+        <label class="form-label">Código 2FA (solo si ya lo activaste)</label>
+        <input type="text" id="auth-admin-totp" class="form-input" maxlength="6" inputmode="numeric" placeholder="000000" style="text-align:center; letter-spacing:4px;" onkeydown="if(event.key==='Enter') window.verifyAdminCredentials('${safeActionName}')">
       </div>
       <button class="btn btn-primary" style="width:100%;" onclick="window.verifyAdminCredentials('${safeActionName}')">Confirmar</button>
     </div>
@@ -3730,10 +3745,12 @@ window.verifyAdminCredentials = async function(actionName) {
 
   const adminSelect = document.getElementById('auth-admin-select');
   const pinInput = document.getElementById('auth-admin-pin');
+  const totpInput = document.getElementById('auth-admin-totp');
 
   if (!adminSelect || !pinInput) return;
   const username = adminSelect.value;
   const pin = pinInput.value;
+  const totpCode = totpInput ? totpInput.value.trim() : '';
 
   const admin = SYSTEM_ADMINS.find(a => a.username === username);
   if (!admin) {
@@ -3748,7 +3765,7 @@ window.verifyAdminCredentials = async function(actionName) {
       await initGovernanceFirebase();
     }
     const verify = window.governanceFunctions.httpsCallable('verifyAlrAdminAccess');
-    await verify({ pin });
+    await verify({ pin, totpCode, username });
     // Sin esto, request.auth.token.alrSuperAdmin seguiría vacío en
     // firestore.rules aunque el claim ya exista en Auth.
     await window.governanceAuth.currentUser.getIdToken(true);
@@ -3770,8 +3787,8 @@ window.verifyAdminCredentials = async function(actionName) {
   } catch (err) {
     // Retardo artificial de 1 segundo para disuadir ataques de fuerza bruta rápidos
     await new Promise(resolve => setTimeout(resolve, 1000));
-    showToast("PIN incorrecto.", "danger");
-    addAuditLog('SYSTEM', 'FALLO_AUTENTICACION', `Denegado: Intento no autorizado de ejecutar "${actionName}" como ${username}.`);
+    showToast(err.message || "PIN incorrecto.", "danger");
+    addAuditLog('SYSTEM', 'FALLO_AUTENTICACION', `Denegado: Intento no autorizado de ejecutar "${actionName}" como ${username} (${err.message || 'PIN incorrecto'}).`);
     if (window.registerAuthFailure) window.registerAuthFailure(username, `Gobernanza: ${actionName}`);
     verifyAuditLedger(); // Desatar alerta si corresponde
   }
@@ -3926,6 +3943,8 @@ window.openProfileSettingsModal = function() {
       </div>
 
       <button class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;" onclick="window.registerWebAuthnCredential(currentAdmin.username)">🔑 Registrar Huella / Passkey</button>
+      <button class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;" onclick="window.enrollTotpReal()">🔐 Configurar 2FA Real (TOTP)</button>
+      <button class="btn btn-secondary" style="width: 100%; margin-bottom: 10px; color: var(--danger);" onclick="window.disableTotpReal()">🚫 Desactivar 2FA</button>
       <button class="btn btn-secondary" style="width: 100%;" onclick="closeModal()">Cerrar Panel</button>
     </div>
   `;
@@ -4159,6 +4178,10 @@ window.openSessionLockedModal = function(lockedAdminName) {
             </button>
           </div>
         </div>
+        <div class="form-group">
+          <label class="form-label">Código 2FA (solo si ya lo activaste)</label>
+          <input type="text" id="auth-admin-totp" class="form-input" placeholder="000000" maxlength="6" inputmode="numeric" style="text-align:center; font-size:16px; letter-spacing:4px; font-weight:900; width: 100%; height:44px;" onkeydown="if(event.key==='Enter') window.unlockConsoleSession()">
+        </div>
       </div>
 
       <button class="btn btn-primary" style="width: 100%; height: 44px; margin-bottom: 10px;" onclick="window.unlockConsoleSession()">
@@ -4188,10 +4211,12 @@ window.unlockConsoleSession = async function() {
 
   const adminSelect = document.getElementById('auth-admin-select');
   const pinInput = document.getElementById('auth-admin-pin');
-  
+  const totpInput = document.getElementById('auth-admin-totp');
+
   if (!adminSelect || !pinInput) return;
   const username = adminSelect.value;
   const pin = pinInput.value.trim();
+  const totpCode = totpInput ? totpInput.value.trim() : '';
 
   if (!pin) {
     showToast("Ingresa tu contraseña de administrador.", "danger");
@@ -4209,18 +4234,22 @@ window.unlockConsoleSession = async function() {
   }
 
   // La validación real vive en verifyAlrAdminAccess (Cloud Function +
-  // Secret Manager) -- ya no se compara ningún hash localmente.
+  // Secret Manager) -- ya no se compara ningún hash localmente. Si el
+  // operador ya activó 2FA (enrollTotpReal), la función exige además
+  // totpCode.
   let isPinValid = false;
+  let authErrorMsg = 'PIN incorrecto.';
   try {
     if (!window.governanceAuth || !window.governanceAuth.currentUser) {
       await initGovernanceFirebase();
     }
     const verify = window.governanceFunctions.httpsCallable('verifyAlrAdminAccess');
-    await verify({ pin });
+    await verify({ pin, totpCode, username });
     await window.governanceAuth.currentUser.getIdToken(true);
     isPinValid = true;
   } catch (e) {
     isPinValid = false;
+    if (e.message) authErrorMsg = e.message;
   }
 
   if (isPinValid) {
@@ -4264,8 +4293,8 @@ window.unlockConsoleSession = async function() {
       window.sendTelegramNotification(intrusionAlert);
     } else {
       const remainingAttempts = 5 - window.LOCK_ATTEMPTS;
-      showToast(`Contraseña incorrecta. Intentos restantes: ${remainingAttempts}`, "danger");
-      addAuditLog('SYSTEM', 'FALLO_DESBLOQUEO', `Denegado: Contraseña incorrecta para ${username} (Intento ${window.LOCK_ATTEMPTS}/5).`);
+      showToast(`${authErrorMsg} Intentos restantes: ${remainingAttempts}`, "danger");
+      addAuditLog('SYSTEM', 'FALLO_DESBLOQUEO', `Denegado: ${authErrorMsg} para ${username} (Intento ${window.LOCK_ATTEMPTS}/5).`);
     }
     if (window.registerAuthFailure) window.registerAuthFailure(username, 'Desbloqueo de Consola');
     
@@ -6070,7 +6099,7 @@ window.openSecurityLockoutModal = function() {
         Introduce el PIN Maestro para reestablecer la gobernanza.
       </p>
       
-      <div class="form-group" style="text-align: left; margin-bottom: 24px;">
+      <div class="form-group" style="text-align: left; margin-bottom: 16px;">
         <label class="form-label">PIN de Desbloqueo Maestro (Master Admin)</label>
         <div style="position: relative; display: flex; align-items: center;">
           <input type="password" id="lockout-master-pin" class="form-input" maxlength="6" placeholder="••••" style="text-align:center; font-size:20px; letter-spacing:6px; font-weight:900; background:#000; color:#fff; border:1px solid var(--border-glass); padding-right: 40px; width: 100%;">
@@ -6078,6 +6107,10 @@ window.openSecurityLockoutModal = function() {
             <i class="ri-eye-off-line" style="font-size: 16px;"></i>
           </button>
         </div>
+      </div>
+      <div class="form-group" style="text-align: left; margin-bottom: 24px;">
+        <label class="form-label">Código 2FA (solo si ya lo activaste)</label>
+        <input type="text" id="lockout-master-totp" class="form-input" maxlength="6" inputmode="numeric" placeholder="000000" style="text-align:center; font-size:16px; letter-spacing:4px; font-weight:900; background:#000; color:#fff; border:1px solid var(--border-glass); width: 100%;">
       </div>
 
       <button class="btn btn-primary" style="width: 100%; height: 44px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 800; cursor:pointer;" onclick="window.unlockSecurityLockout()">
@@ -6092,8 +6125,10 @@ window.unlockSecurityLockout = async function() {
   if (window.checkLockoutState && window.checkLockoutState()) return;
 
   const pinInput = document.getElementById('lockout-master-pin');
+  const totpInput = document.getElementById('lockout-master-totp');
   if (!pinInput) return;
   const pin = pinInput.value;
+  const totpCode = totpInput ? totpInput.value.trim() : '';
 
   // Antes comparaba masterAdmin.pinHash localmente (el mismo hash público
   // y crackeable offline) -- ahora usa la misma Cloud Function que el
@@ -6105,7 +6140,7 @@ window.unlockSecurityLockout = async function() {
       await initGovernanceFirebase();
     }
     const verify = window.governanceFunctions.httpsCallable('verifyAlrAdminAccess');
-    await verify({ pin });
+    await verify({ pin, totpCode, username: masterAdmin.username });
     await window.governanceAuth.currentUser.getIdToken(true);
     isPinValid = true;
   } catch (e) {
@@ -6797,7 +6832,13 @@ window.syncLicenseToFirestore = async function(license) {
         clientName: license.clientName || '',
         appName: license.appName || '',
         appId: license.appId || '',
-        apiKey: license.apiKey || '',
+        // apiKey ya NO vive en el documento principal -- se escribe
+        // aparte en master_licenses/{id}/secrets/apiKey (mismo control
+        // de acceso, pero así un futuro bug que exponga por error el
+        // doc principal no arrastra el secreto con él). Se borra
+        // explícitamente el campo viejo para ir limpiando documentos ya
+        // existentes a medida que se tocan.
+        apiKey: firebase.firestore.FieldValue.delete(),
         status: currentStatus,
         expiryDate: license.expiryDate || license.expirationDate || '2099-12-31T23:59:59Z',
         expirationDate: license.expiryDate || license.expirationDate || '2099-12-31T23:59:59Z',
@@ -6811,7 +6852,11 @@ window.syncLicenseToFirestore = async function(license) {
         version: Number(license.version || 1),
         lastUpdated: new Date().toISOString()
       };
-      await window.governanceDb.collection('master_licenses').doc(license.id).set(payload, { merge: true });
+      const licenseRef = window.governanceDb.collection('master_licenses').doc(license.id);
+      await licenseRef.set(payload, { merge: true });
+      if (license.apiKey) {
+        await licenseRef.collection('secrets').doc('apiKey').set({ value: license.apiKey }, { merge: true });
+      }
       console.log(`[ALR GOVERNANCE] ✅ ${license.id} → ${currentStatus} persistido en Firestore.`);
     } catch (err) {
       console.error('[ALR GOVERNANCE] ❌ Error al escribir en Firestore:', err.message);
@@ -7620,6 +7665,69 @@ window.saveConcurrencyPolicy = function() {
   }
 };
 
+// 🔐 2FA real (TOTP, RFC 6238) -- reemplaza el "2FA" anterior, cuya
+// semilla (MASTER_LEDGER_SALT) era una constante pública visible en este
+// mismo archivo y no protegía nada. El secreto real lo genera y guarda
+// enrollTotp (Cloud Function, Admin SDK); el navegador solo lo ve una
+// vez, al momento de escanear el QR.
+window.enrollTotpReal = async function() {
+  if (!currentAdmin) return;
+  try {
+    if (!window.governanceAuth || !window.governanceAuth.currentUser) {
+      await initGovernanceFirebase();
+    }
+    const enroll = window.governanceFunctions.httpsCallable('enrollTotp');
+    const { data } = await enroll({ username: currentAdmin.username });
+
+    const qrUrl = `https://quickchart.io/chart?cht=qr&chs=180&chl=${encodeURIComponent(data.otpauthUri)}`;
+    const overlay = document.getElementById('modal-overlay');
+    const box = document.getElementById('modal-box');
+    if (!overlay || !box) return;
+
+    box.innerHTML = `
+      <div style="padding: 30px; text-align: center;">
+        <div style="font-size: 40px; margin-bottom: 12px;">📱</div>
+        <h2 style="font-size: 18px; font-weight: 900; color: var(--accent); margin-bottom: 8px; text-transform: uppercase;">Vincular Autenticador</h2>
+        <p style="font-size: 11px; opacity: 0.6; margin-bottom: 20px; line-height: 1.5;">Escanea el código QR con Google Authenticator o similar. A partir de ahora, el PIN por sí solo ya no bastará para entrar -- se pedirá también el código de 6 dígitos.</p>
+
+        <div style="background: #fff; padding: 12px; border-radius: 20px; display: inline-block; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px; border: 1px solid var(--border-active);">
+          <img src="${qrUrl}" alt="QR Code 2FA" style="display: block; width: 160px; height: 160px;">
+        </div>
+
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); border-radius: 15px; padding: 12px; font-family: var(--font-mono); font-size: 10px; margin-bottom: 24px; text-align: left;">
+          <span style="color: var(--accent-secondary); font-weight:900;">CLAVE MANUAL (si no puedes escanear):</span><br>
+          <span style="font-size:11px; color:#fff; word-break:break-all;">${escapeHtml(data.secret)}</span>
+        </div>
+
+        <button class="btn btn-primary" style="width: 100%;" onclick="closeModal()">Listo, ya lo escaneé</button>
+      </div>
+    `;
+    overlay.classList.add('active');
+    addAuditLog('SECURITY', 'TOTP_ENROLL', `2FA real (TOTP) activado para ${currentAdmin.username}.`);
+  } catch (err) {
+    showToast('Error al activar 2FA: ' + err.message, 'danger');
+  }
+};
+
+window.disableTotpReal = function() {
+  if (!currentAdmin) return;
+  const pin = prompt('Ingresa tu PIN actual para desactivar el 2FA:');
+  if (!pin) return;
+  (async () => {
+    try {
+      if (!window.governanceAuth || !window.governanceAuth.currentUser) {
+        await initGovernanceFirebase();
+      }
+      const disable = window.governanceFunctions.httpsCallable('disableTotp');
+      await disable({ pin, username: currentAdmin.username });
+      showToast('2FA desactivado.', 'success');
+      addAuditLog('SECURITY', 'TOTP_DISABLE', `2FA real (TOTP) desactivado para ${currentAdmin.username}.`);
+    } catch (err) {
+      showToast('Error al desactivar 2FA: ' + err.message, 'danger');
+    }
+  })();
+};
+
 // 🔐 Autenticación Biométrica Local (WebAuthn / Passkeys) -- ahora es solo
 // una CONVENIENCIA para no volver a teclear el PIN en este dispositivo,
 // nunca un reemplazo de la verificación server-side (verifyAlrAdminAccess).
@@ -7697,15 +7805,17 @@ window.unlockWithWebAuthn = async function() {
     }
 
     // El PIN descifrado se revalida contra la misma Cloud Function que
-    // cualquier otro desbloqueo.
+    // cualquier otro desbloqueo. Si el operador ya activó 2FA real, esto
+    // fallará (WebAuthn no puede aportar el código de 6 dígitos) -- el
+    // mensaje de error ya deja claro que hay que usar el PIN+2FA normal.
     if (!window.governanceAuth || !window.governanceAuth.currentUser) {
       await initGovernanceFirebase();
     }
+    const admin = SYSTEM_ADMINS[0];
     const verify = window.governanceFunctions.httpsCallable('verifyAlrAdminAccess');
-    await verify({ pin });
+    await verify({ pin, username: admin.username });
     await window.governanceAuth.currentUser.getIdToken(true);
 
-    const admin = SYSTEM_ADMINS[0];
     SESSION_KEY = await sha256(admin.username + pin);
     SESSION_KEY_BUFFER = new TextEncoder().encode(SESSION_KEY);
     currentAdmin = admin;
@@ -7849,17 +7959,37 @@ window.copyUniversalSdkSnippet = function(appId) {
 };
 
 window.openCopySdkPicker = function() {
-  const ids = Array.from(new Set((state.licenses || []).map(l => l.id).filter(Boolean)));
-  if (ids.length === 0) {
+  const licenses = (state.licenses || []).filter(l => l.id);
+  if (licenses.length === 0) {
     showToast('No hay clientes registrados todavía.', 'warning');
     return;
   }
-  const choice = prompt(`Escribe el ID exacto del cliente para el que quieres el tag SDK:\n\n${ids.join('\n')}`, ids[0]);
-  if (!choice || !ids.includes(choice)) {
-    if (choice !== null) showToast('ID de cliente no reconocido.', 'danger');
-    return;
-  }
-  window.copyUniversalSdkSnippet(choice);
+  const overlay = document.getElementById('modal-overlay');
+  const box = document.getElementById('modal-box');
+  if (!overlay || !box) return;
+
+  const optionsHtml = licenses
+    .sort((a, b) => (a.clientName || '').localeCompare(b.clientName || ''))
+    .map(l => `<option value="${escapeHtml(l.id)}">${escapeHtml(l.clientName || l.id)} (${escapeHtml(l.id)})</option>`)
+    .join('');
+
+  box.innerHTML = `
+    <div style="padding: 30px;">
+      <h2 style="font-size: 16px; font-weight: 900; color: var(--accent); margin-bottom: 8px; text-transform: uppercase;">Copiar Tag SDK</h2>
+      <p style="font-size: 11px; opacity: 0.6; margin-bottom: 16px;">Elige el cliente para el que quieres generar el tag de integración de 1 línea.</p>
+      <div class="form-group" style="text-align:left; margin-bottom:24px;">
+        <label class="form-label">Cliente</label>
+        <select id="sdk-picker-select" class="form-input">${optionsHtml}</select>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="window.copyUniversalSdkSnippet(document.getElementById('sdk-picker-select').value); closeModal();">
+          <i class="ri-code-s-slash-line"></i> Copiar
+        </button>
+      </div>
+    </div>
+  `;
+  overlay.classList.add('active');
 };
 
 
