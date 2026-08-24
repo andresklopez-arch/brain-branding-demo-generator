@@ -421,11 +421,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  await initGovernanceFirebase(); // sesión anónima; sin claim todavía, sin acceso a master_licenses
+  // Cada paso va en su propio try/catch: un fallo en cualquiera de ellos
+  // (red, Firebase, lo que sea) NUNCA debe impedir que se llegue a abrir
+  // el candado de abajo -- ya pasó una vez (updateHeaderProfileBadge
+  // tronaba con currentAdmin todavía null y dejaba la consola sin pedir
+  // PIN, atascada en init).
+  try {
+    await initGovernanceFirebase(); // sesión anónima; sin claim todavía, sin acceso a master_licenses
+  } catch (e) { console.error('[INIT] initGovernanceFirebase falló:', e); }
 
-  verifyAuditLedger(); // Verificar inmutabilidad del historial en el arranque (solo datos locales, no licencias)
-  window.updateHeaderProfileBadge();
-  window.resetInactivityTimer();
+  try {
+    verifyAuditLedger(); // Verificar inmutabilidad del historial en el arranque (solo datos locales, no licencias)
+  } catch (e) { console.error('[INIT] verifyAuditLedger falló:', e); }
+
+  try {
+    window.updateHeaderProfileBadge();
+  } catch (e) { console.error('[INIT] updateHeaderProfileBadge falló:', e); }
+
+  try {
+    window.resetInactivityTimer();
+  } catch (e) { console.error('[INIT] resetInactivityTimer falló:', e); }
 
   // currentAdmin es null hasta que unlockConsoleSession()/verifyAdminCredentials()
   // tengan éxito vía verifyAlrAdminAccess. Todo lo que toca master_licenses
@@ -4053,7 +4068,15 @@ window.updateHeaderProfileBadge = function() {
   const profileRole = document.getElementById('header-profile-role');
   
   if (!profileBadge || !avatarCircle || !profileName || !profileRole) return;
-  
+
+  // Se llama incondicionalmente al cargar la página (antes del login, ver
+  // DOMContentLoaded) para reflejar cambios de sesión -- currentAdmin sigue
+  // siendo null hasta un unlock exitoso, así que no hay nada que actualizar
+  // todavía (el placeholder estático del HTML se queda tal cual hasta ese
+  // momento). Sin este guard, esto tronaba ANTES de llegar a abrir el
+  // modal de PIN, dejando la consola atascada sin pedir nada.
+  if (!currentAdmin) return;
+
   const initials = currentAdmin.username.split(' ').map(n => n[0]).join('').substr(0, 2).toUpperCase();
   profileName.innerText = currentAdmin.username;
   profileRole.innerText = currentAdmin.role;
