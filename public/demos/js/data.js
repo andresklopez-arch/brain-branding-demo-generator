@@ -49,6 +49,30 @@ const demoRegistry = {
     welcomeText: "Diagnóstico interactivo de los 14 módulos de Labtivity y configuración de requerimientos a la medida con IA."
   },
 
+  // NIP de Hugo (Transporte de Pasajeros con Choferes & Boletaje IA)
+  "59381": {
+    clientId: "hugo-transporte",
+    clientName: "Hugo",
+    businessName: "Transporte de Pasajeros Hugo",
+    createdDate: "2026-08-22",
+    expirationDays: 90,
+    redirectUrl: "hugo-transporte/index.html",
+    welcomeTitle: "¡Bienvenido Hugo al Ecosistema Digital de Transporte & Boletaje Inteligente con IA!",
+    welcomeText: "Despídete del papel preimpreso, las fugas de dinero y los reportes tardíos. Controla tu boletaje en ruta con impresión térmica y visión artificial IA en tiempo real."
+  },
+
+  // NIP Alternativo 22082 para Hugo
+  "22082": {
+    clientId: "hugo-transporte",
+    clientName: "Hugo",
+    businessName: "Transporte de Pasajeros Hugo",
+    createdDate: "2026-08-22",
+    expirationDays: 90,
+    redirectUrl: "hugo-transporte/index.html",
+    welcomeTitle: "¡Bienvenido Hugo al Ecosistema Digital de Transporte & Boletaje Inteligente con IA!",
+    welcomeText: "Despídete del papel preimpreso, las fugas de dinero y los reportes tardíos. Controla tu boletaje en ruta con impresión térmica y visión artificial IA en tiempo real."
+  },
+
   // NIP de Carlos (Demo Distribuidora Logística)
   "91823": {
     clientId: "carlos-logistica",

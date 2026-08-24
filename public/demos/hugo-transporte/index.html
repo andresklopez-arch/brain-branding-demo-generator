@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Transporte Inteligente IA | Demo Exclusiva para Hugo • Brain Branding</title>
+  
+  <!-- SEO & Meta Tags -->
+  <meta name="description" content="Demo interactiva de digitalización de boletaje con impresora térmica, visión artificial IA y analítica Big Data para Hugo.">
+  <meta name="author" content="Brain Branding AI Enterprise">
+
+  <!-- Chart.js para visualización de Big Data y Reportes -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Estilos Ultramodernos -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ========================================== -->
+  <!-- 1. TOP HEADER & ACCESOS HUGO               -->
+  <!-- ========================================== -->
+  <header class="top-header">
+    <div class="header-container">
+      <div class="brand-badge">
+        <div class="brand-logo-icon">🚌</div>
+        <div>
+          <h1 class="brand-title">Transporte Inteligente con IA</h1>
+          <div class="brand-sub">Demo Personalizada para: <strong>Hugo</strong> • NIP: <code>59381</code></div>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <!-- Switcher Modo Chofer vs Modo Admin -->
+        <div class="role-toggle-group" id="roleSwitcher">
+          <button class="role-btn active" data-role="driver" onclick="App.switchRole('driver')">
+            ⚡ Modo Chofer (Ruta)
+          </button>
+          <button class="role-btn" data-role="admin" onclick="App.switchRole('admin')">
+            🏢 Modo Administración
+          </button>
+        </div>
+
+        <div class="vip-badge-tag">
+          ⏳ Demo Efímera: 90 Días
+        </div>
+
+        <button class="btn-secondary" style="padding: 6px 12px; font-size: 11.5px;" onclick="App.openPassengerScreenModal()">
+          📺 Pantalla Pasajeros
+        </button>
+
+        <button class="btn-secondary" style="padding: 6px 12px; font-size: 11.5px;" onclick="TourGuide.start()">
+          ❓ Tour Guiado
+        </button>
+
+        <a href="../index.html" class="btn-secondary" style="padding: 6px 12px; font-size: 11.5px; text-decoration: none;">
+          🔐 Portal Demos
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- 2. NAVEGACIÓN DOCK CON ICONOS (MODO ADMIN) -->
+  <!-- ========================================== -->
+  <div class="admin-nav-bar" id="mainNavTabs" style="display: none;">
+    <div class="nav-tabs-wrapper">
+      <button class="nav-tab active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
+        <span class="nav-tab-icon">📊</span>
+        <span class="nav-tab-label">Panel</span>
+      </button>
+      <button class="nav-tab" data-tab="fleet" onclick="App.switchTab('fleet')">
+        <span class="nav-tab-icon">🚌</span>
+        <span class="nav-tab-label">Flotilla</span>
+      </button>
+      <button class="nav-tab" data-tab="reports" onclick="App.switchTab('reports')">
+        <span class="nav-tab-icon">📈</span>
+        <span class="nav-tab-label">Reportes</span>
+      </button>
+      <button class="nav-tab" data-tab="roi" onclick="App.switchTab('roi')">
+        <span class="nav-tab-icon">💰</span>
+        <span class="nav-tab-label">Ingresos</span>
+      </button>
+      <button class="nav-tab" data-tab="how-it-works" onclick="App.switchTab('how-it-works')">
+        <span class="nav-tab-icon">✨</span>
+        <span class="nav-tab-label">Ventajas</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. CONTENIDO PRINCIPAL                     -->
+  <!-- ========================================== -->
+  <main class="main-wrapper">
+
+    <!-- ======================================================= -->
+    <!-- SECCIÓN A: MODO CHOFER EN RUTA (ULTRA SIMPLE & DIRECTO) -->
+    <!-- ======================================================= -->
+    <section id="driverModeSection">
+      
+      <!-- Banner Limpio de Turno Activo & Comandos de Voz -->
+      <div class="driver-shift-banner">
+        <div>
+          <div class="driver-info-title">👤 Chofer: Carlos Mendoza (ID: CH-101)</div>
+          <div class="driver-info-sub">🚌 Unidad #04 • Placas: 742-HU-9 • Turno Matutino</div>
+          <div style="margin-top: 8px;">
+            <button id="btnVoiceMic" class="btn-voice-mic" onclick="AIEngine.toggleVoiceControl()">
+              <span>🎙️</span> <span id="voiceStatusText">Comando de Voz: Di "Imprimir"</span>
+            </button>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 11px; color: var(--text-muted);">Recaudado en Turno:</div>
+          <div style="font-size: 20px; font-weight: 900; color: #10b981;" id="statShiftRevenue">$2,646.00 MXN</div>
+        </div>
+      </div>
+
+      <div class="driver-grid">
+        <!-- COLUMNA 1: ESCÁNER DE PERSONAS CON IA (PUERTA DE ABORDAJE) -->
+        <div>
+          <div class="glass-card" id="aiCameraCard" style="margin-bottom: 20px;">
+            <div class="card-header-row">
+              <div class="card-title">
+                <span>👁️</span> Escáner de Personas con IA (Puerta)
+              </div>
+              <span class="badge badge-success">● IA Activa</span>
+            </div>
+
+            <!-- Visor HUD de Cámara -->
+            <div class="camera-hud-container">
+              <video id="aiCameraVideo" class="camera-video-elem" autoplay playsinline muted></video>
+              <canvas id="aiVisionCanvas" class="camera-canvas-overlay" width="400" height="300"></canvas>
+              
+              <div class="camera-hud-top">
+                <div class="hud-pill" id="cameraStatusTxt">📡 Sensor Óptico IA Conectado</div>
+                <div class="hud-pill" style="color: #10b981;">AUTO-DETECCIÓN 98.6%</div>
+              </div>
+            </div>
+
+            <!-- Contadores Rápidos para el Chofer -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; text-align: center;">
+              <div style="background: rgba(15,23,42,0.8); padding: 8px; border-radius: 8px; border: 1px solid var(--border-glass);">
+                <div style="font-size: 10.5px; color: var(--text-muted);">Pasajeros Subidos</div>
+                <div style="font-size: 17px; font-weight: 800; color: #00f2fe;" id="statBoardings">191</div>
+              </div>
+              <div style="background: rgba(15,23,42,0.8); padding: 8px; border-radius: 8px; border: 1px solid var(--border-glass);">
+                <div style="font-size: 10.5px; color: var(--text-muted);">Boletos Cobrados</div>
+                <div style="font-size: 17px; font-weight: 800; color: #10b981;" id="statShiftTickets">189</div>
+              </div>
+              <div style="background: rgba(15,23,42,0.8); padding: 8px; border-radius: 8px; border: 1px solid var(--border-glass);">
+                <div style="font-size: 10.5px; color: var(--text-muted);">Sin Cobrar</div>
+                <div style="font-size: 17px; font-weight: 800; color: #10b981;" id="statDiscrepancies">0</div>
+              </div>
+            </div>
+
+            <!-- Botones de Acción del Sensor -->
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button class="btn-primary" style="flex-grow: 1;" onclick="AIEngine.triggerPassengerDetection()">
+                <span>⚡</span> Simular Abordaje de Pasajero
+              </button>
+              <button id="btnToggleCam" class="btn-secondary" style="flex-grow: 1;" onclick="AIEngine.toggleCamera()">
+                <span>📸</span> Activar Cámara Real
+              </button>
+            </div>
+          </div>
+
+          <!-- Tarjeta de Emisión Manual de Boletos -->
+          <div class="glass-card">
+            <div class="card-header-row">
+              <div class="card-title">
+                <span>🎟️</span> Impresión de Boleto Manual (1-Tap)
+              </div>
+              <button class="btn-primary" style="padding: 4px 10px; font-size: 11px;" onclick="App.openNfcModal()">
+                <span>📱</span> Tap Tarjeta NFC
+              </button>
+            </div>
+
+            <label style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 6px; display: block;">
+              Ruta Asignada:
+            </label>
+            <select id="routeSelector" class="route-select-box"></select>
+
+            <label style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 8px; display: block;">
+              Toca la tarifa para imprimir el boleto al pasajero:
+            </label>
+            <!-- Grid de Botones Táctiles para el Chofer -->
+            <div id="fareButtonsGrid" class="fare-buttons-grid"></div>
+          </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: SIMULADOR DE IMPRESORA TÉRMICA & HISTORIAL -->
+        <div>
+          <!-- Tarjeta de Impresora Térmica -->
+          <div class="glass-card" style="margin-bottom: 20px;">
+            <div class="card-header-row">
+              <div class="card-title">
+                <span>🖨️</span> Impresora Térmica Bluetooth (ESC/POS)
+              </div>
+              <span class="badge badge-success">Conectada</span>
+            </div>
+
+            <!-- Vista Previa de Ticket Realista -->
+            <div class="thermal-printer-wrapper">
+              <div id="thermalReceiptPreview">
+                <!-- Ticket inicial renderizado por JS -->
+                <div class="thermal-ticket-paper">
+                  <div class="ticket-header">
+                    <div class="ticket-logo">🚌 Transportes Hugo S.A. de C.V.</div>
+                    <div class="ticket-sub">SERVICIO PÚBLICO DE PASAJEROS</div>
+                    <div class="ticket-sub">RFC: THU-240822-BB8 • FOLIO OFICIAL</div>
+                    <div class="ticket-divider">================================</div>
+                  </div>
+                  <div class="ticket-row">
+                    <span>FOLIO:</span>
+                    <strong>TCK-89210</strong>
+                  </div>
+                  <div class="ticket-row">
+                    <span>FECHA / HORA:</span>
+                    <span>2026-08-22 10:38:12</span>
+                  </div>
+                  <div class="ticket-row">
+                    <span>UNIDAD:</span>
+                    <span>Unidad #04</span>
+                  </div>
+                  <div class="ticket-row">
+                    <span>CHOFER:</span>
+                    <span>Carlos Mendoza</span>
+                  </div>
+                  <div class="ticket-row">
+                    <span>RUTA:</span>
+                    <span style="font-size:10px;">Ruta 01: Centro ⇄ Terminal</span>
+                  </div>
+                  <div class="ticket-divider">--------------------------------</div>
+                  <div class="ticket-row" style="font-size: 13px; font-weight: bold;">
+                    <span>TIPO BOLETO:</span>
+                    <span>General</span>
+                  </div>
+                  <div class="ticket-row" style="font-size: 15px; font-weight: 800;">
+                    <span>TOTAL PAGADO:</span>
+                    <span>$14.00 MXN</span>
+                  </div>
+                  <div class="ticket-divider">================================</div>
+                  <div class="ticket-qr-section">
+                    <div class="ticket-qr-code">
+                      <svg viewBox="0 0 100 100" width="85" height="85">
+                        <rect width="100" height="100" fill="#ffffff" />
+                        <rect x="5" y="5" width="25" height="25" fill="#000" />
+                        <rect x="8" y="8" width="19" height="19" fill="#fff" />
+                        <rect x="11" y="11" width="13" height="13" fill="#000" />
+                        <rect x="70" y="5" width="25" height="25" fill="#000" />
+                        <rect x="73" y="8" width="19" height="19" fill="#fff" />
+                        <rect x="76" y="11" width="13" height="13" fill="#000" />
+                        <rect x="5" y="70" width="25" height="25" fill="#000" />
+                        <rect x="8" y="73" width="19" height="19" fill="#fff" />
+                        <rect x="11" y="76" width="13" height="13" fill="#000" />
+                        <rect x="40" y="40" width="20" height="20" fill="#000" />
+                        <rect x="70" y="70" width="18" height="18" fill="#000" />
+                      </svg>
+                    </div>
+                    <div class="ticket-security-code">SEC-HG8921 • SEGURO DE VIAJERO INCLUIDO</div>
+                    <div class="ticket-footer-msg">¡Gracias por viajar con nosotros!<br>Conserve su boleto para cualquier aclaración.</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botones de Acción de Ticket -->
+              <div style="display: flex; gap: 8px; width: 100%; max-width: 320px;">
+                <button class="btn-primary" style="flex-grow: 1; font-size: 12px;" onclick="App.printThermalDirect()">
+                  🖨️ Imprimir Ticket Físico
+                </button>
+                <button class="btn-secondary" style="font-size: 12px;" onclick="App.showToast('Enlace de boleto generado para WhatsApp')">
+                  📲 Compartir
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Historial Reciente de Boletos en este Turno -->
+          <div class="glass-card">
+            <div class="card-header-row">
+              <div class="card-title">
+                <span>📋</span> Boletos Emitidos en Turno Actual
+              </div>
+            </div>
+            <div id="recentTicketsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================= -->
+    <!-- SECCIÓN B: MODO ADMINISTRACIÓN CENTRAL                   -->
+    <!-- ======================================================= -->
+    <section id="adminModeSection" style="display: none;">
+
+      <!-- PESTAÑA 1: DASHBOARD GENERAL -->
+      <div class="tab-pane active" id="tab-dashboard">
+        <!-- KPIs Principales -->
+        <div class="stats-summary-grid">
+          <div class="stat-box">
+            <div class="stat-label">Recaudación Total Hoy</div>
+            <div class="stat-value cyan" id="statTotalRevenue">$13,716.00</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Total Boletos Emitidos</div>
+            <div class="stat-value green" id="statTotalTickets">644</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Unidades en Operación</div>
+            <div class="stat-value purple">4 Activas (1 Standby)</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Eficacia Antifraude IA</div>
+            <div class="stat-value amber">99.8% (Cero Fugas)</div>
+          </div>
+        </div>
+
+        <!-- Recomendaciones Inteligentes de Negocio (Neuromarketing + Big Data) -->
+        <div class="glass-card" style="margin-bottom: 20px;">
+          <div class="card-header-row">
+            <div class="card-title">
+              <span>🧠</span> Motor IA & Big Data: Sugerencias de Negocio para Hugo
+            </div>
+            <span class="badge badge-primary">Autoaprendizaje Activo</span>
+          </div>
+          <div id="aiInsightsContainer" class="insights-grid"></div>
+        </div>
+      </div>
+
+      <!-- PESTAÑA 2: FLOTILLA Y CHOFERES -->
+      <div class="tab-pane" id="tab-fleet">
+        <!-- Tabla de Unidades -->
+        <div class="glass-card" style="margin-bottom: 20px;">
+          <div class="card-header-row">
+            <div class="card-title">
+              <span>🚌</span> Estado de la Flotilla en Tiempo Real
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Unidad / Vehículo</th>
+                  <th>Estatus</th>
+                  <th>Ruta Asignada</th>
+                  <th>Chofer</th>
+                  <th>Pasajeros Hoy</th>
+                  <th>Recaudación</th>
+                  <th>Rendimiento</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="fleetTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tabla de Choferes & Liquidación de Turnos -->
+        <div class="glass-card" style="margin-bottom: 20px;">
+          <div class="card-header-row">
+            <div class="card-title">
+              <span>👥</span> Desempeño de Choferes & Liquidaciones con IA
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Chofer</th>
+                  <th>Unidad</th>
+                  <th>Calificación IA</th>
+                  <th>Boletos</th>
+                  <th>Efectivo a Entregar</th>
+                  <th>Auditoría Antifraude</th>
+                  <th>Liquidación</th>
+                </tr>
+              </thead>
+              <tbody id="driversTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Telemetría & Geocercas GPS de Flotilla -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <!-- Tarjeta de Geocercas GPS -->
+          <div class="glass-card">
+            <div class="card-header-row">
+              <div class="card-title">
+                <span>🛰️</span> Rastreo GPS & Tarificación por Geocerca
+              </div>
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Ubicación en Ruta de Unidad Activa:</div>
+            <div style="font-size: 14px; font-weight: 700; color: #fff;" id="gpsLocationTag">📍 Terminal Central</div>
+            <div style="font-size: 11.5px; color: var(--accent-cyan); margin-bottom: 10px;" id="gpsZoneTag">Zona Urbana Centro (Tarifa $14.00)</div>
+            <div class="gps-progress-container" style="margin-bottom: 12px;">
+              <div class="gps-progress-bar" id="gpsProgressTrack"></div>
+            </div>
+            <button class="btn-secondary" style="width: 100%; justify-content: center; font-size: 11.5px;" onclick="AIEngine.simulateGpsProgress()">
+              🛰️ Simular Avance GPS (Ajuste de Tarifa)
+            </button>
+          </div>
+
+          <!-- Tarjeta de Telemetría IA & Ahorro de Combustible -->
+          <div class="glass-card">
+            <div class="card-header-row">
+              <div class="card-title">
+                <span>⛽</span> Telemetría de Conducción & Rendimiento Diésel
+              </div>
+            </div>
+            <div class="telemetry-grid">
+              <div class="telemetry-box">
+                <div class="telemetry-lbl">Calificación Chofer</div>
+                <div class="telemetry-val" style="color: #10b981;" id="telemetryDriverScore">97 / 100</div>
+              </div>
+              <div class="telemetry-box">
+                <div class="telemetry-lbl">Velocidad GPS</div>
+                <div class="telemetry-val" style="color: #00f2fe;" id="telemetrySpeed">42 km/h</div>
+              </div>
+              <div class="telemetry-box">
+                <div class="telemetry-lbl">Frenadas Bruscas</div>
+                <div class="telemetry-val" style="color: #ef4444;" id="telemetryHarshBraking">0 eventos</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn-secondary" style="font-size: 10.5px; flex-grow: 1;" onclick="AIEngine.simulateDrivingEvent('smooth_driving')">🌱 Suave</button>
+              <button class="btn-secondary" style="font-size: 10.5px; flex-grow: 1;" onclick="AIEngine.simulateDrivingEvent('harsh_brake')">⚠️ Frenada</button>
+              <button class="btn-secondary" style="font-size: 10.5px; flex-grow: 1;" onclick="AIEngine.simulateDrivingEvent('speeding')">🚨 Exceso</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PESTAÑA 3: REPORTES CRUZADOS & BIG DATA -->
+      <div class="tab-pane" id="tab-reports">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+          
+          <!-- Gráfica 1: Ingresos por Ruta -->
+          <div class="glass-card">
+            <div class="card-header-row">
+              <div class="card-title">
+                <span>📊</span> Recaudación por Ruta en Tiempo Real
+              </div>
+            </div>
+            <div style="height: 280px; position: relative;">
+              <canvas id="revenueChartCanvas"></canvas>
+            </div>
+          </div>
+
+          <!-- Gráfica 2: Afluencia de Pasajeros y Proyección Predictiva IA -->
+          <div class="glass-card">
+            <div class="card-header-row">
+              <div class="card-title">
+                <span>📈</span> Afluencia de Pasajeros & Proyección Predictiva IA
+              </div>
+            </div>
+            <div style="height: 280px; position: relative;">
+              <canvas id="densityChartCanvas"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PESTAÑA 4: GENERADOR DE NUEVOS INGRESOS & AHORRO OPERATIVO -->
+      <div class="tab-pane" id="tab-roi">
+        <div class="glass-card">
+          <div class="card-header-row">
+            <div class="card-title">
+              <span>💰</span> Nuevas Fuentes de Ingreso & Ahorro Operativo para Hugo
+            </div>
+            <span class="badge badge-success">Multiplicador de Ganancias</span>
+          </div>
+
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
+            Descubre cómo tu empresa no solo ahorrará en papel y evitará fugas de dinero, sino que además <strong>abrirá nuevas líneas de ingresos rentables</strong> mediante publicidad dinámica en pantallas a bordo, convenios empresariales y fidelización de pasajeros frecuentes.
+          </p>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+            
+            <!-- Tarjeta 1: Nuevos Ingresos por Publicidad -->
+            <div style="background: linear-gradient(135deg, rgba(121,40,202,0.2), rgba(0,242,254,0.15)); border: 1.5px solid #00f2fe; border-radius: var(--radius-md); padding: 18px;">
+              <div style="font-size: 28px; margin-bottom: 8px;">📢</div>
+              <h4 style="color: #00f2fe; margin-bottom: 6px;">1. Ingresos por Publicidad en Pantallas a Bordo</h4>
+              <p style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">
+                Vende espacios publicitarios dinámicos y geolocalizados a comercios locales (farmacias, tiendas, escuelas, restaurantes) en las pantallas instaladas dentro de tus unidades. <strong>Un flujo de ingresos 100% nuevo y recurrente.</strong>
+              </p>
+            </div>
+
+            <!-- Tarjeta 2: Cero Gasto en Imprenta -->
+            <div style="background: rgba(15,23,42,0.8); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 18px;">
+              <div style="font-size: 28px; margin-bottom: 8px;">🚫📄</div>
+              <h4 style="color: #38bdf8; margin-bottom: 6px;">2. Eliminación Total de Imprenta de Talonarios</h4>
+              <p style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">
+                Ahorro del 100% en costos de mandar a imprimir millares de boletos de papel, eliminando además el desperdicio por boletos mojados, rotos o extraviados en ruta.
+              </p>
+            </div>
+
+            <!-- Tarjeta 3: Recuperación de Fugas con IA -->
+            <div style="background: rgba(15,23,42,0.8); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 18px;">
+              <div style="font-size: 28px; margin-bottom: 8px;">🛡️</div>
+              <h4 style="color: #10b981; margin-bottom: 6px;">3. Recuperación Total de Pasajes Cobrados</h4>
+              <p style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">
+                La visión artificial audita el 100% de los abordajes contra los boletos emitidos, garantizando que cada peso que pagan los pasajeros entre íntegro a la caja del negocio.
+              </p>
+            </div>
+
+            <!-- Tarjeta 4: Ahorro en Combustible por Telemetría -->
+            <div style="background: rgba(15,23,42,0.8); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 18px;">
+              <div style="font-size: 28px; margin-bottom: 8px;">⛽</div>
+              <h4 style="color: #fbbf24; margin-bottom: 6px;">4. Optimización de Diésel y Rutas</h4>
+              <p style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">
+                El monitoreo de velocidad y hábitos de frenado de los choferes reduce el consumo innecesario de combustible y los costos de desgaste mecánico de la flotilla.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- PESTAÑA 5: CÓMO FUNCIONA & PROPUESTA DE VALOR -->
+      <div class="tab-pane" id="tab-how-it-works">
+        <div class="glass-card">
+          <div class="card-header-row">
+            <div class="card-title">
+              <span>✨</span> Ventajas y Beneficios de Trabajar con Brain Branding para Hugo
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 10px;">
+            <div style="background: rgba(15,23,42,0.8); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px;">
+              <h4 style="color: #00f2fe; margin-bottom: 6px;">1. De Boletos Manuales a Trazabilidad Digital Inmediata</h4>
+              <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+                Tus choferes ya no tienen que perder tiempo contando boletos en físico ni llenando formatos manuales. Cada boleto se imprime en segundos mediante mini-impresoras térmicas inalámbricas con número de serie único y código QR.
+              </p>
+            </div>
+
+            <div style="background: rgba(15,23,42,0.8); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px;">
+              <h4 style="color: #10b981; margin-bottom: 6px;">2. Blindaje Antifraude con Visión Artificial IA</h4>
+              <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+                Aprovecha la cámara del propio celular o tablet del chofer para contar con precisión cada persona que sube a la unidad. Si alguien aborda sin boleto, el sistema genera una alerta instantánea, erradicando el cobro no reportado.
+              </p>
+            </div>
+
+            <div style="background: rgba(15,23,42,0.8); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px;">
+              <h4 style="color: #fbbf24; margin-bottom: 6px;">3. Cierre de Caja y Liquidación en 1 Solo Clic</h4>
+              <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+                Al terminar el turno, el chofer no tiene que hacer cuentas a mano. El sistema calcula exactamente el dinero en efectivo recaudado, cruza los datos con la visión IA y genera la liquidación oficial al instante.
+              </p>
+            </div>
+
+            <div style="background: rgba(15,23,42,0.8); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px;">
+              <h4 style="color: #c084fc; margin-bottom: 6px;">4. Control Total Desde Tu Teléfono o Computadora</h4>
+              <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+                Hugo puede supervisar toda su flotilla desde cualquier parte del mundo. Accede a reportes cruzados de combustible vs recaudación, mapas de aforo y proyecciones de demanda para maximizar la rentabilidad de cada ruta.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 5. MODAL DE MONEDERO & TARJETAS NFC / QR   -->
+  <!-- ========================================== -->
+  <div class="modal-backdrop" id="nfcModal">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="font-size: 16px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <span>📱</span> Validador Contactless NFC / Tarjetas Frecuentes
+        </div>
+        <button class="tour-close-btn" onclick="App.closeNfcModal()">✕</button>
+      </div>
+
+      <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px;">
+        Simula el acercamiento (*Tap*) de la tarjeta inteligente o monedero digital del pasajero al lector NFC de la unidad para cobro instantáneo sin efectivo:
+      </p>
+
+      <div id="nfcCardsContainer" style="margin-bottom: 16px;"></div>
+
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-secondary" style="width: 100%; justify-content: center;" onclick="App.closeNfcModal()">
+          Cerrar Validador NFC
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 7. MODAL BIOMÉTRICO FACIAL DEL CHOFER      -->
+  <!-- ========================================== -->
+  <div class="modal-backdrop" id="biometricModal">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="font-size: 16px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <span>🛡️</span> Escaneo Biométrico Facial & Anti-Fatiga IA
+        </div>
+        <button class="tour-close-btn" onclick="App.closeBiometricModal()">✕</button>
+      </div>
+
+      <div class="biometric-scanner-box">
+        <div class="bio-reticle">👨‍✈️</div>
+        <div style="font-size: 11px; font-family: monospace; color: #00f2fe; margin-top: 10px;">
+          BUSCANDO PUNTOS FACIALES...
+        </div>
+      </div>
+
+      <div id="biometricStatusBadge" class="badge badge-primary" style="display: block; text-align: center; margin-bottom: 16px; padding: 8px;">
+        Escaneo Listo • Presiona el botón para validar identidad y alerta del conductor
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-primary" style="flex-grow: 1;" onclick="AIEngine.verifyDriverBiometrics()">
+          📸 Iniciar Escaneo Biométrico
+        </button>
+        <button class="btn-secondary" onclick="App.closeBiometricModal()">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 8. MODAL DE PANTALLA ESPEJO PARA PASAJEROS -->
+  <!-- ========================================== -->
+  <div class="modal-backdrop" id="passengerScreenModal">
+    <div class="modal-card" style="max-width: 720px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="font-size: 16px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <span>📺</span> Vista Pasajeros en Cabina (Smart Transit Display)
+        </div>
+        <button class="tour-close-btn" onclick="App.closePassengerScreenModal()">✕</button>
+      </div>
+
+      <div class="passenger-display-wrapper">
+        <div class="passenger-top-bar">
+          <div>
+            <div style="font-size: 12px; color: var(--accent-cyan); font-weight: 700;">RUTA 01: CENTRO ⇄ TERMINAL SUR</div>
+            <div style="font-size: 18px; font-weight: 800;">Próxima Parada: <span style="color: #00f2fe;">Parque Industrial Norte</span></div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 20px; font-weight: 900; color: #10b981;">18 / 28</div>
+            <div style="font-size: 10.5px; color: var(--text-muted);">Asientos Ocupados</div>
+          </div>
+        </div>
+
+        <!-- Línea de Paradas en Vivo -->
+        <div class="passenger-stops-timeline">
+          <div class="stop-node passed">
+            <div class="stop-dot">✓</div>
+            <div>Terminal</div>
+          </div>
+          <div class="stop-node passed">
+            <div class="stop-dot">✓</div>
+            <div>Reforma</div>
+          </div>
+          <div class="stop-node current">
+            <div class="stop-dot">●</div>
+            <div style="color: #00f2fe; font-weight: 700;">P. Industrial</div>
+          </div>
+          <div class="stop-node">
+            <div class="stop-dot">4</div>
+            <div>Caseta</div>
+          </div>
+        </div>
+
+        <!-- Publicidad Inteligente Geolocalizada (Monetización para Hugo) -->
+        <div class="passenger-ad-banner">
+          <div>
+            <div style="font-size: 10px; color: #fbbf24; font-weight: 800;">📢 ESPACIO PUBLICITARIO DINÁMICO IA</div>
+            <div style="font-size: 13px; font-weight: 700;">"Farmacias del Ahorro - 20% Desc. en Parada Reforma"</div>
+          </div>
+          <span class="badge badge-warning">Geolocalizado</span>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px; text-align: center;">
+        <button class="btn-secondary" style="font-size: 12px;" onclick="App.closePassengerScreenModal()">
+          Cerrar Pantalla de Pasajeros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 6. MODAL DE CIERRE DE TURNO / LIQUIDACIÓN  -->
+  <!-- ========================================== -->
+  <div class="modal-backdrop" id="cashierModal">
+    <div class="modal-card">
+      <div id="cashierModalBody"></div>
+      <div style="display: flex; gap: 10px; margin-top: 18px;">
+        <button class="btn-primary" style="flex-grow: 1;" onclick="App.confirmCashierCut()">
+          ✔ Confirmar Liquidación y Archivar Turno
+        </button>
+        <button class="btn-secondary" onclick="App.closeCashierModal()">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/ai-engine.js"></script>
+  <script src="js/tour.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
