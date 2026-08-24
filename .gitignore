@@ -9,3 +9,4 @@ functions/.secret.local
 firestore-debug.log
 ui-debug.log
 .firebase/
+public/.trash/

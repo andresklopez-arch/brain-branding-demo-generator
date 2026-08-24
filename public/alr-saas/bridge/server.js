@@ -48,8 +48,13 @@ let auditPrivateKeyDecrypted = null; // Guardado en RAM únicamente
 let isAuditLogCorrupted = false;
 let auditLogCorruptReason = '';
 
-// Clave por defecto (Failsafe)
-const DEFAULT_PASSWORD = 'alr_saas_sec_chain_2026_aes_key_secure';
+// Clave por defecto (Failsafe) — legacy: constante fija que vivió en el
+// código fuente (y por tanto quedó comprometida mientras public/alr-saas/bridge
+// estuvo servido públicamente antes de excluirlo del hosting). Se conserva
+// SOLO como fallback de lectura para poder restaurar respaldos viejos
+// cifrados sin clave personalizada; ya no se usa para cifrar nada nuevo
+// (ver DEFAULT_PASSWORD más abajo).
+const LEGACY_DEFAULT_PASSWORD = 'alr_saas_sec_chain_2026_aes_key_secure';
 
 // Exclusiones estándar (no sugerir borrar estas carpetas)
 const EXCLUSIONS = [
@@ -72,7 +77,28 @@ const EXCLUSIONS = [
   'node_modules'
 ];
 
-app.use(cors());
+// El bridge ya no se sirve públicamente (excluido de Firebase Hosting), pero
+// sigue escuchando en localhost:4026 y el CORS abierto permitía que CUALQUIER
+// página que el operador tuviera abierta en el navegador (no solo la consola
+// ALR SaaS) pudiera hacerle fetch — un ataque tipo confused-deputy si el
+// operador visita un sitio malicioso mientras el bridge corre. Restringido
+// al origen real de la consola + localhost (para pruebas contra el emulador
+// de Hosting).
+const BRIDGE_ALLOWED_ORIGINS = [
+  'https://brain-branding.web.app',
+  'http://localhost:5000',
+  'http://127.0.0.1:5000'
+];
+app.use(cors({
+  origin(origin, callback) {
+    // Sin origin (curl, llamadas locales directas) se permite: el Bearer
+    // BRIDGE_TOKEN sigue siendo la barrera real de autenticación.
+    if (!origin || BRIDGE_ALLOWED_ORIGINS.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Origen no permitido por CORS'));
+  }
+}));
 app.use(express.json());
 
 // Asegurar directorios y archivos base con permisos de solo lectura iniciales
@@ -116,6 +142,28 @@ if (!fs.existsSync(TOKEN_PATH) || tokenNeedsRegen) {
     fs.chmodSync(TOKEN_PATH, 0o600);
     BRIDGE_TOKEN = fs.readFileSync(TOKEN_PATH, 'utf8').trim();
     fs.chmodSync(TOKEN_PATH, 0o400);
+  }
+}
+
+// 1b. Clave de cifrado de respaldos por defecto — una por instalación,
+// generada al azar igual que BRIDGE_TOKEN, en vez de la constante fija
+// legacy. Se usa para cifrar TODO respaldo nuevo que no traiga clave
+// personalizada; para descifrar respaldos viejos ver el fallback en
+// /api/projects/restore.
+const DEFAULT_PASSWORD_PATH = path.join(TRASH_DIR, 'default_password.txt');
+let DEFAULT_PASSWORD = '';
+if (!fs.existsSync(DEFAULT_PASSWORD_PATH)) {
+  DEFAULT_PASSWORD = crypto.randomBytes(32).toString('hex');
+  fs.writeFileSync(DEFAULT_PASSWORD_PATH, DEFAULT_PASSWORD, 'utf8');
+  fs.chmodSync(DEFAULT_PASSWORD_PATH, 0o400);
+  startupLogQueue.push({ action: 'DEFAULT_PASSWORD_GENERATE', projectName: 'system', details: 'Clave de cifrado por defecto (por instalacion) generada, reemplaza la constante fija anterior', status: 'SUCCESS' });
+} else {
+  try {
+    DEFAULT_PASSWORD = fs.readFileSync(DEFAULT_PASSWORD_PATH, 'utf8').trim();
+  } catch (err) {
+    fs.chmodSync(DEFAULT_PASSWORD_PATH, 0o600);
+    DEFAULT_PASSWORD = fs.readFileSync(DEFAULT_PASSWORD_PATH, 'utf8').trim();
+    fs.chmodSync(DEFAULT_PASSWORD_PATH, 0o400);
   }
 }
 
@@ -1018,9 +1066,20 @@ app.post('/api/projects/restore', async (req, res) => {
       fs.mkdirSync(destDir, { recursive: true });
     }
 
-    // Extraer y validar (si la clave es incorrecta, AdmZip fallará debido a estructura zip corrupta tras descifrar con clave errónea)
-    const zip = new AdmZip(tempZipPath);
-    zip.extractAllTo(destDir, true);
+    // Extraer y validar (si la clave es incorrecta, AdmZip fallará debido a estructura zip corrupta tras descifrar con clave errónea).
+    // Si no se dio clave personalizada, el respaldo pudo haberse cifrado
+    // ANTES de la rotación de DEFAULT_PASSWORD (constante fija legacy) —
+    // reintentar una vez con esa clave antes de darlo por fallido.
+    try {
+      const zip = new AdmZip(tempZipPath);
+      zip.extractAllTo(destDir, true);
+    } catch (primaryErr) {
+      if (customKey) throw primaryErr;
+      await decryptFile(encPath, tempZipPath, LEGACY_DEFAULT_PASSWORD);
+      const legacyZip = new AdmZip(tempZipPath);
+      legacyZip.extractAllTo(destDir, true);
+      writeAuditLog('RESTORE_PROJECT', projectName, 'Restaurado con la clave por defecto legacy (respaldo previo a la rotacion de clave)', 'SUCCESS');
+    }
 
     // Limpiar papelera y temporales
     fs.unlinkSync(tempZipPath);
