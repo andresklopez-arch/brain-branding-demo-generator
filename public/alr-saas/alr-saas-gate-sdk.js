@@ -17,8 +17,13 @@
   const appId = currentScript ? (currentScript.getAttribute('data-app-id') || 'kuatsi_central') : 'kuatsi_central';
   const projectId = currentScript ? (currentScript.getAttribute('data-project-id') || 'brain-branding') : 'brain-branding';
 
-  const REST_URL = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/master_licenses/${appId}`;
-  
+  const ALR_REGION = 'us-central1';
+  // Ya no lee Firestore REST directo (exponía el documento COMPLETO de
+  // licencia -- apiKey, datos de contacto -- a cualquiera con DevTools,
+  // sin ninguna autenticación). Esta función solo expone {status,
+  // gracePeriodHours}, ver functions/index.js: getPublicLicenseStatus.
+  const STATUS_URL = `https://${ALR_REGION}-${projectId}.cloudfunctions.net/getPublicLicenseStatus?appId=${encodeURIComponent(appId)}`;
+
   let isBlocked = false;
   let lockOverlay = null;
   let originalFetch = window.fetch;
@@ -141,7 +146,7 @@
     // Interceptar Fetch
     window.fetch = function (...args) {
       const url = typeof args[0] === 'string' ? args[0] : (args[0]?.url || '');
-      if (url.includes('master_licenses/')) {
+      if (url.includes('cloudfunctions.net/getPublicLicenseStatus')) {
         return originalFetch.apply(this, args);
       }
       return Promise.reject(new Error('ACCESO BLOQUEADO POR ALR SAAS'));
@@ -175,18 +180,16 @@
   // 5. Polling REST cada 4 segundos con Cloud Firestore
   async function checkRemoteStatus() {
     try {
-      const res = await fetch(REST_URL);
+      const res = await fetch(STATUS_URL);
       if (res.ok) {
         const data = await res.json();
-        if (data && data.fields) {
-          const rawStatus = (data.fields.status?.stringValue || 'ACTIVE').toUpperCase();
-          configuredGraceHours = Number(data.fields.gracePeriodHours?.integerValue || data.fields.gracePeriodHours?.stringValue || 72);
+        const rawStatus = (data.status || 'ACTIVE').toUpperCase();
+        configuredGraceHours = Number(data.gracePeriodHours || 72);
 
-          if (rawStatus === 'SUSPENDED' || rawStatus === 'EXPIRED') {
-            if (!isBlocked) applyShielding();
-          } else {
-            if (isBlocked) liftShielding();
-          }
+        if (rawStatus === 'SUSPENDED' || rawStatus === 'EXPIRED') {
+          if (!isBlocked) applyShielding();
+        } else {
+          if (isBlocked) liftShielding();
         }
       }
     } catch (e) {

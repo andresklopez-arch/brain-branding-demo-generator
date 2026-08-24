@@ -1,6 +1,9 @@
 const functions = require('firebase-functions');
 const https = require('https');
 const kb = require('./knowledge_base');
+const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
+const { defineSecret } = require('firebase-functions/params');
+const nodeCrypto = require('crypto');
 
 // Ver la misma nota en api/telegram.js — el token ya no vive en texto
 // plano en el código. Esta función de Firebase parece no recibir tráfico
@@ -214,10 +217,12 @@ exports.telegramWebhook = functions.https.onRequest(async (req, res) => {
 });
 
 // ============================================================
-// 🔐 ALR SAAS GOVERNANCE — setLicenseStatus (Cloud Function)
-// Proxy con Firebase Admin SDK para escritura segura y autoritativa
-// en Firestore. El Commander llama a este endpoint en lugar de
-// escribir directo desde el browser (evita CORS y permisos).
+// 🔐 ALR SAAS GOVERNANCE — Firebase Admin SDK
+// Usado por getPublicLicenseStatus/verifyAlrAdminAccess más abajo. El
+// viejo exports.setLicenseStatus (onRequest con un ADMIN_SECRET
+// hardcodeado compartido con api/telegram.js) se retiró: confirmado por
+// grep que app.js nunca lo llama (usa Render/Firestore directo, ambos
+// también reemplazados) -- era código muerto.
 // ============================================================
 
 const admin = require('firebase-admin');
@@ -229,104 +234,77 @@ if (!admin.apps.length) {
 
 const adminDb = admin.firestore();
 
-exports.setLicenseStatus = functions.https.onRequest(async (req, res) => {
-  // CORS — Permitir solo desde brain-branding.web.app y localhost
-  const allowedOrigins = [
-    'https://brain-branding.web.app',
-    'https://brain-branding.firebaseapp.com',
-    'http://localhost:5173',
-    'http://localhost:3000'
-  ];
-  const origin = req.headers.origin || '';
-  const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
-  res.set('Access-Control-Allow-Origin', corsOrigin);
-  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.set('Access-Control-Max-Age', '3600');
+// ============================================================
+// 🔐 ALR SAAS GOVERNANCE — Cloud Functions v2 (custom claims)
+// Mismo patrón que rey-xalpa/Rey_Xalpa_temp/functions/index.js: el
+// claim alrSuperAdmin SOLO lo asigna esta función (Admin SDK) tras
+// validar el PIN contra Secret Manager. firestore.rules exige ese
+// claim para leer/escribir master_licenses -- el navegador nunca
+// puede otorgárselo a sí mismo.
+// ============================================================
 
-  if (req.method === 'OPTIONS') {
-    return res.status(204).send('');
+const ALR_REGION = 'us-central1';
+
+// Antes era SYSTEM_ADMINS[0].pinHash en app.js, un hash SHA-256
+// precalculado visible en el JS público (crackeable offline sin
+// límite de intentos). Ahora vive en Secret Manager -- nunca en el
+// código ni en un .env versionado. Configurar antes de desplegar:
+//   firebase functions:secrets:set ALR_ADMIN_PIN
+const ALR_ADMIN_PIN = defineSecret('ALR_ADMIN_PIN');
+
+function alrSafeEqual(a, b) {
+  const ha = nodeCrypto.createHash('sha256').update(String(a)).digest();
+  const hb = nodeCrypto.createHash('sha256').update(String(b)).digest();
+  return nodeCrypto.timingSafeEqual(ha, hb);
+}
+
+// --- verifyAlrAdminAccess({ pin }) -----------------------------------
+// Puerta de entrada única al panel ALR SaaS Commander. Requiere sesión
+// anónima de Firebase Auth ya iniciada (ver app.js). Si el PIN
+// coincide, asigna el claim alrSuperAdmin:true al UID actual -- ese
+// claim es lo único que firestore.rules exige para tocar
+// master_licenses.
+exports.verifyAlrAdminAccess = onCall({ region: ALR_REGION, secrets: [ALR_ADMIN_PIN] }, async (request) => {
+  const { auth, data } = request;
+  if (!auth) throw new HttpsError('unauthenticated', 'Requiere sesión anónima activa.');
+
+  const pin = String(data?.pin || '');
+  if (!pin || !alrSafeEqual(pin, ALR_ADMIN_PIN.value())) {
+    throw new HttpsError('permission-denied', 'PIN inválido.');
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido. Usa POST.' });
+  await admin.auth().setCustomUserClaims(auth.uid, { alrSuperAdmin: true });
+  return { ok: true };
+});
+
+// --- getPublicLicenseStatus?appId=... ---------------------------------
+// Único endpoint que alr-saas-gate-sdk.js debe llamar, sin
+// autenticación (se embebe en apps de terceros clientes). Usa Admin
+// SDK, así que bypasea firestore.rules -- expone SOLO status y
+// gracePeriodHours, nunca apiKey, datos de contacto ni el resto del
+// documento de licencia.
+exports.getPublicLicenseStatus = onRequest({ region: ALR_REGION, cors: true }, async (req, res) => {
+  const appId = String(req.query.appId || '').trim();
+  if (!appId || !/^[a-z0-9_-]{2,60}$/i.test(appId)) {
+    return res.status(400).json({ error: 'appId inválido o ausente.' });
   }
 
   try {
-    const { licenseId, status, callerKey } = req.body;
-
-    // Validación mínima de seguridad — clave compartida con Commander
-    const ADMIN_SECRET = 'alr-saas-master-2025-brain';
-    if (callerKey !== ADMIN_SECRET) {
-      console.warn('[ALR SAAS FUNCTION] ⛔ Intento sin autorización desde:', origin);
-      return res.status(403).json({ error: 'No autorizado.' });
+    const snap = await adminDb.collection('master_licenses').doc(appId).get();
+    if (!snap.exists) {
+      // Mismo comportamiento "fail open" que el SDK actual si el doc
+      // no existe, para no bloquear apps mal configuradas por error.
+      return res.status(200).json({ status: 'ACTIVE', gracePeriodHours: 72 });
     }
-
-    // Validar status
-    const validStatuses = ['ACTIVE', 'SUSPENDED', 'EXPIRED'];
-    const normalizedStatus = (status || '').toUpperCase();
-    if (!validStatuses.includes(normalizedStatus)) {
-      return res.status(400).json({ error: `Estado inválido: ${status}. Usa ACTIVE, SUSPENDED o EXPIRED.` });
-    }
-
-    // Documentos a actualizar — siempre los 3 de Kuatsi + el ID específico
-    const docIds = Array.from(new Set([
-      'kuatsi_central',
-      'kuatsi',
-      'kuatsi-cafeteria',
-      ...(licenseId ? [licenseId] : [])
-    ]));
-
-    const timestamp = new Date().toISOString();
-    const writeResults = [];
-
-    // Escritura en batch con Admin SDK (sin restricciones de CORS ni auth)
-    const batch = adminDb.batch();
-    for (const docId of docIds) {
-      const docRef = adminDb.collection('master_licenses').doc(docId);
-      batch.update(docRef, {
-        status: normalizedStatus,
-        lastUpdated: timestamp,
-        lastGovernedBy: 'ALR_SAAS_COMMANDER',
-        governanceTimestamp: admin.firestore.FieldValue.serverTimestamp()
-      });
-      writeResults.push(docId);
-    }
-    await batch.commit();
-
-    console.log(`[ALR SAAS FUNCTION] ✅ Status "${normalizedStatus}" aplicado a: ${writeResults.join(', ')}`);
-
-    // Notificación Telegram
-    const emoji = normalizedStatus === 'ACTIVE' ? '🟢' : '🔴';
-    const tgMsg = `${emoji} <b>[ALR SaaS Cloud Function]</b>\n\nEstado de Kuatsi actualizado a <b>${normalizedStatus}</b> vía Cloud Function.\nDocumentos: ${writeResults.join(', ')}\nFecha: ${timestamp}`;
-    const tgPayload = JSON.stringify({
-      chat_id: '-4784988247',
-      text: tgMsg,
-      parse_mode: 'HTML'
-    });
-
-    // Enviar Telegram (fire-and-forget, sin bloquear la respuesta)
-    const tgReq = require('https').request({
-      hostname: 'api.telegram.org',
-      port: 443,
-      path: `/bot${TELEGRAM_TOKEN}/sendMessage`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(tgPayload) }
-    }, () => {});
-    tgReq.on('error', () => {});
-    tgReq.write(tgPayload);
-    tgReq.end();
-
+    const licData = snap.data() || {};
     return res.status(200).json({
-      ok: true,
-      status: normalizedStatus,
-      updatedDocs: writeResults,
-      timestamp
+      status: String(licData.status || 'ACTIVE').toUpperCase(),
+      gracePeriodHours: Number(licData.gracePeriodHours || 72)
     });
-
   } catch (err) {
-    console.error('[ALR SAAS FUNCTION ERROR]', err);
-    return res.status(500).json({ error: err.message });
+    console.error('[getPublicLicenseStatus] Error:', err);
+    // Fail open: un error del servidor no debe tumbar apps de clientes.
+    return res.status(200).json({ status: 'ACTIVE', gracePeriodHours: 72 });
   }
 });
 

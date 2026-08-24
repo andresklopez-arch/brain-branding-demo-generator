@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="description" content="ALR SaaS Central Commander - Plataforma unificada de aprovisionamiento, licenciamiento y telemetría multi-app.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://unpkg.com; img-src 'self' data: https://quickchart.io; connect-src 'self' https://www.gstatic.com https://*.firestore.googleapis.com https://*.firebaseio.com https://api.telegram.org https://discord.com https://discordapp.com https://hooks.slack.com; worker-src 'self' blob:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://unpkg.com; img-src 'self' data: https://quickchart.io; connect-src 'self' https://www.gstatic.com https://*.firestore.googleapis.com https://*.firebaseio.com https://us-central1-brain-branding.cloudfunctions.net https://brain-branding-demo-generator.onrender.com https://api.telegram.org https://discord.com https://discordapp.com https://hooks.slack.com; worker-src 'self' blob:;">
   <title>ALR SaaS | Central Commander</title>
   
   <script>
@@ -45,6 +45,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" integrity="sha384-v3Z/Xdw1sCeo6M/geW7sn1Lt9obIm7MhAk8laVV+rvYFmzuWDELOiygx7dVte2dX" crossorigin="anonymous"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js" integrity="sha384-3LctmFHtNDZwkVOSZ0fvJZJD9XR5Og5ol/MVEfNt36gUUnSYBRJN0iFjIMbFecOg" crossorigin="anonymous"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js" integrity="sha384-p62xBRve8PdqGDGASZtZMuHgPsyPcT5VsFwgmz2p4zaFdEtt5ZzNqxK+CLzQS7xP" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js" integrity="sha384-vvxTwVHSsu4+BCvShJlRfl/l6vm0av+7r2UM1bsbkE+Jj9bnnSxyntRC36sQ5z7X" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -309,7 +310,7 @@
                 <input type="text" id="portfolio-search" class="form-input" placeholder="🔍 Buscar aplicación por nombre o ID..." oninput="window.filterAppsPortfolio(this.value)" style="height: 36px; font-size: 11px;">
               </div>
               <div style="display: flex; gap: 10px;">
-                <button class="btn btn-secondary" onclick="window.copyUniversalSdkSnippet('kuatsi_central')" style="height: 36px; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; color: var(--accent); border-color: rgba(0,229,255,0.3);" title="Copiar script tag de 1 sola línea para integrar cualquier aplicación actual o futura">
+                <button class="btn btn-secondary" onclick="window.openCopySdkPicker()" style="height: 36px; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; color: var(--accent); border-color: rgba(0,229,255,0.3);" title="Elegir cliente y copiar script tag de integración">
                   <i class="ri-code-s-slash-line"></i> Copiar Tag SDK (1-Línea)
                 </button>
                 <button class="btn btn-secondary" onclick="window.downloadObfuscatedSdk()" style="height: 36px; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;" title="Descargar SDK Universal de Licencias">

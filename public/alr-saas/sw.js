@@ -1,12 +1,13 @@
-const CACHE_NAME = 'alr-saas-commander-v2';
+// v3: quita ReyLicensingValidator.js/.obfuscated.js/obfuscator.js del
+// precache (archivados fuera del árbol servido -- roto, sin uso real) y
+// sube CACHE_NAME para invalidar el cache de Service Workers ya
+// instalados en navegadores de operadores.
+const CACHE_NAME = 'alr-saas-commander-v3';
 const ASSETS = [
   './',
   './index.html',
   './app.js',
-  './index.css',
-  './ReyLicensingValidator.js',
-  './ReyLicensingValidator.obfuscated.js',
-  './obfuscator.js'
+  './index.css'
 ];
 
 self.addEventListener('install', (e) => {

@@ -1,11 +1,43 @@
 rules_version = '2';
+
+// ============================================================
+//  ALR SaaS Commander — Firestore Security Rules
+//  El claim `alrSuperAdmin` SOLO lo asigna verifyAlrAdminAccess
+//  (Cloud Function, Admin SDK) tras validar el PIN contra Secret
+//  Manager — nunca lo decide el navegador. El status público que
+//  consume alr-saas-gate-sdk.js en las apps cliente NO se sirve
+//  desde aquí: lo sirve getPublicLicenseStatus (Cloud Function con
+//  Admin SDK, que bypasea estas reglas) para no tener que abrir
+//  lectura pública de master_licenses (que contiene apiKey, datos
+//  de contacto, etc.).
+// ============================================================
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /master_licenses/{docId} {
-      allow read, write: if true;
+
+    function isAlrSuperAdmin() {
+      return request.auth != null
+        && request.auth.token.get('alrSuperAdmin', false) == true;
     }
-    match /{document=**} {
-      allow read, write: if true;
+
+    match /master_licenses/{licenseId} {
+      allow read, write: if isAlrSuperAdmin();
     }
+
+    // Colecciones propias de la consola.
+    match /alr-saas-settings/{docId} {
+      allow read, write: if isAlrSuperAdmin();
+    }
+    match /alr-saas-security-alerts/{docId} {
+      allow read, write: if isAlrSuperAdmin();
+    }
+    match /alr-saas-telemetry-logs/{docId} {
+      allow read, write: if isAlrSuperAdmin();
+    }
+    match /alr_saas_sync_logs/{docId} {
+      allow read, write: if isAlrSuperAdmin();
+    }
+
+    // Sin match /{document=**} de respaldo: todo lo no cubierto
+    // arriba queda denegado por defecto.
   }
 }

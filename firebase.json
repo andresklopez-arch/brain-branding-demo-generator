@@ -17,7 +17,8 @@
       "**/*.tar",
       "**/*.mp4",
       "**/*.log",
-      "backups/**"
+      "backups/**",
+      "alr-saas/bridge/**"
     ],
     "cleanUrls": true,
     "trailingSlash": true,
@@ -38,5 +39,13 @@
   },
   "functions": {
     "source": "functions"
+  },
+  "emulators": {
+    "auth": { "port": 9099 },
+    "firestore": { "port": 8080 },
+    "functions": { "port": 5001 },
+    "hosting": { "port": 5000 },
+    "ui": { "enabled": true },
+    "singleProjectMode": true
   }
 }

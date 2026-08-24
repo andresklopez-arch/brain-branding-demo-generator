@@ -202,18 +202,26 @@ const DEFAULT_LICENSES = [
   }
 ];
 
-// 🔐 BASE DE DATOS DE ADMINISTRADORES Y PIN DE SEGURIDAD SECURE HASHES (SHA-256)
+// El PIN real ya NO se valida contra este hash (antes era un sha256
+// precalculado visible en el JS público, crackeable offline sin límite
+// de intentos). La verificación real la hace verifyAlrAdminAccess
+// (Cloud Function + Secret Manager, ver functions/index.js). El campo
+// pinHash se conserva solo porque otras rutinas no relacionadas con
+// autenticación lo reutilizan como "sal" para firmar configuración
+// local ya guardada (Telegram/Firebase) -- no como control de acceso.
 const SYSTEM_ADMINS = [
   { username: 'Master Admin', pinHash: '0c759f0a85f7faa512ce37bd492ac6cb5cd2d806a4a81b1c700df37f7392570f', role: 'SUPER_ADMIN' }
 ];
 
-// OTP de sesión y variables de control de seguridad en memoria
-window.CURRENT_SESSION_OTP = '';
-window.CURRENT_SESSION_OTP_TIME = 0;
 window.LOCK_ATTEMPTS = 0;
 window.LOCKOUT_UNTIL = 0;
 
-let currentAdmin = SYSTEM_ADMINS[0]; // Master Admin activo por defecto
+// Antes arrancaba ya autenticado como Master Admin sin pedir nada -- la
+// consola completa (incluida la lectura de licencias de clientes) era
+// accesible a cualquiera con la URL. Ahora arranca bloqueada;
+// unlockConsoleSession() (vía verifyAlrAdminAccess) es el único camino
+// para obtener currentAdmin != null.
+let currentAdmin = null;
 
 // 🚀 SUGERENCIA 3: PLANTILLAS DE BASES DE DATOS SEMILLA (SEED TEMPLATES)
 const SEED_TEMPLATES = {
@@ -412,18 +420,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  verifyAuditLedger(); // Verificar inmutabilidad del historial en el arranque
-  renderAll();
-  updateSaasSimulation(); // Inicializar el simulador interactivo
-  startServerlessBillingCron(); // Inicializar el cron de débito y micro-facturación en tiempo real
-  loadBackupTelemetry(); // Cargar estado de último respaldo cifrado
-  window.updateHeaderProfileBadge(); // Sincronizar el badge de sesión del administrador
-  await window.rehydrateDecryptedSettings();
-  await window.loadIntegrationSettings(); // Cargar configuraciones de Telegram y Firebase
-  await window.initFirebaseSync(); // Inicializar sincronización con Firebase
+  await initGovernanceFirebase(); // sesión anónima; sin claim todavía, sin acceso a master_licenses
 
-  // Sincronización incondicional e inmediata en el arranque desde Cloud Firestore REST API
-  await window.pullAllLicensesFromCloud(true);
+  verifyAuditLedger(); // Verificar inmutabilidad del historial en el arranque (solo datos locales, no licencias)
+  window.updateHeaderProfileBadge();
+  window.resetInactivityTimer();
+
+  // currentAdmin es null hasta que unlockConsoleSession()/verifyAdminCredentials()
+  // tengan éxito vía verifyAlrAdminAccess. Todo lo que toca master_licenses
+  // (tabla de clientes, pullAllLicensesFromCloud, cron de facturación, etc.)
+  // se dispara dentro de unlockConsoleSession() tras el login exitoso, no aquí
+  // -- antes corría incondicionalmente y la consola completa quedaba abierta
+  // a cualquiera con la URL, sin pedir nada.
+  window.openSessionLockedModal('Master Admin');
 
   // Procesar cualquier notificación de Telegram encolada localmente mientras estaba offline
   window.processOfflineNotificationsQueue();
@@ -799,82 +808,45 @@ async function loadFromStorage() {
 
 window.pullAllLicensesFromCloud = async function(silent = false) {
   if (!silent) showToast("Consultando licencias en la nube...", "info");
-  
+
+  if (!window.governanceDb) {
+    if (!silent) showToast("Sin sesión de gobernanza activa.", "warning");
+    return;
+  }
+
   try {
-    let pulledLicenses = [];
+    // Antes leía la REST API de Firestore sin ninguna autenticación
+    // (funcionaba solo porque las reglas estaban abiertas a todo
+    // internet). Ahora usa governanceDb, protegido por el claim
+    // alrSuperAdmin que asigna verifyAlrAdminAccess.
+    const snap = await window.governanceDb.collection('master_licenses').get();
+    const pulledLicenses = snap.docs.map(doc => {
+      const d = doc.data() || {};
+      return {
+        id: doc.id,
+        clientName: d.clientName || 'Cliente',
+        appName: d.appName || 'Aplicación',
+        appId: d.appId || doc.id,
+        apiKey: d.apiKey || '',
+        expiryDate: d.expiryDate || d.expirationDate || '2099-12-31T23:59:59Z',
+        expirationDate: d.expiryDate || d.expirationDate || '2099-12-31T23:59:59Z',
+        currentPlan: d.currentPlan || 'PAGADO',
+        baseMonthlyFee: Number(d.baseMonthlyFee || 500),
+        adjustedMonthlyFee: Number(d.adjustedMonthlyFee || d.baseMonthlyFee || 500),
+        renewalPeriod: d.renewalPeriod || 'Mensual',
+        paymentPeriod: d.paymentPeriod || 'Mensual',
+        startDate: d.startDate || '2025-01-01',
+        dailyCost: Number(d.dailyCost || 0),
+        status: String(d.status || 'ACTIVE').toUpperCase(),
+        version: Number(d.version || 1)
+      };
+    });
 
-    // 1. Consulta directa y en vivo a la REST API de Cloud Firestore (Bypassea caché y fuerza lectura fresca)
-    try {
-      const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses?t=${Date.now()}`;
-      const res = await fetch(restUrl, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' } });
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.documents) {
-          data.documents.forEach(doc => {
-            const fields = doc.fields || {};
-            const docId = doc.name.split('/').pop();
-            const rawStatus = (fields.status?.stringValue || 'ACTIVE').toUpperCase();
-            const baseMonthlyFee = Number(fields.baseMonthlyFee?.doubleValue || fields.baseMonthlyFee?.integerValue || 500);
-            const adjustedMonthlyFee = Number(fields.adjustedMonthlyFee?.doubleValue || fields.adjustedMonthlyFee?.integerValue || baseMonthlyFee);
-            const renewalPeriod = fields.renewalPeriod?.stringValue || 'Mensual';
-            const paymentPeriod = fields.paymentPeriod?.stringValue || 'Mensual';
-            const startDate = fields.startDate?.stringValue || '2025-01-01';
-
-            pulledLicenses.push({
-              id: docId,
-              clientName: fields.clientName?.stringValue || 'Cliente',
-              appName: fields.appName?.stringValue || 'Aplicación',
-              appId: fields.appId?.stringValue || docId,
-              apiKey: fields.apiKey?.stringValue || '',
-              expiryDate: fields.expiryDate?.stringValue || fields.expirationDate?.stringValue || '2099-12-31T23:59:59Z',
-              expirationDate: fields.expiryDate?.stringValue || fields.expirationDate?.stringValue || '2099-12-31T23:59:59Z',
-              currentPlan: fields.currentPlan?.stringValue || 'PAGADO',
-              baseMonthlyFee: baseMonthlyFee,
-              adjustedMonthlyFee: adjustedMonthlyFee,
-              renewalPeriod: renewalPeriod,
-              paymentPeriod: paymentPeriod,
-              startDate: startDate,
-              dailyCost: Number(fields.dailyCost?.doubleValue || fields.dailyCost?.integerValue || 0),
-              status: rawStatus,
-              version: Number(fields.version?.integerValue || 1)
-            });
-          });
-        }
-      }
-    } catch (restErr) {
-      console.warn('[REST PRIMARY PULL WARN]', restErr);
-    }
-
-    // 2. Consolidación y deduplicación para que Kuatsi tenga una única representación (kuatsi_central)
     if (pulledLicenses.length > 0) {
-      const kuatsiDocs = pulledLicenses.filter(l => l.id.includes('kuatsi'));
-      const isKuatsiSuspended = kuatsiDocs.some(l => l.status === 'SUSPENDED');
-      
-      const cleanLicenses = [];
-      let kuatsiCentralAdded = false;
-
-      pulledLicenses.forEach(l => {
-        if (l.id.includes('kuatsi')) {
-          if (!kuatsiCentralAdded) {
-            cleanLicenses.push({
-              ...l,
-              id: 'kuatsi_central',
-              appId: 'kuatsi-cafeteria',
-              clientName: 'Kuatsi Cafetería Central',
-              appName: 'Kuatsi POS & Cafetería',
-              status: isKuatsiSuspended ? 'SUSPENDED' : (l.status || 'ACTIVE')
-            });
-            kuatsiCentralAdded = true;
-          }
-        } else {
-          cleanLicenses.push(l);
-        }
-      });
-
-      state.licenses = cleanLicenses;
+      state.licenses = pulledLicenses;
       await saveToStorage();
       renderAll();
-      if (!silent) showToast(`Sincronización exitosa: ${cleanLicenses.length} licencia(s) en vivo desde la nube.`, "success");
+      if (!silent) showToast(`Sincronización exitosa: ${pulledLicenses.length} licencia(s) en vivo desde la nube.`, "success");
     } else {
       if (!silent) showToast("No se encontraron licencias registradas en la nube.", "warning");
     }
@@ -1369,7 +1341,7 @@ window.sendRenewalNotice = function(clientId) {
 
   addAuditLog('GOVERNANCE', 'AVISO_PREVENTIVO', `Aviso preventivo de suspensión enviado a cliente: ${license.clientName} (${license.appName}). Fecha expiración: ${expiryDateFormatted}`);
 
-  showToast(`⚡ Aviso preventivo enviado a ${license.clientName}`, "warning");
+  showToast(`⚡ Aviso preventivo enviado a ${escapeHtml(license.clientName)}`, "warning");
 };
 
 window.sendMassRenewalWarnings = function() {
@@ -1406,7 +1378,7 @@ window.quickRenewLicense = function(clientId) {
 
   saveToStorage();
   window.syncLicenseToFirestore(license);
-  showToast(`¡Licencia de ${license.clientName} renovada con éxito (+30 días)!`, "success");
+  showToast(`¡Licencia de ${escapeHtml(license.clientName)} renovada con éxito (+30 días)!`, "success");
   renderAll();
 };
 
@@ -2277,8 +2249,11 @@ window.processAprovisionamiento = async function() {
       state.licenses.splice(existingIndex, 1);
     }
 
-    // Generar API Key única de seguridad
-    const randomHex = Math.random().toString(16).substr(2, 8);
+    // Generar API Key única de seguridad -- 128 bits de entropía
+    // criptográfica (antes Math.random().toString(16).substr(2,8) daba
+    // ~32 bits, adivinable).
+    const randomBytes = crypto.getRandomValues(new Uint8Array(16));
+    const randomHex = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
     const apiKey = `sec_${clientId.split('_')[0]}_${randomHex}`;
 
     // Parsear roles personalizados del CSV
@@ -2609,33 +2584,33 @@ window.togglePlanStatus = function(clientId) {
   const license = state.licenses.find(l => l.id === clientId || l.appId === clientId) || state.licenses[0];
   if (!license) return;
 
-  const nextPlan = license.currentPlan === 'PAGADO' ? 'NO_PAGADO' : 'PAGADO';
-  license.currentPlan = nextPlan;
+  requestAdminVerification(`Cambiar Plan de Pago (${license.clientName})`, () => {
+    const nextPlan = license.currentPlan === 'PAGADO' ? 'NO_PAGADO' : 'PAGADO';
+    license.currentPlan = nextPlan;
 
-  if (nextPlan === 'PAGADO') {
-    license.status = 'ACTIVE';
-    window.writeGovernanceStatus(license.id, 'ACTIVE');
-    showToast(`¡Pago verificado para ${license.clientName}! Sistema puesto en línea en automático 🟢`, "success");
-  } else {
-    const suspensionInfo = window.calculateNextSuspensionDate(license);
-    if (suspensionInfo.isOverdue || suspensionInfo.daysLeft <= 0) {
-      license.status = 'SUSPENDED';
-      window.writeGovernanceStatus(license.id, 'SUSPENDED');
-      showToast(`Cliente ${license.clientName} marcado como NO_PAGADO y suspendido automáticamente 🔴`, "danger");
+    if (nextPlan === 'PAGADO') {
+      license.status = 'ACTIVE';
+      showToast(`¡Pago verificado para ${escapeHtml(license.clientName)}! Sistema puesto en línea en automático 🟢`, "success");
     } else {
-      showToast(`Cliente ${license.clientName} marcado como NO_PAGADO. Próxima suspensión: ${suspensionInfo.formattedDate}`, "warning");
+      const suspensionInfo = window.calculateNextSuspensionDate(license);
+      if (suspensionInfo.isOverdue || suspensionInfo.daysLeft <= 0) {
+        license.status = 'SUSPENDED';
+        showToast(`Cliente ${escapeHtml(license.clientName)} marcado como NO_PAGADO y suspendido automáticamente 🔴`, "danger");
+      } else {
+        showToast(`Cliente ${escapeHtml(license.clientName)} marcado como NO_PAGADO. Próxima suspensión: ${suspensionInfo.formattedDate}`, "warning");
+      }
     }
-  }
 
-  license.version = (license.version || 1) + 1;
-  addAuditLog('ORQUESTADOR', nextPlan === 'PAGADO' ? 'FACTURACIÓN_ALTA' : 'FACTURACIÓN_SUSPENSIÓN', `El estatus de pago de ${license.clientName} cambió a ${nextPlan}.`);
-  
-  const tgMessage = `💰 <b>[ESTATUS DE PAGO ALR SAAS]</b> 💰\n\nCliente: <b>${license.clientName}</b> (${license.id})\n<b>Nuevo Estatus:</b> ${nextPlan === 'PAGADO' ? 'PAGADO 🟢 (Sin riesgo de suspensión)' : 'NO_PAGADO 🔴 (Próxima suspensión en curso)'}\n<b>Frecuencia de Pago:</b> ${license.paymentPeriod || 'Mensual'}\n<b>Fecha:</b> ${new Date().toLocaleString()}`;
-  window.sendTelegramNotification(tgMessage);
+    license.version = (license.version || 1) + 1;
+    addAuditLog('ORQUESTADOR', nextPlan === 'PAGADO' ? 'FACTURACIÓN_ALTA' : 'FACTURACIÓN_SUSPENSIÓN', `El estatus de pago de ${license.clientName} cambió a ${nextPlan}.`);
 
-  saveToStorage();
-  window.syncLicenseToFirestore(license);
-  renderAll();
+    const tgMessage = `💰 <b>[ESTATUS DE PAGO ALR SAAS]</b> 💰\n\nCliente: <b>${escapeHtml(license.clientName)}</b> (${license.id})\n<b>Nuevo Estatus:</b> ${nextPlan === 'PAGADO' ? 'PAGADO 🟢 (Sin riesgo de suspensión)' : 'NO_PAGADO 🔴 (Próxima suspensión en curso)'}\n<b>Frecuencia de Pago:</b> ${license.paymentPeriod || 'Mensual'}\n<b>Fecha:</b> ${new Date().toLocaleString()}`;
+    window.sendTelegramNotification(tgMessage);
+
+    saveToStorage();
+    window.syncLicenseToFirestore(license);
+    renderAll();
+  });
 };
 
 
@@ -2767,7 +2742,7 @@ window.processPaymentMonths = function(clientId, monthsCount) {
 
   saveToStorage();
   window.syncLicenseToFirestore(license);
-  showToast(`¡Pago de ${monthsCount} mes(es) ($${totalPaid.toLocaleString('es-MX')} MXN) registrado con éxito para ${license.clientName}! 🟢`, "success");
+  showToast(`¡Pago de ${monthsCount} mes(es) ($${totalPaid.toLocaleString('es-MX')} MXN) registrado con éxito para ${escapeHtml(license.clientName)}! 🟢`, "success");
   closeModal();
   renderAll();
 };
@@ -2802,7 +2777,7 @@ window.quickEditPeriod = function(clientId) {
   window.syncLicenseToFirestore(license);
 
   // Sugerencia 2: Toast Resumen (Valor Anterior -> Valor Nuevo)
-  showToast(`🔄 Período actualizado: "${oldPeriod}" ➔ "${newPeriod}" (${license.clientName})`, "info");
+  showToast(`🔄 Período actualizado: "${oldPeriod}" ➔ "${newPeriod}" (${escapeHtml(license.clientName)})`, "info");
 
   // Sugerencia 3: Bitácora de Auditoría y Telegram
   addAuditLog('ORQUESTADOR', 'CAMBIO_PERÍODO', `Período de renovación de ${license.clientName} modificado: "${oldPeriod}" ➔ "${newPeriod}".`);
@@ -2852,7 +2827,7 @@ window.deleteAppFromPortfolio = function(appId) {
   window.sendTelegramNotification(tgMsg);
 
   saveToStorage();
-  showToast(`Aplicación "${app.name}" eliminada del catálogo con éxito.`, "info");
+  showToast(`Aplicación "${escapeHtml(app.name)}" eliminada del catálogo con éxito.`, "info");
   renderAll();
 };
 
@@ -2860,68 +2835,32 @@ window.toggleLicenseStatus = function(clientId, currentStatus) {
   const license = state.licenses.find(l => l.id === clientId);
   if (!license) return;
 
-  const isCurrentlyActive = (currentStatus === 'ACTIVE' || currentStatus === 'active' || currentStatus === true || license.status === 'ACTIVE' || license.status === 'active');
-  const nextStatus = isCurrentlyActive ? 'SUSPENDED' : 'ACTIVE';
+  requestAdminVerification(`Cambiar Estado de Licencia (${license.clientName})`, () => {
+    const isCurrentlyActive = (currentStatus === 'ACTIVE' || currentStatus === 'active' || currentStatus === true || license.status === 'ACTIVE' || license.status === 'active');
+    const nextStatus = isCurrentlyActive ? 'SUSPENDED' : 'ACTIVE';
 
-  license.status = nextStatus;
-  license.version = (license.version || 1) + 1;
-  addAuditLog('API_GATEWAY', nextStatus === 'ACTIVE' ? 'ACTIVACIÓN' : 'SUSPENSIÓN', `La licencia del cliente ${license.clientName} ha sido cambiada a ${nextStatus}.`);
-  
-  const tgMessage = `🔔 <b>[TELEMETRÍA ALR SAAS]</b> 🔔\n\nEl cliente <b>${license.clientName}</b> (${license.id}) ha cambiado de estado operativo.\n<b>Nuevo Estado:</b> ${nextStatus === 'ACTIVE' ? 'ONLINE (En Línea) 🟢' : 'OFFLINE (Fuera de Línea) 🔴'}\n<b>Plan actual:</b> ${license.currentPlan}\n<b>Fecha:</b> ${new Date().toLocaleString()}`;
-  window.sendTelegramNotification(tgMessage);
+    license.status = nextStatus;
+    license.version = (license.version || 1) + 1;
+    addAuditLog('API_GATEWAY', nextStatus === 'ACTIVE' ? 'ACTIVACIÓN' : 'SUSPENSIÓN', `La licencia del cliente ${license.clientName} ha sido cambiada a ${nextStatus}.`);
 
-  saveToStorage();
+    const tgMessage = `🔔 <b>[TELEMETRÍA ALR SAAS]</b> 🔔\n\nEl cliente <b>${escapeHtml(license.clientName)}</b> (${license.id}) ha cambiado de estado operativo.\n<b>Nuevo Estado:</b> ${nextStatus === 'ACTIVE' ? 'ONLINE (En Línea) 🟢' : 'OFFLINE (Fuera de Línea) 🔴'}\n<b>Plan actual:</b> ${license.currentPlan}\n<b>Fecha:</b> ${new Date().toLocaleString()}`;
+    window.sendTelegramNotification(tgMessage);
 
-  // ================================================================
-  // ⚡ ESCRITURA EN FIRESTORE VÍA FIREBASE SDK v8 (GOVERNANCE DB)
-  // Sin CORS. Sin restricciones de auth. Batch commit directo.
-  // Fallback automático a PATCH REST si el SDK no está disponible.
-  // ================================================================
-  window.writeGovernanceStatus(license.id, nextStatus).then(ok => {
-    if (ok) {
-      console.log(`[ALR SAAS TOGGLE] ✅ Firestore actualizado → ${nextStatus}`);
-    }
-  });
+    saveToStorage();
+    window.syncLicenseToFirestore(license);
 
-  // Sincronizar resto de campos (no bloqueante, 1 segundo después)
-  setTimeout(() => window.syncLicenseToFirestore(license), 1000);
-
-  // ⚡ DIFUSIÓN INSTANTÁNEA MULTI-PESTAÑA EN TIEMPO REAL (0 MILISEGUNDOS)
-  try {
-    localStorage.setItem('alr_saas_license_signal', JSON.stringify({ id: license.id, status: nextStatus, timestamp: Date.now() }));
-    if ('BroadcastChannel' in window) {
-      const bc = new BroadcastChannel('alr_saas_global_channel');
-      bc.postMessage({ type: 'LICENSE_STATUS_UPDATE', id: license.id, status: nextStatus, license });
-      bc.close();
-    }
-  } catch (e) {}
-
-  showToast(`Cliente ${license.clientName}: Estado cambiado a ${nextStatus === 'ACTIVE' ? 'ONLINE 🟢' : 'SUSPENDIDO 🔴'}.`, nextStatus === 'ACTIVE' ? 'success' : 'danger');
-  renderAll();
-};
-
-// ============================================================
-// 🔁 FALLBACK: Escritura PATCH directa a Firestore REST API
-// Se usa solo si la Cloud Function setLicenseStatus no responde.
-// ============================================================
-window._syncStatusDirectPatch = function(status) {
-  const allKuatsiDocIds = ['kuatsi_central', 'kuatsi', 'kuatsi-cafeteria'];
-  const statusPayload = JSON.stringify({ fields: { status: { stringValue: status } } });
-
-  allKuatsiDocIds.forEach(docId => {
-    const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses/${docId}?updateMask.fieldPaths=status`;
-    fetch(restUrl, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: statusPayload
-    }).then(async res => {
-      if (res.ok) {
-        console.log(`[FALLBACK PATCH] ✅ ${docId} → ${status}`);
-      } else {
-        const t = await res.text();
-        console.error(`[FALLBACK PATCH] ❌ ${docId} HTTP ${res.status}:`, t);
+    // ⚡ DIFUSIÓN INSTANTÁNEA MULTI-PESTAÑA EN TIEMPO REAL (0 MILISEGUNDOS)
+    try {
+      localStorage.setItem('alr_saas_license_signal', JSON.stringify({ id: license.id, status: nextStatus, timestamp: Date.now() }));
+      if ('BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('alr_saas_global_channel');
+        bc.postMessage({ type: 'LICENSE_STATUS_UPDATE', id: license.id, status: nextStatus, license });
+        bc.close();
       }
-    }).catch(e => console.error(`[FALLBACK PATCH ERR] ${docId}:`, e.message));
+    } catch (e) {}
+
+    showToast(`Cliente ${escapeHtml(license.clientName)}: Estado cambiado a ${nextStatus === 'ACTIVE' ? 'ONLINE 🟢' : 'SUSPENDIDO 🔴'}.`, nextStatus === 'ACTIVE' ? 'success' : 'danger');
+    renderAll();
   });
 };
 
@@ -3045,7 +2984,7 @@ window.sendAnnualIncreaseAdvanceNotice = function(clientId) {
   }
 
   addAuditLog('FINANZAS', 'AVISO_INCREMENTO_ANUAL', `Aviso de incremento del +6% enviado a ${license.clientName}. Próxima cuota: ${formattedNextFee} el ${dateFormatted}.`);
-  showToast(`🔔 Aviso de incremento del +6% enviado a ${license.clientName} (${daysUntilAnniversary} días restantes)`, "warning");
+  showToast(`🔔 Aviso de incremento del +6% enviado a ${escapeHtml(license.clientName)} (${daysUntilAnniversary} días restantes)`, "warning");
 };
 
 window.checkAndSendAnnualIncreaseReminders = function() {
@@ -3302,7 +3241,7 @@ window.saveRenewalConfigModal = function(clientId) {
   window.sendTelegramNotification(tgMsg);
 
   addAuditLog('ORQUESTADOR', 'CONFIGURACIÓN_RENOVACIÓN', `Actualizado ${license.clientName}: Vencimiento ${newExpiry}, Renovación ${newPeriod}, Pago ${newPaymentPeriod}, Cuota ${calc.formattedAdjusted}.`);
-  showToast(`¡Configuración de renovación y pago guardada para ${license.clientName}!`, "success");
+  showToast(`¡Configuración de renovación y pago guardada para ${escapeHtml(license.clientName)}!`, "success");
   closeModal();
   renderAll();
 };
@@ -3311,24 +3250,26 @@ window.deleteLicense = function(clientId) {
   const license = state.licenses.find(l => l.id === clientId || l.appId === clientId);
   if (!license) return;
 
-  if (!confirm(`¿Confirmas que deseas mover la licencia de "${license.clientName}" (${license.id}) a la papelera de reciclaje?`)) return;
+  requestAdminVerification(`Eliminar Licencia (${license.clientName})`, () => {
+    if (!confirm(`¿Confirmas que deseas mover la licencia de "${license.clientName}" (${license.id}) a la papelera de reciclaje?`)) return;
 
-  state.licenses = state.licenses.filter(l => l.id !== clientId && l.id !== license.id);
-  if (!state.recycleBin) state.recycleBin = [];
-  
-  license.status = 'SUSPENDED';
-  license.version = (license.version || 1) + 1;
+    state.licenses = state.licenses.filter(l => l.id !== clientId && l.id !== license.id);
+    if (!state.recycleBin) state.recycleBin = [];
 
-  state.recycleBin.push({
-    license: license,
-    deletedAt: new Date().toISOString()
+    license.status = 'SUSPENDED';
+    license.version = (license.version || 1) + 1;
+
+    state.recycleBin.push({
+      license: license,
+      deletedAt: new Date().toISOString()
+    });
+
+    addAuditLog('ORQUESTADOR', 'ELIMINACIÓN_PAPELERA', `Cliente ${license.clientName} movido a la papelera de reciclaje (retención de 45 días).`);
+    saveToStorage();
+    window.syncLicenseToFirestore(license);
+    showToast(`Cliente ${escapeHtml(license.clientName)} movido a la papelera.`, "info");
+    renderAll();
   });
-
-  addAuditLog('ORQUESTADOR', 'ELIMINACIÓN_PAPELERA', `Cliente ${license.clientName} movido a la papelera de reciclaje (retención de 45 días).`);
-  saveToStorage();
-  window.syncLicenseToFirestore(license);
-  showToast(`Cliente ${license.clientName} movido a la papelera.`, "info");
-  renderAll();
 };
 
 window.restoreLicense = function(clientId) {
@@ -3456,7 +3397,7 @@ window.openAddCreditsModal = function(clientId) {
     addAuditLog('SYSTEM', 'RECARGA', `Recarga exitosa de $${amount.toLocaleString()} al cliente ${license.clientName}. Nuevo saldo: $${license.initialAmount.toLocaleString()}`);
     saveToStorage();
     window.syncLicenseToFirestore(license);
-    showToast(`¡Recarga exitosa a ${license.clientName}!`, "success");
+    showToast(`¡Recarga exitosa a ${escapeHtml(license.clientName)}!`, "success");
     renderAll();
   });
 };
@@ -3718,87 +3659,40 @@ function startServerlessBillingCron() {
   }, 30000);
 }
 
-// 🔐 AUTENTICACIÓN DE DOBLE FACTOR (BYPASSED)
+// 🔐 Reautenticación real antes de una acción sensible: abre el modal de
+// PIN y solo ejecuta onConfirm si verifyAdminCredentials (que llama a
+// verifyAlrAdminAccess, Cloud Function) tiene éxito. Antes esta función
+// ejecutaba onConfirm() de inmediato sin pedir nada -- un bypass total.
 window.requestAdminVerification = function(actionName, onConfirm) {
-  if (typeof onConfirm === 'function') {
-    onConfirm();
-  }
-};
-
-window.updateAuthOtpHelper = async function() {
-  const adminSelect = document.getElementById('auth-admin-select');
-  const otpHelper = document.getElementById('auth-otp-helper');
-  if (!adminSelect || !otpHelper) return;
-  const username = adminSelect.value;
-  const now = new Date();
-  const currentMinute = Math.floor(now.getTime() / 60000);
-  const hash = await sha256(username + MASTER_LEDGER_SALT + currentMinute);
-  const code = (parseInt(hash.substr(0, 8), 16) % 1000000).toString().padStart(6, '0');
-  otpHelper.innerText = code;
-
-  // Calcular y actualizar temporizador visual circular
-  const sec = 60 - now.getSeconds();
-  const timerCircle = document.getElementById('otp-timer-circle');
-  const timerText = document.getElementById('otp-timer-text');
-  
-  if (timerCircle && timerText) {
-    const circumference = 56.54;
-    const offset = circumference - (circumference * sec / 60);
-    timerCircle.style.strokeDashoffset = offset;
-    timerText.innerText = `${sec}s`;
-    
-    // Gradación de color según el tiempo restante
-    if (sec > 30) {
-      timerCircle.style.stroke = "var(--success)";
-    } else if (sec > 10) {
-      timerCircle.style.stroke = "var(--warning)";
-    } else {
-      timerCircle.style.stroke = "var(--danger)";
-    }
-  }
-};
-
-window.openOtpPairingModal = function() {
-  const adminSelect = document.getElementById('auth-admin-select');
-  if (!adminSelect) return;
-  const username = adminSelect.value;
-  
-  const otpauthUri = `otpauth://totp/ALR-SaaS:${username}?secret=ALRSAASSECURECHAIN2026&issuer=ALR-SaaS`;
-  const qrUrl = `https://quickchart.io/chart?cht=qr&chs=180&chl=${encodeURIComponent(otpauthUri)}`;
-  
+  window.pendingAdminAction = onConfirm;
   const overlay = document.getElementById('modal-overlay');
   const box = document.getElementById('modal-box');
-  if (!overlay || !box) return;
+  if (!overlay || !box) { if (typeof onConfirm === 'function') onConfirm(); return; }
 
-  // Guardar el modal original para poder regresar al cancelar/cerrar la vinculación
-  window.previousModalContent = box.innerHTML;
+  const adminsHtml = SYSTEM_ADMINS.map(adm =>
+    `<option value="${escapeHtml(adm.username)}">${escapeHtml(adm.username)} (${escapeHtml(adm.role)})</option>`
+  ).join('');
+  const safeActionName = escapeHtml(actionName).replace(/'/g, "\\'");
 
   box.innerHTML = `
     <div style="padding: 30px; text-align: center;">
-      <div style="font-size: 40px; margin-bottom: 12px;">📱</div>
-      <h2 style="font-size: 18px; font-weight: 900; color: var(--accent); margin-bottom: 8px; text-transform: uppercase;">Vincular Google Authenticator</h2>
-      <p style="font-size: 11px; opacity: 0.6; margin-bottom: 20px; line-height: 1.5;">Escanea el código QR con Google Authenticator o Microsoft Authenticator para configurar el doble factor (2FA) para <strong style="color:var(--accent-secondary);">${username}</strong>.</p>
-      
-      <div style="background: #fff; padding: 12px; border-radius: 20px; display: inline-block; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px; border: 1px solid var(--border-active);">
-        <img src="${qrUrl}" alt="QR Code 2FA" style="display: block; width: 160px; height: 160px;">
+      <div style="font-size: 40px; margin-bottom: 12px;">🔐</div>
+      <h2 style="font-size: 16px; font-weight: 900; color: var(--accent); margin-bottom: 8px; text-transform: uppercase;">Confirmación Requerida</h2>
+      <p style="font-size: 11px; opacity: 0.6; margin-bottom: 16px;">Acción: <strong>${escapeHtml(actionName)}</strong></p>
+      <div class="form-group" style="text-align:left; margin-bottom:16px;">
+        <label class="form-label">Perfil</label>
+        <select id="auth-admin-select" class="form-input">${adminsHtml}</select>
       </div>
-
-      <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); border-radius: 15px; padding: 12px; font-family: var(--font-mono); font-size: 10px; margin-bottom: 24px; text-align: left;">
-        <span style="color: var(--accent-secondary); font-weight:900;">LLAVE_MANUAL_BASE32:</span><br>
-        <span style="font-size:11px; color:#fff; word-break:break-all;">ALRSAASSECURECHAIN2026</span>
+      <div class="form-group" style="text-align:left; margin-bottom:24px;">
+        <label class="form-label">PIN de Administrador</label>
+        <input type="password" id="auth-admin-pin" class="form-input" maxlength="6" style="text-align:center; letter-spacing:6px;" onkeydown="if(event.key==='Enter') window.verifyAdminCredentials('${safeActionName}')">
       </div>
-
-      <button class="btn btn-secondary" style="width: 100%;" onclick="window.returnToAuthModal()">Regresar a Autenticación</button>
+      <button class="btn btn-primary" style="width:100%;" onclick="window.verifyAdminCredentials('${safeActionName}')">Confirmar</button>
     </div>
   `;
-};
-
-window.returnToAuthModal = function() {
-  const box = document.getElementById('modal-box');
-  if (box && window.previousModalContent) {
-    box.innerHTML = window.previousModalContent;
-    window.updateAuthOtpHelper();
-  }
+  overlay.classList.add('active');
+  const pinInput = document.getElementById('auth-admin-pin');
+  if (pinInput) pinInput.focus();
 };
 
 async function sha256(message) {
@@ -3836,7 +3730,7 @@ window.verifyAdminCredentials = async function(actionName) {
 
   const adminSelect = document.getElementById('auth-admin-select');
   const pinInput = document.getElementById('auth-admin-pin');
-  
+
   if (!adminSelect || !pinInput) return;
   const username = adminSelect.value;
   const pin = pinInput.value;
@@ -3847,44 +3741,37 @@ window.verifyAdminCredentials = async function(actionName) {
     return;
   }
 
-  // 1. Validar PIN estático con salting: sha256(username + pin)
-  const saltedPinHash = await sha256(username + pin);
-  
-  // 2. Validar Token OTP dinámico con ventana de tiempo de 1 minuto de tolerancia
-  const currentMinute = Math.floor(Date.now() / 60000);
-  const expectedOtpHashCurrent = await sha256(username + MASTER_LEDGER_SALT + currentMinute);
-  const expectedOtpHashPrev = await sha256(username + MASTER_LEDGER_SALT + (currentMinute - 1));
-  
-  const expectedOtpCodeCurrent = (parseInt(expectedOtpHashCurrent.substr(0, 8), 16) % 1000000).toString().padStart(6, '0');
-  const expectedOtpCodePrev = (parseInt(expectedOtpHashPrev.substr(0, 8), 16) % 1000000).toString().padStart(6, '0');
+  // La validación real vive en verifyAlrAdminAccess (Cloud Function +
+  // Secret Manager) -- ya no se compara ningún hash localmente.
+  try {
+    if (!window.governanceAuth || !window.governanceAuth.currentUser) {
+      await initGovernanceFirebase();
+    }
+    const verify = window.governanceFunctions.httpsCallable('verifyAlrAdminAccess');
+    await verify({ pin });
+    // Sin esto, request.auth.token.alrSuperAdmin seguiría vacío en
+    // firestore.rules aunque el claim ya exista en Auth.
+    await window.governanceAuth.currentUser.getIdToken(true);
 
-  const isPinValid = constantTimeCompare(admin.pinHash, saltedPinHash);
-  const isOtpValid = constantTimeCompare(pin, expectedOtpCodeCurrent) || constantTimeCompare(pin, expectedOtpCodePrev);
-
-  if (isPinValid || isOtpValid) {
     if (window.clearAuthFailures) window.clearAuthFailures();
     window.lastAuthAdmin = username;
     window.lastAuthRole = admin.role;
-    
-    // Derivar clave de sesión asíncronamente a partir de las credenciales
     SESSION_KEY = await sha256(username + pin);
+    currentAdmin = admin;
 
     showToast(`Acción autorizada por ${username}`, "success");
     closeModal();
-    
-    // Registrar evento de autorización exitosa en la bitácora criptográfica
-    const authMethod = isOtpValid ? "OTP DINÁMICO 2FA" : "PIN SALTEADO";
-    addAuditLog('SYSTEM', 'AUTORIZACIÓN', `Acción "${actionName}" firmada digitalmente por ${username} (${admin.role}) usando ${authMethod}.`);
-    
+    addAuditLog('SYSTEM', 'AUTORIZACIÓN', `Acción "${actionName}" autorizada por ${username} (${admin.role}) vía verifyAlrAdminAccess.`);
+
     if (window.pendingAdminAction) {
       window.pendingAdminAction();
       window.pendingAdminAction = null;
     }
-  } else {
+  } catch (err) {
     // Retardo artificial de 1 segundo para disuadir ataques de fuerza bruta rápidos
     await new Promise(resolve => setTimeout(resolve, 1000));
-    showToast("PIN o código OTP incorrecto.", "danger");
-    addAuditLog('SYSTEM', 'FALLO_AUTENTICACION', `Denegado: Intento no autorizado de ejecutar "${actionName}" como ${username}. Credenciales incorrectas.`);
+    showToast("PIN incorrecto.", "danger");
+    addAuditLog('SYSTEM', 'FALLO_AUTENTICACION', `Denegado: Intento no autorizado de ejecutar "${actionName}" como ${username}.`);
     if (window.registerAuthFailure) window.registerAuthFailure(username, `Gobernanza: ${actionName}`);
     verifyAuditLedger(); // Desatar alerta si corresponde
   }
@@ -4321,8 +4208,20 @@ window.unlockConsoleSession = async function() {
     btn.innerHTML = '<i class="ri-loader-4-line animation-spin"></i> Procesando...';
   }
 
-  const saltedPinHash = await sha256(username + pin);
-  const isPinValid = constantTimeCompare(admin.pinHash, saltedPinHash);
+  // La validación real vive en verifyAlrAdminAccess (Cloud Function +
+  // Secret Manager) -- ya no se compara ningún hash localmente.
+  let isPinValid = false;
+  try {
+    if (!window.governanceAuth || !window.governanceAuth.currentUser) {
+      await initGovernanceFirebase();
+    }
+    const verify = window.governanceFunctions.httpsCallable('verifyAlrAdminAccess');
+    await verify({ pin });
+    await window.governanceAuth.currentUser.getIdToken(true);
+    isPinValid = true;
+  } catch (e) {
+    isPinValid = false;
+  }
 
   if (isPinValid) {
     if (window.clearAuthFailures) window.clearAuthFailures();
@@ -4331,15 +4230,27 @@ window.unlockConsoleSession = async function() {
     window.IS_CONSOLE_LOCKED = false;
     currentAdmin = admin;
     window.updateHeaderProfileBadge();
-    
+
     SESSION_KEY = await sha256(username + pin);
     SESSION_KEY_BUFFER = new TextEncoder().encode(SESSION_KEY);
     try { await loadFromStorage(); } catch(e) { console.warn('[Unlock] loadFromStorage error (posible clave nueva):', e); }
+
+    // Todo lo que toca master_licenses (antes disparado incondicionalmente
+    // en DOMContentLoaded) arranca aquí, ya con el claim alrSuperAdmin
+    // asignado -- ver reestructuración de DOMContentLoaded más abajo.
+    updateSaasSimulation();
+    startServerlessBillingCron();
+    loadBackupTelemetry();
+    await window.rehydrateDecryptedSettings();
+    await window.loadIntegrationSettings();
+    await window.initFirebaseSync();
+    await window.pullAllLicensesFromCloud(true);
+
     renderAll();
     showToast(`✅ Consola desbloqueada por ${username}`, "success");
     closeModal();
-    
-    addAuditLog('SYSTEM', 'CONSOLA_DESBLOQUEO', `La consola fue desbloqueada con éxito por ${username} (${admin.role}).`);
+
+    addAuditLog('SYSTEM', 'CONSOLA_DESBLOQUEO', `La consola fue desbloqueada con éxito por ${username} (${admin.role}) vía verifyAlrAdminAccess.`);
     window.resetInactivityTimer();
   } else {
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -4389,11 +4300,14 @@ window.rehydrateDecryptedSettings = async function() {
   const whitelistRegex = /^\d+(,\d+)*$/;
   const chatIdRegex = /^-?\d+$/;
 
-  // Corregir token si está corrupto o es inválido o contiene el viejo error tipográfico
-  const oldTypoToken = '8644813999' + ':' + 'AAH0cOu38hhM10nu1oGeC84eY5vLctNqdRs';
-  const correctToken = '8644813999' + ':' + 'AAH0cOu38hhM1Onu1oGeC84eY5vLctNqdRs';
-  if (!token || !tokenRegex.test(token) || token === oldTypoToken) {
-    (token = correctToken);
+  // Antes, si no había token guardado (o era inválido), se rellenaba
+  // automáticamente con un token real y vivo hardcodeado aquí mismo --
+  // visible para cualquiera que leyera el JS público. Ya no hay default:
+  // si el token guardado no es válido, queda vacío (sendTelegramNotification
+  // usa el proxy autenticado del backend como respaldo en ese caso -- ver
+  // más abajo).
+  if (token && !tokenRegex.test(token)) {
+    token = '';
     await setSecureStorage('alr_saas_tg_token_sec', token);
   }
 
@@ -4454,7 +4368,7 @@ window.firestoreDb = null;
 // SIEMPRE activa. NO depende de configuración del usuario.
 // Usa el Firebase SDK v8 cargado en el <head> del HTML.
 // ================================================================
-function initGovernanceFirebase() {
+async function initGovernanceFirebase() {
   try {
     const GOVERNANCE_CONFIG = {
       apiKey: "AIzaSyC7yYMeYSVCiqVbLnBHGsv_UfCeVqGF3bI",
@@ -4467,8 +4381,8 @@ function initGovernanceFirebase() {
 
     if (typeof firebase === 'undefined' || !firebase.initializeApp) {
       console.error('[ALR GOVERNANCE] ❌ Firebase SDK v8 no disponible — intentando en 500ms.');
-      setTimeout(initGovernanceFirebase, 500);
-      return;
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return initGovernanceFirebase();
     }
 
     const govAppName = 'alr-saas-governance';
@@ -4476,55 +4390,26 @@ function initGovernanceFirebase() {
     const govApp = existing || firebase.initializeApp(GOVERNANCE_CONFIG, govAppName);
 
     window.governanceDb = govApp.firestore();
-    console.log('[ALR GOVERNANCE] ✅ Firestore Governance DB listo para escritura.');
+    window.governanceAuth = govApp.auth();
+    window.governanceFunctions = govApp.functions();
+
+    // Sesión anónima requerida por verifyAlrAdminAccess (request.auth no
+    // puede ser null en la Cloud Function). El claim alrSuperAdmin se
+    // asigna DESPUÉS, al validar el PIN -- hasta entonces esta sesión no
+    // tiene ningún permiso en firestore.rules.
+    if (!window.governanceAuth.currentUser) {
+      await window.governanceAuth.signInAnonymously();
+    }
+
+    console.log('[ALR GOVERNANCE] ✅ Firebase Auth + Firestore Governance listos.');
 
   } catch (e) {
     console.error('[ALR GOVERNANCE] ❌ Error:', e.message);
     window.governanceDb = null;
+    window.governanceAuth = null;
+    window.governanceFunctions = null;
   }
 }
-
-// Inicializar cuando el DOM esté listo (garantiza que los scripts del <head> ya cargaron)
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initGovernanceFirebase);
-} else {
-  initGovernanceFirebase();
-}
-
-// ================================================================
-// ⚡ GOVERNANCE API — Escritura via servidor Render (Node.js)
-// El servidor hace el PATCH a Firestore sin restricciones CORS.
-// URL del servidor: brain-branding-demo-generator.onrender.com
-// ================================================================
-const GOVERNANCE_API = 'https://brain-branding-demo-generator.onrender.com/api/governance/set-status';
-const ALR_GOVERNANCE_SECRET = 'alr-saas-master-2025-brain';
-
-window.writeGovernanceStatus = async function(licenseId, status) {
-  try {
-    const res = await fetch(GOVERNANCE_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ licenseId, status, callerKey: ALR_GOVERNANCE_SECRET })
-    });
-
-    const data = await res.json();
-
-    if (res.ok && data.ok) {
-      console.log(`[ALR GOVERNANCE] ✅ Servidor Render OK → "${status}" en Firestore`, data.results?.map(r => r.docId + ':' + (r.ok ? '✅' : '❌')).join(', '));
-      return true;
-    } else {
-      console.error(`[ALR GOVERNANCE] ❌ Servidor Render HTTP ${res.status}:`, data.error || JSON.stringify(data));
-      // Fallback: PATCH REST directo
-      window._syncStatusDirectPatch(status);
-      return false;
-    }
-  } catch (e) {
-    console.error('[ALR GOVERNANCE] ❌ Error de red al llamar servidor Render:', e.message);
-    // Fallback: PATCH REST directo
-    window._syncStatusDirectPatch(status);
-    return false;
-  }
-};
 
 // Ejecutar hidratación inicial (fallback base)
 window.rehydrateDecryptedSettings();
@@ -5094,6 +4979,29 @@ window.processOfflineNotificationsQueue = function() {
   });
 };
 
+// Proxy autenticado hacia api/telegram.js (Render) -- usa el bot fijo del
+// servidor cuando el operador no configuró su propio token (ver
+// rehydrateDecryptedSettings, ya no hay un token por defecto hardcodeado
+// en este archivo). Reutiliza la misma sesión de Firebase Auth que ya
+// protege Firestore en vez de un segundo secreto estático.
+async function alrNotifyProxy(path, body) {
+  if (!window.governanceAuth || !window.governanceAuth.currentUser) {
+    await initGovernanceFirebase();
+  }
+  const idToken = window.governanceAuth && window.governanceAuth.currentUser
+    ? await window.governanceAuth.currentUser.getIdToken()
+    : null;
+  if (!idToken) throw new Error('Sin sesión autenticada para notificar.');
+  const isGet = path === 'getMe' || path === 'getUpdates';
+  const url = `https://brain-branding-demo-generator.onrender.com/api/alr-notify/${path}${isGet && body ? '?' + new URLSearchParams(body) : ''}`;
+  const res = await fetch(url, {
+    method: isGet ? 'GET' : 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+    body: isGet ? undefined : JSON.stringify(body || {})
+  });
+  return res.json();
+}
+
 window.sendTelegramNotification = function(message) {
   try {
     const isOtpMessage = typeof message === 'string' && (message.includes("Acceso de Seguridad") || message.includes("OTP"));
@@ -5103,9 +5011,19 @@ window.sendTelegramNotification = function(message) {
       return;
     }
     if (!window.TELEGRAM_BOT_TOKEN || !window.TELEGRAM_CHAT_ID) {
-      console.warn("[TELEGRAM] Despacho omitido: Token de Bot o Chat ID no configurados.");
-      if (isOtpMessage) {
-        showToast("Telegram: Configuración incompleta (Token o Chat ID faltante).", "warning");
+      // Sin token propio configurado por el operador: usar el proxy
+      // autenticado del backend (bot fijo del servidor) en vez de no
+      // enviar nada -- antes esta ruta jamás se ejercía porque siempre
+      // había un token hardcodeado de respaldo.
+      if (window.TELEGRAM_CHAT_ID) {
+        alrNotifyProxy('send', { chatId: window.TELEGRAM_CHAT_ID, text: message, parseMode: 'HTML' }).catch(e => {
+          console.warn('[TELEGRAM] Envío vía proxy autenticado falló:', e.message);
+        });
+      } else {
+        console.warn("[TELEGRAM] Despacho omitido: Token de Bot o Chat ID no configurados.");
+        if (isOtpMessage) {
+          showToast("Telegram: Configuración incompleta (Token o Chat ID faltante).", "warning");
+        }
       }
       return;
     }
@@ -6177,12 +6095,26 @@ window.unlockSecurityLockout = async function() {
   if (!pinInput) return;
   const pin = pinInput.value;
 
-  // El PIN Maestro de restauración de brecha será el PIN de Master Admin salteado
+  // Antes comparaba masterAdmin.pinHash localmente (el mismo hash público
+  // y crackeable offline) -- ahora usa la misma Cloud Function que el
+  // resto de las rutas de desbloqueo.
   const masterAdmin = SYSTEM_ADMINS[0];
-  const saltedPinHash = await sha256(masterAdmin.username + pin);
+  let isPinValid = false;
+  try {
+    if (!window.governanceAuth || !window.governanceAuth.currentUser) {
+      await initGovernanceFirebase();
+    }
+    const verify = window.governanceFunctions.httpsCallable('verifyAlrAdminAccess');
+    await verify({ pin });
+    await window.governanceAuth.currentUser.getIdToken(true);
+    isPinValid = true;
+  } catch (e) {
+    isPinValid = false;
+  }
 
-  if (masterAdmin.pinHash === saltedPinHash) {
+  if (isPinValid) {
     if (window.clearAuthFailures) window.clearAuthFailures();
+    currentAdmin = masterAdmin;
     localStorage.removeItem('alr_saas_lockout');
     
     // Sugerencia 1: Recuperación failsafe automática de la última configuración válida autorizada
@@ -6852,70 +6784,47 @@ window.syncLicenseToFirestore = async function(license) {
 
   const currentStatus = (license.status || 'ACTIVE').toUpperCase();
 
-  // ⚡ GOBERNANZA SERVER-SIDE: Enviar estado operativo a Firestore a través del backend Render (sin problemas de CORS)
-  if (typeof window.writeGovernanceStatus === 'function') {
-    window.writeGovernanceStatus(license.id, currentStatus);
-  }
-
-  // 📡 RESPALDO DE SINCRONIZACIÓN INMEDIATA VÍA REST API
-  try {
-    const candidateIds = Array.from(new Set([
-      license.id,
-      license.appId,
-      'kuatsi_central',
-      'kuatsi',
-      'kuatsi-cafeteria'
-    ].filter(Boolean)));
-
-    const fieldsToMask = [
-      'id', 'clientName', 'appName', 'appId', 'apiKey', 'status', 
-      'expiryDate', 'expirationDate', 'currentPlan', 'renewalPeriod', 
-      'paymentPeriod', 'baseMonthlyFee', 'adjustedMonthlyFee', 
-      'startDate', 'dailyCost', 'version', 'lastUpdated'
-    ];
-    const updateMaskQuery = fieldsToMask.map(f => `updateMask.fieldPaths=${f}`).join('&');
-
-    for (const docId of candidateIds) {
-      if (license.id.includes('kuatsi') || docId.includes('kuatsi') || docId === license.id) {
-        const restUrl = `https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses/${docId}?${updateMaskQuery}`;
-        const payload = {
-          fields: {
-            id: { stringValue: docId },
-            clientName: { stringValue: license.clientName || '' },
-            appName: { stringValue: license.appName || '' },
-            appId: { stringValue: license.appId || '' },
-            apiKey: { stringValue: license.apiKey || '' },
-            status: { stringValue: (license.status || 'ACTIVE').toUpperCase() },
-            expiryDate: { stringValue: license.expiryDate || license.expirationDate || '2099-12-31T23:59:59Z' },
-            expirationDate: { stringValue: license.expiryDate || license.expirationDate || '2099-12-31T23:59:59Z' },
-            currentPlan: { stringValue: license.currentPlan || 'PAGADO' },
-            renewalPeriod: { stringValue: license.renewalPeriod || 'Mensual' },
-            paymentPeriod: { stringValue: license.paymentPeriod || 'Mensual' },
-            baseMonthlyFee: { doubleValue: Number(license.baseMonthlyFee || license.monthlyFee || 500) },
-            adjustedMonthlyFee: { doubleValue: Number(license.adjustedMonthlyFee || 500) },
-            startDate: { stringValue: license.startDate || license.createdAt || '2025-01-01' },
-            dailyCost: { doubleValue: Number(license.dailyCost || 0) },
-            version: { integerValue: String(license.version || 1) },
-            lastUpdated: { stringValue: new Date().toISOString() }
-          }
-        };
-        fetch(restUrl, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        }).then(res => {
-          if (res.ok) {
-            console.log(`[REST SYNC OK] ✅ Documento "${docId}" → ${license.status} persistido en Firestore.`);
-          } else {
-            res.text().then(t => console.error(`[REST SYNC FAIL] ❌ ${docId} HTTP ${res.status}:`, t));
-          }
-        }).catch(e => console.error('[REST SYNC ERR] ❌', docId, e.message));
-      }
+  // Escritura autenticada única, protegida por firestore.rules
+  // (isAlrSuperAdmin()) -- reemplaza tanto la llamada al backend de
+  // Render/PATCH sin auth como el "respaldo" de PATCH REST directo
+  // (ambos dependían de que Firestore estuviera abierto a todo internet).
+  // Ya no se escriben incondicionalmente los 3 doc-ids de Kuatsi -- cada
+  // licencia toca solo su propio docId.
+  if (window.governanceDb) {
+    try {
+      const payload = {
+        id: license.id,
+        clientName: license.clientName || '',
+        appName: license.appName || '',
+        appId: license.appId || '',
+        apiKey: license.apiKey || '',
+        status: currentStatus,
+        expiryDate: license.expiryDate || license.expirationDate || '2099-12-31T23:59:59Z',
+        expirationDate: license.expiryDate || license.expirationDate || '2099-12-31T23:59:59Z',
+        currentPlan: license.currentPlan || 'PAGADO',
+        renewalPeriod: license.renewalPeriod || 'Mensual',
+        paymentPeriod: license.paymentPeriod || 'Mensual',
+        baseMonthlyFee: Number(license.baseMonthlyFee || license.monthlyFee || 500),
+        adjustedMonthlyFee: Number(license.adjustedMonthlyFee || 500),
+        startDate: license.startDate || license.createdAt || '2025-01-01',
+        dailyCost: Number(license.dailyCost || 0),
+        version: Number(license.version || 1),
+        lastUpdated: new Date().toISOString()
+      };
+      await window.governanceDb.collection('master_licenses').doc(license.id).set(payload, { merge: true });
+      console.log(`[ALR GOVERNANCE] ✅ ${license.id} → ${currentStatus} persistido en Firestore.`);
+    } catch (err) {
+      console.error('[ALR GOVERNANCE] ❌ Error al escribir en Firestore:', err.message);
+      showToast(`Error al sincronizar "${escapeHtml(license.clientName || license.id)}" con la nube: ${err.message}`, 'danger');
     }
-  } catch (restErr) {
-    console.warn('[REST SYNC ERR]', restErr);
+  } else {
+    console.warn('[ALR GOVERNANCE] governanceDb no disponible; se omite la escritura.');
   }
 
+  // Lo siguiente sincroniza además con una instancia OPCIONAL de Firebase
+  // ("Bring your own Firebase") que el operador puede configurar por su
+  // cuenta desde la UI -- no es master_licenses de brain-branding, así
+  // que no depende del canal de arriba ni de sus reglas.
   if (!window.FIREBASE_SYNC_ENABLED || !window.firestoreDb) {
     return;
   }
@@ -7304,7 +7213,7 @@ window.cloneClientWizard = function(licenseId) {
     servicesTextarea.value = license.customConfig.services.map(s => `${s.name},${s.price || s.itemsCount || 0}`).join('\n');
   }
   
-  showToast(`Cargados datos de ${license.clientName} en el Asistente para clonación rápida.`, "success");
+  showToast(`Cargados datos de ${escapeHtml(license.clientName)} en el Asistente para clonación rápida.`, "success");
 };
 
 window.viewSeedTemplateSchema = function(appId) {
@@ -7377,7 +7286,7 @@ window.simulateClientUsage = function(licenseId) {
   if (!license) return;
   
   if (license.status === 'SUSPENDED') {
-    showToast(`El cliente ${license.clientName} está suspendido. Actívalo para simular uso.`, "warning");
+    showToast(`El cliente ${escapeHtml(license.clientName)} está suspendido. Actívalo para simular uso.`, "warning");
     return;
   }
   
@@ -7389,9 +7298,9 @@ window.simulateClientUsage = function(licenseId) {
   if (license.initialAmount <= 0) {
     license.status = 'SUSPENDED';
     addAuditLog('TELEMETRÍA', 'SUSPENSIÓN_AUTOMÁTICA', `Licencia de cliente ${license.clientName} suspendida automáticamente por saldo agotado.`);
-    showToast(`Saldo de ${license.clientName} agotado. Suspendido.`, "danger");
+    showToast(`Saldo de ${escapeHtml(license.clientName)} agotado. Suspendido.`, "danger");
   } else {
-    showToast(`Simuladas 10 operaciones en ${license.clientName}. Descontado $${totalDeduction.toFixed(2)}. Saldo actual: $${license.initialAmount.toFixed(2)}`, "success");
+    showToast(`Simuladas 10 operaciones en ${escapeHtml(license.clientName)}. Descontado $${totalDeduction.toFixed(2)}. Saldo actual: $${license.initialAmount.toFixed(2)}`, "success");
     addAuditLog('TELEMETRÍA', 'MOCK_USO', `Simuladas 10 ops en ${license.clientName}. Saldo restante: $${license.initialAmount}`);
   }
   
@@ -7711,12 +7620,31 @@ window.saveConcurrencyPolicy = function() {
   }
 };
 
-// 🔐 Sugerencia 1: Autenticación Biométrica Local (WebAuthn / Passkeys)
+// 🔐 Autenticación Biométrica Local (WebAuthn / Passkeys) -- ahora es solo
+// una CONVENIENCIA para no volver a teclear el PIN en este dispositivo,
+// nunca un reemplazo de la verificación server-side (verifyAlrAdminAccess).
+// Antes, cuando el WebAuthn nativo fallaba o no estaba disponible, un
+// simple confirm() del navegador "simulaba" éxito y otorgaba acceso de
+// SUPER_ADMIN sin ninguna biometría real -- ese fallback se elimina.
 window.registerWebAuthnCredential = async function(username) {
   try {
     if (!window.PublicKeyCredential) {
       throw new Error("El navegador no soporta autenticación biométrica (WebAuthn).");
     }
+
+    // Lo que WebAuthn va a envolver debe ser el PIN real (no SESSION_KEY,
+    // que es sha256(username+pin) y no sirve para reautenticar contra
+    // verifyAlrAdminAccess). Se revalida aquí mismo antes de envolverlo,
+    // así un PIN incorrecto nunca queda guardado como si fuera válido.
+    const pin = prompt(`Confirma tu PIN de administrador para registrar esta passkey (${username}):`);
+    if (!pin) throw new Error("Registro cancelado: se requiere el PIN para vincular la passkey.");
+
+    if (!window.governanceAuth || !window.governanceAuth.currentUser) {
+      await initGovernanceFirebase();
+    }
+    const verify = window.governanceFunctions.httpsCallable('verifyAlrAdminAccess');
+    await verify({ pin });
+
     const challenge = crypto.getRandomValues(new Uint8Array(32));
     const userId = crypto.getRandomValues(new Uint8Array(16));
     const publicKeyCredentialCreationOptions = {
@@ -7728,24 +7656,13 @@ window.registerWebAuthnCredential = async function(username) {
       timeout: 60000,
       attestation: "none"
     };
-    let credential;
-    try {
-      credential = await navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions });
-    } catch (webAuthnError) {
-      console.warn("Fallo o cancelación de WebAuthn nativo, aplicando simulación segura de hardware de confianza:", webAuthnError);
-      const confirmBio = confirm("¿Deseas registrar la huella digital del dispositivo local para el usuario: " + username + "?");
-      if (!confirmBio) throw new Error("Registro biométrico cancelado por el operador.");
-      credential = { // let
-        id: "simulated_fido2_" + Math.random().toString(36).substring(2) + Date.now().toString(36),
-        rawId: new Uint8Array([1, 2, 3, 4, 5])
-      };
-    }
+    const credential = await navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions });
+
     const credId = credential.id;
     localStorage.setItem('alr_saas_webauthn_cred_id', credId);
-    if (SESSION_KEY) {
-      const encryptedKey = await encryptReposo(SESSION_KEY, credId + "_webauthn_secret");
-      localStorage.setItem('alr_saas_webauthn_wrapped_key', encryptedKey);
-    }
+    const encryptedKey = await encryptReposo(pin, credId + "_webauthn_secret");
+    localStorage.setItem('alr_saas_webauthn_wrapped_key', encryptedKey);
+
     showToast("Credencial biométrica (Passkey) registrada con éxito para " + username, "success");
     addAuditLog('SECURITY', 'WEBAUTHN_REGISTER', `Se registró una nueva llave biométrica (Passkey) para el usuario ${username}.`);
   } catch (err) {
@@ -7761,38 +7678,52 @@ window.unlockWithWebAuthn = async function() {
     if (!credId || !wrappedKey) {
       throw new Error("No hay ninguna credencial biométrica registrada en este dispositivo.");
     }
-    let assertion;
-    try {
-      if (!window.PublicKeyCredential) throw new Error("No soportado");
-      const challenge = crypto.getRandomValues(new Uint8Array(32));
-      const publicKeyCredentialRequestOptions = {
-        challenge: challenge,
-        allowCredentials: [{ id: new TextEncoder().encode(credId), type: 'public-key' }],
-        timeout: 60000,
-        userVerification: "required"
-      };
-      assertion = await navigator.credentials.get({ publicKey: publicKeyCredentialRequestOptions });
-    } catch (webAuthnError) {
-      console.warn("Fallo o cancelación de WebAuthn nativo en validación, ejecutando validación de firma hardware simulada:", webAuthnError);
-      const confirmAuth = confirm("Verificación Biométrica: Coloca tu huella digital en el sensor de huellas.");
-      if (!confirmAuth) throw new Error("Verificación biométrica cancelada por el usuario.");
-      assertion = { id: credId }; // let
+    if (!window.PublicKeyCredential) {
+      throw new Error("Este navegador no soporta WebAuthn.");
     }
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const publicKeyCredentialRequestOptions = {
+      challenge: challenge,
+      allowCredentials: [{ id: new TextEncoder().encode(credId), type: 'public-key' }],
+      timeout: 60000,
+      userVerification: "required"
+    };
+    await navigator.credentials.get({ publicKey: publicKeyCredentialRequestOptions });
+
     const keyToDecrypt = credId + "_webauthn_secret";
-    const decryptedKey = await decryptReposo(wrappedKey, keyToDecrypt);
-    if (!decryptedKey) {
+    const pin = await decryptReposo(wrappedKey, keyToDecrypt);
+    if (!pin) {
       throw new Error("La firma biométrica no coincide o el secreto local está corrupto.");
     }
-    SESSION_KEY = decryptedKey;
-    SESSION_KEY_BUFFER = new TextEncoder().encode(decryptedKey);
+
+    // El PIN descifrado se revalida contra la misma Cloud Function que
+    // cualquier otro desbloqueo.
+    if (!window.governanceAuth || !window.governanceAuth.currentUser) {
+      await initGovernanceFirebase();
+    }
+    const verify = window.governanceFunctions.httpsCallable('verifyAlrAdminAccess');
+    await verify({ pin });
+    await window.governanceAuth.currentUser.getIdToken(true);
+
     const admin = SYSTEM_ADMINS[0];
+    SESSION_KEY = await sha256(admin.username + pin);
+    SESSION_KEY_BUFFER = new TextEncoder().encode(SESSION_KEY);
     currentAdmin = admin;
     window.updateHeaderProfileBadge();
-    await loadFromStorage();
+    try { await loadFromStorage(); } catch (e) { console.warn('[WebAuthn Unlock] loadFromStorage error:', e); }
+
+    updateSaasSimulation();
+    startServerlessBillingCron();
+    loadBackupTelemetry();
+    await window.rehydrateDecryptedSettings();
+    await window.loadIntegrationSettings();
+    await window.initFirebaseSync();
+    await window.pullAllLicensesFromCloud(true);
+
     renderAll();
     showToast("Consola desbloqueada mediante biometría (WebAuthn).", "success");
     closeModal();
-    addAuditLog('SYSTEM', 'CONSOLA_DESBLOQUEO_BIOMETRICO', `Consola desbloqueada usando biometría de hardware (WebAuthn).`);
+    addAuditLog('SYSTEM', 'CONSOLA_DESBLOQUEO_BIOMETRICO', `Consola desbloqueada usando biometría de hardware (WebAuthn), verificada vía verifyAlrAdminAccess.`);
     window.resetInactivityTimer();
   } catch (err) {
     showToast("Error de autenticación biométrica: " + err.message, "danger");
@@ -7896,7 +7827,15 @@ window.downloadObfuscatedSdk = async function() {
   }
 };
 
-window.copyUniversalSdkSnippet = function(appId = 'kuatsi_central') {
+// Antes tenía un default silencioso a 'kuatsi_central' -- si se copiaba
+// sin editar al aprovisionar un cliente nuevo, ese cliente quedaba
+// gobernado por el estado de licencia de OTRO cliente. Ahora exige un
+// appId explícito.
+window.copyUniversalSdkSnippet = function(appId) {
+  if (!appId) {
+    showToast('Selecciona primero un cliente/app.', 'warning');
+    return;
+  }
   const tag = `<script src="https://brain-branding.web.app/alr-saas/alr-saas-gate-sdk.js" data-app-id="${appId}" data-project-id="brain-branding"></script>`;
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(tag).then(() => {
@@ -7907,6 +7846,20 @@ window.copyUniversalSdkSnippet = function(appId = 'kuatsi_central') {
   } else {
     prompt("Copie este script tag de 1 sola línea para integrar su aplicación:", tag);
   }
+};
+
+window.openCopySdkPicker = function() {
+  const ids = Array.from(new Set((state.licenses || []).map(l => l.id).filter(Boolean)));
+  if (ids.length === 0) {
+    showToast('No hay clientes registrados todavía.', 'warning');
+    return;
+  }
+  const choice = prompt(`Escribe el ID exacto del cliente para el que quieres el tag SDK:\n\n${ids.join('\n')}`, ids[0]);
+  if (!choice || !ids.includes(choice)) {
+    if (choice !== null) showToast('ID de cliente no reconocido.', 'danger');
+    return;
+  }
+  window.copyUniversalSdkSnippet(choice);
 };
 
 

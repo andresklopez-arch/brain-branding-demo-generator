@@ -3,7 +3,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { exec } = require('child_process');
+const { exec, execFile } = require('child_process');
 const { Worker } = require('worker_threads');
 const archiver = require('archiver');
 const AdmZip = require('adm-zip');
@@ -22,6 +22,27 @@ const PRIVATE_KEY_ENC_PATH = path.join(TRASH_DIR, 'audit_private_key.enc');
 const PUBLIC_KEY_PATH = path.join(TRASH_DIR, 'audit_public_key.pem');
 const CONFIG_PATH = path.join(TRASH_DIR, 'bridge_config.enc');
 const CONFIG_JSON_PATH = path.join(TRASH_DIR, 'bridge_config.json');
+
+// Whitelist estricta: solo lo que realmente puede ser el nombre de una
+// carpeta de proyecto en SCRATCH_DIR. Bloquea path traversal ("../"),
+// separadores de ruta, y cualquier metacarácter de shell que el fallback
+// de borrado en Windows pudiera interpretar si se colara en el nombre.
+const PROJECT_NAME_RE = /^[A-Za-z0-9_-]+$/;
+
+function assertValidProjectName(projectName) {
+  return typeof projectName === 'string' && PROJECT_NAME_RE.test(projectName);
+}
+
+// Resuelve projectName -> ruta absoluta DENTRO de SCRATCH_DIR, o null si
+// projectName es inválido o el resultado escaparía de SCRATCH_DIR
+// (defensa en profundidad además del whitelist de arriba).
+function resolveSafeScratchPath(projectName) {
+  if (!assertValidProjectName(projectName)) return null;
+  const resolved = path.resolve(SCRATCH_DIR, projectName);
+  const boundary = SCRATCH_DIR + path.sep;
+  if (resolved !== SCRATCH_DIR && !resolved.startsWith(boundary)) return null;
+  return resolved;
+}
 
 let auditPrivateKeyDecrypted = null; // Guardado en RAM únicamente
 let isAuditLogCorrupted = false;
@@ -847,6 +868,10 @@ app.post('/api/projects/trash', async (req, res) => {
   if (!projectName) {
     return res.status(400).json({ error: 'Falta projectName' });
   }
+  if (!assertValidProjectName(projectName)) {
+    writeAuditLog('TRASH_PROJECT', String(projectName), 'Rechazado: projectName con caracteres no permitidos (posible path traversal)', 'DENIED');
+    return res.status(400).json({ error: `Nombre de proyecto inválido: "${projectName}". Solo se permiten letras, números, guión y guión bajo.` });
+  }
 
   // 🛡️ VERIFICAR CAJA FUERTE (SAFE BOX)
   const safeBox = readSafeBox();
@@ -854,8 +879,8 @@ app.post('/api/projects/trash', async (req, res) => {
     return res.status(403).json({ error: `Acceso denegado: El proyecto "${projectName}" está blindado en la Caja Fuerte y no puede ser eliminado.` });
   }
 
-  const targetPath = path.join(SCRATCH_DIR, projectName);
-  if (!fs.existsSync(targetPath)) {
+  const targetPath = resolveSafeScratchPath(projectName);
+  if (!targetPath || !fs.existsSync(targetPath)) {
     return res.status(404).json({ error: `El proyecto "${projectName}" no existe en la PC.` });
   }
 
@@ -912,7 +937,11 @@ app.post('/api/projects/trash', async (req, res) => {
         } catch (rmErr) {
           console.warn(`[WARN] fs.rmSync falló, reintentando con rd /s /q:`, rmErr);
           const uncPath = `\\\\?\\${targetPath}`;
-          exec(`cmd /c "rd /s /q \\"${uncPath}\\""`, (err, stdout, stderr) => {
+          // execFile (sin shell) pasa uncPath como argv literal -- a
+          // diferencia de exec(), no lo interpreta una shell, así que
+          // metacaracteres como & | ; " en el nombre no pueden inyectar
+          // comandos adicionales.
+          execFile('cmd.exe', ['/c', 'rd', '/s', '/q', uncPath], (err, stdout, stderr) => {
             if (err) {
               console.error(`Error eliminando la carpeta ${targetPath}:`, err);
               writeAuditLog('TRASH_PROJECT', projectName, `Compreso y cifrado pero fallo borrado de carpeta: ${stderr || err.message}`, 'FAILED');
@@ -958,6 +987,10 @@ app.post('/api/projects/restore', async (req, res) => {
   const { projectName, customKey } = req.body;
   if (!projectName) {
     return res.status(400).json({ error: 'Falta projectName' });
+  }
+  if (!assertValidProjectName(projectName)) {
+    writeAuditLog('RESTORE_PROJECT', String(projectName), 'Rechazado: projectName con caracteres no permitidos (posible path traversal)', 'DENIED');
+    return res.status(400).json({ error: `Nombre de proyecto inválido: "${projectName}".` });
   }
 
   const manifest = readManifest();
@@ -1036,6 +1069,10 @@ app.post('/api/projects/purge-force', (req, res) => {
   const { projectName } = req.body;
   if (!projectName) {
     return res.status(400).json({ error: 'Falta projectName' });
+  }
+  if (!assertValidProjectName(projectName)) {
+    writeAuditLog('PURGE_PROJECT_FORCE', String(projectName), 'Rechazado: projectName con caracteres no permitidos (posible path traversal)', 'DENIED');
+    return res.status(400).json({ error: `Nombre de proyecto inválido: "${projectName}".` });
   }
 
   try {

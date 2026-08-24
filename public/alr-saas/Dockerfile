@@ -5,7 +5,6 @@ FROM nginx:alpine
 COPY index.html /usr/share/nginx/html/index.html
 COPY app.js /usr/share/nginx/html/app.js
 COPY index.css /usr/share/nginx/html/index.css
-COPY ReyLicensingValidator.js /usr/share/nginx/html/ReyLicensingValidator.js
 
 # Exponer el puerto estándar HTTP
 EXPOSE 80

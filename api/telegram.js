@@ -46,79 +46,14 @@ app.use(express.json({ limit: '10mb', verify: (req, res, buf) => { req.rawBody =
 app.use(express.text({ type: '*/*', limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ================================================================
-// 🔐 ALR SaaS GOVERNANCE API — REGISTRADO ANTES DE express.static
-// (El static middleware capturaría estas rutas si van después)
-// ================================================================
+// Los endpoints /api/governance/* (PATCH sin auth real a Firestore,
+// dependientes de que firestore.rules estuviera abierta a todo internet)
+// se retiraron -- ver functions/index.js: verifyAlrAdminAccess/
+// getPublicLicenseStatus y app.js: syncLicenseToFirestore, que ahora
+// escriben directo y autenticado. ALR_GOVERNANCE_SECRET se conserva
+// porque lo siguen usando 2 endpoints de diagnóstico interno no
+// relacionados con licenciamiento (más abajo).
 const ALR_GOVERNANCE_SECRET = 'alr-saas-master-2025-brain';
-const KUATSI_DOC_IDS = ['kuatsi_central', 'kuatsi', 'kuatsi-cafeteria'];
-
-function patchFirestoreStatus(docId, status) {
-  return new Promise((resolve) => {
-    const payload = JSON.stringify({ fields: { status: { stringValue: status } } });
-    const fsPath = `/v1/projects/brain-branding/databases/(default)/documents/master_licenses/${docId}?updateMask.fieldPaths=status`;
-    const req = https.request({
-      hostname: 'firestore.googleapis.com', port: 443, path: fsPath, method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
-    }, (res) => {
-      let body = '';
-      res.on('data', c => body += c);
-      res.on('end', () => {
-        try {
-          const d = JSON.parse(body);
-          resolve({ docId, ok: res.statusCode === 200, status: d.fields?.status?.stringValue, httpCode: res.statusCode });
-        } catch (e) {
-          resolve({ docId, ok: false, error: e.message, httpCode: res.statusCode });
-        }
-      });
-    });
-    req.on('error', e => resolve({ docId, ok: false, error: e.message }));
-    req.write(payload); req.end();
-  });
-}
-
-app.post('/api/governance/set-status', async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(204).end();
-
-  const { licenseId, status, callerKey } = req.body || {};
-  if (callerKey !== ALR_GOVERNANCE_SECRET) {
-    return res.status(403).json({ ok: false, error: 'Not authorized.' });
-  }
-  const validStatuses = ['ACTIVE', 'SUSPENDED', 'EXPIRED'];
-  const normalized = (status || '').toUpperCase();
-  if (!validStatuses.includes(normalized)) {
-    return res.status(400).json({ ok: false, error: `Invalid status: ${status}` });
-  }
-  const docIds = Array.from(new Set([...KUATSI_DOC_IDS, ...(licenseId && !KUATSI_DOC_IDS.includes(licenseId) ? [licenseId] : [])]));
-  console.log(`[GOVERNANCE API] ⚡ Writing "${normalized}" → docs: ${docIds.join(', ')}`);
-  const results = await Promise.all(docIds.map(d => patchFirestoreStatus(d, normalized)));
-  const allOk = results.every(r => r.ok);
-  console.log(`[GOVERNANCE API] ${allOk ? '✅' : '❌'} Result:`, JSON.stringify(results));
-  return res.status(allOk ? 200 : 207).json({ ok: allOk, status: normalized, results, timestamp: new Date().toISOString() });
-});
-
-app.get('/api/governance/status', async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  https.get(`https://firestore.googleapis.com/v1/projects/brain-branding/databases/(default)/documents/master_licenses/kuatsi_central?t=${Date.now()}`, (fsRes) => {
-    let body = ''; fsRes.on('data', c => body += c);
-    fsRes.on('end', () => {
-      try {
-        const d = JSON.parse(body);
-        res.json({ ok: true, status: d.fields?.status?.stringValue || 'UNKNOWN', lastUpdated: d.fields?.lastUpdated?.stringValue, source: 'firestore:kuatsi_central' });
-      } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-    });
-  }).on('error', e => res.status(500).json({ ok: false, error: e.message }));
-});
-
-app.options('/api/governance/set-status', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.status(204).end();
-});
 
 // Antes esta contraseña solo se comparaba EN EL NAVEGADOR (index.html
 // tenía el hash escrito ahí y comparaba con crypto.subtle.digest del
@@ -412,6 +347,68 @@ function callTelegram(method, data) {
     req.end();
   });
 }
+
+// ================================================================
+// 🔐 ALR SAAS — Proxy autenticado hacia Telegram
+// Antes app.js tenía el token del bot hardcodeado en el JS público y
+// llamaba a api.telegram.org directo desde el navegador. Ahora el token
+// solo vive aquí (process.env.TELEGRAM_BOT_TOKEN) y el navegador pasa su
+// ID token de Firebase Auth (el mismo que ya protege Firestore) en vez
+// de un segundo secreto estático.
+// ================================================================
+const admin = require('firebase-admin');
+if (!admin.apps.length) {
+  // Basta con projectId para verificar ID tokens -- no requiere
+  // credencial de service account.
+  admin.initializeApp({ projectId: 'brain-branding' });
+}
+
+async function requireAlrSuperAdmin(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    if (!idToken) return res.status(401).json({ ok: false, error: 'Falta Authorization: Bearer <idToken>.' });
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    if (decoded.alrSuperAdmin !== true) {
+      return res.status(403).json({ ok: false, error: 'No autorizado.' });
+    }
+    next();
+  } catch (e) {
+    return res.status(401).json({ ok: false, error: 'Token inválido: ' + e.message });
+  }
+}
+
+app.post('/api/alr-notify/send', requireAlrSuperAdmin, async (req, res) => {
+  const { chatId, text, parseMode } = req.body || {};
+  if (!chatId || !text) return res.status(400).json({ ok: false, error: 'Falta chatId o text.' });
+  try {
+    const result = await callTelegram('sendMessage', { chat_id: chatId, text, parse_mode: parseMode || 'HTML' });
+    res.json(result);
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/alr-notify/getMe', requireAlrSuperAdmin, async (req, res) => {
+  try { res.json(await callTelegram('getMe', {})); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/alr-notify/getUpdates', requireAlrSuperAdmin, async (req, res) => {
+  const limit = Number(req.query.limit) || 10;
+  try { res.json(await callTelegram('getUpdates', { limit, allowed_updates: ['message', 'callback_query'] })); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/alr-notify/editMessage', requireAlrSuperAdmin, async (req, res) => {
+  const { chatId, messageId, text } = req.body || {};
+  try { res.json(await callTelegram('editMessageText', { chat_id: chatId, message_id: messageId, text, parse_mode: 'HTML' })); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/alr-notify/answerCallback', requireAlrSuperAdmin, async (req, res) => {
+  const { callbackQueryId, text } = req.body || {};
+  try { res.json(await callTelegram('answerCallbackQuery', { callback_query_id: callbackQueryId, text })); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
 
 // ================================================================
 // 🔬 SERO LAB LIMS 4.0 REQUIREMENTS SYNC & REALTIME ALERTS API
