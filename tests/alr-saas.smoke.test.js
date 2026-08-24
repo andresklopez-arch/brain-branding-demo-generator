@@ -164,6 +164,28 @@ async function firestoreSet(idToken, path, fields) {
   const cloneNoRegistry = await callFunction("provisionAppClone", adminFreshToken, { appId: "app_sin_registro_de_clonado", tenantId: "smoke_clone_test2", businessName: "Smoke Clone Test 2" });
   check("provisionAppClone con appId sin registro en alr-saas-app-registry falla con failed-precondition", cloneNoRegistry.status !== 200 && /auto-clonado/i.test(cloneNoRegistry.json.error?.message || ""), JSON.stringify(cloneNoRegistry.json));
 
+  // --- deprovisionAppClone / testAppCloneConnection / listLoginAttempts: gating ---
+  // Mismo criterio que arriba: solo se prueba en automático que ninguna
+  // de las 3 funciones nuevas (borrado real, probar conexión, auditoría)
+  // es alcanzable sin el claim alrSuperAdmin. El flujo feliz de
+  // deprovisionAppClone se prueba manualmente en producción, igual que
+  // provisionAppClone.
+  const noClaimUser2 = await signInAnon();
+  const deprovDenied = await callFunction("deprovisionAppClone", noClaimUser2.idToken, { appId: "no_existe", tenantId: "smoke_deprov_test" });
+  check("deprovisionAppClone SIN claim alrSuperAdmin es denegado", deprovDenied.status !== 200 || !!deprovDenied.json.error, JSON.stringify(deprovDenied.json));
+
+  const testConnDenied = await callFunction("testAppCloneConnection", noClaimUser2.idToken, { appId: "no_existe" });
+  check("testAppCloneConnection SIN claim alrSuperAdmin es denegado", testConnDenied.status !== 200 || !!testConnDenied.json.error, JSON.stringify(testConnDenied.json));
+
+  const testConnNoRegistry = await callFunction("testAppCloneConnection", adminFreshToken, { appId: "app_sin_registro_de_clonado" });
+  check("testAppCloneConnection con appId sin registro falla con failed-precondition", testConnNoRegistry.status !== 200 && /auto-clonado/i.test(testConnNoRegistry.json.error?.message || ""), JSON.stringify(testConnNoRegistry.json));
+
+  const listAttemptsDenied = await callFunction("listLoginAttempts", noClaimUser2.idToken, {});
+  check("listLoginAttempts SIN claim alrSuperAdmin es denegado", listAttemptsDenied.status !== 200 || !!listAttemptsDenied.json.error, JSON.stringify(listAttemptsDenied.json));
+
+  const listAttemptsOk = await callFunction("listLoginAttempts", adminFreshToken, {});
+  check("listLoginAttempts con claim alrSuperAdmin responde ok con un arreglo", listAttemptsOk.status === 200 && Array.isArray(listAttemptsOk.json.result?.attempts), JSON.stringify(listAttemptsOk.json));
+
   console.log(`\n${passed} prueba(s) pasaron, ${failed} fallaron.`);
   process.exit(failed > 0 ? 1 : 0);
 })().catch(e => { console.error("Error inesperado:", e); process.exit(1); });

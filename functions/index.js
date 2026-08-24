@@ -288,13 +288,52 @@ async function checkAndConsumeRateLimit(ip) {
   return { ref, failCount: data.failCount || 0 };
 }
 
-async function registerFailedAttempt(ref, failCount) {
+// Mismo chat que ya usa api/telegram.js (ADMIN_CHAT_ID ahí) -- un chat id
+// de Telegram no es un secreto (solo identifica la conversación), la
+// credencial real es el bot token, que nunca sale de Render/Secret
+// Manager. La ID token que exige el proxy se obtiene aquí mismo con un
+// custom token del propio Admin SDK (nunca se guarda ni se expone).
+const ALR_ALERT_CHAT_ID = '8337803949';
+const ALR_WEB_API_KEY = 'AIzaSyCgIpvZux4c6VjBI31KX8rACPe-zDSVRYo';
+const ALR_NOTIFY_PROXY_BASE = 'https://brain-branding-demo-generator.onrender.com';
+const CONSECUTIVE_FAILS_ALERT_THRESHOLD = 3;
+
+async function sendAlrSecurityAlert(text) {
+  try {
+    const customToken = await admin.auth().createCustomToken('alr-system-alerter', { alrSuperAdmin: true });
+    const signInRes = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${ALR_WEB_API_KEY}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: customToken, returnSecureToken: true })
+    });
+    const signInJson = await signInRes.json();
+    if (!signInJson.idToken) throw new Error(signInJson.error?.message || 'Sin idToken');
+    await fetch(`${ALR_NOTIFY_PROXY_BASE}/api/alr-notify/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${signInJson.idToken}` },
+      body: JSON.stringify({ chatId: ALR_ALERT_CHAT_ID, text, parseMode: 'HTML' })
+    });
+  } catch (err) {
+    // Una alerta que no se pudo enviar nunca debe tumbar el flujo de
+    // autenticación real -- solo se registra en logs.
+    console.error('[sendAlrSecurityAlert] Fallo al enviar alerta:', err);
+  }
+}
+
+async function registerFailedAttempt(ref, failCount, context) {
   const nextCount = failCount + 1;
   const update = { failCount: nextCount, lastAttempt: Date.now() };
   if (nextCount >= MAX_FAILED_ATTEMPTS) {
     update.lockedUntil = Date.now() + LOCKOUT_MS;
   }
   await ref.set(update, { merge: true });
+
+  if (nextCount === CONSECUTIVE_FAILS_ALERT_THRESHOLD) {
+    const ip = context?.ip || 'IP desconocida';
+    const fn = context?.fn || 'login';
+    await sendAlrSecurityAlert(
+      `⚠️ <b>ALR SaaS</b>: ${nextCount} intentos fallidos seguidos en <code>${fn}</code> desde IP <code>${ip}</code>. Si no fuiste tú, revisa la consola.`
+    );
+  }
 }
 
 async function clearRateLimit(ref) {
@@ -319,7 +358,7 @@ exports.verifyAlrAdminAccess = onCall({ region: ALR_REGION, secrets: [ALR_ADMIN_
   const username = String(data?.username || 'Master Admin');
 
   if (!pin || !alrSafeEqual(pin, ALR_ADMIN_PIN.value())) {
-    await registerFailedAttempt(rateLimitRef, failCount);
+    await registerFailedAttempt(rateLimitRef, failCount, { ip, fn: 'verifyAlrAdminAccess/pin' });
     throw new HttpsError('permission-denied', 'PIN inválido.');
   }
 
@@ -332,7 +371,7 @@ exports.verifyAlrAdminAccess = onCall({ region: ALR_REGION, secrets: [ALR_ADMIN_
     const secret = totpSnap.data().secret;
     const totpValid = totpCode.length === 6 && authenticator.verify({ token: totpCode, secret });
     if (!totpValid) {
-      await registerFailedAttempt(rateLimitRef, failCount);
+      await registerFailedAttempt(rateLimitRef, failCount, { ip, fn: 'verifyAlrAdminAccess/totp' });
       throw new HttpsError('permission-denied', totpCode ? 'Código 2FA inválido.' : 'Falta el código 2FA.');
     }
   }
@@ -526,5 +565,145 @@ exports.provisionAppClone = onCall({ region: ALR_REGION }, async (request) => {
   }, { merge: true });
 
   return { ok: true, tenantId, connectSecret: remoteResult?.connectSecret || null, appUrl };
+});
+
+// --- deprovisionAppClone({ appId, tenantId }) ----------------------------
+// Contraparte destructiva de provisionAppClone: borra DE VERDAD el tenant
+// en la app destino (todas sus colecciones, ver deleteTenant en
+// rey-xalpa/Rey_Xalpa_temp/functions/index.js) y retira la licencia de
+// master_licenses aquí. Irreversible -- requiere alrSuperAdmin + el
+// adminPin guardado en el registro (mismo PIN que usa el panel maestro
+// de la app destino, ver openAppCloneConfigModal en app.js).
+exports.deprovisionAppClone = onCall({ region: ALR_REGION }, async (request) => {
+  const { auth, data } = request;
+  if (!auth || auth.token?.alrSuperAdmin !== true) {
+    throw new HttpsError('permission-denied', 'Requiere sesión de administrador activa.');
+  }
+
+  const appId = String(data?.appId || '').trim();
+  const tenantId = String(data?.tenantId || '').trim().toLowerCase();
+  if (!appId) throw new HttpsError('invalid-argument', 'Falta appId.');
+  if (!CLONE_TENANT_ID_RE.test(tenantId)) {
+    throw new HttpsError('invalid-argument', 'tenantId inválido.');
+  }
+
+  const registrySnap = await adminDb.collection('alr-saas-app-registry').doc(appId).get();
+  if (!registrySnap.exists) {
+    throw new HttpsError('failed-precondition', 'Esta app no tiene auto-clonado configurado.');
+  }
+  const { firebaseProjectId, functionsRegion, webApiKey, deleteFunctionName, adminPin } = registrySnap.data() || {};
+  if (!firebaseProjectId || !functionsRegion || !webApiKey || !deleteFunctionName || !adminPin) {
+    throw new HttpsError('failed-precondition', 'Falta configurar el borrado (deleteFunctionName/adminPin) para esta app.');
+  }
+
+  let idToken;
+  try {
+    const signUpRes = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${encodeURIComponent(webApiKey)}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnSecureToken: true }) }
+    );
+    const signUpJson = await signUpRes.json();
+    idToken = signUpJson.idToken;
+    if (!idToken) throw new Error(signUpJson.error?.message || 'Sin idToken');
+  } catch (err) {
+    console.error('[deprovisionAppClone] Fallo al autenticar contra la app destino:', err);
+    throw new HttpsError('unavailable', 'No se pudo iniciar sesión contra la app destino.');
+  }
+
+  let remoteResult;
+  try {
+    const fnRes = await fetch(
+      `https://${functionsRegion}-${firebaseProjectId}.cloudfunctions.net/${deleteFunctionName}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ data: { pin: adminPin, tenantId } })
+      }
+    );
+    const fnJson = await fnRes.json();
+    if (!fnRes.ok || fnJson.error) {
+      throw new HttpsError(
+        mapRemoteCallableCode(fnJson.error?.status),
+        fnJson.error?.message || `La app destino respondió ${fnRes.status}.`
+      );
+    }
+    remoteResult = fnJson.result;
+  } catch (err) {
+    if (err instanceof HttpsError) throw err;
+    console.error('[deprovisionAppClone] Fallo al llamar a la app destino:', err);
+    throw new HttpsError('unavailable', 'No se pudo contactar a la app destino.');
+  }
+
+  await adminDb.collection('master_licenses').doc(tenantId).delete().catch(() => {});
+  await adminDb.collection('master_licenses').doc(tenantId).collection('secrets').doc('apiKey').delete().catch(() => {});
+
+  return { ok: true, tenantId, collectionsDeleted: remoteResult?.collectionsDeleted || [] };
+});
+
+// --- testAppCloneConnection({ appId }) -----------------------------------
+// "Probar conexión" del panel de Auto-clonado: valida que webApiKey y
+// registerFunctionName realmente funcionan SIN crear ningún tenant --
+// llama a la función destino con un tenantId deliberadamente inválido
+// ("__ping__", falla la validación TENANT_ID_RE del lado de la app
+// destino) y confirma que la respuesta es un error JSON estructurado de
+// esa función (prueba que existe y es alcanzable), no un 404/HTML de
+// infraestructura.
+exports.testAppCloneConnection = onCall({ region: ALR_REGION }, async (request) => {
+  const { auth, data } = request;
+  if (!auth || auth.token?.alrSuperAdmin !== true) {
+    throw new HttpsError('permission-denied', 'Requiere sesión de administrador activa.');
+  }
+
+  const appId = String(data?.appId || '').trim();
+  const registrySnap = await adminDb.collection('alr-saas-app-registry').doc(appId).get();
+  if (!registrySnap.exists) {
+    throw new HttpsError('failed-precondition', 'Esta app no tiene auto-clonado configurado.');
+  }
+  const { firebaseProjectId, functionsRegion, webApiKey, registerFunctionName } = registrySnap.data() || {};
+  if (!firebaseProjectId || !functionsRegion || !webApiKey || !registerFunctionName) {
+    throw new HttpsError('failed-precondition', 'El registro de esta app está incompleto.');
+  }
+
+  const signUpRes = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${encodeURIComponent(webApiKey)}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnSecureToken: true }) }
+  ).catch(() => null);
+  const signUpJson = signUpRes ? await signUpRes.json().catch(() => ({})) : {};
+  if (!signUpJson.idToken) {
+    return { ok: false, step: 'auth', detail: signUpJson.error?.message || 'webApiKey inválida o auth anónima desactivada en el proyecto destino.' };
+  }
+
+  const fnRes = await fetch(
+    `https://${functionsRegion}-${firebaseProjectId}.cloudfunctions.net/${registerFunctionName}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${signUpJson.idToken}` },
+      body: JSON.stringify({ data: { name: 'Ping de prueba', tenantId: '__ping__' } })
+    }
+  ).catch(() => null);
+  if (!fnRes) {
+    return { ok: false, step: 'function', detail: 'No se pudo contactar la función -- revisa región/proyecto.' };
+  }
+  const fnJson = await fnRes.json().catch(() => null);
+  if (!fnJson || (!fnJson.error && !fnJson.result)) {
+    return { ok: false, step: 'function', detail: `Respuesta inesperada (status ${fnRes.status}) -- la función probablemente no existe con ese nombre.` };
+  }
+
+  return { ok: true, detail: 'Conexión verificada: la app destino respondió correctamente.' };
+});
+
+// --- listLoginAttempts() --------------------------------------------------
+// Panel de auditoría: expone alr_login_attempts (rate-limit por IP de
+// verifyAlrAdminAccess) de solo lectura -- esa colección no tiene reglas
+// propias en firestore.rules (default-deny), así que el navegador nunca
+// la lee directo; solo a través de esta función admin-gated.
+exports.listLoginAttempts = onCall({ region: ALR_REGION }, async (request) => {
+  const { auth } = request;
+  if (!auth || auth.token?.alrSuperAdmin !== true) {
+    throw new HttpsError('permission-denied', 'Requiere sesión de administrador activa.');
+  }
+  const snap = await adminDb.collection(LOGIN_ATTEMPTS_COLLECTION).orderBy('lastAttempt', 'desc').limit(100).get();
+  const attempts = snap.docs.map((doc) => ({ ip: doc.id, ...doc.data() }));
+  return { ok: true, attempts };
 });
 

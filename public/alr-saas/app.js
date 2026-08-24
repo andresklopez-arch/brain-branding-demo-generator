@@ -1347,9 +1347,14 @@ function renderDashboardTable() {
             <button class="btn btn-secondary" style="height: 30px; width: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: ${isOnline ? 'var(--danger)' : 'var(--success)'};" onclick="window.toggleLicenseStatus('${escapeHtml(l.id)}', '${l.status}')" title="${isOnline ? 'Suspender Acceso' : 'Reactivar Acceso'}">
               <i class="${isOnline ? 'ri-shut-down-line' : 'ri-play-circle-line'}" style="font-size: 13px;"></i>
             </button>
-            <button class="btn btn-danger-outline" style="height: 30px; width: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center;" onclick="window.deleteLicense('${escapeHtml(l.id)}')" title="Eliminar Cliente / Mover a Papelera de Reciclaje">
+            <button class="btn btn-danger-outline" style="height: 30px; width: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center;" onclick="window.deleteLicense('${escapeHtml(l.id)}')" title="Eliminar Cliente / Mover a Papelera de Reciclaje (solo en ALR SaaS, no borra nada en la app destino)">
               <i class="ri-delete-bin-line" style="font-size: 13px;"></i>
             </button>
+            ${(state.appRegistry && state.appRegistry[l.appId] && state.appRegistry[l.appId].deleteFunctionName) ? `
+            <button class="btn btn-danger-outline" style="height: 30px; width: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: rgba(239,68,68,0.12);" onclick="window.deprovisionTenantReal('${escapeHtml(l.id)}', '${escapeHtml(l.appId)}', '${escapeHtml(l.clientName)}')" title="⚠️ Borrado DURO: elimina TODOS los datos del tenant en la app destino, irreversible">
+              <i class="ri-delete-bin-2-fill" style="font-size: 13px;"></i>
+            </button>
+            ` : ''}
           </div>
         </td>
       </tr>
@@ -3388,6 +3393,37 @@ window.deleteLicense = function(clientId) {
   });
 };
 
+// Borrado DURO real: llama a deprovisionAppClone, que borra TODAS las
+// colecciones del tenant en la app destino (irreversible, ver deleteTenant
+// del lado de esa app) además de quitar la licencia de ALR SaaS. Distinto
+// de deleteLicense (que solo mueve la licencia local a la papelera sin
+// tocar la app destino) -- por eso pide una confirmación escrita, no solo
+// un confirm().
+window.deprovisionTenantReal = function(clientId, appId, clientName) {
+  requestAdminVerification(`Borrar tenant real (${clientName})`, () => {
+    const typed = prompt(`⚠️ ESTO ES IRREVERSIBLE.\n\nVas a borrar TODOS los datos de "${clientName}" (${clientId}) en la app destino -- órdenes, empleados, caja, todo. No hay respaldo automático.\n\nPara confirmar, escribe exactamente: BORRAR ${clientId}`);
+    if (typed !== `BORRAR ${clientId}`) {
+      showToast("Borrado cancelado. La confirmación no coincidió.", "warning");
+      return;
+    }
+
+    (async () => {
+      try {
+        showToast(`Borrando tenant ${escapeHtml(clientName)}...`, "info");
+        const call = window.governanceFunctions.httpsCallable('deprovisionAppClone');
+        await call({ appId, tenantId: clientId });
+        addAuditLog('ORQUESTADOR', 'BORRADO_TENANT_REAL', `Tenant ${clientName} (${clientId}) borrado por completo en la app destino y en ALR SaaS.`);
+        await window.pullAllLicensesFromCloud(true);
+        renderAll();
+        showToast(`Tenant ${escapeHtml(clientName)} borrado por completo.`, "success");
+      } catch (err) {
+        console.error('[DEPROVISION ERR]', err);
+        showToast(`Error al borrar: ${escapeHtml(err.message || String(err))}`, "danger");
+      }
+    })();
+  });
+};
+
 window.restoreLicense = function(clientId) {
   const binIndex = state.recycleBin.findIndex(item => item.license.id === clientId);
   if (binIndex === -1) return;
@@ -4005,6 +4041,73 @@ window.updateHeaderProfileBadge = function() {
   avatarCircle.style.boxShadow = `0 0 10px ${glowColor}`;
   if (typeof window.loadIntegrationSettings === 'function') {
     window.loadIntegrationSettings();
+  }
+};
+
+// Panel de auditoría: lee alr_login_attempts (rate-limit por IP de
+// verifyAlrAdminAccess) vía la Cloud Function listLoginAttempts -- esa
+// colección no tiene reglas propias, así que el navegador no puede leerla
+// directo, solo a través de esa función admin-gated.
+window.openLoginAttemptsModal = async function() {
+  const overlay = document.getElementById('modal-overlay');
+  const box = document.getElementById('modal-box');
+  if (!overlay || !box) return;
+
+  box.innerHTML = `
+    <div style="padding: 30px; text-align: left; max-height:85vh; overflow-y:auto;" class="custom-scroll">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px;">
+        <h3 style="font-size: 16px; font-weight: 900; color: var(--accent); text-transform: uppercase;">🔒 Intentos fallidos de acceso</h3>
+        <button class="btn btn-secondary" style="width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 16px;" onclick="closeModal()">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <div id="login-attempts-body" style="font-size: 12px; opacity: 0.6;">Cargando...</div>
+    </div>
+  `;
+  overlay.classList.add('active');
+  overlay.style.display = 'flex';
+
+  try {
+    const call = window.governanceFunctions.httpsCallable('listLoginAttempts');
+    const res = await call();
+    const attempts = (res.data && res.data.attempts) || [];
+    const bodyEl = document.getElementById('login-attempts-body');
+    if (!bodyEl) return;
+
+    if (attempts.length === 0) {
+      bodyEl.innerHTML = `<p style="opacity:0.6;">Sin intentos fallidos registrados.</p>`;
+      return;
+    }
+
+    bodyEl.innerHTML = `
+      <table style="width:100%; border-collapse: collapse; font-size: 11px;">
+        <thead>
+          <tr style="text-align:left; opacity:0.6; text-transform:uppercase; font-size:9px;">
+            <th style="padding:6px;">IP</th>
+            <th style="padding:6px;">Fallos</th>
+            <th style="padding:6px;">Último intento</th>
+            <th style="padding:6px;">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${attempts.map(a => {
+            const locked = a.lockedUntil && a.lockedUntil > Date.now();
+            const lastAttempt = a.lastAttempt ? new Date(a.lastAttempt).toLocaleString('es-MX') : '—';
+            return `
+              <tr style="border-top: 1px solid var(--border-glass);">
+                <td style="padding:6px; font-family:monospace;">${escapeHtml(a.ip)}</td>
+                <td style="padding:6px; font-weight:900; color:${a.failCount >= 5 ? '#ef4444' : (a.failCount >= 3 ? '#f59e0b' : '#fff')};">${escapeHtml(String(a.failCount || 0))}</td>
+                <td style="padding:6px;">${escapeHtml(lastAttempt)}</td>
+                <td style="padding:6px;">${locked ? `<span style="color:#ef4444; font-weight:900;">BLOQUEADO</span>` : `<span style="opacity:0.5;">libre</span>`}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    const bodyEl = document.getElementById('login-attempts-body');
+    if (bodyEl) bodyEl.innerHTML = `<p style="color:#ef4444;">Error al cargar: ${escapeHtml(err.message || String(err))}</p>`;
   }
 };
 
@@ -7486,8 +7589,23 @@ window.openAppCloneConfigModal = function(appId) {
         <input type="text" id="clone-cfg-hosting" class="form-input" value="${g(existing.hostingBaseUrl)}" placeholder="https://rey-smart-wash.web.app">
       </div>
 
+      <div style="margin: 20px 0; border-top: 1px solid var(--border-glass); padding-top: 16px;">
+        <span style="font-size: 9px; font-weight: 800; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 10px;">Borrado de tenants (opcional, para el botón "Borrar tenant real")</span>
+        <div class="form-group">
+          <label class="form-label">Nombre de la función de borrado</label>
+          <input type="text" id="clone-cfg-delfnname" class="form-input" value="${g(existing.deleteFunctionName, 'deleteTenant')}" placeholder="deleteTenant">
+        </div>
+        <div class="form-group">
+          <label class="form-label">PIN de administrador de la app destino (ej. el mismo de comando_rey)</label>
+          <input type="password" id="clone-cfg-adminpin" class="form-input" value="${g(existing.adminPin)}" placeholder="•••••••">
+        </div>
+      </div>
+
+      <div id="clone-cfg-test-result" style="font-size: 11px; margin-bottom: 12px;"></div>
+
       <div style="display: flex; gap: 16px; margin-top: 24px;">
         <button class="btn btn-secondary flex-1" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-secondary flex-1" onclick="window.testAppCloneConfig('${g(appId)}')">Probar conexión</button>
         <button class="btn btn-primary flex-2" onclick="window.saveAppCloneConfig('${g(appId)}')">Guardar configuración</button>
       </div>
     </div>
@@ -7497,6 +7615,30 @@ window.openAppCloneConfigModal = function(appId) {
   overlay.style.display = 'flex';
 };
 
+// "Probar conexión" -- solo prueba webApiKey + registerFunctionName SIN
+// crear ningún tenant (ver testAppCloneConnection en functions/index.js).
+// Requiere haber guardado la config primero (lee de state.appRegistry).
+window.testAppCloneConfig = async function(appId) {
+  const resultEl = document.getElementById('clone-cfg-test-result');
+  if (!state.appRegistry || !state.appRegistry[appId]) {
+    if (resultEl) resultEl.innerHTML = `<span style="color:#f59e0b;">Guarda la configuración primero para poder probarla.</span>`;
+    return;
+  }
+  if (resultEl) resultEl.innerHTML = `<span style="opacity:0.6;">Probando conexión...</span>`;
+  try {
+    const call = window.governanceFunctions.httpsCallable('testAppCloneConnection');
+    const res = await call({ appId });
+    const { ok, detail } = res.data || {};
+    if (resultEl) {
+      resultEl.innerHTML = ok
+        ? `<span style="color:#2ecc71;">✅ ${escapeHtml(detail || 'Conexión verificada.')}</span>`
+        : `<span style="color:#ef4444;">❌ ${escapeHtml(detail || 'Falló la conexión.')}</span>`;
+    }
+  } catch (err) {
+    if (resultEl) resultEl.innerHTML = `<span style="color:#ef4444;">❌ ${escapeHtml(err.message || String(err))}</span>`;
+  }
+};
+
 window.saveAppCloneConfig = function(appId) {
   const getVal = (id) => document.getElementById(id)?.value?.trim() || '';
   const config = {
@@ -7504,7 +7646,9 @@ window.saveAppCloneConfig = function(appId) {
     functionsRegion: getVal('clone-cfg-region') || 'us-central1',
     webApiKey: getVal('clone-cfg-apikey'),
     registerFunctionName: getVal('clone-cfg-fnname') || 'registerTenant',
-    hostingBaseUrl: getVal('clone-cfg-hosting').replace(/\/$/, '')
+    hostingBaseUrl: getVal('clone-cfg-hosting').replace(/\/$/, ''),
+    deleteFunctionName: getVal('clone-cfg-delfnname') || 'deleteTenant',
+    adminPin: getVal('clone-cfg-adminpin')
   };
 
   if (!config.firebaseProjectId || !config.webApiKey || !config.hostingBaseUrl) {
