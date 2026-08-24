@@ -47,6 +47,14 @@ service cloud.firestore {
       allow read, write: if isAlrSuperAdmin();
     }
 
+    // Catálogo de apps con auto-clonado (registerTenant-equivalente por
+    // app-type) que usa provisionAppClone -- webApiKey aquí NO es secreta
+    // (ya vive pública en el app_config.js del propio cliente), pero se
+    // protege igual que el resto de la consola por consistencia.
+    match /alr-saas-app-registry/{appId} {
+      allow read, write: if isAlrSuperAdmin();
+    }
+
     // Sin match /{document=**} de respaldo: todo lo no cubierto
     // arriba queda denegado por defecto.
   }

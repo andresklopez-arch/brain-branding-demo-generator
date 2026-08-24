@@ -410,3 +410,121 @@ exports.getPublicLicenseStatus = onRequest({ region: ALR_REGION, cors: true }, a
   }
 });
 
+// --- provisionAppClone({ appId, tenantId, businessName }) ---------------
+// Clona una app ya construida para un cliente nuevo del mismo giro SIN
+// crear infraestructura nueva: llama al registerTenant (o equivalente)
+// que la app destino YA expone para alta de tenants dentro de su propio
+// proyecto Firebase (ver rey-xalpa/Rey_Xalpa_temp/functions/index.js:111,
+// que hace exactamente esto para autolavados). "appId" identifica el
+// app-type en alr-saas-app-registry -- ese doc dice a qué proyecto/función
+// llamar. Requiere claim alrSuperAdmin: a diferencia de un alta
+// self-service normal de la app destino (que solo pide sesión anónima),
+// aquí lo dispara el operador desde la consola central.
+const CLONE_TENANT_ID_RE = /^[a-z0-9_]{2,40}$/;
+const CALLABLE_ERROR_CODES = new Set([
+  'already-exists', 'invalid-argument', 'permission-denied', 'unauthenticated',
+  'not-found', 'resource-exhausted', 'failed-precondition', 'internal', 'unavailable'
+]);
+function mapRemoteCallableCode(status) {
+  if (!status) return 'internal';
+  const code = String(status).toLowerCase().replace(/_/g, '-');
+  return CALLABLE_ERROR_CODES.has(code) ? code : 'internal';
+}
+
+exports.provisionAppClone = onCall({ region: ALR_REGION }, async (request) => {
+  const { auth, data } = request;
+  if (!auth || auth.token?.alrSuperAdmin !== true) {
+    throw new HttpsError('permission-denied', 'Requiere sesión de administrador activa.');
+  }
+
+  const appId = String(data?.appId || '').trim();
+  const tenantId = String(data?.tenantId || '').trim().toLowerCase();
+  const businessName = String(data?.businessName || '').trim();
+
+  if (!appId) throw new HttpsError('invalid-argument', 'Falta appId.');
+  if (!CLONE_TENANT_ID_RE.test(tenantId)) {
+    throw new HttpsError('invalid-argument', 'tenantId inválido (usa minúsculas, números y guión bajo, 2-40 caracteres).');
+  }
+  if (businessName.length < 4) {
+    throw new HttpsError('invalid-argument', 'Nombre de negocio muy corto.');
+  }
+
+  const registrySnap = await adminDb.collection('alr-saas-app-registry').doc(appId).get();
+  if (!registrySnap.exists) {
+    throw new HttpsError('failed-precondition', 'Esta app no tiene auto-clonado configurado.');
+  }
+  const { firebaseProjectId, functionsRegion, webApiKey, registerFunctionName, hostingBaseUrl } = registrySnap.data() || {};
+  if (!firebaseProjectId || !functionsRegion || !webApiKey || !registerFunctionName || !hostingBaseUrl) {
+    throw new HttpsError('failed-precondition', 'El registro de esta app está incompleto.');
+  }
+
+  // 1. Sesión anónima contra el proyecto DESTINO (no brain-branding) --
+  // misma técnica que usa la propia app destino para su alta self-service,
+  // solo que disparada aquí server-to-server. webApiKey no es secreta: ya
+  // vive pública en el app_config.js de cada app cliente.
+  let idToken;
+  try {
+    const signUpRes = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${encodeURIComponent(webApiKey)}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnSecureToken: true }) }
+    );
+    const signUpJson = await signUpRes.json();
+    idToken = signUpJson.idToken;
+    if (!idToken) throw new Error(signUpJson.error?.message || 'Sin idToken');
+  } catch (err) {
+    console.error('[provisionAppClone] Fallo al autenticar contra la app destino:', err);
+    throw new HttpsError('unavailable', 'No se pudo iniciar sesión contra la app destino.');
+  }
+
+  // 2. Llamar a la función de alta de tenants de la app destino con el
+  // protocolo estándar de Cloud Functions callable (mismo que usa
+  // tests/alr-saas.smoke.test.js contra esta propia consola).
+  let remoteResult;
+  try {
+    const fnRes = await fetch(
+      `https://${functionsRegion}-${firebaseProjectId}.cloudfunctions.net/${registerFunctionName}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ data: { name: businessName, tenantId } })
+      }
+    );
+    const fnJson = await fnRes.json();
+    if (!fnRes.ok || fnJson.error) {
+      throw new HttpsError(
+        mapRemoteCallableCode(fnJson.error?.status),
+        fnJson.error?.message || `La app destino respondió ${fnRes.status}.`
+      );
+    }
+    remoteResult = fnJson.result;
+  } catch (err) {
+    if (err instanceof HttpsError) throw err;
+    console.error('[provisionAppClone] Fallo al llamar a la app destino:', err);
+    throw new HttpsError('unavailable', 'No se pudo contactar a la app destino.');
+  }
+
+  // 3. Registrar la licencia/gobernanza en brain-branding para que el
+  // cliente nuevo aparezca en el dashboard de ALR SaaS (activar/suspender/
+  // facturar) -- mismo set de campos base que syncLicenseToFirestore
+  // (app.js), escrito aquí server-side porque ya tenemos Admin SDK.
+  const appUrl = `${String(hostingBaseUrl).replace(/\/$/, '')}/${tenantId}`;
+  const nowIso = new Date().toISOString();
+  const expiry = new Date();
+  expiry.setDate(expiry.getDate() + 20);
+  await adminDb.collection('master_licenses').doc(tenantId).set({
+    id: tenantId,
+    clientName: businessName,
+    appId,
+    appName: appId,
+    appUrl,
+    status: 'ACTIVE',
+    expiryDate: expiry.toISOString(),
+    expirationDate: expiry.toISOString(),
+    currentPlan: 'PLATA',
+    lastUpdated: nowIso,
+    provisionedVia: 'provisionAppClone',
+  }, { merge: true });
+
+  return { ok: true, tenantId, connectSecret: remoteResult?.connectSecret || null, appUrl };
+});
+

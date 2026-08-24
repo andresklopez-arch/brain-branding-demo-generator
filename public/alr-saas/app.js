@@ -293,7 +293,8 @@ let state = {
   recycleBin: [],
   customSeeds: [],
   ledgerIntact: true,
-  importedDomain: null
+  importedDomain: null,
+  appRegistry: {}
 };
 
 // Configuración de Paginación de Telemetría
@@ -864,6 +865,24 @@ window.pullAllLicensesFromCloud = async function(silent = false) {
   } catch (err) {
     console.error("[PULL LICENSES ERR]", err);
     if (!silent) showToast(`Error consultando la nube: ${err.message}`, "danger");
+  }
+};
+
+// Catálogo de apps con auto-clonado (registerTenant-equivalente por
+// app-type, ver provisionAppClone en functions/index.js). state.appRegistry
+// queda como { [appId]: {firebaseProjectId, functionsRegion, webApiKey,
+// registerFunctionName, hostingBaseUrl} } -- si un appId no tiene entrada
+// aquí, el Asistente cae al flujo de solo-metadata de siempre.
+window.pullAppRegistryFromCloud = async function() {
+  if (!window.governanceDb) return;
+  try {
+    const snap = await window.governanceDb.collection('alr-saas-app-registry').get();
+    const registry = {};
+    snap.docs.forEach(doc => { registry[doc.id] = doc.data() || {}; });
+    state.appRegistry = registry;
+  } catch (err) {
+    console.warn("[PULL APP REGISTRY ERR]", err.message);
+    state.appRegistry = state.appRegistry || {};
   }
 };
 
@@ -1537,6 +1556,10 @@ function renderAppsPortfolio() {
               <!-- Sugerencia 7: Ver Semilla -->
               <a href="#" onclick="event.preventDefault(); window.viewSeedTemplateSchema('${escapeHtml(app.id)}')" style="color: var(--accent); font-size: 9px; text-decoration: none; font-weight: 800; border: 1px solid rgba(0, 229, 255, 0.15); padding: 3px 8px; border-radius: 8px; background: rgba(0, 229, 255, 0.03); display: inline-flex; align-items: center; gap: 4px;" title="Ver plantilla de semilla base de la aplicación">
                 <i class="ri-code-box-line"></i> Semilla
+              </a>
+              <!-- Auto-clonado: configura a qué proyecto/función llamar para dar de alta tenants nuevos con un clic desde el Asistente -->
+              <a href="#" onclick="event.preventDefault(); window.openAppCloneConfigModal('${escapeHtml(app.id)}')" style="color: ${(state.appRegistry && state.appRegistry[app.id]) ? '#2ecc71' : 'var(--accent)'}; font-size: 9px; text-decoration: none; font-weight: 800; border: 1px solid ${(state.appRegistry && state.appRegistry[app.id]) ? 'rgba(46,204,113,0.3)' : 'rgba(0, 229, 255, 0.15)'}; padding: 3px 8px; border-radius: 8px; background: ${(state.appRegistry && state.appRegistry[app.id]) ? 'rgba(46,204,113,0.06)' : 'rgba(0, 229, 255, 0.03)'}; display: inline-flex; align-items: center; gap: 4px;" title="Configurar el auto-clonado (alta de tenants con un clic) para esta app">
+                <i class="ri-file-copy-2-line"></i> ${(state.appRegistry && state.appRegistry[app.id]) ? 'Clonado ✓' : 'Auto-clonado'}
               </a>
               <!-- Botón Eliminar App -->
               <button onclick="event.preventDefault(); window.deleteAppFromPortfolio('${escapeHtml(app.id)}')" style="color: var(--danger); font-size: 9px; border: 1px solid rgba(239, 68, 68, 0.3); padding: 3px 8px; border-radius: 8px; background: rgba(239, 68, 68, 0.05); cursor: pointer; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;" title="Eliminar Aplicación del Catálogo Master">
@@ -2227,6 +2250,21 @@ window.processAprovisionamiento = async function() {
     return;
   }
 
+  // Si la app seleccionada tiene auto-clonado configurado (ver
+  // pullAppRegistryFromCloud / provisionAppClone), el alta real del
+  // cliente pasa por ahí -- NO por el flujo de abajo, que solo escribe
+  // metadata local sin dar de alta al cliente en la app destino.
+  if (state.appRegistry && state.appRegistry[appId]) {
+    if (state.licenses.some(l => l.id === clientId)) {
+      showToast(`El ID "${clientId}" ya está registrado en esta consola. Elige otro para clonar.`, "warning");
+      return;
+    }
+    window.requestAdminVerification(`Clonar app para cliente nuevo (${clientId})`, async () => {
+      await window.runAppCloneProvisioning(appId, clientId, clientName);
+    });
+    return;
+  }
+
   if (!SEED_TEMPLATES[appId]) {
     showToast("La plantilla semilla seleccionada no es válida o no existe.", "danger");
     return;
@@ -2357,6 +2395,73 @@ window.processAprovisionamiento = async function() {
   } else {
     await proceedWithProvisioning();
   }
+};
+
+// Alta real de un cliente nuevo sobre una app que ya tiene auto-clonado
+// (ver state.appRegistry / provisionAppClone). A diferencia del flujo de
+// arriba, esto SÍ da de alta al cliente en la app destino (mismo proyecto
+// Firebase, tenant nuevo aislado) -- no solo escribe metadata local.
+window.runAppCloneProvisioning = async function(appId, tenantId, businessName) {
+  try {
+    showToast(`Clonando app para ${escapeHtml(businessName)}...`, "info");
+    const call = window.governanceFunctions.httpsCallable('provisionAppClone');
+    const res = await call({ appId, tenantId, businessName });
+    const { tenantId: newTenantId, connectSecret, appUrl } = res.data || {};
+
+    addAuditLog('ORQUESTADOR', 'CLONAR_APP', `Cliente ${businessName} clonado con éxito sobre ${appId}. Tenant: ${newTenantId}.`);
+    await window.pullAllLicensesFromCloud(true);
+    renderAll();
+    window.showAppCloneSuccessModal({ businessName, tenantId: newTenantId, connectSecret, appUrl });
+  } catch (err) {
+    console.error('[CLONE APP ERR]', err);
+    showToast(`Error al clonar: ${escapeHtml(err.message || String(err))}`, "danger");
+  }
+};
+
+// El connectSecret solo se puede consultar UNA vez (lo genera
+// registerTenant en la app destino y no queda guardado en texto plano en
+// ningún lado accesible después) -- este modal obliga a copiarlo antes de
+// cerrar, no se puede volver a abrir con el mismo valor.
+window.showAppCloneSuccessModal = function({ businessName, tenantId, connectSecret, appUrl }) {
+  const overlay = document.getElementById('modal-overlay');
+  const box = document.getElementById('modal-box');
+  if (!overlay || !box) return;
+
+  box.innerHTML = `
+    <div style="padding: 30px; text-align: left; max-height:85vh; overflow-y:auto;" class="custom-scroll">
+      <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px;">
+        <h3 style="font-size: 16px; font-weight: 900; color: #2ecc71; text-transform: uppercase;">✅ App clonada con éxito</h3>
+      </div>
+
+      <p style="font-size: 13px; opacity: 0.85; margin-bottom: 14px;">
+        <strong>${escapeHtml(businessName)}</strong> ya quedó dado de alta como tenant <code>${escapeHtml(tenantId)}</code> en la app destino, con su admin por defecto (PIN <code>1111</code> -- pide al cliente que lo cambie en su primer ingreso).
+      </p>
+
+      <div style="margin-bottom: 14px;">
+        <label style="font-size: 10px; font-weight: 900; opacity: 0.6; text-transform: uppercase;">URL de la app</label>
+        <div style="display:flex; gap:8px; margin-top:4px;">
+          <input type="text" readonly value="${escapeHtml(appUrl || '')}" style="flex:1; background: rgba(255,255,255,0.05); border:1px solid var(--border-glass); border-radius:8px; padding:8px 10px; font-size:12px; color:#fff;">
+          <button class="btn btn-secondary" onclick="navigator.clipboard.writeText('${escapeHtml(appUrl || '')}'); showToast('URL copiada', 'success');">Copiar</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 10px; border: 1px solid rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); border-radius: 10px; padding: 14px;">
+        <label style="font-size: 10px; font-weight: 900; color: #ef4444; text-transform: uppercase;">⚠️ Código de conexión (connectSecret) -- se muestra UNA sola vez</label>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <input type="text" readonly value="${escapeHtml(connectSecret || '')}" style="flex:1; background: rgba(255,255,255,0.05); border:1px solid var(--border-glass); border-radius:8px; padding:8px 10px; font-size:12px; color:#fff; font-family:monospace;">
+          <button class="btn btn-secondary" onclick="navigator.clipboard.writeText('${escapeHtml(connectSecret || '')}'); showToast('Código copiado', 'success');">Copiar</button>
+        </div>
+        <p style="font-size: 10.5px; opacity: 0.8; margin-top: 8px;">Cópialo y entrégalo al cliente ahora mismo. Si lo pierdes, tendrá que rotarlo desde la propia app (invalida el anterior).</p>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 14px; border-top: 1px solid var(--border-glass); padding-top: 14px;">
+        <button class="btn btn-primary" onclick="closeModal()">Ya copié el código, cerrar</button>
+      </div>
+    </div>
+  `;
+
+  overlay.classList.add('active');
+  overlay.style.display = 'flex';
 };
 
 window.onWizardAppChange = function() {
@@ -4274,6 +4379,7 @@ window.unlockConsoleSession = async function() {
     await window.loadIntegrationSettings();
     await window.initFirebaseSync();
     await window.pullAllLicensesFromCloud(true);
+    await window.pullAppRegistryFromCloud();
 
     renderAll();
     showToast(`✅ Consola desbloqueada por ${username}`, "success");
@@ -7326,6 +7432,99 @@ window.updateAppColor = function(appId, color) {
   }
 };
 
+// Configuración de auto-clonado por app-type (una sola vez por app, no por
+// cliente) -- estos 5 campos le dicen a provisionAppClone a qué proyecto de
+// Firebase y a qué función de alta de tenants llamar cuando el Asistente
+// clona esta app para un cliente nuevo. webApiKey NO es secreta (ya vive
+// pública en el app_config.js de cada app cliente).
+window.openAppCloneConfigModal = function(appId) {
+  const overlay = document.getElementById('modal-overlay');
+  const box = document.getElementById('modal-box');
+  if (!overlay || !box) return;
+
+  const existing = (state.appRegistry && state.appRegistry[appId]) || {};
+  const g = (v, d = '') => escapeHtml(String(v ?? d));
+
+  box.innerHTML = `
+    <div style="padding: 30px; text-align: left; max-height:85vh; overflow-y:auto;" class="custom-scroll">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px;">
+        <h3 style="font-size: 16px; font-weight: 900; color: var(--accent); text-transform: uppercase;">Auto-clonado: ${g(appId)}</h3>
+        <button class="btn btn-secondary" style="width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 16px;" onclick="closeModal()">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <p style="font-size: 11px; opacity: 0.7; margin-bottom: 16px;">
+        Configura esto UNA vez por app (no por cliente). Con estos datos, el botón "Clonar" del Asistente dará de alta clientes nuevos como tenants reales dentro del proyecto ya desplegado, en vez de solo registrar metadata.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">Firebase Project ID</label>
+        <input type="text" id="clone-cfg-project" class="form-input" value="${g(existing.firebaseProjectId)}" placeholder="rey-smart-wash">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Región de Cloud Functions</label>
+        <input type="text" id="clone-cfg-region" class="form-input" value="${g(existing.functionsRegion, 'us-central1')}" placeholder="us-central1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Web API Key (pública, no es secreta)</label>
+        <input type="text" id="clone-cfg-apikey" class="form-input" value="${g(existing.webApiKey)}" placeholder="AIza...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nombre de la función de alta de tenants</label>
+        <input type="text" id="clone-cfg-fnname" class="form-input" value="${g(existing.registerFunctionName, 'registerTenant')}" placeholder="registerTenant">
+      </div>
+      <div class="form-group">
+        <label class="form-label">URL base de Hosting</label>
+        <input type="text" id="clone-cfg-hosting" class="form-input" value="${g(existing.hostingBaseUrl)}" placeholder="https://rey-smart-wash.web.app">
+      </div>
+
+      <div style="display: flex; gap: 16px; margin-top: 24px;">
+        <button class="btn btn-secondary flex-1" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary flex-2" onclick="window.saveAppCloneConfig('${g(appId)}')">Guardar configuración</button>
+      </div>
+    </div>
+  `;
+
+  overlay.classList.add('active');
+  overlay.style.display = 'flex';
+};
+
+window.saveAppCloneConfig = function(appId) {
+  const getVal = (id) => document.getElementById(id)?.value?.trim() || '';
+  const config = {
+    firebaseProjectId: getVal('clone-cfg-project'),
+    functionsRegion: getVal('clone-cfg-region') || 'us-central1',
+    webApiKey: getVal('clone-cfg-apikey'),
+    registerFunctionName: getVal('clone-cfg-fnname') || 'registerTenant',
+    hostingBaseUrl: getVal('clone-cfg-hosting').replace(/\/$/, '')
+  };
+
+  if (!config.firebaseProjectId || !config.webApiKey || !config.hostingBaseUrl) {
+    showToast("Completa Project ID, Web API Key y URL de Hosting.", "warning");
+    return;
+  }
+
+  window.requestAdminVerification(`Configurar auto-clonado (${appId})`, async () => {
+    if (!window.governanceDb) {
+      showToast("Sin sesión de gobernanza activa.", "warning");
+      return;
+    }
+    try {
+      await window.governanceDb.collection('alr-saas-app-registry').doc(appId).set(config, { merge: true });
+      if (!state.appRegistry) state.appRegistry = {};
+      state.appRegistry[appId] = config;
+      addAuditLog('SYSTEM', 'CONFIG_AUTO_CLONADO', `Auto-clonado configurado para ${appId} -> proyecto ${config.firebaseProjectId}.`);
+      showToast(`Auto-clonado de ${appId} guardado.`, "success");
+      closeModal();
+      renderAll();
+    } catch (err) {
+      console.error('[SAVE CLONE CONFIG ERR]', err);
+      showToast(`Error al guardar: ${err.message}`, "danger");
+    }
+  });
+};
+
 window.simulateClientUsage = function(licenseId) {
   const license = state.licenses.find(l => l.id === licenseId);
   if (!license) return;
@@ -7829,6 +8028,7 @@ window.unlockWithWebAuthn = async function() {
     await window.loadIntegrationSettings();
     await window.initFirebaseSync();
     await window.pullAllLicensesFromCloud(true);
+    await window.pullAppRegistryFromCloud();
 
     renderAll();
     showToast("Consola desbloqueada mediante biometría (WebAuthn).", "success");

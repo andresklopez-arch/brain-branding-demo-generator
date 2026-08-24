@@ -105,6 +105,12 @@ async function firestoreSet(idToken, path, fields) {
   const adminSecretRead = await firestoreGet(adminFreshToken, "master_licenses/testclient/secrets/apiKey");
   check("Con claim alrSuperAdmin SÍ puede leer secrets/apiKey", adminSecretRead.status === 200);
 
+  // --- firestore.rules: alr-saas-app-registry (config de auto-clonado) ---
+  const anonRegistryRead = await firestoreGet(anon.idToken, "alr-saas-app-registry/rey_xalpa");
+  check("Sesión anónima SIN claim NO puede leer alr-saas-app-registry", anonRegistryRead.status === 403 || !!anonRegistryRead.json.error);
+  const adminRegistryWrite = await firestoreSet(adminFreshToken, "alr-saas-app-registry/rey_xalpa", { firebaseProjectId: { stringValue: "rey-smart-wash" } });
+  check("Con claim alrSuperAdmin SÍ puede escribir alr-saas-app-registry", adminRegistryWrite.status === 200, JSON.stringify(adminRegistryWrite.json));
+
   // --- TOTP real ---
   const totpUser = "TotpSmokeAdmin";
   const enrollRes = await callFunction("enrollTotp", adminFreshToken, { username: totpUser });
@@ -143,6 +149,20 @@ async function firestoreSet(idToken, path, fields) {
     lastResult = await callFunction("verifyAlrAdminAccess", u.idToken, { pin: "000000", username: rateLimitUser });
   }
   check("Tras 6 intentos fallidos seguidos, la función bloquea por rate-limit (resource-exhausted)", lastResult.status !== 200 && /intentos fallidos/i.test(lastResult.json.error?.message || ""), JSON.stringify(lastResult.json));
+
+  // --- provisionAppClone: gating de acceso ---
+  // Cobertura parcial a propósito: probar el flujo feliz completo
+  // requeriría un segundo proyecto Firebase real (ej. rey-smart-wash) --
+  // eso se verifica manualmente contra producción (ver plan), no aquí.
+  // Lo que SÍ se prueba en automático es la parte crítica de seguridad:
+  // que nadie sin el claim alrSuperAdmin puede disparar un clonado, y que
+  // un appId sin auto-clonado configurado no intenta llamar a nada.
+  const cloneNoClaimUser = await signInAnon();
+  const cloneDenied = await callFunction("provisionAppClone", cloneNoClaimUser.idToken, { appId: "no_existe", tenantId: "smoke_clone_test", businessName: "Smoke Clone Test" });
+  check("provisionAppClone SIN claim alrSuperAdmin es denegado", cloneDenied.status !== 200 || !!cloneDenied.json.error, JSON.stringify(cloneDenied.json));
+
+  const cloneNoRegistry = await callFunction("provisionAppClone", adminFreshToken, { appId: "app_sin_registro_de_clonado", tenantId: "smoke_clone_test2", businessName: "Smoke Clone Test 2" });
+  check("provisionAppClone con appId sin registro en alr-saas-app-registry falla con failed-precondition", cloneNoRegistry.status !== 200 && /auto-clonado/i.test(cloneNoRegistry.json.error?.message || ""), JSON.stringify(cloneNoRegistry.json));
 
   console.log(`\n${passed} prueba(s) pasaron, ${failed} fallaron.`);
   process.exit(failed > 0 ? 1 : 0);
