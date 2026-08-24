@@ -1354,6 +1354,9 @@ function renderDashboardTable() {
             <button class="btn btn-danger-outline" style="height: 30px; width: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: rgba(239,68,68,0.12);" onclick="window.deprovisionTenantReal('${escapeHtml(l.id)}', '${escapeHtml(l.appId)}', '${escapeHtml(l.clientName)}')" title="⚠️ Borrado DURO: elimina TODOS los datos del tenant en la app destino, irreversible">
               <i class="ri-delete-bin-2-fill" style="font-size: 13px;"></i>
             </button>
+            <button class="btn btn-secondary" style="height: 30px; width: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: #f59e0b;" onclick="window.restoreTenantReal('${escapeHtml(l.id)}', '${escapeHtml(l.appId)}', '${escapeHtml(l.clientName)}')" title="Restaurar el respaldo más reciente de este tenant (deshace el último clonado/borrado)">
+              <i class="ri-history-line" style="font-size: 13px;"></i>
+            </button>
             ` : ''}
           </div>
         </td>
@@ -3419,6 +3422,37 @@ window.deprovisionTenantReal = function(clientId, appId, clientName) {
       } catch (err) {
         console.error('[DEPROVISION ERR]', err);
         showToast(`Error al borrar: ${escapeHtml(err.message || String(err))}`, "danger");
+      }
+    })();
+  });
+};
+
+// Restaura el respaldo más reciente de un tenant (deshace el último
+// clonado o borrado, ver createPreCloneBackup/createPreDeleteBackup del
+// lado de la app destino). Funciona incluso si el tenant ya no aparece
+// en la tabla de clientes (ej. después de un deprovisionTenantReal).
+window.restoreTenantReal = function(clientId, appId, clientName) {
+  if (!clientId) {
+    showToast("Falta el ID del tenant a restaurar.", "warning");
+    return;
+  }
+  requestAdminVerification(`Restaurar tenant (${clientName || clientId})`, () => {
+    if (!confirm(`¿Restaurar el respaldo más reciente de "${clientId}"? Esto sobrescribe cualquier dato actual de ese tenant con lo que había antes de la última operación (clonado o borrado).`)) return;
+
+    (async () => {
+      try {
+        showToast(`Restaurando ${escapeHtml(clientId)}...`, "info");
+        const call = window.governanceFunctions.httpsCallable('restoreAppCloneBackup');
+        const res = await call({ appId, tenantId: clientId });
+        const { backupType, snapshotAt, restoredDocs } = res.data || {};
+        addAuditLog('ORQUESTADOR', 'RESTAURACIÓN_TENANT_REAL', `Tenant ${clientId} restaurado desde respaldo (${backupType || 'desconocido'}, ${snapshotAt || ''}), ${restoredDocs || 0} documentos.`);
+        await window.pullAllLicensesFromCloud(true);
+        renderAll();
+        closeModal();
+        showToast(`Tenant ${escapeHtml(clientId)} restaurado (${escapeHtml(String(restoredDocs || 0))} documentos).`, "success");
+      } catch (err) {
+        console.error('[RESTORE TENANT ERR]', err);
+        showToast(`Error al restaurar: ${escapeHtml(err.message || String(err))}`, "danger");
       }
     })();
   });
@@ -7608,6 +7642,16 @@ window.openAppCloneConfigModal = function(appId) {
         <button class="btn btn-secondary flex-1" onclick="window.testAppCloneConfig('${g(appId)}')">Probar conexión</button>
         <button class="btn btn-primary flex-2" onclick="window.saveAppCloneConfig('${g(appId)}')">Guardar configuración</button>
       </div>
+
+      ${existing.deleteFunctionName ? `
+      <div style="margin-top: 20px; border-top: 1px solid var(--border-glass); padding-top: 16px;">
+        <span style="font-size: 9px; font-weight: 800; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 10px;">Restaurar un tenant (aunque ya no aparezca en la tabla, ej. borrado por error)</span>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="clone-cfg-restore-tenantid" class="form-input" placeholder="id del tenant a restaurar" style="flex:1;">
+          <button class="btn btn-secondary" style="color:#f59e0b;" onclick="window.restoreTenantReal(document.getElementById('clone-cfg-restore-tenantid').value.trim(), '${g(appId)}', document.getElementById('clone-cfg-restore-tenantid').value.trim())">Restaurar</button>
+        </div>
+      </div>
+      ` : ''}
     </div>
   `;
 

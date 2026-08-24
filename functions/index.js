@@ -640,6 +640,92 @@ exports.deprovisionAppClone = onCall({ region: ALR_REGION }, async (request) => 
   return { ok: true, tenantId, collectionsDeleted: remoteResult?.collectionsDeleted || [] };
 });
 
+// --- restoreAppCloneBackup({ appId, tenantId }) --------------------------
+// Deshace el último clonado o borrado de un tenant: llama a
+// restoreTenantBackup en la app destino, que reescribe el respaldo más
+// reciente guardado ahí (ver createPreCloneBackup/createPreDeleteBackup
+// en rey-xalpa/Rey_Xalpa_temp/functions/index.js) tal cual estaba antes
+// de la operación. Reutiliza la misma conexión (webApiKey/adminPin) que
+// provisionAppClone/deprovisionAppClone.
+exports.restoreAppCloneBackup = onCall({ region: ALR_REGION }, async (request) => {
+  const { auth, data } = request;
+  if (!auth || auth.token?.alrSuperAdmin !== true) {
+    throw new HttpsError('permission-denied', 'Requiere sesión de administrador activa.');
+  }
+
+  const appId = String(data?.appId || '').trim();
+  const tenantId = String(data?.tenantId || '').trim().toLowerCase();
+  if (!appId) throw new HttpsError('invalid-argument', 'Falta appId.');
+  if (!CLONE_TENANT_ID_RE.test(tenantId)) {
+    throw new HttpsError('invalid-argument', 'tenantId inválido.');
+  }
+
+  const registrySnap = await adminDb.collection('alr-saas-app-registry').doc(appId).get();
+  if (!registrySnap.exists) {
+    throw new HttpsError('failed-precondition', 'Esta app no tiene auto-clonado configurado.');
+  }
+  const { firebaseProjectId, functionsRegion, webApiKey, adminPin } = registrySnap.data() || {};
+  const restoreFunctionName = (registrySnap.data() || {}).restoreFunctionName || 'restoreTenantBackup';
+  if (!firebaseProjectId || !functionsRegion || !webApiKey || !adminPin) {
+    throw new HttpsError('failed-precondition', 'Falta configurar el borrado/restauración (adminPin) para esta app.');
+  }
+
+  let idToken;
+  try {
+    const signUpRes = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${encodeURIComponent(webApiKey)}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnSecureToken: true }) }
+    );
+    const signUpJson = await signUpRes.json();
+    idToken = signUpJson.idToken;
+    if (!idToken) throw new Error(signUpJson.error?.message || 'Sin idToken');
+  } catch (err) {
+    console.error('[restoreAppCloneBackup] Fallo al autenticar contra la app destino:', err);
+    throw new HttpsError('unavailable', 'No se pudo iniciar sesión contra la app destino.');
+  }
+
+  let remoteResult;
+  try {
+    const fnRes = await fetch(
+      `https://${functionsRegion}-${firebaseProjectId}.cloudfunctions.net/${restoreFunctionName}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ data: { pin: adminPin, tenantId } })
+      }
+    );
+    const fnJson = await fnRes.json();
+    if (!fnRes.ok || fnJson.error) {
+      throw new HttpsError(
+        mapRemoteCallableCode(fnJson.error?.status),
+        fnJson.error?.message || `La app destino respondió ${fnRes.status}.`
+      );
+    }
+    remoteResult = fnJson.result;
+  } catch (err) {
+    if (err instanceof HttpsError) throw err;
+    console.error('[restoreAppCloneBackup] Fallo al llamar a la app destino:', err);
+    throw new HttpsError('unavailable', 'No se pudo contactar a la app destino.');
+  }
+
+  // Si el tenant había sido borrado de ALR SaaS, vuelve a registrarse aquí
+  // también a partir de lo que la app destino diga que restauró (mismo
+  // formato/estado que tenía antes, así que el tenant reaparece en el
+  // dashboard como si nunca se hubiera ido).
+  if (remoteResult?.tenantId) {
+    await adminDb.collection('master_licenses').doc(tenantId).set({
+      id: tenantId,
+      appId,
+      appName: appId,
+      status: 'ACTIVE',
+      lastUpdated: new Date().toISOString(),
+      restoredFromBackup: remoteResult.backupId || null,
+    }, { merge: true });
+  }
+
+  return { ok: true, tenantId, ...remoteResult };
+});
+
 // --- testAppCloneConnection({ appId }) -----------------------------------
 // "Probar conexión" del panel de Auto-clonado: valida que webApiKey y
 // registerFunctionName realmente funcionan SIN crear ningún tenant --

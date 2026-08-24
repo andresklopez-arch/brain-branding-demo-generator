@@ -186,6 +186,9 @@ async function firestoreSet(idToken, path, fields) {
   const listAttemptsOk = await callFunction("listLoginAttempts", adminFreshToken, {});
   check("listLoginAttempts con claim alrSuperAdmin responde ok con un arreglo", listAttemptsOk.status === 200 && Array.isArray(listAttemptsOk.json.result?.attempts), JSON.stringify(listAttemptsOk.json));
 
+  const restoreDenied = await callFunction("restoreAppCloneBackup", noClaimUser2.idToken, { appId: "no_existe", tenantId: "smoke_restore_test" });
+  check("restoreAppCloneBackup SIN claim alrSuperAdmin es denegado", restoreDenied.status !== 200 || !!restoreDenied.json.error, JSON.stringify(restoreDenied.json));
+
   console.log(`\n${passed} prueba(s) pasaron, ${failed} fallaron.`);
   process.exit(failed > 0 ? 1 : 0);
 })().catch(e => { console.error("Error inesperado:", e); process.exit(1); });
