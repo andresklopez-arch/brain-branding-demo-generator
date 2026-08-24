@@ -4505,13 +4505,20 @@ window.firestoreDb = null;
 // ================================================================
 async function initGovernanceFirebase() {
   try {
+    // Config verificada contra `firebase apps:sdkconfig web` -- la que
+    // vivía aquí antes (apiKey terminado en "...VqGF3bI", appId
+    // "...29b64e") pertenecía a un app/proyecto que ya no existe bajo
+    // brain-branding y hacía fallar TODO signInAnonymously silenciosamente
+    // ("API key not valid"), lo que a su vez tumbaba cualquier intento de
+    // desbloquear la consola en producción -- nunca se notó porque las
+    // pruebas de esta sesión corrieron solo contra el emulador.
     const GOVERNANCE_CONFIG = {
-      apiKey: "AIzaSyC7yYMeYSVCiqVbLnBHGsv_UfCeVqGF3bI",
+      apiKey: "AIzaSyCgIpvZux4c6VjBI31KX8rACPe-zDSVRYo",
       authDomain: "brain-branding.firebaseapp.com",
       projectId: "brain-branding",
-      storageBucket: "brain-branding.appspot.com",
-      messagingSenderId: "464083309532",
-      appId: "1:464083309532:web:99b83aeb55af0b3e29b64e"
+      storageBucket: "brain-branding.firebasestorage.app",
+      messagingSenderId: "545863893528",
+      appId: "1:545863893528:web:f0e82a190dbaa5d743396d"
     };
 
     if (typeof firebase === 'undefined' || !firebase.initializeApp) {
