@@ -865,7 +865,12 @@ window.pullAllLicensesFromCloud = async function(silent = false) {
         startDate: d.startDate || '2025-01-01',
         dailyCost: Number(d.dailyCost || 0),
         status: String(d.status || 'ACTIVE').toUpperCase(),
-        version: Number(d.version || 1)
+        version: Number(d.version || 1),
+        initialAmount: Number(d.initialAmount || 0),
+        gracePeriodHours: Number(d.gracePeriodHours || 72),
+        contact: d.contact || '',
+        appUrl: d.appUrl || '',
+        customConfig: d.customConfig || null
       };
     }));
 
@@ -1531,7 +1536,7 @@ function renderAppsPortfolio() {
           : false;
         
         // Tooltip con detalles del cliente (Sugerencia 3)
-        const tooltipText = `Cliente: ${l.clientName}\nEstado: ${isActive ? 'ONLINE' : 'OFFLINE'}\nPlan: ${l.currentPlan}\nSaldo Inicial: $${l.initialAmount.toLocaleString('es-MX')}`;
+        const tooltipText = `Cliente: ${l.clientName}\nEstado: ${isActive ? 'ONLINE' : 'OFFLINE'}\nPlan: ${l.currentPlan}\nSaldo Inicial: $${Number(l.initialAmount || 0).toLocaleString('es-MX')}`;
         
         return `
           <div style="display: inline-flex; align-items: center; background: rgba(0, 229, 255, 0.05); border: 1px solid rgba(0, 229, 255, 0.15); padding: 4px 8px; border-radius: 12px; margin-bottom: 4px; transition: all 0.2s ease; gap: 4px;" onmouseover="this.style.background='rgba(0, 229, 255, 0.15)'; this.style.borderColor='var(--accent)';" onmouseout="this.style.background='rgba(0, 229, 255, 0.05)'; this.style.borderColor='rgba(0, 229, 255, 0.15)';">
@@ -2537,7 +2542,7 @@ async function showWelcomeModal(client, customSeedTemplate) {
     `• Token (API Key): \`${client.apiKey}\`\n` +
     `• Plan de Suscripción: *${client.currentPlan}*\n` +
     `• Horas de Gracia: *${client.gracePeriodHours || 24} hrs*\n` +
-    `• Crédito Inicial: *$${client.initialAmount.toLocaleString()}*\n\n` +
+    `• Crédito Inicial: *$${Number(client.initialAmount || 0).toLocaleString()}*\n\n` +
     `🌐 *Enlace de la App:* ${appUrl}\n\n` +
     `🚀 *Semilla Base Sembrada con Éxito:*\n` +
     `• Perfiles Creados: _${rolesSummary}_\n` +
@@ -3594,7 +3599,7 @@ window.openAddCreditsModal = function(clientId) {
       return;
     }
 
-    license.initialAmount += amount;
+    license.initialAmount = Number(license.initialAmount || 0) + amount;
     addAuditLog('SYSTEM', 'RECARGA', `Recarga exitosa de $${amount.toLocaleString()} al cliente ${license.clientName}. Nuevo saldo: $${license.initialAmount.toLocaleString()}`);
     saveToStorage();
     window.syncLicenseToFirestore(license);
