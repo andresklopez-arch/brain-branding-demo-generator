@@ -888,6 +888,67 @@ window.pullAllLicensesFromCloud = async function(silent = false) {
   }
 };
 
+// Catálogo de apps (Portafolio) — antes vivía SOLO en localStorage cifrado
+// por navegador (ver loadFromStorage), lo que causaba que una app recién
+// registrada "desapareciera" al entrar desde otro navegador/dispositivo o
+// tras limpiar datos del sitio. Ahora se sincroniza a alr-saas-apps en
+// Firestore igual que master_licenses.
+window.syncAppToFirestore = async function(app) {
+  if (!window.governanceDb || !app || !app.id) return;
+  try {
+    await window.governanceDb.collection('alr-saas-apps').doc(app.id).set({
+      name: app.name || app.id,
+      version: app.version || 'v1.0.0',
+      status: app.status || 'RELEASED',
+      icon: app.icon || 'ri-apps-fill',
+      color: app.color || '#10b981',
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  } catch (err) {
+    console.warn('[SYNC APP ERR]', err.message);
+  }
+};
+
+window.deleteAppFromFirestore = async function(appId) {
+  if (!window.governanceDb || !appId) return;
+  try {
+    await window.governanceDb.collection('alr-saas-apps').doc(appId).delete();
+  } catch (err) {
+    console.warn('[DELETE APP CLOUD ERR]', err.message);
+  }
+};
+
+window.pullAppsFromCloud = async function(silent = true) {
+  if (!window.governanceDb) return;
+  try {
+    const snap = await window.governanceDb.collection('alr-saas-apps').get();
+    let addedCount = 0;
+    snap.docs.forEach(doc => {
+      const d = doc.data() || {};
+      const idx = state.apps.findIndex(a => a.id === doc.id);
+      const cloudApp = {
+        id: doc.id,
+        name: d.name || doc.id,
+        version: d.version || 'v1.0.0',
+        status: d.status || 'RELEASED',
+        activeClients: idx !== -1 ? (state.apps[idx].activeClients || 0) : 0,
+        icon: d.icon || 'ri-apps-fill',
+        color: d.color || '#10b981'
+      };
+      if (idx !== -1) {
+        state.apps[idx] = { ...state.apps[idx], ...cloudApp };
+      } else {
+        state.apps.push(cloudApp);
+        addedCount++;
+      }
+    });
+    if (addedCount > 0) await saveToStorage();
+    if (!silent && addedCount > 0) showToast(`${addedCount} app(s) sincronizada(s) desde la nube.`, "success");
+  } catch (err) {
+    console.warn('[PULL APPS ERR]', err.message);
+  }
+};
+
 // Catálogo de apps con auto-clonado (registerTenant-equivalente por
 // app-type, ver provisionAppClone en functions/index.js). state.appRegistry
 // queda como { [appId]: {firebaseProjectId, functionsRegion, webApiKey,
@@ -2961,6 +3022,7 @@ window.deleteAppFromPortfolio = function(appId) {
   if (!confirm(confirmMsg)) return;
 
   state.apps.splice(appIndex, 1);
+  window.deleteAppFromFirestore(appId);
   if (typeof SEED_TEMPLATES !== 'undefined') {
     delete SEED_TEMPLATES[appId];
   }
@@ -4017,6 +4079,7 @@ window.processRegisterApp = function() {
   };
 
   state.apps.push(newApp);
+  window.syncAppToFirestore(newApp);
 
   // Registrar auditoría INMUTABLE
   addAuditLog('SYSTEM', 'REGISTRO_APP', `Nueva aplicación base registrada: ${name} (${version}).`);
@@ -4870,6 +4933,7 @@ window.unlockConsoleSession = async function() {
     await window.initFirebaseSync();
     await window.pullAllLicensesFromCloud(true);
     await window.pullAppRegistryFromCloud();
+    await window.pullAppsFromCloud(true);
 
     renderAll();
     showToast(`✅ Consola desbloqueada por ${username}`, "success");
@@ -7396,6 +7460,7 @@ async function processImportedSeed(data) {
   } else {
     state.apps.push(newApp);
   }
+  window.syncAppToFirestore(newApp);
 
   // 5. Registrar/actualizar en SEED_TEMPLATES
   SEED_TEMPLATES[data.id] = {
@@ -8577,6 +8642,7 @@ window.unlockWithWebAuthn = async function() {
     await window.initFirebaseSync();
     await window.pullAllLicensesFromCloud(true);
     await window.pullAppRegistryFromCloud();
+    await window.pullAppsFromCloud(true);
 
     renderAll();
     showToast("Consola desbloqueada mediante biometría (WebAuthn).", "success");

@@ -55,6 +55,14 @@ service cloud.firestore {
       allow read, write: if isAlrSuperAdmin();
     }
 
+    // Catálogo de apps del Portafolio (nombre/icono/color/version/status).
+    // Antes vivía SOLO en localStorage por navegador -- una app registrada
+    // en un dispositivo "desaparecía" al entrar desde otro. Se sincroniza
+    // aquí para que el catálogo sea el mismo en cualquier dispositivo.
+    match /alr-saas-apps/{appId} {
+      allow read, write: if isAlrSuperAdmin();
+    }
+
     // Sin match /{document=**} de respaldo: todo lo no cubierto
     // arriba queda denegado por defecto.
   }
