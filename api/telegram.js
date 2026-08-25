@@ -362,20 +362,49 @@ if (!admin.apps.length) {
   // credencial de service account.
   admin.initializeApp({ projectId: 'brain-branding' });
 }
+// Segunda app Admin, con nombre, para el proyecto de REY Xalpa/clones
+// (rey-smart-wash). Un ID token solo lo puede verificar el proyecto que lo
+// emitió -- por eso hace falta una instancia de Admin SDK por proyecto en
+// vez de reutilizar la de brain-branding. Así ambos proyectos pueden
+// mandar alertas de seguridad al MISMO bot/chat sin duplicar el token de
+// Telegram en Secret Manager de un segundo proyecto.
+let reySmartWashApp = null;
+try {
+  reySmartWashApp = admin.apps.find(a => a.name === 'rey-smart-wash')
+    || admin.initializeApp({ projectId: 'rey-smart-wash' }, 'rey-smart-wash');
+} catch (e) {
+  console.error('[TELEGRAM PROXY] No se pudo inicializar la app Admin de rey-smart-wash:', e.message);
+}
+
+// Proyectos de confianza que pueden pedir el envío de una alerta, y el
+// claim que cada uno debe traer en el ID token para demostrar que es su
+// propio backend (Cloud Function con Admin SDK) el que lo pidió, no
+// cualquier usuario anónimo de ese proyecto.
+const TRUSTED_ALERT_PROJECTS = [
+  { auth: () => admin.auth(), claim: 'alrSuperAdmin' },
+  { auth: () => reySmartWashApp && reySmartWashApp.auth(), claim: 'reySystemAlert' },
+];
 
 async function requireAlrSuperAdmin(req, res, next) {
-  try {
-    const authHeader = req.headers.authorization || '';
-    const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-    if (!idToken) return res.status(401).json({ ok: false, error: 'Falta Authorization: Bearer <idToken>.' });
-    const decoded = await admin.auth().verifyIdToken(idToken);
-    if (decoded.alrSuperAdmin !== true) {
-      return res.status(403).json({ ok: false, error: 'No autorizado.' });
+  const authHeader = req.headers.authorization || '';
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (!idToken) return res.status(401).json({ ok: false, error: 'Falta Authorization: Bearer <idToken>.' });
+
+  let lastErr = null;
+  for (const project of TRUSTED_ALERT_PROJECTS) {
+    const authInstance = project.auth();
+    if (!authInstance) continue;
+    try {
+      const decoded = await authInstance.verifyIdToken(idToken);
+      if (decoded[project.claim] === true) {
+        return next();
+      }
+      lastErr = new Error('Token válido pero sin el claim requerido.');
+    } catch (e) {
+      lastErr = e;
     }
-    next();
-  } catch (e) {
-    return res.status(401).json({ ok: false, error: 'Token inválido: ' + e.message });
   }
+  return res.status(401).json({ ok: false, error: 'Token inválido: ' + (lastErr ? lastErr.message : 'desconocido') });
 }
 
 app.post('/api/alr-notify/send', requireAlrSuperAdmin, async (req, res) => {
