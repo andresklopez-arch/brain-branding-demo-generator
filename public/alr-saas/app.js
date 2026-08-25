@@ -3478,6 +3478,279 @@ window.restoreTenantReal = function(clientId, appId, clientName) {
   });
 };
 
+// ============================================================
+// ⚡ CLONADO RÁPIDO — solo para apps con auto-clonado ya configurado
+// (state.appRegistry). Flujo de 2 pasos: elegir app -> negocio/frecuencia/
+// monto. Al terminar, muestra una ficha descargable en JPG con URL, ID y
+// el código de acceso de 6 dígitos que generó provisionAppClone.
+// ============================================================
+function slugifyBusinessName(name) {
+  return name.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 40) || 'cliente';
+}
+
+window.openQuickCloneModal = function() {
+  const overlay = document.getElementById('modal-overlay');
+  const box = document.getElementById('modal-box');
+  if (!overlay || !box) return;
+
+  const registry = state.appRegistry || {};
+  const appIds = Object.keys(registry);
+
+  if (appIds.length === 0) {
+    box.innerHTML = `
+      <div style="padding: 30px; text-align: left;">
+        <h3 style="font-size: 16px; font-weight: 900; color: var(--accent); text-transform: uppercase; margin-bottom: 14px;">⚡ Clonado Rápido</h3>
+        <p style="font-size: 12px; opacity: 0.8;">Todavía no hay ninguna app con auto-clonado configurado. Ve a "Portafolio de Apps", registra la app (o usa "Cargar desde URL"), y configura su "Auto-clonado" primero.</p>
+        <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+          <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
+        </div>
+      </div>
+    `;
+    overlay.classList.add('active');
+    overlay.style.display = 'flex';
+    return;
+  }
+
+  box.innerHTML = `
+    <div style="padding: 30px; text-align: left;">
+      <h3 style="font-size: 16px; font-weight: 900; color: var(--accent); text-transform: uppercase; margin-bottom: 4px;">⚡ Clonado Rápido</h3>
+      <p style="font-size: 11px; opacity: 0.7; margin-bottom: 18px;">Elige qué app clonar para el cliente nuevo.</p>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        ${appIds.map(appId => {
+          const appRecord = (state.apps || []).find(a => a.id === appId);
+          const label = appRecord ? appRecord.name : appId;
+          return `
+            <button class="btn btn-secondary" style="height:52px; display:flex; align-items:center; justify-content:flex-start; gap:12px; padding:0 16px; text-align:left;" onclick="window.openQuickCloneForm('${escapeHtml(appId)}')">
+              <i class="ri-apps-2-fill" style="font-size:18px; color:var(--accent);"></i>
+              <span style="font-weight:800;">${escapeHtml(label)}</span>
+            </button>
+          `;
+        }).join('')}
+      </div>
+      <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      </div>
+    </div>
+  `;
+  overlay.classList.add('active');
+  overlay.style.display = 'flex';
+};
+
+window.openQuickCloneForm = function(appId) {
+  const overlay = document.getElementById('modal-overlay');
+  const box = document.getElementById('modal-box');
+  if (!overlay || !box) return;
+  const appRecord = (state.apps || []).find(a => a.id === appId);
+  const label = appRecord ? appRecord.name : appId;
+
+  box.innerHTML = `
+    <div style="padding: 30px; text-align: left;">
+      <h3 style="font-size: 16px; font-weight: 900; color: var(--accent); text-transform: uppercase; margin-bottom: 4px;">⚡ Clonado Rápido: ${escapeHtml(label)}</h3>
+      <p style="font-size: 11px; opacity: 0.7; margin-bottom: 18px;">Solo lo esencial. El resto (roles, servicios) se hereda de la app original.</p>
+
+      <div class="form-group">
+        <label class="form-label">Nombre del negocio / cliente</label>
+        <input type="text" id="qc-business-name" class="form-input" placeholder="Ej: Autolavado Don Pepe">
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="form-group">
+          <label class="form-label">Frecuencia de pago</label>
+          <select id="qc-payment-freq" class="form-input" style="background:#000; border:1px solid var(--border-glass); color:#fff;">
+            <option value="Semanal">Semanal</option>
+            <option value="Quincenal">Quincenal</option>
+            <option value="Mensual" selected>Mensual</option>
+            <option value="Anual">Anual</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monto</label>
+          <input type="number" id="qc-amount" class="form-input" placeholder="Ej: 500" min="0" step="0.01">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:16px; margin-top:24px;">
+        <button class="btn btn-secondary flex-1" onclick="window.openQuickCloneModal()">Atrás</button>
+        <button class="btn btn-primary flex-2" onclick="window.runQuickClone('${escapeHtml(appId)}')">Clonar</button>
+      </div>
+    </div>
+  `;
+  overlay.classList.add('active');
+  overlay.style.display = 'flex';
+};
+
+window.runQuickClone = function(appId) {
+  const businessName = document.getElementById('qc-business-name')?.value?.trim() || '';
+  const paymentFrequency = document.getElementById('qc-payment-freq')?.value || 'Mensual';
+  const amount = Number(document.getElementById('qc-amount')?.value) || 0;
+
+  if (businessName.length < 4) {
+    showToast("Escribe el nombre del negocio (mínimo 4 caracteres).", "warning");
+    return;
+  }
+
+  let tenantId = slugifyBusinessName(businessName);
+  if (state.licenses.some(l => l.id === tenantId)) {
+    tenantId = `${tenantId}_${Math.floor(Math.random() * 900 + 100)}`;
+  }
+
+  requestAdminVerification(`Clonado rápido (${businessName})`, async () => {
+    try {
+      showToast(`Clonando app para ${escapeHtml(businessName)}...`, "info");
+      const call = window.governanceFunctions.httpsCallable('provisionAppClone');
+      const res = await call({ appId, tenantId, businessName, paymentFrequency, amount });
+      const { tenantId: newTenantId, connectSecret, appUrl } = res.data || {};
+
+      addAuditLog('ORQUESTADOR', 'CLONADO_RAPIDO', `Cliente ${businessName} clonado (rápido) sobre ${appId}. Tenant: ${newTenantId}. Pago: ${paymentFrequency} $${amount}.`);
+      await window.pullAllLicensesFromCloud(true);
+      renderAll();
+      window.showQuickCloneFicha({ businessName, tenantId: newTenantId, connectSecret, appUrl, paymentFrequency, amount });
+    } catch (err) {
+      console.error('[QUICK CLONE ERR]', err);
+      showToast(`Error al clonar: ${escapeHtml(err.message || String(err))}`, "danger");
+    }
+  });
+};
+
+// Ficha final: igual info que el modal de provisionAppClone normal, pero
+// además ofrece descargarla como imagen JPG lista para mandar al cliente
+// por WhatsApp/Telegram con sus instrucciones de acceso.
+window.showQuickCloneFicha = function({ businessName, tenantId, connectSecret, appUrl, paymentFrequency, amount }) {
+  const overlay = document.getElementById('modal-overlay');
+  const box = document.getElementById('modal-box');
+  if (!overlay || !box) return;
+
+  box.innerHTML = `
+    <div style="padding: 30px; text-align: left;">
+      <h3 style="font-size: 16px; font-weight: 900; color: #2ecc71; text-transform: uppercase; margin-bottom: 16px;">✅ ${escapeHtml(businessName)} — listo</h3>
+
+      <div style="margin-bottom: 12px;">
+        <label style="font-size: 10px; font-weight: 900; opacity: 0.6; text-transform: uppercase;">URL de acceso</label>
+        <div style="font-family: monospace; font-size: 13px; color: var(--accent); margin-top:4px; word-break:break-all;">${escapeHtml(appUrl || '')}</div>
+      </div>
+      <div style="margin-bottom: 12px;">
+        <label style="font-size: 10px; font-weight: 900; opacity: 0.6; text-transform: uppercase;">ID de sucursal</label>
+        <div style="font-family: monospace; font-size: 13px; color: #fff; margin-top:4px;">${escapeHtml(tenantId || '')}</div>
+      </div>
+      <div style="margin-bottom: 20px; border: 1px solid rgba(46,204,113,0.4); background: rgba(46,204,113,0.08); border-radius: 10px; padding: 14px;">
+        <label style="font-size: 10px; font-weight: 900; color: #2ecc71; text-transform: uppercase;">Código de acceso</label>
+        <div style="font-family: monospace; font-size: 22px; font-weight: 900; letter-spacing: 4px; color: #fff; margin-top:6px;">${escapeHtml(connectSecret || '')}</div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%; height:48px; margin-bottom:10px;" onclick="window.downloadQuickCloneFichaJpg({businessName: '${escapeHtml(businessName).replace(/'/g, "\\'")}', tenantId: '${escapeHtml(tenantId).replace(/'/g, "\\'")}', connectSecret: '${escapeHtml(connectSecret).replace(/'/g, "\\'")}', appUrl: '${escapeHtml(appUrl).replace(/'/g, "\\'")}'})">
+        <i class="ri-image-2-line"></i> Descargar ficha (JPG) para el cliente
+      </button>
+      <button class="btn btn-secondary" style="width:100%;" onclick="closeModal()">Cerrar</button>
+    </div>
+  `;
+  overlay.classList.add('active');
+  overlay.style.display = 'flex';
+};
+
+// Dibuja la ficha en un <canvas> (sin librerías externas) y dispara la
+// descarga como JPG -- pensada para reenviarse tal cual por WhatsApp/
+// Telegram al cliente, con instrucciones de acceso incluidas.
+window.downloadQuickCloneFichaJpg = function({ businessName, tenantId, connectSecret, appUrl }) {
+  const W = 1080, H = 1350;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // Fondo
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#0a0e17');
+  grad.addColorStop(1, '#05070c');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Encabezado
+  ctx.fillStyle = '#00e5ff';
+  ctx.font = '900 44px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('ACCESO A TU SISTEMA', W / 2, 140);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 56px Arial';
+  wrapCanvasText(ctx, businessName, W / 2, 230, W - 160, 62);
+
+  // Línea divisoria
+  ctx.strokeStyle = 'rgba(0,229,255,0.25)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(80, 360);
+  ctx.lineTo(W - 80, 360);
+  ctx.stroke();
+
+  function drawField(label, value, y, highlight) {
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = '900 26px Arial';
+    ctx.fillText(label, 80, y);
+
+    ctx.fillStyle = highlight ? '#2ecc71' : '#ffffff';
+    ctx.font = (highlight ? '900 64px monospace' : '700 34px monospace');
+    wrapCanvasText(ctx, value, 80, y + 55, W - 160, highlight ? 68 : 42, 'left');
+  }
+
+  drawField('URL DE ACCESO', appUrl || '', 440);
+  drawField('ID DE SUCURSAL', tenantId || '', 620);
+  drawField('CÓDIGO DE ACCESO', connectSecret || '', 800, true);
+
+  // Instrucciones
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  ctx.font = '700 28px Arial';
+  const steps = [
+    '1. Abre la URL de acceso en tu celular o compu.',
+    '2. Escribe el ID de sucursal.',
+    '3. Escribe el código de acceso.',
+    '4. Presiona "Conectar mi terminal".'
+  ];
+  let sy = 1020;
+  steps.forEach(s => { wrapCanvasText(ctx, s, 80, sy, W - 160, 36, 'left'); sy += 60; });
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '700 22px Arial';
+  ctx.fillText('Guarda este código, no se puede volver a consultar.', W / 2, H - 40);
+
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `acceso_${slugifyBusinessName(businessName)}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }, 'image/jpeg', 0.92);
+};
+
+// Helper genérico de wrap de texto en canvas (con salto de línea manual).
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, align) {
+  const words = String(text).split(' ');
+  let line = '';
+  let cy = y;
+  const prevAlign = ctx.textAlign;
+  if (align) ctx.textAlign = align;
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line + words[i] + ' ';
+    if (ctx.measureText(testLine).width > maxWidth && line !== '') {
+      ctx.fillText(line, x, cy);
+      line = words[i] + ' ';
+      cy += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line, x, cy);
+  ctx.textAlign = prevAlign;
+}
+
 window.restoreLicense = function(clientId) {
   const binIndex = state.recycleBin.findIndex(item => item.license.id === clientId);
   if (binIndex === -1) return;

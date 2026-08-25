@@ -479,6 +479,11 @@ exports.provisionAppClone = onCall({ region: ALR_REGION }, async (request) => {
   const appId = String(data?.appId || '').trim();
   const tenantId = String(data?.tenantId || '').trim().toLowerCase();
   const businessName = String(data?.businessName || '').trim();
+  // Frecuencia de pago y monto -- del flujo de "Clonado Rápido" del
+  // Asistente; no afectan al tenant en la app destino, solo a la
+  // licencia/gobernanza que ALR SaaS lleva de este cliente.
+  const paymentFrequency = String(data?.paymentFrequency || 'Mensual').trim();
+  const amount = Number(data?.amount) || 0;
 
   if (!appId) throw new HttpsError('invalid-argument', 'Falta appId.');
   if (!CLONE_TENANT_ID_RE.test(tenantId)) {
@@ -517,7 +522,11 @@ exports.provisionAppClone = onCall({ region: ALR_REGION }, async (request) => {
 
   // 2. Llamar a la función de alta de tenants de la app destino con el
   // protocolo estándar de Cloud Functions callable (mismo que usa
-  // tests/alr-saas.smoke.test.js contra esta propia consola).
+  // tests/alr-saas.smoke.test.js contra esta propia consola). customSecret
+  // es un PIN corto de 6 dígitos, no el secreto largo por defecto -- a
+  // propósito, para que el operador se lo pueda dictar/escribir fácil al
+  // cliente (decisión explícita del usuario, ver ficha descargable).
+  const customSecret = String(nodeCrypto.randomInt(100000, 1000000));
   let remoteResult;
   try {
     const fnRes = await fetch(
@@ -525,7 +534,7 @@ exports.provisionAppClone = onCall({ region: ALR_REGION }, async (request) => {
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ data: { name: businessName, tenantId } })
+        body: JSON.stringify({ data: { name: businessName, tenantId, customSecret } })
       }
     );
     const fnJson = await fnRes.json();
@@ -560,6 +569,11 @@ exports.provisionAppClone = onCall({ region: ALR_REGION }, async (request) => {
     expiryDate: expiry.toISOString(),
     expirationDate: expiry.toISOString(),
     currentPlan: 'PLATA',
+    renewalPeriod: paymentFrequency,
+    paymentPeriod: paymentFrequency,
+    baseMonthlyFee: amount,
+    adjustedMonthlyFee: amount,
+    initialAmount: amount,
     lastUpdated: nowIso,
     provisionedVia: 'provisionAppClone',
   }, { merge: true });
