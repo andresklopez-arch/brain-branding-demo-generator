@@ -492,7 +492,7 @@ app.post('/api/serolab/save-requirement', (req, res) => {
     `👤 *Área / Puesto:* ${authorArea || 'General'}\n\n` +
     `✍️ *Uso Actual:* ${uso || 'Sin especificar'}\n` +
     `🚀 *Requerimientos:* ${deseo || 'Sin especificar'}${submodsText}\n\n` +
-    `📊 _Progreso:_ ${Object.keys(currentReqs).length}/18 Módulos Nutridos\n` +
+    `📊 _Progreso:_ ${Object.keys(currentReqs).length}/23 Módulos Nutridos\n` +
     `🌐 _Ver Panel Completo:_ https://brainbranding.com.mx/demos/serolab/admin.html`;
 
   callTelegram('sendMessage', {

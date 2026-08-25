@@ -34,7 +34,7 @@ const demoRegistry = {
     expirationDays: 90,
     redirectUrl: "serolab/index.html",
     welcomeTitle: "¡Bienvenido equipo de SERO LAB al Configurador LIMS & ERP de Brain Branding!",
-    welcomeText: "Diagnóstico interactivo de los 14 módulos de Labtivity y configuración de requerimientos a la medida con IA."
+    welcomeText: "Diagnóstico interactivo de los 23 módulos (incluye Recursos Humanos) y configuración de requerimientos a la medida con IA."
   },
 
   // NIP Alternativo 20260 para SERO LAB
@@ -46,7 +46,7 @@ const demoRegistry = {
     expirationDays: 90,
     redirectUrl: "serolab/index.html",
     welcomeTitle: "¡Bienvenido equipo de SERO LAB al Configurador LIMS & ERP de Brain Branding!",
-    welcomeText: "Diagnóstico interactivo de los 14 módulos de Labtivity y configuración de requerimientos a la medida con IA."
+    welcomeText: "Diagnóstico interactivo de los 23 módulos (incluye Recursos Humanos) y configuración de requerimientos a la medida con IA."
   },
 
   // NIP de Hugo (Transporte de Pasajeros con Choferes & Boletaje IA)

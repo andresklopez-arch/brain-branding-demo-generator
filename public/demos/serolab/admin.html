@@ -126,7 +126,7 @@
 
     <div class="stats-bar">
       <div class="stat-card">
-        <div class="num" id="statConfigured">0 / 18</div>
+        <div class="num" id="statConfigured">0 / 23</div>
         <div class="lbl">Módulos Nutridos por el Cliente</div>
       </div>
       <div class="stat-card">
@@ -215,7 +215,7 @@
         grid.appendChild(card);
       });
 
-      document.getElementById("statConfigured").textContent = `${count} / 18`;
+      document.getElementById("statConfigured").textContent = `${count} / ${SEROLAB_MODULES.length}`;
       document.getElementById("statSubmods").textContent = `${totalSub}`;
       document.getElementById("statLastUpdate").textContent = lastDate ? lastDate.toLocaleTimeString('es-MX') : 'En espera';
     }

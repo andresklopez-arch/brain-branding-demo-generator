@@ -344,7 +344,7 @@ const DemoApp = {
     });
 
     if (badge) badge.textContent = `${count}`;
-    if (statConfigured) statConfigured.textContent = `${count} / 18`;
+    if (statConfigured) statConfigured.textContent = `${count} / ${SEROLAB_MODULES.length}`;
     if (statSubmods) statSubmods.textContent = `${totalSubmods}`;
   },
 
@@ -390,7 +390,7 @@ const DemoApp = {
       body.appendChild(item);
     });
 
-    totalTxt.textContent = `Consolidado de los 18 módulos para SERO LAB Grupo Diagnóstico.`;
+    totalTxt.textContent = `Consolidado de los ${SEROLAB_MODULES.length} módulos para SERO LAB Grupo Diagnóstico.`;
     modal.style.display = "flex";
   },
 

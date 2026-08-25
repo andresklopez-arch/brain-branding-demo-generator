@@ -423,5 +423,122 @@ const SEROLAB_MODULES = [
       "Ventas por hora pico para optimizar turnos de personal",
       "Exportador automatizado a Excel ejecutivo y PDF gerencial"
     ]
+  },
+
+  // EJE 5: RECURSOS HUMANOS
+  {
+    id: "expedientes_rh",
+    category: "rh",
+    name: "19. Expedientes Digitales y Documentación del Personal",
+    icon: "🗂️",
+    badgeType: "new",
+    badgeText: "⚡ 100% Nuevo de Brain Branding (No existe en Labtivity)",
+    currentApp: "No existe en Labtivity. Los expedientes de personal se llevan en carpetas físicas o en Excel/Drive suelto por cada sucursal.",
+    brainBetter: "Expediente digital único por colaborador con documentos escaneados, vigencias de certificaciones y cédulas profesionales, y alertas automáticas antes de que algo venza.",
+    defaultUso: "Resguardo de contratos, identificaciones, comprobantes de domicilio y documentos de ingreso de cada empleado.",
+    defaultDeseo: "Que el sistema avise antes de que venza la cédula profesional de un químico o el examen médico de un flebotomista.",
+    advices: [
+      "Alerta automática 30 días antes del vencimiento de cédula profesional, licencia sanitaria o certificación NOM.",
+      "Checklist de documentos obligatorios por puesto (químico, flebotomista, mensajero) que marca en rojo lo faltante.",
+      "Firma digital de contratos y políticas internas directamente desde el celular del colaborador."
+    ],
+    submodules: [
+      "Alertas de vencimiento de cédulas, licencias y certificaciones",
+      "Checklist de expediente completo por puesto",
+      "Firma digital de contrato y reglamento interno",
+      "Repositorio de comprobantes de estudios médicos de ingreso"
+    ]
+  },
+  {
+    id: "nomina_checador",
+    category: "rh",
+    name: "20. Nómina, Incidencias y Checador Biométrico",
+    icon: "💵",
+    badgeType: "new",
+    badgeText: "⚡ 100% Nuevo de Brain Branding (No existe en Labtivity)",
+    currentApp: "No existe en Labtivity. La asistencia se controla con checador aparte (o lista de firmas) y la nómina se calcula en Excel o con el contador externo.",
+    brainBetter: "Checador biométrico o por geolocalización integrado, cálculo automático de incidencias (faltas, retardos, horas extra) y timbrado de nómina CFDI directo desde el mismo sistema.",
+    defaultUso: "Registro de entrada/salida por sucursal y turno (matutino/vespertino), y cálculo de nómina quincenal.",
+    defaultDeseo: "Que el checador se conecte directo con nómina para no tener que capturar faltas y retardos dos veces.",
+    advices: [
+      "Checador por huella, rostro o geolocalización desde el celular para toma a domicilio y personal foráneo.",
+      "Cálculo automático de horas extra, faltas y retardos con reglas configurables por puesto.",
+      "Timbrado de nómina CFDI 4.0 con recibo digital enviado directo al WhatsApp del colaborador."
+    ],
+    submodules: [
+      "Checador biométrico / geolocalización por sucursal",
+      "Cálculo automático de incidencias (faltas, retardos, extras)",
+      "Timbrado de Recibos de Nómina CFDI 4.0",
+      "Envío del recibo de nómina por WhatsApp y Portal del Empleado"
+    ]
+  },
+  {
+    id: "reclutamiento",
+    category: "rh",
+    name: "21. Reclutamiento y Selección de Personal",
+    icon: "🧲",
+    badgeType: "new",
+    badgeText: "⚡ 100% Nuevo de Brain Branding (No existe en Labtivity)",
+    currentApp: "No existe en Labtivity. Las vacantes se publican por fuera y las entrevistas se agendan por teléfono o WhatsApp personal.",
+    brainBetter: "Embudo de reclutamiento con vacantes publicadas automáticamente, formulario de postulación en línea y seguimiento de candidatos por etapa (CV, entrevista, examen, contratación).",
+    defaultUso: "Contratación de químicos, flebotomistas y personal de recepción cuando se abre una vacante o se amplía una sucursal.",
+    defaultDeseo: "Tener un lugar donde ver todos los candidatos de una vacante sin perder CVs en el correo o WhatsApp.",
+    advices: [
+      "Formulario de postulación en línea con carga de CV y filtro automático por puesto y sucursal deseada.",
+      "Pipeline visual de candidatos por etapa (Postulado, Entrevista, Examen, Oferta, Contratado).",
+      "Plantillas de examen de conocimientos técnicos para químicos y flebotomistas aplicables en línea."
+    ],
+    submodules: [
+      "Formulario de postulación en línea con carga de CV",
+      "Pipeline de candidatos por etapa de contratación",
+      "Banco de candidatos no contratados para vacantes futuras",
+      "Examen técnico en línea por puesto (Química, Flebotomía, Caja)"
+    ]
+  },
+  {
+    id: "capacitacion_desempeno",
+    category: "rh",
+    name: "22. Capacitación, NOM-035 y Evaluación de Desempeño",
+    icon: "🎓",
+    badgeType: "new",
+    badgeText: "⚡ 100% Nuevo de Brain Branding (No existe en Labtivity)",
+    currentApp: "No existe en Labtivity. Las capacitaciones se hacen de manera informal y no hay evidencia digital para auditorías (ISO 15189, NOM-035).",
+    brainBetter: "Biblioteca de capacitaciones con evidencia digital de asistencia y examen, cuestionario NOM-035 automatizado, y evaluaciones de desempeño periódicas por puesto.",
+    defaultUso: "Inducción a personal nuevo y capacitaciones periódicas de bioseguridad, manejo de muestras y atención a pacientes.",
+    defaultDeseo: "Que quede evidencia digital de que cada químico y flebotomista tomó su capacitación de bioseguridad, para las auditorías.",
+    advices: [
+      "Cuestionario NOM-035 automatizado con resultados confidenciales y reporte agregado para la empresa (obligatorio por ley).",
+      "Constancia digital descargable de cada capacitación tomada, con firma y fecha, lista para auditoría ISO 15189.",
+      "Evaluación de desempeño 90°/180° por puesto con seguimiento de metas y plan de mejora."
+    ],
+    submodules: [
+      "Cuestionario y reporte NOM-035 automatizado",
+      "Biblioteca de capacitaciones con constancia digital firmada",
+      "Evaluación de desempeño periódica por puesto",
+      "Plan de mejora y seguimiento de metas por colaborador"
+    ]
+  },
+  {
+    id: "portal_empleado",
+    category: "rh",
+    name: "23. Portal del Empleado (Autoservicio)",
+    icon: "📲",
+    badgeType: "new",
+    badgeText: "⚡ 100% Nuevo de Brain Branding (No existe en Labtivity)",
+    currentApp: "No existe en Labtivity. El empleado tiene que pedir sus recibos, vacaciones o constancias directamente en la oficina de RH.",
+    brainBetter: "Portal/app donde cada colaborador ve sus recibos de nómina, solicita vacaciones o permisos, y descarga sus constancias sin tener que ir a la oficina de RH.",
+    defaultUso: "Para que el personal de las distintas sucursales pueda resolver trámites básicos sin desplazarse a matriz.",
+    defaultDeseo: "Que el empleado pueda pedir sus vacaciones desde el celular y el jefe las apruebe con un clic.",
+    advices: [
+      "Solicitud y aprobación de vacaciones/permisos en 1 clic desde el celular del jefe directo.",
+      "Calendario de vacaciones por sucursal para evitar que falte personal clave el mismo día.",
+      "Descarga de constancias de percepciones, laborales y de no adeudo directamente desde el portal."
+    ],
+    submodules: [
+      "Solicitud y aprobación de vacaciones/permisos desde el celular",
+      "Calendario de ausencias por sucursal y puesto",
+      "Descarga de constancias y recibos históricos",
+      "Buzón de quejas/sugerencias anónimo del colaborador"
+    ]
   }
 ];
