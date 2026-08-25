@@ -441,27 +441,121 @@ app.post('/api/alr-notify/answerCallback', requireAlrSuperAdmin, async (req, res
 
 // ================================================================
 // 🔬 SERO LAB LIMS 4.0 REQUIREMENTS SYNC & REALTIME ALERTS API
+// Antes esto se guardaba en un archivo JSON en el disco de Render
+// (DATA_DIR/serolab_requirements.json) -- ese disco es efímero: cada
+// despliegue del servicio (cualquier `git push`, no solo de SERO LAB)
+// lo reiniciaba desde el código del repo, y el archivo NUNCA estaba en
+// Git, así que cualquier requerimiento que el cliente hubiera guardado
+// se perdía en silencio en el siguiente despliegue. Ahora vive en
+// Firestore (colección serolab_requirements, ver firestore.rules),
+// que sí es persistente. Este servicio no corre en Google Cloud, así
+// que no tiene credenciales de Admin SDK ambientales -- se autentica
+// como sesión anónima (misma técnica ya usada en toda la app) y habla
+// con Firestore por su API REST, sin guardar ningún secreto nuevo.
 // ================================================================
-const SEROLAB_REQS_FILE = path.join(DATA_DIR, 'serolab_requirements.json');
+const SEROLAB_PROJECT_ID = 'brain-branding';
+const SEROLAB_WEB_API_KEY = 'AIzaSyCgIpvZux4c6VjBI31KX8rACPe-zDSVRYo';
 
-function loadSeroLabRequirements() {
-  try {
-    if (fs.existsSync(SEROLAB_REQS_FILE)) {
-      return JSON.parse(fs.readFileSync(SEROLAB_REQS_FILE, 'utf8'));
+// Ningún otro punto de este archivo usa fetch() -- todas las llamadas HTTP
+// salientes (Telegram, etc.) van por el módulo https nativo (ver
+// callTelegram arriba). Se sigue el mismo patrón aquí en vez de asumir que
+// fetch existe en el runtime de Node que Render tenga configurado.
+function httpsRequestJson(hostname, pathStr, method, headers, bodyObj) {
+  return new Promise((resolve, reject) => {
+    const postData = bodyObj !== undefined ? JSON.stringify(bodyObj) : null;
+    const finalHeaders = Object.assign({}, headers);
+    if (postData !== null) {
+      finalHeaders['Content-Type'] = 'application/json';
+      finalHeaders['Content-Length'] = Buffer.byteLength(postData);
     }
-  } catch (e) {}
-  return {};
+    const req = https.request({ hostname, port: 443, path: pathStr, method, headers: finalHeaders }, (res) => {
+      let body = '';
+      res.on('data', c => body += c);
+      res.on('end', () => {
+        let parsed;
+        try { parsed = JSON.parse(body); } catch (e) { parsed = {}; }
+        resolve({ status: res.statusCode, json: parsed });
+      });
+    });
+    req.on('error', reject);
+    if (postData !== null) req.write(postData);
+    req.end();
+  });
 }
 
-function saveSeroLabRequirements(data) {
+let seroLabTokenCache = { idToken: null, expiresAt: 0 };
+async function getSeroLabAnonToken() {
+  if (seroLabTokenCache.idToken && Date.now() < seroLabTokenCache.expiresAt) {
+    return seroLabTokenCache.idToken;
+  }
+  const { json } = await httpsRequestJson(
+    'identitytoolkit.googleapis.com',
+    `/v1/accounts:signUp?key=${SEROLAB_WEB_API_KEY}`,
+    'POST', {}, { returnSecureToken: true }
+  );
+  if (!json.idToken) throw new Error(json.error?.message || 'No se pudo obtener sesión anónima');
+  seroLabTokenCache = { idToken: json.idToken, expiresAt: Date.now() + 50 * 60 * 1000 };
+  return json.idToken;
+}
+
+function seroLabToFirestoreFields(obj) {
+  const fields = {};
+  Object.entries(obj).forEach(([key, val]) => {
+    if (Array.isArray(val)) {
+      fields[key] = { arrayValue: { values: val.map(v => ({ stringValue: String(v) })) } };
+    } else {
+      fields[key] = { stringValue: String(val ?? '') };
+    }
+  });
+  return fields;
+}
+
+function seroLabFromFirestoreFields(fields) {
+  const obj = {};
+  Object.entries(fields || {}).forEach(([key, val]) => {
+    if (val.arrayValue) {
+      obj[key] = (val.arrayValue.values || []).map(v => v.stringValue || '');
+    } else {
+      obj[key] = val.stringValue ?? '';
+    }
+  });
+  return obj;
+}
+
+async function loadSeroLabRequirements() {
   try {
-    fs.writeFileSync(SEROLAB_REQS_FILE, JSON.stringify(data, null, 2), 'utf8');
+    const idToken = await getSeroLabAnonToken();
+    const { json } = await httpsRequestJson(
+      'firestore.googleapis.com',
+      `/v1/projects/${SEROLAB_PROJECT_ID}/databases/(default)/documents/serolab_requirements`,
+      'GET', { Authorization: `Bearer ${idToken}` }
+    );
+    const data = {};
+    (json.documents || []).forEach(doc => {
+      const id = doc.name.split('/').pop();
+      data[id] = seroLabFromFirestoreFields(doc.fields);
+    });
+    return data;
   } catch (e) {
-    console.warn('[SERO LAB] Error guardando requerimientos:', e.message);
+    console.warn('[SERO LAB] Error leyendo Firestore:', e.message);
+    return {};
   }
 }
 
-app.post('/api/serolab/save-requirement', (req, res) => {
+async function saveSeroLabRequirement(moduleId, entry) {
+  const idToken = await getSeroLabAnonToken();
+  const { status, json } = await httpsRequestJson(
+    'firestore.googleapis.com',
+    `/v1/projects/${SEROLAB_PROJECT_ID}/databases/(default)/documents/serolab_requirements/${encodeURIComponent(moduleId)}`,
+    'PATCH', { Authorization: `Bearer ${idToken}` },
+    { fields: seroLabToFirestoreFields(entry) }
+  );
+  if (status < 200 || status >= 300) {
+    throw new Error(json.error?.message || `Firestore respondió ${status}`);
+  }
+}
+
+app.post('/api/serolab/save-requirement', async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -470,8 +564,7 @@ app.post('/api/serolab/save-requirement', (req, res) => {
   const { moduleId, moduleName, authorArea, uso, deseo, submodules } = req.body || {};
   if (!moduleId) return res.status(400).json({ ok: false, error: 'moduleId is required' });
 
-  const currentReqs = loadSeroLabRequirements();
-  currentReqs[moduleId] = {
+  const entry = {
     moduleId,
     moduleName: moduleName || moduleId,
     authorArea: authorArea || 'General',
@@ -480,7 +573,16 @@ app.post('/api/serolab/save-requirement', (req, res) => {
     submodules: Array.isArray(submodules) ? submodules : [],
     updatedAt: new Date().toISOString()
   };
-  saveSeroLabRequirements(currentReqs);
+
+  let total = 0;
+  try {
+    await saveSeroLabRequirement(moduleId, entry);
+    const currentReqs = await loadSeroLabRequirements();
+    total = Object.keys(currentReqs).length;
+  } catch (e) {
+    console.warn('[SERO LAB] Error guardando en Firestore:', e.message);
+    return res.status(500).json({ ok: false, error: 'No se pudo guardar el requerimiento.' });
+  }
 
   // Real-time Telegram notification to Andres
   const submodsText = Array.isArray(submodules) && submodules.length > 0
@@ -492,7 +594,7 @@ app.post('/api/serolab/save-requirement', (req, res) => {
     `👤 *Área / Puesto:* ${authorArea || 'General'}\n\n` +
     `✍️ *Uso Actual:* ${uso || 'Sin especificar'}\n` +
     `🚀 *Requerimientos:* ${deseo || 'Sin especificar'}${submodsText}\n\n` +
-    `📊 _Progreso:_ ${Object.keys(currentReqs).length}/23 Módulos Nutridos\n` +
+    `📊 _Progreso:_ ${total}/23 Módulos Nutridos\n` +
     `🌐 _Ver Panel Completo:_ https://brainbranding.com.mx/demos/serolab/admin.html`;
 
   callTelegram('sendMessage', {
@@ -501,12 +603,12 @@ app.post('/api/serolab/save-requirement', (req, res) => {
     parse_mode: 'Markdown'
   }).catch(() => {});
 
-  return res.status(200).json({ ok: true, total: Object.keys(currentReqs).length, timestamp: new Date().toISOString() });
+  return res.status(200).json({ ok: true, total, timestamp: new Date().toISOString() });
 });
 
-app.get('/api/serolab/requirements', (req, res) => {
+app.get('/api/serolab/requirements', async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  const data = loadSeroLabRequirements();
+  const data = await loadSeroLabRequirements();
   return res.status(200).json({ ok: true, requirements: data, count: Object.keys(data).length, timestamp: new Date().toISOString() });
 });
 

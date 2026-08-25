@@ -63,6 +63,23 @@ service cloud.firestore {
       allow read, write: if isAlrSuperAdmin();
     }
 
+    // Cuestionario colaborativo de SERO LAB (demo LIMS 4.0). Antes se
+    // guardaba en un archivo en el disco de Render (api/telegram.js) --
+    // efímero, se borraba en cada despliegue del servicio. Ahora vive aquí.
+    // Se deja accesible con solo sesión anónima (igual que hoy: el POST del
+    // navegador no pide ningún login) porque el objetivo es que cualquier
+    // colaborador de SERO LAB pueda opinar sin fricción -- pero se valida
+    // la forma del documento para que ni una sesión anónima pueda meter
+    // basura arbitraria o campos gigantes.
+    match /serolab_requirements/{moduleId} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.resource.data.moduleId is string
+        && request.resource.data.uso is string && request.resource.data.uso.size() < 4000
+        && request.resource.data.deseo is string && request.resource.data.deseo.size() < 4000
+        && request.resource.data.submodules is list;
+    }
+
     // Sin match /{document=**} de respaldo: todo lo no cubierto
     // arriba queda denegado por defecto.
   }
