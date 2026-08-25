@@ -3627,6 +3627,14 @@ window.openRegisterAppModal = function() {
     <div style="padding: 30px;">
       <h2 style="font-size: 20px; font-weight: 900; color: var(--accent); margin-bottom: 20px; text-transform: uppercase;">Registrar Nueva Aplicación</h2>
       <div style="display:flex; flex-direction:column; gap:16px;">
+        <div class="form-group" style="background: rgba(0,229,255,0.04); border: 1px solid rgba(0,229,255,0.15); border-radius: 12px; padding: 14px;">
+          <label class="form-label">Cargar desde URL (si ya tiene auto-clonado configurado)</label>
+          <div style="display:flex; gap:8px; margin-top:4px;">
+            <input type="text" id="app-reg-url" class="form-input" placeholder="https://rey-smart-wash.web.app" style="flex:1;">
+            <button class="btn btn-secondary" type="button" onclick="window.autofillAppFromUrl()">Detectar</button>
+          </div>
+          <p style="font-size: 10px; opacity: 0.6; margin-top: 6px;">Si esa URL coincide con una app que ya configuraste en "Auto-clonado", esto rellena Nombre e ID por ti.</p>
+        </div>
         <div class="form-group">
           <label class="form-label">Nombre del Software</label>
           <input type="text" id="app-reg-name" class="form-input" placeholder="Ej: REY Smart Pharmacy System">
@@ -3660,6 +3668,50 @@ window.openRegisterAppModal = function() {
     </div>
   `;
   overlay.classList.add('active');
+};
+
+// Busca en state.appRegistry (ya cargado desde alr-saas-app-registry, ver
+// pullAppRegistryFromCloud) qué appId tiene un hostingBaseUrl que coincide
+// con la URL pegada, y rellena Nombre/ID a partir de eso -- evita tener
+// que saber de memoria el ID exacto (ej. "rey_xalpa") con el que se
+// configuró el auto-clonado.
+window.autofillAppFromUrl = function() {
+  const raw = document.getElementById('app-reg-url')?.value?.trim();
+  if (!raw) {
+    showToast("Pega la URL primero.", "warning");
+    return;
+  }
+  let origin;
+  try {
+    origin = new URL(raw.startsWith('http') ? raw : `https://${raw}`).origin;
+  } catch (e) {
+    showToast("URL inválida.", "warning");
+    return;
+  }
+
+  const registry = state.appRegistry || {};
+  const match = Object.entries(registry).find(([, cfg]) => {
+    try {
+      return cfg.hostingBaseUrl && new URL(cfg.hostingBaseUrl).origin === origin;
+    } catch (e) {
+      return false;
+    }
+  });
+
+  if (!match) {
+    showToast("Esa URL no tiene auto-clonado configurado todavía. Llena los campos manualmente, o configúralo primero desde una app ya registrada.", "warning");
+    return;
+  }
+
+  const [appId] = match;
+  const prettyName = appId.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const slugEl = document.getElementById('app-reg-slug');
+  const nameEl = document.getElementById('app-reg-name');
+  const verEl = document.getElementById('app-reg-ver');
+  if (slugEl) slugEl.value = appId;
+  if (nameEl && !nameEl.value) nameEl.value = prettyName;
+  if (verEl && !verEl.value) verEl.value = 'v1.0.0';
+  showToast(`Detectado "${appId}" — Nombre e ID completados automáticamente.`, "success");
 };
 
 window.processRegisterApp = function() {
