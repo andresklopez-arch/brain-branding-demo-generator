@@ -2487,9 +2487,14 @@ app.get('/api/admin/gemini-healthcheck', async (req, res) => {
   try {
     const health = await testGeminiConnection();
     if (!health.ok) {
+      const detailLines = (health.details || [])
+        .map((d) => `• \`${d.model}\`: ${d.httpStatus ? `HTTP ${d.httpStatus} — ` : ''}${d.error || d.reason || 'sin detalle'}`)
+        .join('\n');
       callTelegram('sendMessage', {
         chat_id: ADMIN_CHAT_ID,
-        text: `🚨 *ALERTA: CHEQUEO DIARIO DE GEMINI FALLÓ* 🚨\n\nRazón: \`${health.reason}\`\n\nEl bot podría llevar horas usando solo respuestas por reglas fijas (sin IA real) sin que nadie lo notara. Revisa Render → Environment → GEMINI_API_KEY, o si Google retiró el modelo actual.`,
+        text: `🚨 *ALERTA: CHEQUEO DIARIO DE GEMINI FALLÓ* 🚨\n\nRazón: \`${health.reason}\`` +
+          (detailLines ? `\n\n*Motivo real por modelo:*\n${detailLines}` : '') +
+          `\n\nEl bot podría llevar horas usando solo respuestas por reglas fijas (sin IA real) sin que nadie lo notara. Revisa Render → Environment → GEMINI_API_KEY, o si Google retiró el modelo actual.`,
         parse_mode: 'Markdown'
       }).catch(() => {});
     }
@@ -4097,13 +4102,17 @@ app.listen(PORT, async () => {
         parse_mode: 'Markdown'
       }).catch(() => {});
     } else {
-      console.warn(`[GEMINI HEALTHCHECK] FALLÓ — razón: ${health.reason}`);
+      console.warn(`[GEMINI HEALTHCHECK] FALLÓ — razón: ${health.reason}`, health.details);
+      const detailLines = (health.details || [])
+        .map((d) => `• \`${d.model}\`: ${d.httpStatus ? `HTTP ${d.httpStatus} — ` : ''}${d.error || d.reason || 'sin detalle'}`)
+        .join('\n');
       callTelegram('sendMessage', {
         chat_id: ADMIN_CHAT_ID,
         text: `🚨 *ALERTA: EL MOTOR DE IA (GEMINI) NO RESPONDIÓ AL ARRANCAR* 🚨\n\n` +
           (health.reason === 'NO_API_KEY'
             ? `No hay ninguna \`GEMINI_API_KEY\` configurada en el servidor — el bot está usando solo respuestas por reglas fijas, no IA real.`
-            : `Los modelos configurados fallaron al responder. Es posible que Google haya retirado el modelo actual (ya pasó antes) o que la llave de API ya no sea válida. El bot está usando el respaldo por reglas fijas mientras tanto.`) +
+            : `Los modelos configurados fallaron al responder. El bot está usando el respaldo por reglas fijas mientras tanto.` +
+              (detailLines ? `\n\n*Motivo real por modelo:*\n${detailLines}` : ''))+
           `\n\n_Revisa Render → Environment → GEMINI_API_KEY, o pide que se actualicen los modelos en api/geminiHelper.js._`,
         parse_mode: 'Markdown'
       }).catch(() => {});

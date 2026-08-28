@@ -19,7 +19,12 @@ const geminiMetrics = {
   averageLatencyMs: 0,
   totalLatencyMs: 0,
   lastUsedModel: null,
-  recentLogs: []
+  recentLogs: [],
+  // El bucle de modelos solo devolvía null cuando todos fallaban -- sin
+  // ningún detalle de POR QUÉ (¿clave inválida? ¿cuota agotada? ¿modelo
+  // retirado?). Se guarda aquí el último motivo real por modelo para que
+  // el healthcheck y la alerta de Telegram lo puedan mostrar.
+  lastFailureDetails: []
 };
 
 const frequencyCache = new Map();
@@ -276,7 +281,17 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
     'gemini-flash-latest'
   ];
 
+  const failureDetails = [];
+
   for (const model of modelsToTry) {
+    // failedModelsBlacklist se llenaba (línea de abajo) pero nunca se
+    // consultaba aquí -- el bucle seguía reintentando modelos ya
+    // confirmados como retirados/inexistentes en CADA mensaje, gastando
+    // los 8s de timeout de cada uno para nada.
+    if (isModelBlacklisted(model)) {
+      failureDetails.push({ model, reason: 'BLACKLISTED_RECENTLY' });
+      continue;
+    }
     try {
       const reply = await withRetry(async () => {
         return new Promise((resolve) => {
@@ -334,7 +349,10 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
                   console.error(`[GEMINI PARSE ERROR] Model ${model}:`, e.message);
                 }
               } else {
-                console.warn(`[GEMINI WARN] Model ${model} returned HTTP ${res.statusCode}`);
+                let apiErrorMsg = data.slice(0, 300);
+                try { apiErrorMsg = JSON.parse(data)?.error?.message || apiErrorMsg; } catch (e) {}
+                console.warn(`[GEMINI WARN] Model ${model} returned HTTP ${res.statusCode}: ${apiErrorMsg}`);
+                failureDetails.push({ model, httpStatus: res.statusCode, error: apiErrorMsg });
                 if (res.statusCode === 404 || res.statusCode === 400) {
                   failedModelsBlacklist.set(model, Date.now());
                 }
@@ -345,6 +363,7 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
 
           req.on('error', (err) => {
             console.warn(`[GEMINI REQ ERROR] Model ${model}:`, err.message);
+            failureDetails.push({ model, error: err.message });
             resolve(null);
           });
 
@@ -365,7 +384,9 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
   }
 
   geminiMetrics.failedCalls++;
-  recordLog({ status: 'FAIL', reason: 'ALL_MODELS_FAILED', contextId });
+  geminiMetrics.lastFailureDetails = failureDetails;
+  console.warn('[GEMINI ALL MODELS FAILED]', JSON.stringify(failureDetails));
+  recordLog({ status: 'FAIL', reason: 'ALL_MODELS_FAILED', contextId, detail: failureDetails[0] || null });
   return null;
 }
 
@@ -393,7 +414,7 @@ async function testGeminiConnection() {
   }
   const reply = await getGeminiReply('Responde únicamente con la palabra: OK', 'Sistema', 'startup_healthcheck', []);
   if (!reply) {
-    return { ok: false, reason: 'ALL_MODELS_FAILED' };
+    return { ok: false, reason: 'ALL_MODELS_FAILED', details: geminiMetrics.lastFailureDetails };
   }
 
   // Además de "¿Gemini responde?", valida que una respuesta larga real no
