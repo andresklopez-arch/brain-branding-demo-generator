@@ -73,11 +73,15 @@ service cloud.firestore {
     // basura arbitraria o campos gigantes.
     match /serolab_requirements/{moduleId} {
       allow read: if true;
-      allow write: if request.auth != null
+      allow create, update: if request.auth != null
         && request.resource.data.moduleId is string
         && request.resource.data.uso is string && request.resource.data.uso.size() < 4000
         && request.resource.data.deseo is string && request.resource.data.deseo.size() < 4000
         && request.resource.data.submodules is list;
+      // Borrar SÍ requiere admin -- una sesión anónima cualquiera puede
+      // aportar (create/update), pero no puede borrar las respuestas que
+      // ya dio el cliente.
+      allow delete: if isAlrSuperAdmin();
     }
 
     // Sin match /{document=**} de respaldo: todo lo no cubierto
