@@ -2480,8 +2480,35 @@ app.get('/api/admin/test-gemini-reply', async (req, res) => {
 // solo agrupa/deduplica en memoria en vez de reenviar cada aviso a
 // Telegram (extensiones de navegador de terceros generan bastante ruido
 // de falsos positivos).
-const seenCspViolations = new Map(); // fingerprint -> { directive, blockedUri, documentUri, firstSeen, count }
-let cspResetDay = new Date().toDateString();
+const CSP_REPORTS_FILE = path.join(DATA_DIR, 'csp_reports.json');
+function loadCspReportsFromDisk() {
+  try {
+    if (fs.existsSync(CSP_REPORTS_FILE)) {
+      const saved = JSON.parse(fs.readFileSync(CSP_REPORTS_FILE, 'utf8'));
+      if (saved.day === new Date().toDateString()) {
+        return { day: saved.day, map: new Map(saved.entries || []) };
+      }
+    }
+  } catch (e) {}
+  return { day: new Date().toDateString(), map: new Map() };
+}
+function saveCspReportsToDisk() {
+  try {
+    fs.writeFileSync(
+      CSP_REPORTS_FILE,
+      JSON.stringify({ day: cspResetDay, entries: Array.from(seenCspViolations.entries()) }),
+      'utf8'
+    );
+  } catch (e) {}
+}
+
+// fingerprint -> { directive, blockedUri, documentUri, firstSeen, count }
+// Se recarga del disco al arrancar (mismo día) para no perder el conteo
+// del día en cada redeploy -- este proyecto despliega seguido (ver Regla
+// Global #4).
+const cspLoaded = loadCspReportsFromDisk();
+const seenCspViolations = cspLoaded.map;
+let cspResetDay = cspLoaded.day;
 app.post('/api/csp-report', (req, res) => {
   res.status(204).end(); // Responder rápido; el navegador no espera nada.
   try {
@@ -2520,6 +2547,7 @@ app.post('/api/csp-report', (req, res) => {
     const existing = seenCspViolations.get(fingerprint);
     if (existing) {
       existing.count++;
+      saveCspReportsToDisk();
       return;
     }
     if (seenCspViolations.size >= 100) return; // tope de memoria por día
@@ -2529,6 +2557,7 @@ app.post('/api/csp-report', (req, res) => {
       firstSeen: new Date().toISOString(),
       count: 1
     });
+    saveCspReportsToDisk();
 
     callTelegram('sendMessage', {
       chat_id: ADMIN_CHAT_ID,
@@ -2550,6 +2579,17 @@ app.get('/api/admin/csp-reports', (req, res) => {
     count: seenCspViolations.size,
     violations: Array.from(seenCspViolations.values()).sort((a, b) => b.count - a.count)
   });
+});
+
+// Limpia el registro a mano mientras ajustas la CSP, sin esperar al
+// reinicio automático de medianoche.
+app.delete('/api/admin/csp-reports', (req, res) => {
+  if (!ALR_GOVERNANCE_SECRET || req.query.callerKey !== ALR_GOVERNANCE_SECRET) {
+    return res.status(403).json({ ok: false, error: 'Not authorized.' });
+  }
+  seenCspViolations.clear();
+  saveCspReportsToDisk();
+  return res.status(200).json({ ok: true });
 });
 
 // El formulario de diagnóstico del sitio (#agency-contact-form) abre
@@ -2581,9 +2621,11 @@ app.post('/api/leads', (req, res) => {
       return res.status(400).json({ ok: false, error: 'Faltan campos requeridos.' });
     }
 
-    prospectLogs.push({
+    const entry = {
       chatId: `web-${Date.now()}`,
       name,
+      phone,
+      countryCode,
       username: `Sitio Web (+${countryCode} ${phone})`,
       text: `${business ? `Negocio: ${business}. ` : ''}${desc}${operation ? ` | Operación actual: ${operation}` : ''}`.trim(),
       giro: vertical || 'No especificado',
@@ -2592,7 +2634,16 @@ app.post('/api/leads', (req, res) => {
       timestamp: new Date().toLocaleTimeString('es-MX'),
       lastActiveMs: Date.now(),
       source: 'website_form'
-    });
+    };
+
+    // Si el mismo teléfono ya mandó el formulario antes (ej. corrigió un
+    // error y lo reenvió), actualiza esa entrada en vez de duplicarla.
+    const dupIndex = prospectLogs.findIndex((p) => p.source === 'website_form' && p.phone === phone);
+    if (dupIndex !== -1) {
+      prospectLogs[dupIndex] = { ...prospectLogs[dupIndex], ...entry, chatId: prospectLogs[dupIndex].chatId };
+    } else {
+      prospectLogs.push(entry);
+    }
     if (prospectLogs.length > 500) prospectLogs.shift();
     saveProspectsToDisk(prospectLogs);
 
@@ -2600,6 +2651,28 @@ app.post('/api/leads', (req, res) => {
   } catch (e) {
     return res.status(500).json({ ok: false });
   }
+});
+
+// Descarga prospectLogs completo (Telegram, WhatsApp y ahora el sitio)
+// como CSV para abrir en Excel/Sheets, en vez de tener que revisarlo
+// entrada por entrada desde el panel de Telegram.
+function csvCell(val) {
+  const str = String(val ?? '');
+  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+}
+app.get('/api/admin/leads-export', (req, res) => {
+  if (!ALR_GOVERNANCE_SECRET || req.query.callerKey !== ALR_GOVERNANCE_SECRET) {
+    return res.status(403).json({ ok: false, error: 'Not authorized.' });
+  }
+  const columns = ['chatId', 'name', 'username', 'phone', 'countryCode', 'giro', 'conviction', 'temp', 'text', 'timestamp', 'source'];
+  const rows = [columns.join(',')];
+  prospectLogs.forEach((p) => {
+    rows.push(columns.map((col) => csvCell(p[col])).join(','));
+  });
+  const csv = rows.join('\r\n');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="leads_${new Date().toISOString().slice(0, 10)}.csv"`);
+  return res.status(200).send('﻿' + csv); // BOM para que Excel detecte UTF-8
 });
 
 // Configure automatic security alerts for repeated prompt injection attacks & Auto IP-Ban
