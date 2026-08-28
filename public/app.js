@@ -294,7 +294,6 @@ document.addEventListener('DOMContentLoaded', () => {
       "Asistente Personal IA",
       "Apps Móviles Android & iOS",
       "Punto de Venta POS",
-      "Simulador de Presupuesto IA",
       "Software a la Medida",
       "Página Web de Alta Conversión"
     ]);
@@ -302,7 +301,6 @@ document.addEventListener('DOMContentLoaded', () => {
       "Implementamos tu Asistente Personal de Inteligencia Artificial que puedes controlar desde WhatsApp o Telegram para que disfrutes más de las cosas que valen la pena.",
       "Desarrollamos Aplicaciones Móviles (PWA y Nativas) para Android e iOS publicadas en Play Store y App Store con cobro en tarjeta y notificaciones push.",
       "Controla tu negocio 24/7 desde cualquier lugar y dispositivo: administra inventarios, sucursales, cortes de caja y facturación a tu medida.",
-      "Cotiza e interactúa en tiempo real con nuestro Simulador de Presupuestos IA para calcular la inversión y retorno exacto de tu proyecto.",
       "Desarrollamos Software Personalizado, ERP, CRM y Plataformas a la Medida para automatizar la operación exacta de tu empresa.",
       "Establece una presencia digital corporativa premium con tu Página Web disruptiva con puntuación 98+ en velocidad y conversión."
     ]);
@@ -568,9 +566,14 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         cookieBanner.style.display = 'block';
       }, 1000);
+    } else if (typeof gtag === 'function') {
+      gtag('consent', 'update', { ad_storage: 'granted', analytics_storage: 'granted' });
     }
     acceptCookiesBtn.addEventListener('click', () => {
       safeLocalStorage.setItem('cookies_accepted', 'true');
+      if (typeof gtag === 'function') {
+        gtag('consent', 'update', { ad_storage: 'granted', analytics_storage: 'granted' });
+      }
       cookieBanner.style.opacity = '0';
       setTimeout(() => {
         cookieBanner.style.display = 'none';
@@ -652,87 +655,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { threshold: 0.15 });
 
   revealElements.forEach(el => revealObserver.observe(el));
-
-  // 10. Calculator Logic
-  const basePrice = 12000;
-  const calcChecks = document.querySelectorAll('.calc-check');
-  const totalDisplay = document.getElementById('calc-total-price');
-  
-  if (totalDisplay && calcChecks.length > 0) {
-    const svgCircle = document.getElementById('calc-svg-progress');
-    const pctLabel = document.getElementById('calc-pct-label');
-
-    const updateEstimate = () => {
-      let total = basePrice;
-      calcChecks.forEach(chk => {
-        if (chk.checked) {
-          total += parseInt(chk.getAttribute('data-price'));
-        }
-      });
-      totalDisplay.textContent = `$${total.toLocaleString()} MXN`;
-      
-      const pct = Math.round((total / 35000) * 100);
-      if (pctLabel) pctLabel.textContent = `${pct}%`;
-      
-      if (svgCircle) {
-        const strokeOffset = 345.57 - (345.57 * pct) / 100;
-        svgCircle.style.strokeDashoffset = strokeOffset;
-      }
-    };
-    
-    calcChecks.forEach(chk => chk.addEventListener('change', () => {
-      updateEstimate();
-      if (typeof gtag === 'function') {
-        gtag('event', 'select_saas_module', {
-          event_category: 'calculator',
-          event_label: chk.parentElement.querySelector('span').textContent,
-          value: parseInt(chk.getAttribute('data-price'))
-        });
-      }
-    }));
-    updateEstimate(); // Inicializar gráfico
-    
-    const calcSubmitBtn = document.getElementById('calc-submit-btn');
-    if (calcSubmitBtn) {
-      calcSubmitBtn.addEventListener('click', () => {
-        const selectedModules = [];
-        calcChecks.forEach(chk => {
-          if (chk.checked) {
-            selectedModules.push(chk.parentElement.querySelector('span').textContent);
-          }
-        });
-        
-        const totalPrice = document.getElementById('calc-total-price').textContent;
-        const descField = document.getElementById('contact-desc');
-        if (descField) {
-          descField.value = `Coticé una configuración SaaS con presupuesto estimado de ${totalPrice}.\n\nMódulos seleccionados:\n- Plataforma Base\n${selectedModules.map(m => `- ${m}`).join('\n')}`;
-        }
-        
-        const contactSec = document.getElementById('contacto');
-        if (contactSec) {
-          contactSec.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // Fire premium corporate confetti burst
-        if (typeof confetti === 'function') {
-          confetti({
-            particleCount: 150,
-            spread: 85,
-            origin: { y: 0.6 },
-            colors: ['#6366f1', '#ec4899', '#3b82f6', '#10b981']
-          });
-        }
-
-        const contactCard = document.querySelector('.contact-card');
-        if (contactCard) {
-          contactCard.classList.add('pulse-highlight');
-          setTimeout(() => {
-            contactCard.classList.remove('pulse-highlight');
-          }, 3000);
-        }
-      });
-    }
-  }
 
   // 11. FAQ Accordion Logic
   const faqItems = document.querySelectorAll('.faq-item');
