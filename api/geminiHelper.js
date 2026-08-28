@@ -265,20 +265,22 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
     }
   });
 
-  // Los 3 modelos que tenía esta lista antes (2.0-flash, 2.5-flash,
-  // 1.5-flash) dejaron de estar disponibles para llaves de API nuevas —
-  // cualquier respuesta exitosa habría sido imposible con una llave
-  // recién creada, cayendo siempre al respaldo por reglas fijas.
-  // "gemini-flash-latest" es un alias que Google mantiene apuntando al
-  // modelo flash vigente más reciente, así que aunque Google retire
-  // Modelos oficiales vigentes en Google Generative Language API con fallback multinivel
+  // Confirmado con esta misma llave de API (ver lastFailureDetails del
+  // 2026-08-28): los 5 modelos de abajo ya están retirados por Google
+  // para llaves nuevas (se bloquean solos por 404/400 desde el primer
+  // intento). "gemini-flash-latest" es el único que responde de verdad
+  // -- es un alias que Google mantiene apuntando al modelo flash
+  // vigente más reciente -- así que va primero para no gastar hasta
+  // 80s de latencia real reintentando 5 modelos muertos antes de
+  // llegar al que sí funciona. Los demás se dejan solo como respaldo
+  // por si algún día alguno vuelve a responder.
   const modelsToTry = [
+    'gemini-flash-latest',
     'gemini-2.0-flash',
     'gemini-1.5-flash',
     'gemini-2.5-flash',
     'gemini-1.5-pro',
-    'gemini-2.0-flash-lite',
-    'gemini-flash-latest'
+    'gemini-2.0-flash-lite'
   ];
 
   const failureDetails = [];
@@ -474,7 +476,10 @@ async function extractAppointmentInfo(replyText) {
     const req = https.request({
       hostname: 'generativelanguage.googleapis.com',
       port: 443,
-      path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      // gemini-2.0-flash está retirado (ver modelsToTry arriba, mismo
+      // hallazgo) -- esta llamada llevaba tiempo fallando en silencio,
+      // sin nunca extraer info de citas confirmadas por el bot.
+      path: `/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
     }, (res) => {
