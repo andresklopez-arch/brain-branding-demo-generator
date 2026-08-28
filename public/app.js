@@ -5104,7 +5104,9 @@ END:VCARD`;
     isFetchingContracts = true;
 
     try {
-      const res = await fetch(`${apiBase}/api/contracts-list`);
+      const res = await fetch(`${apiBase}/api/contracts-list`, {
+        headers: { 'X-Admin-Key': window._adminGovKey || '' }
+      });
       const data = await res.json();
       if (data && data.ok && Array.isArray(data.contracts)) {
         const remoteList = data.contracts;
@@ -5124,7 +5126,7 @@ END:VCARD`;
             currentMap.set(key, lc);
             fetch(`${apiBase}/api/contracts`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 'Content-Type': 'application/json', 'X-Admin-Key': window._adminGovKey || '' },
               body: JSON.stringify(lc)
             }).catch(() => {});
           } else {
@@ -5158,7 +5160,7 @@ END:VCARD`;
     try {
       await fetch(`${window.API_BASE}/api/contracts/${code}/toggle-status`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Key': window._adminGovKey || '' },
         body: JSON.stringify({ status: targetStatus })
       });
     } catch(e) {}
@@ -5553,7 +5555,7 @@ END:VCARD`;
 
         fetch(window.API_BASE + '/api/contracts', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-Admin-Key': window._adminGovKey || '' },
           body: JSON.stringify(contract)
         }).catch(() => {});
 

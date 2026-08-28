@@ -66,6 +66,26 @@ if (!ALR_GOVERNANCE_SECRET) {
   console.warn('[ALR_GOVERNANCE_SECRET] No configurada -- /api/admin/gemini-healthcheck y /api/admin/test-gemini-reply quedarán bloqueados hasta configurarla en Render.');
 }
 
+// /api/contracts/* (crear, listar-todos, apagar/prender remotamente,
+// borrar) no tenían NINGUNA autenticación -- cualquiera que adivinara o
+// viera un folio de 6 dígitos podía tocarlos. El panel admin no usa
+// Firebase Auth (es un login propio de contraseña + 2FA por Telegram,
+// ver /api/admin/verify-2fa), así que se reutiliza este mismo secreto:
+// el servidor se lo entrega al navegador SOLO tras pasar el 2FA
+// (ver más abajo), y el navegador lo manda de vuelta en el header
+// X-Admin-Key en cada acción administrativa. GET /:code, GET
+// /:code/app-status y POST /:code/accept se quedan públicos a propósito
+// -- los usa el cliente final para ver/firmar su contrato o que su app
+// se autoconsulte si debe mostrarse suspendida, sin necesitar login.
+function requireGovernanceKey(req, res) {
+  const key = req.headers['x-admin-key'];
+  if (!ALR_GOVERNANCE_SECRET || key !== ALR_GOVERNANCE_SECRET) {
+    res.status(403).json({ ok: false, error: 'No autorizado.' });
+    return false;
+  }
+  return true;
+}
+
 // Antes esta contraseña solo se comparaba EN EL NAVEGADOR (index.html
 // tenía el hash escrito ahí y comparaba con crypto.subtle.digest del
 // lado del cliente) — cualquiera podía saltarse esa comparación entera
@@ -155,7 +175,7 @@ app.use(express.static(path.join(__dirname, '../public'), {
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Admin-Key');
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -2851,7 +2871,11 @@ app.post('/api/admin/verify-2fa', async (req, res) => {
     parse_mode: 'Markdown'
   }).catch(() => {});
 
-  return res.status(200).json({ ok: true, adminToken });
+  // alrGovernanceSecret solo se entrega tras pasar contraseña + 2FA real
+  // por Telegram -- el navegador lo guarda en memoria (no en localStorage
+  // persistente) y lo reenvía en X-Admin-Key para las acciones de
+  // /api/contracts/* que sí requieren ser el admin.
+  return res.status(200).json({ ok: true, adminToken, alrGovernanceSecret: ALR_GOVERNANCE_SECRET || null });
 });
 
 // Audit Log Store for Legal & Operational Audit Trail
@@ -3800,6 +3824,7 @@ function saveContractsToDisk() {
 }
 
 app.post('/api/contracts', (req, res) => {
+  if (!requireGovernanceKey(req, res)) return;
   try {
     const { clientName, appName, date, initialPrice, monthlyPrice, code: customCode } = req.body || {};
     if (!clientName || !appName) {
@@ -3919,6 +3944,7 @@ app.post('/api/contracts/:code/accept', (req, res) => {
 
 // Toggle App Online / Offline Remote Governance Endpoint
 app.post('/api/contracts/:code/toggle-status', (req, res) => {
+  if (!requireGovernanceKey(req, res)) return;
   const code = (req.params.code || '').trim();
   const contract = contractsDB[code];
   if (!contract) {
@@ -3975,10 +4001,12 @@ app.get('/api/contracts/:code/app-status', (req, res) => {
 });
 
 app.get('/api/contracts-list', (req, res) => {
+  if (!requireGovernanceKey(req, res)) return;
   return res.status(200).json({ ok: true, contracts: Object.values(contractsDB) });
 });
 
 app.delete('/api/contracts/:code', (req, res) => {
+  if (!requireGovernanceKey(req, res)) return;
   const code = (req.params.code || '').trim();
   if (contractsDB[code]) {
     const deleted = contractsDB[code];

@@ -273,6 +273,7 @@
           if (otpError) otpError.style.display = 'none';
           window._is2FAActive = false;
           window._adminToken = data.adminToken;
+          window._adminGovKey = data.alrGovernanceSecret || null;
           try { sessionStorage.setItem('brain_branding_admin_token', data.adminToken); } catch (e) {}
           if (window._otpInterval) clearInterval(window._otpInterval);
 
@@ -468,7 +469,8 @@
       // el token del bot embebido en este HTML público).
       try {
         fetch((window.API_BASE || '') + '/api/contracts/' + codeStr, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: { 'X-Admin-Key': window._adminGovKey || '' }
         }).catch(function() {});
       } catch(e) {}
 
@@ -575,7 +577,7 @@
       try {
         await fetch(apiBase + '/api/contracts', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-Admin-Key': window._adminGovKey || '' },
           body: JSON.stringify(contract)
         });
       } catch(err) {
