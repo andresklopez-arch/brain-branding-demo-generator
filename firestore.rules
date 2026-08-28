@@ -84,6 +84,22 @@ service cloud.firestore {
       allow delete: if isAlrSuperAdmin();
     }
 
+    // Prospectos (Telegram/WhatsApp/sitio) y citas agendadas por el bot.
+    // Antes vivían solo en el disco efímero de Render -- se perdían en
+    // cada despliegue. Ahora se replican aquí desde api/historyStore.js,
+    // que se autentica con una credencial real de service account (NO la
+    // sesión anónima que usa serolab_requirements arriba -- estos datos
+    // sí son sensibles), así que el Admin SDK bypasea estas reglas por
+    // completo. Se dejan explícitas de cualquier forma para que quede
+    // documentado que ningún cliente (navegador, app) debe poder tocar
+    // estas colecciones directo, ni siquiera para leer.
+    match /bot_prospects/{docId} {
+      allow read, write: if false;
+    }
+    match /bot_appointments/{docId} {
+      allow read, write: if false;
+    }
+
     // Sin match /{document=**} de respaldo: todo lo no cubierto
     // arriba queda denegado por defecto.
   }

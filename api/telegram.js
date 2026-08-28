@@ -1107,9 +1107,34 @@ const ADMIN_CHAT_ID = '8337803949';
 const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || null;
 
 const pausedChats = {};
-const { loadProspectsFromDisk, saveProspectsToDisk, loadAppointmentsFromDisk, saveAppointmentsToDisk } = require('./historyStore.js');
+const {
+  loadProspectsFromDisk, saveProspectsToDisk, loadProspectsFromFirestore, syncProspectToFirestore,
+  loadAppointmentsFromDisk, saveAppointmentsToDisk, loadAppointmentsFromFirestore, syncAppointmentToFirestore
+} = require('./historyStore.js');
+// Arranca con lo que haya en el disco de este proceso (rápido, síncrono)
+// y en cuanto Firestore responde reemplaza el contenido EN EL MISMO
+// arreglo (nunca se reasigna la variable -- todo el resto del archivo ya
+// tiene su propia referencia a este arreglo) con la copia persistente
+// real. Si Firestore no está configurada o falla, se queda con lo del
+// disco tal cual, sin romper nada.
 const prospectLogs = loadProspectsFromDisk();
+loadProspectsFromFirestore().then((remote) => {
+  if (remote && remote.length > 0) {
+    prospectLogs.length = 0;
+    prospectLogs.push(...remote);
+    console.log(`[FIRESTORE] ${remote.length} prospecto(s) recuperado(s) de Firestore.`);
+  }
+}).catch(() => {});
+
 let appointments = loadAppointmentsFromDisk();
+loadAppointmentsFromFirestore().then((remote) => {
+  if (remote && remote.length > 0) {
+    appointments.length = 0;
+    appointments.push(...remote);
+    console.log(`[FIRESTORE] ${remote.length} cita(s) recuperada(s) de Firestore.`);
+  }
+}).catch(() => {});
+
 const userRateLimits = {};
 
 function sanitizeReply(text) {
@@ -1291,6 +1316,7 @@ async function detectAndTrackAppointment(chatId, firstName, username, reply) {
     appointments.push(entry);
     if (appointments.length > 500) appointments.shift();
     saveAppointmentsToDisk(appointments);
+    syncAppointmentToFirestore(entry);
 
     const whenLabel = dateISO ? `${dateISO}${time24h ? ' ' + time24h : ''}` : (info.dayLabel || 'sin definir');
     const calendarLine = entry.calendarEventUrl ? `\n🔗 *Ver en Google Calendar:* [Abrir evento](${entry.calendarEventUrl})` : '';
@@ -1381,7 +1407,7 @@ async function notifyOwner(chatId, firstName, username, userText) {
   const isPaused = pausedChats[chatId] && pausedChats[chatId] > Date.now();
   const statusTag = isPaused ? '⏸️ *[MODO PAUSA ACTIVO - BOT SILENCIADO]*' : '🤖 *[RESPUESTA AUTOMÁTICA ENVIADA]*';
 
-  prospectLogs.push({
+  const prospectEntry = {
     chatId,
     name: firstName || 'Prospecto',
     username: username || 'Sin username',
@@ -1391,9 +1417,11 @@ async function notifyOwner(chatId, firstName, username, userText) {
     temp: isCitaClick ? 'CITA_URGENTE' : (tempTag.includes('CALIENTE') ? 'CALIENTE' : (tempTag.includes('TIBIO') ? 'TIBIO' : 'FRÍO')),
     timestamp: new Date().toLocaleTimeString('es-MX'),
     lastActiveMs: Date.now()
-  });
+  };
+  prospectLogs.push(prospectEntry);
   if (prospectLogs.length > 500) prospectLogs.shift();
   saveProspectsToDisk(prospectLogs);
+  syncProspectToFirestore(prospectEntry);
 
   const alertHeader = isCitaClick ? '🚨 *¡PROSPECTO SOLICITÓ AGENDAR CITA EN WHATSAPP!* 🚨' : '🚨 *¡NUEVO MENSAJE DE PROSPECTO EN TELEGRAM!* 🚨';
   const giroTag = state.giro ? `🏢 *Giro / Industria:* ${state.giro}\n` : '';
@@ -2639,13 +2667,17 @@ app.post('/api/leads', (req, res) => {
     // Si el mismo teléfono ya mandó el formulario antes (ej. corrigió un
     // error y lo reenvió), actualiza esa entrada en vez de duplicarla.
     const dupIndex = prospectLogs.findIndex((p) => p.source === 'website_form' && p.phone === phone);
+    let finalEntry;
     if (dupIndex !== -1) {
-      prospectLogs[dupIndex] = { ...prospectLogs[dupIndex], ...entry, chatId: prospectLogs[dupIndex].chatId };
+      finalEntry = { ...prospectLogs[dupIndex], ...entry, chatId: prospectLogs[dupIndex].chatId };
+      prospectLogs[dupIndex] = finalEntry;
     } else {
-      prospectLogs.push(entry);
+      finalEntry = entry;
+      prospectLogs.push(finalEntry);
     }
     if (prospectLogs.length > 500) prospectLogs.shift();
     saveProspectsToDisk(prospectLogs);
+    syncProspectToFirestore(finalEntry);
 
     return res.status(201).json({ ok: true });
   } catch (e) {

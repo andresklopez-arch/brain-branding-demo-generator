@@ -8,6 +8,29 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
+// El disco de Render es efímero (cualquier `git push` lo reinicia desde
+// el repo) -- prospects_db.json y appointments_db.json vivían SOLO ahí,
+// así que cada despliegue borraba en silencio leads y citas reales. Con
+// FIREBASE_SERVICE_ACCOUNT_JSON configurada en Render (credencial real
+// de service account, no la sesión anónima que usa SERO LAB -- estos
+// datos sí son sensibles), Firestore pasa a ser la fuente de verdad:
+// se hidrata desde ahí al arrancar y cada escritura se replica ahí
+// también (además del archivo de disco, que se conserva como respaldo
+// rápido dentro de la misma vida del proceso). Si la credencial no está
+// configurada, `db` queda `null` y todo sigue funcionando exactamente
+// como antes (solo disco), sin romper nada.
+const admin = require('firebase-admin');
+if (!admin.apps.length && process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+  try {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount), projectId: 'brain-branding' });
+    console.log('[FIRESTORE] Admin SDK inicializado con credencial de service account.');
+  } catch (e) {
+    console.error('[FIRESTORE] FIREBASE_SERVICE_ACCOUNT_JSON inválida, cae a modo solo-disco:', e.message);
+  }
+}
+const db = admin.apps.length ? admin.firestore() : null;
+
 const DATA_DIR = path.join(__dirname, '../data');
 const HISTORY_FILE = path.join(DATA_DIR, 'conversation_history.enc');
 const LEGACY_FILE = path.join(DATA_DIR, 'conversation_history.json');
@@ -147,6 +170,33 @@ function saveProspectsToDisk(logs) {
   } catch (e) {}
 }
 
+const PROSPECTS_COLLECTION = 'bot_prospects';
+
+// Devuelve null (no undefined/[]) cuando Firestore no está disponible o
+// falla, para que quien llama pueda distinguir "sin datos" de "no se
+// pudo consultar" y decida quedarse con lo que ya tenía en memoria/disco
+// en vez de vaciarlo por error.
+async function loadProspectsFromFirestore() {
+  if (!db) return null;
+  try {
+    const snap = await db.collection(PROSPECTS_COLLECTION).orderBy('lastActiveMs', 'asc').limit(500).get();
+    return snap.docs.map((d) => d.data());
+  } catch (e) {
+    console.warn('[FIRESTORE] Error leyendo prospectos:', e.message);
+    return null;
+  }
+}
+
+// No bloqueante a propósito: quien llama no espera esta promesa (la
+// respuesta al usuario/webhook no debe depender de la latencia de
+// Firestore). Un doc por chatId -- reenviar el mismo chatId actualiza en
+// vez de duplicar.
+function syncProspectToFirestore(entry) {
+  if (!db || !entry || !entry.chatId) return;
+  db.collection(PROSPECTS_COLLECTION).doc(String(entry.chatId)).set(entry, { merge: true })
+    .catch((e) => console.warn('[FIRESTORE] Error guardando prospecto:', e.message));
+}
+
 function loadMetricsFromDisk() {
   try {
     if (fs.existsSync(METRICS_FILE)) {
@@ -177,6 +227,25 @@ function saveAppointmentsToDisk(appointments) {
   try {
     fs.writeFileSync(APPOINTMENTS_FILE, JSON.stringify(appointments.slice(-500), null, 2), 'utf8');
   } catch (e) {}
+}
+
+const APPOINTMENTS_COLLECTION = 'bot_appointments';
+
+async function loadAppointmentsFromFirestore() {
+  if (!db) return null;
+  try {
+    const snap = await db.collection(APPOINTMENTS_COLLECTION).orderBy('createdAt', 'asc').limit(500).get();
+    return snap.docs.map((d) => d.data());
+  } catch (e) {
+    console.warn('[FIRESTORE] Error leyendo citas:', e.message);
+    return null;
+  }
+}
+
+function syncAppointmentToFirestore(entry) {
+  if (!db || !entry || !entry.id) return;
+  db.collection(APPOINTMENTS_COLLECTION).doc(String(entry.id)).set(entry, { merge: true })
+    .catch((e) => console.warn('[FIRESTORE] Error guardando cita:', e.message));
 }
 
 const VISITS_FILE = path.join(DATA_DIR, 'visits_db.json');
@@ -288,8 +357,12 @@ module.exports = {
   inMemoryStore,
   loadProspectsFromDisk,
   saveProspectsToDisk,
+  loadProspectsFromFirestore,
+  syncProspectToFirestore,
   loadAppointmentsFromDisk,
   saveAppointmentsToDisk,
+  loadAppointmentsFromFirestore,
+  syncAppointmentToFirestore,
   loadMetricsFromDisk,
   saveMetricsToDisk,
   loadVisitsFromDisk,
