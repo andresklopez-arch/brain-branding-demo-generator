@@ -462,21 +462,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 5. Contact Form WhatsApp Redirection, Auto-Save Draft & Giro Chips Handler
-  const formFields = ['contact-name', 'contact-business', 'contact-desc', 'contact-operation'];
-  
-  // Auto-restore draft from LocalStorage on load
-  formFields.forEach(fieldId => {
-    const el = document.getElementById(fieldId);
-    if (el) {
-      const savedVal = localStorage.getItem(`draft_${fieldId}`);
-      if (savedVal) el.value = savedVal;
-      el.addEventListener('input', (e) => {
-        localStorage.setItem(`draft_${fieldId}`, e.target.value);
-      });
-    }
-  });
-
   // Haptic Feedback for buttons & cards on mobile
   const triggerMobileVibration = () => {
     if (navigator.vibrate) {
@@ -489,74 +474,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  const contactForm = document.getElementById('agency-contact-form');
-  if (contactForm) {
-    contactForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      triggerMobileVibration();
-      
-      // Honeypot anti-spam verification
-      const honeypot = document.getElementById('contact-honeypot');
-      if (honeypot && honeypot.value !== '') {
-        console.warn('[Security] Bot detectado en el formulario.');
-        return; // Bloqueo silencioso
-      }
-      
-      const name = document.getElementById('contact-name').value.trim();
-      const business = document.getElementById('contact-business').value.trim();
-      const vertical = document.getElementById('contact-vertical').value;
-      const desc = document.getElementById('contact-desc').value.trim();
-      const operation = document.getElementById('contact-operation').value.trim();
-      
-      // WhatsApp pre-filled link
-      const phone = "527712339238"; // WhatsApp comercial
-      const text = `Hola *Brain Branding*, realicé el diagnóstico de mi negocio en la web:\n\n1. *Giro:* ${vertical}\n2. *Funciones que requiero:* ${desc}\n3. *Operación actual:* ${operation}\n\nMi nombre es *${name}* de la empresa *${business}*. Quedo a la espera de mi propuesta personalizada.`;
-      
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const waUrl = isMobile 
-        ? `whatsapp://send?phone=${phone}&text=${encodeURIComponent(text)}`
-        : `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`;
-      
-      // Visual feedback on button
-      const submitBtn = contactForm.querySelector('button[type="submit"]');
-      const originalText = submitBtn.innerHTML;
-      submitBtn.innerHTML = '✓ ¡Estructurando idea! Abriendo WhatsApp...';
-      submitBtn.disabled = true;
-      submitBtn.style.opacity = '0.7';
-
-      // Clear draft storage
-      formFields.forEach(f => localStorage.removeItem(`draft_${f}`));
-
-      setTimeout(() => {
-        window.open(waUrl, '_blank');
-        
-        // Reset button after redirect
-        setTimeout(() => {
-          submitBtn.innerHTML = originalText;
-          submitBtn.disabled = false;
-          submitBtn.style.opacity = '1';
-          contactForm.reset();
-          // Reset chips to default
-          if (chips && chips.length > 0) {
-            chips.forEach((c, idx) => {
-              if (idx === 0) {
-                c.style.borderColor = 'var(--primary)';
-                c.style.color = '#fff';
-                c.style.background = 'rgba(99, 102, 241, 0.1)';
-                c.classList.add('active-chip');
-                verticalInput.value = c.getAttribute('data-value');
-              } else {
-                c.style.borderColor = 'var(--border-color)';
-                c.style.color = 'var(--text-muted)';
-                c.style.background = 'rgba(255,255,255,0.02)';
-                c.classList.remove('active-chip');
-              }
-            });
-          }
-        }, 1000);
-      }, 600);
-    });
-  }
+  // El submit real de #agency-contact-form (validación, máscara de
+  // teléfono, borradores cifrados, mensaje de WhatsApp) vive más abajo,
+  // en la sección "17. Real-Time Visual Field Validation" en adelante.
 
   // 6. Cookie Consent Logic
   const cookieBanner = document.getElementById('cookie-banner');
@@ -1697,7 +1617,10 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('Bot detected via honeypot.');
         return;
       }
-      
+
+      const descField = document.getElementById('contact-desc');
+      const operationField = document.getElementById('contact-operation');
+
       let gaErrorTimeout = null;
       const errorCounts = {};
       const showInputError = (el, msg) => {
@@ -1824,6 +1747,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
       fieldFocusTimes = {};
+
+      // Google Ads conversion (misma etiqueta que gracias.html/confirmacion.html)
+      // + evento GA4 recomendado para captación de leads.
+      if (typeof gtag === 'function') {
+        gtag('event', 'conversion', { send_to: 'AW-11158652391/conversion' });
+        gtag('event', 'generate_lead', {
+          event_category: 'engagement',
+          event_label: 'Contact Form'
+        });
+      }
 
       // Open WhatsApp web or api
       const whatsappUrl = `https://api.whatsapp.com/send?phone=527712339238&text=${encodeURIComponent(text)}`;

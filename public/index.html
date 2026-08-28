@@ -4584,6 +4584,8 @@
             <span style="font-size: 11.5px; color: var(--text-muted); display: block;">Contesta unas preguntas rápidas y te escribimos por WhatsApp con una propuesta orientada a tu negocio.</span>
           </div>
 
+          <button type="button" id="form-restore-link" style="display: none; align-self: flex-start; background: none; border: none; padding: 0; margin-bottom: 2px; font-size: 11.5px; color: var(--primary); text-decoration: underline; cursor: pointer;">↺ Tienes un borrador sin enviar — haz clic para restaurarlo</button>
+
           <form id="agency-contact-form" novalidate style="display: flex; flex-direction: column; gap: 12px;">
             <div style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;" aria-hidden="true">
               <label for="contact-honeypot">Deja este campo vacío</label>
@@ -4598,6 +4600,23 @@
               <div>
                 <label for="contact-business" style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 5px;">Tu negocio</label>
                 <input type="text" id="contact-business" required placeholder="Ej. Ferretería Erika" style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 12px; color: #fff; font-size: 13px;">
+              </div>
+            </div>
+
+            <div>
+              <label for="contact-phone" style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 5px;">Tu WhatsApp</label>
+              <div style="display: grid; grid-template-columns: 90px 1fr; gap: 8px;">
+                <select id="contact-country-code" style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 6px; color: #fff; font-size: 13px;">
+                  <option value="52" selected>🇲🇽 +52</option>
+                  <option value="1">🇺🇸 +1</option>
+                  <option value="502">🇬🇹 +502</option>
+                  <option value="57">🇨🇴 +57</option>
+                  <option value="54">🇦🇷 +54</option>
+                  <option value="56">🇨🇱 +56</option>
+                  <option value="51">🇵🇪 +51</option>
+                  <option value="34">🇪🇸 +34</option>
+                </select>
+                <input type="tel" id="contact-phone" inputmode="numeric" required maxlength="12" placeholder="771-233-9238" style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 12px; color: #fff; font-size: 13px;">
               </div>
             </div>
 
