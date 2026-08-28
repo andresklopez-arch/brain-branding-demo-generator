@@ -1758,9 +1758,37 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
+      // Guardar el lead en el servidor ANTES de abrir WhatsApp -- si el
+      // visitante cierra esa pestaña sin llegar a enviar el mensaje, el
+      // nombre/teléfono/giro que ya escribió no se pierde. No bloqueante
+      // (no se espera la respuesta) para no retrasar la apertura de
+      // WhatsApp ni arriesgar que el navegador la trate como popup no
+      // solicitado por perder el gesto del usuario.
+      if (window.API_BASE) {
+        fetch(`${window.API_BASE}/api/leads`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, business, phone: phoneVal, countryCode, vertical, desc, operation })
+        }).catch(() => {});
+      }
+
       // Open WhatsApp web or api
       const whatsappUrl = `https://api.whatsapp.com/send?phone=527712339238&text=${encodeURIComponent(text)}`;
       window.open(whatsappUrl, '_blank');
+
+      // Visual feedback: confirm to the user their message was built and sent
+      const submitBtn = agencyContactForm.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '✓ ¡Listo! Abriendo WhatsApp...';
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.7';
+        setTimeout(() => {
+          submitBtn.innerHTML = originalBtnText;
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = '1';
+        }, 1800);
+      }
 
       // Reset form fields
       agencyContactForm.reset();

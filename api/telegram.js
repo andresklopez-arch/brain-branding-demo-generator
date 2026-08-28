@@ -2480,8 +2480,7 @@ app.get('/api/admin/test-gemini-reply', async (req, res) => {
 // solo agrupa/deduplica en memoria en vez de reenviar cada aviso a
 // Telegram (extensiones de navegador de terceros generan bastante ruido
 // de falsos positivos).
-const seenCspViolations = new Set();
-let cspViolationsSinceReset = 0;
+const seenCspViolations = new Map(); // fingerprint -> { directive, blockedUri, documentUri, firstSeen, count }
 let cspResetDay = new Date().toDateString();
 app.post('/api/csp-report', (req, res) => {
   res.status(204).end(); // Responder rápido; el navegador no espera nada.
@@ -2492,30 +2491,115 @@ app.post('/api/csp-report', (req, res) => {
     const today = new Date().toDateString();
     if (today !== cspResetDay) {
       seenCspViolations.clear();
-      cspViolationsSinceReset = 0;
       cspResetDay = today;
     }
-    if (seenCspViolations.size >= 100) return; // tope de memoria por día
 
     const raw = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
     const parsed = JSON.parse(raw);
-    const report = parsed['csp-report'];
-    if (!report) return;
 
-    const directive = report['violated-directive'] || report['effective-directive'] || 'desconocida';
-    const blockedUri = report['blocked-uri'] || 'desconocido';
-    const documentUri = report['document-uri'] || 'desconocida';
+    // Dos formatos posibles según qué directiva del navegador disparó el
+    // POST: `report-uri` (viejo, un solo objeto {"csp-report": {...}}) o
+    // `report-to` / Reporting API (nuevo, arreglo de {type, body: {...}}
+    // con nombres de campo en camelCase en vez de kebab-case).
+    let directive, blockedUri, documentUri;
+    if (Array.isArray(parsed)) {
+      const entry = parsed.find((r) => r && r.type === 'csp-violation');
+      if (!entry || !entry.body) return;
+      directive = entry.body.effectiveDirective || 'desconocida';
+      blockedUri = entry.body.blockedURL || 'desconocido';
+      documentUri = entry.body.documentURL || entry.url || 'desconocida';
+    } else {
+      const report = parsed['csp-report'];
+      if (!report) return;
+      directive = report['violated-directive'] || report['effective-directive'] || 'desconocida';
+      blockedUri = report['blocked-uri'] || 'desconocido';
+      documentUri = report['document-uri'] || 'desconocida';
+    }
     const fingerprint = `${directive}|${blockedUri}`;
-    if (seenCspViolations.has(fingerprint)) return;
-    seenCspViolations.add(fingerprint);
-    cspViolationsSinceReset++;
+
+    const existing = seenCspViolations.get(fingerprint);
+    if (existing) {
+      existing.count++;
+      return;
+    }
+    if (seenCspViolations.size >= 100) return; // tope de memoria por día
+
+    seenCspViolations.set(fingerprint, {
+      directive, blockedUri, documentUri,
+      firstSeen: new Date().toISOString(),
+      count: 1
+    });
 
     callTelegram('sendMessage', {
       chat_id: ADMIN_CHAT_ID,
-      text: `🛡️ *CSP Report-Only: nueva violación detectada* 🛡️\n\nDirectiva: \`${directive}\`\nRecurso bloqueado: \`${blockedUri}\`\nPágina: \`${documentUri}\`\n\nVa ${cspViolationsSinceReset} distinta(s) hoy. Si esto es tráfico legítimo, ajusta la CSP en firebase.json antes de quitarle "-Report-Only".`,
+      text: `🛡️ *CSP Report-Only: nueva violación detectada* 🛡️\n\nDirectiva: \`${directive}\`\nRecurso bloqueado: \`${blockedUri}\`\nPágina: \`${documentUri}\`\n\nVa ${seenCspViolations.size} distinta(s) hoy. Consulta /api/admin/csp-reports para ver el detalle, o ajusta la CSP en firebase.json antes de quitarle "-Report-Only".`,
       parse_mode: 'Markdown'
     }).catch(() => {});
   } catch (e) {}
+});
+
+// Panel de consulta para lo que junta /api/csp-report de arriba, sin
+// depender de haber visto la alerta de Telegram cuando llegó.
+app.get('/api/admin/csp-reports', (req, res) => {
+  if (!ALR_GOVERNANCE_SECRET || req.query.callerKey !== ALR_GOVERNANCE_SECRET) {
+    return res.status(403).json({ ok: false, error: 'Not authorized.' });
+  }
+  return res.status(200).json({
+    ok: true,
+    resetDay: cspResetDay,
+    count: seenCspViolations.size,
+    violations: Array.from(seenCspViolations.values()).sort((a, b) => b.count - a.count)
+  });
+});
+
+// El formulario de diagnóstico del sitio (#agency-contact-form) abre
+// WhatsApp con el mensaje ya armado, pero si el visitante cierra esa
+// pestaña sin llegar a presionar "Enviar" ahí, el nombre/teléfono/giro
+// que ya escribió se perdía para siempre. Este endpoint lo guarda en el
+// mismo prospectLogs que ya usan los leads de Telegram/WhatsApp, ANTES
+// de abrir WhatsApp (ver app.js). Público por diseño -- lo llama el
+// navegador de cualquier visitante -- así que valida tipos/tamaños en
+// vez de exigir autenticación.
+app.post('/api/leads', (req, res) => {
+  try {
+    const rateCheck = checkUserRateLimit(`web-lead:${req.ip || 'unknown'}`);
+    if (!rateCheck.allowed) {
+      return res.status(429).json({ ok: false, error: 'Demasiadas solicitudes.' });
+    }
+
+    const body = req.body || {};
+    const clamp = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+    const name = clamp(body.name, 100);
+    const business = clamp(body.business, 100);
+    const phone = clamp(body.phone, 20);
+    const countryCode = clamp(body.countryCode, 5) || '52';
+    const vertical = clamp(body.vertical, 60);
+    const desc = clamp(body.desc, 1000);
+    const operation = clamp(body.operation, 1000);
+
+    if (!name || !phone) {
+      return res.status(400).json({ ok: false, error: 'Faltan campos requeridos.' });
+    }
+
+    prospectLogs.push({
+      chatId: `web-${Date.now()}`,
+      name,
+      username: `Sitio Web (+${countryCode} ${phone})`,
+      text: `${business ? `Negocio: ${business}. ` : ''}${desc}${operation ? ` | Operación actual: ${operation}` : ''}`.trim(),
+      giro: vertical || 'No especificado',
+      conviction: 'ALTA',
+      temp: 'CALIENTE',
+      timestamp: new Date().toLocaleTimeString('es-MX'),
+      lastActiveMs: Date.now(),
+      source: 'website_form'
+    });
+    if (prospectLogs.length > 500) prospectLogs.shift();
+    saveProspectsToDisk(prospectLogs);
+
+    return res.status(201).json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ ok: false });
+  }
 });
 
 // Configure automatic security alerts for repeated prompt injection attacks & Auto IP-Ban
