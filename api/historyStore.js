@@ -34,6 +34,7 @@ const db = admin.apps.length ? admin.firestore() : null;
 const DATA_DIR = path.join(__dirname, '../data');
 const HISTORY_FILE = path.join(DATA_DIR, 'conversation_history.enc');
 const LEGACY_FILE = path.join(DATA_DIR, 'conversation_history.json');
+const HISTORY_COLLECTION = 'bot_conversation_history';
 
 const SECRET_KEY_STR = process.env.HMAC_SECRET || process.env.ENCRYPTION_KEY || 'BRAIN_BRANDING_MASTER_SAAS_HMAC_KEY_2026_SECRET';
 // Derive 32-byte key for AES-256
@@ -77,6 +78,10 @@ function purgeOldSessions(maxDays = 30) {
       if (lastTime > 0 && lastTime < cutoffTime) {
         delete inMemoryStore[key];
         purgedCount++;
+        if (db) {
+          db.collection(HISTORY_COLLECTION).doc(String(key)).delete()
+            .catch((e) => console.warn('[FIRESTORE] Error borrando historial purgado:', e.message));
+        }
       }
     }
   }
@@ -114,6 +119,57 @@ try {
   inMemoryStore = {};
 }
 
+// Hidratación desde Firestore (async, no bloquea el arranque -- para
+// cuando llegue el primer mensaje ya casi seguro terminó). Firestore
+// gana sobre el disco para las llaves que ya tenga ahí; una sesión que
+// solo exista en el disco de este arranque (aún no sincronizada)
+// sobrevive intacta. getHistory/addTurn siguen siendo síncronas -- este
+// es el mismo patrón de "escritura replicada" ya usado para
+// prospectos/citas/contratos, no una reescritura del camino caliente de
+// cada mensaje entrante.
+async function loadHistoryFromFirestore() {
+  if (!db) return null;
+  try {
+    const snap = await db.collection(HISTORY_COLLECTION).get();
+    const out = {};
+    snap.docs.forEach((d) => {
+      const data = d.data();
+      if (!data || !data.encrypted) return;
+      const decrypted = decrypt(data.encrypted);
+      if (!decrypted) return;
+      try {
+        const turns = JSON.parse(decrypted);
+        if (Array.isArray(turns)) out[d.id] = turns;
+      } catch (e) {}
+    });
+    return out;
+  } catch (e) {
+    console.warn('[FIRESTORE] Error leyendo historial de conversaciones:', e.message);
+    return null;
+  }
+}
+loadHistoryFromFirestore().then((remote) => {
+  if (remote && Object.keys(remote).length > 0) {
+    Object.assign(inMemoryStore, remote);
+    console.log(`[FIRESTORE] ${Object.keys(remote).length} sesión(es) de conversación recuperada(s) de Firestore.`);
+  }
+}).catch(() => {});
+
+function syncHistoryKeyToFirestore(key) {
+  if (!db || !key) return;
+  const turns = inMemoryStore[key];
+  if (!turns) return;
+  const encrypted = encrypt(JSON.stringify(turns));
+  db.collection(HISTORY_COLLECTION).doc(String(key)).set({ encrypted, updatedAt: new Date().toISOString() })
+    .catch((e) => console.warn('[FIRESTORE] Error guardando historial:', e.message));
+}
+
+function deleteHistoryKeyFromFirestore(key) {
+  if (!db || !key) return;
+  db.collection(HISTORY_COLLECTION).doc(String(key)).delete()
+    .catch((e) => console.warn('[FIRESTORE] Error borrando historial:', e.message));
+}
+
 function saveToDisk() {
   try {
     const jsonStr = JSON.stringify(inMemoryStore);
@@ -132,17 +188,19 @@ function addTurn(key, role, text) {
   if (!key) return;
   if (!inMemoryStore[key]) inMemoryStore[key] = [];
   inMemoryStore[key].push({ role, text, timestamp: new Date().toISOString() });
-  
+
   if (inMemoryStore[key].length > 20) {
     inMemoryStore[key] = inMemoryStore[key].slice(-20);
   }
   saveToDisk();
+  syncHistoryKeyToFirestore(key);
 }
 
 function clearHistory(key) {
   if (key && inMemoryStore[key]) {
     delete inMemoryStore[key];
     saveToDisk();
+    deleteHistoryKeyFromFirestore(key);
   }
 }
 
