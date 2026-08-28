@@ -56,7 +56,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ejecutar chequeo diario del motor de IA (Gemini)
-        # El mismo secreto ya vive hardcodeado en api/telegram.js
-        # (ALR_GOVERNANCE_SECRET) — no se gana nada moviéndolo a un GitHub
-        # Secret aquí mientras siga expuesto en el código fuente.
-        run: curl -sf --max-time 30 "https://brain-branding-demo-generator.onrender.com/api/admin/gemini-healthcheck?callerKey=alr-saas-master-2025-brain"
+        # ALR_GOVERNANCE_SECRET ya no vive hardcodeada en api/telegram.js
+        # (ahora se lee de la misma variable en Render) -- este Secret debe
+        # tener EL MISMO VALOR configurado ahí, o este job empieza a fallar
+        # con 403.
+        env:
+          ALR_GOVERNANCE_SECRET: ${{ secrets.ALR_GOVERNANCE_SECRET }}
+        run: curl -sf --max-time 30 "https://brain-branding-demo-generator.onrender.com/api/admin/gemini-healthcheck?callerKey=${ALR_GOVERNANCE_SECRET}"

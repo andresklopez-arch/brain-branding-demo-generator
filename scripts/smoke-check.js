@@ -6,11 +6,15 @@
 
 const SITE = 'https://brainbranding.com.mx';
 const API = 'https://brain-branding-demo-generator.onrender.com';
-// Mismo secreto que ALR_GOVERNANCE_SECRET en api/telegram.js — los
-// endpoints /api/admin/test-gemini-reply y /api/admin/gemini-healthcheck
-// lo exigen para no dejarlos abiertos a que cualquiera los dispare y
-// gaste cuota de la API key de Gemini.
-const CALLER_KEY = 'alr-saas-master-2025-brain';
+// Mismo secreto que ALR_GOVERNANCE_SECRET en api/telegram.js (y en Render)
+// — los endpoints /api/admin/test-gemini-reply y /api/admin/gemini-healthcheck
+// lo exigen para no dejarlos abiertos a que cualquiera los dispare y gaste
+// cuota de la API key de Gemini. Ejecuta este script con:
+//   ALR_GOVERNANCE_SECRET=<valor> node scripts/smoke-check.js
+const CALLER_KEY = process.env.ALR_GOVERNANCE_SECRET || '';
+if (!CALLER_KEY) {
+  console.warn('[smoke-check] ALR_GOVERNANCE_SECRET no está en el entorno -- los checks de Gemini van a fallar con 403 (el resto del smoke-check corre igual).');
+}
 
 const checks = [
   {

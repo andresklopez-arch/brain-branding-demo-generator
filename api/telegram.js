@@ -53,7 +53,18 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // escriben directo y autenticado. ALR_GOVERNANCE_SECRET se conserva
 // porque lo siguen usando 2 endpoints de diagnóstico interno no
 // relacionados con licenciamiento (más abajo).
-const ALR_GOVERNANCE_SECRET = 'alr-saas-master-2025-brain';
+//
+// Antes vivía hardcodeada aquí mismo (cualquiera con acceso de lectura al
+// repo la veía) y ADEMÁS estaba duplicada en .github/workflows/watchdog.yml
+// y scripts/smoke-check.js -- por eso antes no se ganaba nada moviéndola
+// a un GitHub Secret nada más en el workflow. Ahora se lee SOLO de la
+// variable de entorno, sin valor de respaldo: si no está configurada en
+// Render, los dos endpoints de diagnóstico quedan bloqueados (falla
+// cerrado) en vez de aceptar cualquier callerKey vacío por accidente.
+const ALR_GOVERNANCE_SECRET = process.env.ALR_GOVERNANCE_SECRET || '';
+if (!ALR_GOVERNANCE_SECRET) {
+  console.warn('[ALR_GOVERNANCE_SECRET] No configurada -- /api/admin/gemini-healthcheck y /api/admin/test-gemini-reply quedarán bloqueados hasta configurarla en Render.');
+}
 
 // Antes esta contraseña solo se comparaba EN EL NAVEGADOR (index.html
 // tenía el hash escrito ahí y comparaba con crypto.subtle.digest del
@@ -2421,7 +2432,7 @@ app.get('/api/admin/gemini-healthcheck', async (req, res) => {
   // Reusa el mismo secreto de /api/governance/set-status — sin esto,
   // cualquiera que descubriera la URL podía dispararlo en bucle y gastar
   // cuota de la API key de Gemini.
-  if (req.query.callerKey !== ALR_GOVERNANCE_SECRET) {
+  if (!ALR_GOVERNANCE_SECRET || req.query.callerKey !== ALR_GOVERNANCE_SECRET) {
     return res.status(403).json({ ok: false, error: 'Not authorized.' });
   }
   try {
@@ -2445,7 +2456,7 @@ app.get('/api/admin/gemini-healthcheck', async (req, res) => {
 // 1748167). Usa un prompt fijo (no viene del usuario) para no exponer un
 // generador de texto arbitrario públicamente.
 app.get('/api/admin/test-gemini-reply', async (req, res) => {
-  if (req.query.callerKey !== ALR_GOVERNANCE_SECRET) {
+  if (!ALR_GOVERNANCE_SECRET || req.query.callerKey !== ALR_GOVERNANCE_SECRET) {
     return res.status(403).json({ ok: false, error: 'Not authorized.' });
   }
   const truncatedBefore = geminiMetrics.truncatedReplies;
@@ -2457,6 +2468,54 @@ app.get('/api/admin/test-gemini-reply', async (req, res) => {
   );
   const truncated = geminiMetrics.truncatedReplies > truncatedBefore;
   return res.status(200).json({ ok: !!reply, truncated, reply });
+});
+
+// El sitio manda su CSP en modo Report-Only (no bloquea nada todavía --
+// ver firebase.json) precisamente porque no se pudo probar en un
+// navegador real antes de desplegarla. Este endpoint recibe esos avisos
+// del navegador (`report-uri`) y los junta aquí en vez de que solo vivan
+// en la consola de DevTools de cada visitante, para poder revisar antes
+// de pasar el CSP a modo bloqueante. Es público por diseño -- el
+// navegador lo llama solo, sin poder mandar ningún secreto -- así que
+// solo agrupa/deduplica en memoria en vez de reenviar cada aviso a
+// Telegram (extensiones de navegador de terceros generan bastante ruido
+// de falsos positivos).
+const seenCspViolations = new Set();
+let cspViolationsSinceReset = 0;
+let cspResetDay = new Date().toDateString();
+app.post('/api/csp-report', (req, res) => {
+  res.status(204).end(); // Responder rápido; el navegador no espera nada.
+  try {
+    const rateCheck = checkUserRateLimit(`csp-report:${req.ip || 'unknown'}`);
+    if (!rateCheck.allowed) return;
+
+    const today = new Date().toDateString();
+    if (today !== cspResetDay) {
+      seenCspViolations.clear();
+      cspViolationsSinceReset = 0;
+      cspResetDay = today;
+    }
+    if (seenCspViolations.size >= 100) return; // tope de memoria por día
+
+    const raw = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
+    const parsed = JSON.parse(raw);
+    const report = parsed['csp-report'];
+    if (!report) return;
+
+    const directive = report['violated-directive'] || report['effective-directive'] || 'desconocida';
+    const blockedUri = report['blocked-uri'] || 'desconocido';
+    const documentUri = report['document-uri'] || 'desconocida';
+    const fingerprint = `${directive}|${blockedUri}`;
+    if (seenCspViolations.has(fingerprint)) return;
+    seenCspViolations.add(fingerprint);
+    cspViolationsSinceReset++;
+
+    callTelegram('sendMessage', {
+      chat_id: ADMIN_CHAT_ID,
+      text: `🛡️ *CSP Report-Only: nueva violación detectada* 🛡️\n\nDirectiva: \`${directive}\`\nRecurso bloqueado: \`${blockedUri}\`\nPágina: \`${documentUri}\`\n\nVa ${cspViolationsSinceReset} distinta(s) hoy. Si esto es tráfico legítimo, ajusta la CSP en firebase.json antes de quitarle "-Report-Only".`,
+      parse_mode: 'Markdown'
+    }).catch(() => {});
+  } catch (e) {}
 });
 
 // Configure automatic security alerts for repeated prompt injection attacks & Auto IP-Ban
