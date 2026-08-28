@@ -99,6 +99,9 @@ service cloud.firestore {
     match /bot_appointments/{docId} {
       allow read, write: if false;
     }
+    match /bot_contracts/{code} {
+      allow read, write: if false;
+    }
 
     // Sin match /{document=**} de respaldo: todo lo no cubierto
     // arriba queda denegado por defecto.

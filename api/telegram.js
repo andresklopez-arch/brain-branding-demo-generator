@@ -1109,7 +1109,8 @@ const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || null;
 const pausedChats = {};
 const {
   loadProspectsFromDisk, saveProspectsToDisk, loadProspectsFromFirestore, syncProspectToFirestore,
-  loadAppointmentsFromDisk, saveAppointmentsToDisk, loadAppointmentsFromFirestore, syncAppointmentToFirestore
+  loadAppointmentsFromDisk, saveAppointmentsToDisk, loadAppointmentsFromFirestore, syncAppointmentToFirestore,
+  loadContractsFromFirestore, syncContractToFirestore, deleteContractFromFirestore
 } = require('./historyStore.js');
 // Arranca con lo que haya en el disco de este proceso (rápido, síncrono)
 // y en cuanto Firestore responde reemplaza el contenido EN EL MISMO
@@ -3775,6 +3776,18 @@ try {
   console.error('[CONTRACTS DB LOAD ERROR]', e);
 }
 
+// Firestore gana sobre el disco para cualquier folio que ya tenga (es la
+// fuente de verdad real) -- Object.assign solo pisa las llaves que
+// vienen en `remote`, así que un folio que el disco acabe de parchear
+// (como 763190 arriba) y que Firestore aún no haya visto sobrevive
+// intacto hasta la primera sincronización.
+loadContractsFromFirestore().then((remote) => {
+  if (remote && Object.keys(remote).length > 0) {
+    Object.assign(contractsDB, remote);
+    console.log(`[FIRESTORE] ${Object.keys(remote).length} contrato(s) recuperado(s) de Firestore.`);
+  }
+}).catch(() => {});
+
 function saveContractsToDisk() {
   try {
     if (!fs.existsSync(DATA_DIR)) {
@@ -3820,6 +3833,7 @@ app.post('/api/contracts', (req, res) => {
 
     contractsDB[code] = contract;
     saveContractsToDisk();
+    syncContractToFirestore(contract);
     console.log(`[CONTRACT CREATED] Code: ${code} for ${clientName}`);
 
     // Send instant Telegram notification to Andrés R
@@ -3880,6 +3894,7 @@ app.post('/api/contracts/:code/accept', (req, res) => {
   };
 
   saveContractsToDisk();
+  syncContractToFirestore(contract);
   console.log(`[CONTRACT ACCEPTED] Code: ${code} by ${contract.clientName}`);
 
   // Send instant Telegram notification to Andrés R
@@ -3916,6 +3931,7 @@ app.post('/api/contracts/:code/toggle-status', (req, res) => {
 
   contract.appStatus = newStatus;
   saveContractsToDisk();
+  syncContractToFirestore(contract);
   console.log(`[APP STATUS GOVERNANCE] Code: ${code} (${contract.appName}) toggled to ${newStatus}`);
 
   const statusMsg = newStatus === 'ONLINE'
@@ -3968,6 +3984,7 @@ app.delete('/api/contracts/:code', (req, res) => {
     const deleted = contractsDB[code];
     delete contractsDB[code];
     saveContractsToDisk();
+    deleteContractFromFirestore(code);
     console.log(`[CONTRACT DELETED] Deleted contract code: ${code}`);
 
     // Antes esta notificación la mandaba el navegador directo a la API de

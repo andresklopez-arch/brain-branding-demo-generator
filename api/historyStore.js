@@ -197,6 +197,39 @@ function syncProspectToFirestore(entry) {
     .catch((e) => console.warn('[FIRESTORE] Error guardando prospecto:', e.message));
 }
 
+// contractsDB es un objeto plano { [code]: contract }, no un arreglo --
+// contracts.json guarda la facturación real de clientes SaaS, así que
+// esta es la migración más delicada de las tres. Mismo patrón: se
+// hidrata al arrancar (Firestore gana sobre el disco para los folios
+// que ya tenga; el disco solo aporta lo que Firestore aún no vio) y cada
+// escritura se replica ahí, sin bloquear la respuesta al cliente.
+const CONTRACTS_COLLECTION = 'bot_contracts';
+
+async function loadContractsFromFirestore() {
+  if (!db) return null;
+  try {
+    const snap = await db.collection(CONTRACTS_COLLECTION).get();
+    const out = {};
+    snap.docs.forEach((d) => { out[d.id] = d.data(); });
+    return out;
+  } catch (e) {
+    console.warn('[FIRESTORE] Error leyendo contratos:', e.message);
+    return null;
+  }
+}
+
+function syncContractToFirestore(contract) {
+  if (!db || !contract || !contract.code) return;
+  db.collection(CONTRACTS_COLLECTION).doc(String(contract.code)).set(contract, { merge: true })
+    .catch((e) => console.warn('[FIRESTORE] Error guardando contrato:', e.message));
+}
+
+function deleteContractFromFirestore(code) {
+  if (!db || !code) return;
+  db.collection(CONTRACTS_COLLECTION).doc(String(code)).delete()
+    .catch((e) => console.warn('[FIRESTORE] Error borrando contrato:', e.message));
+}
+
 function loadMetricsFromDisk() {
   try {
     if (fs.existsSync(METRICS_FILE)) {
@@ -363,6 +396,9 @@ module.exports = {
   saveAppointmentsToDisk,
   loadAppointmentsFromFirestore,
   syncAppointmentToFirestore,
+  loadContractsFromFirestore,
+  syncContractToFirestore,
+  deleteContractFromFirestore,
   loadMetricsFromDisk,
   saveMetricsToDisk,
   loadVisitsFromDisk,
