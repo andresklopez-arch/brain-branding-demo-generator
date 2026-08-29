@@ -7,7 +7,8 @@
     "start": "node api/telegram.js",
     "dev": "node api/telegram.js",
     "test:alr-saas": "firebase emulators:exec --only auth,firestore,functions --project brain-branding \"node tests/alr-saas.smoke.test.js\"",
-    "test:csp": "node scripts/test-csp-fixture.js"
+    "test:csp": "node scripts/test-csp-fixture.js",
+    "test:report-catchup": "node scripts/test-report-catchup.js"
   },
   "dependencies": {
     "express": "^4.19.2",

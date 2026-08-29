@@ -46,3 +46,6 @@ jobs:
 
       - name: Validar que la CSP cubra los dominios externos que el sitio usa
         run: npm run test:csp
+
+      - name: Validar la lógica de recuperación de reportes automáticos
+        run: npm run test:report-catchup

@@ -59,6 +59,61 @@ function trackTruncation() {
   }
 }
 
+// Circuit breaker: antes, si Gemini se caía (cuota agotada, modelo
+// retirado, clave inválida), CADA mensaje de CADA cliente pagaba el costo
+// completo de intentar los 3 modelos con sus timeouts (hasta 8s c/u) antes
+// de caer al respaldo por reglas fijas -- con tráfico real eso significa
+// varios segundos de espera perceptible por cliente, repetido sin parar.
+// Tras CIRCUIT_OPEN_THRESHOLD fallos totales seguidos, el circuito se abre
+// y getGeminiReply regresa null de inmediato (sin intentar la API) hasta
+// que pase CIRCUIT_COOLDOWN_MS, momento en el que deja pasar UNA llamada
+// de prueba ("medio abierto") para ver si ya se recuperó.
+const CIRCUIT_OPEN_THRESHOLD = 4;
+const CIRCUIT_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutos
+const geminiCircuit = { open: false, consecutiveFailures: 0, openedAt: null, lastProbeAt: 0 };
+let onCircuitBreakerAlertCallback = null;
+
+function setCircuitBreakerAlertCallback(cb) {
+  onCircuitBreakerAlertCallback = cb;
+}
+
+function recordGeminiCircuitSuccess() {
+  if (geminiCircuit.open && typeof onCircuitBreakerAlertCallback === 'function') {
+    onCircuitBreakerAlertCallback('closed', geminiCircuit.consecutiveFailures);
+  }
+  geminiCircuit.open = false;
+  geminiCircuit.consecutiveFailures = 0;
+  geminiCircuit.openedAt = null;
+}
+
+function recordGeminiCircuitFailure() {
+  geminiCircuit.consecutiveFailures++;
+  if (!geminiCircuit.open && geminiCircuit.consecutiveFailures >= CIRCUIT_OPEN_THRESHOLD) {
+    geminiCircuit.open = true;
+    geminiCircuit.openedAt = new Date().toISOString();
+    if (typeof onCircuitBreakerAlertCallback === 'function') {
+      onCircuitBreakerAlertCallback('opened', geminiCircuit.consecutiveFailures);
+    }
+  }
+}
+
+// true = no intentar la API ahora mismo. Deja pasar una llamada de prueba
+// (y la cuenta como "probada ahora") cada CIRCUIT_COOLDOWN_MS aunque el
+// circuito siga abierto, para poder cerrarlo solo si esa prueba funciona.
+function isGeminiCircuitOpenNow() {
+  if (!geminiCircuit.open) return false;
+  const now = Date.now();
+  if (now - geminiCircuit.lastProbeAt >= CIRCUIT_COOLDOWN_MS) {
+    geminiCircuit.lastProbeAt = now;
+    return false;
+  }
+  return true;
+}
+
+function getGeminiCircuitState() {
+  return { ...geminiCircuit };
+}
+
 function recordLog(entry) {
   geminiMetrics.recentLogs.push({
     ...entry,
@@ -178,6 +233,11 @@ async function getGeminiReply(userText, userName, contextId, history = [], custo
   const apiKey = getApiKey();
   if (!apiKey) {
     console.log('[GEMINI] No GEMINI_API_KEY found in environment variables. Using rule-based fallback.');
+    return null;
+  }
+
+  if (isGeminiCircuitOpenNow()) {
+    console.log(`[GEMINI CIRCUIT] Abierto tras ${geminiCircuit.consecutiveFailures} fallos seguidos -- usando respaldo por reglas fijas sin intentar la API.`);
     return null;
   }
 
@@ -330,6 +390,7 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
                   }
                   if (text && text.trim()) {
                     const latency = Date.now() - startTime;
+                    recordGeminiCircuitSuccess();
                     geminiMetrics.successfulCalls++;
                     geminiMetrics.totalLatencyMs += latency;
                     geminiMetrics.averageLatencyMs = Math.round(geminiMetrics.totalLatencyMs / geminiMetrics.successfulCalls);
@@ -385,6 +446,7 @@ ARQUITECTURA DE PERSUASIÓN E INTELIGENCIA NEURO-CONSULTIVA:
     }
   }
 
+  recordGeminiCircuitFailure();
   geminiMetrics.failedCalls++;
   geminiMetrics.lastFailureDetails = failureDetails;
   console.warn('[GEMINI ALL MODELS FAILED]', JSON.stringify(failureDetails));
@@ -509,6 +571,8 @@ module.exports = {
   geminiMetrics,
   setSecurityAlertCallback,
   setTruncationAlertCallback,
+  setCircuitBreakerAlertCallback,
+  getGeminiCircuitState,
   withRetry,
   generateLeadBriefing,
   testGeminiConnection,

@@ -3,8 +3,9 @@ const crypto = require('crypto');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
-const { getGeminiReply, geminiMetrics, setSecurityAlertCallback, setTruncationAlertCallback, generateLeadBriefing, testGeminiConnection, extractAppointmentInfo } = require('./geminiHelper.js');
+const { getGeminiReply, geminiMetrics, setSecurityAlertCallback, setTruncationAlertCallback, setCircuitBreakerAlertCallback, getGeminiCircuitState, withRetry, generateLeadBriefing, testGeminiConnection, extractAppointmentInfo } = require('./geminiHelper.js');
 const googleCalendar = require('./googleCalendar.js');
+const { getDueReportSlots } = require('./reportScheduling.js');
 const { getHistory, addTurn } = require('./historyStore.js');
 
 // Declarado aquí arriba (no donde se usaba antes, ~2760 líneas más abajo)
@@ -15,6 +16,21 @@ const DATA_DIR = path.join(__dirname, '../data');
 try {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 } catch (e) {}
+
+// Escritura atómica: fs.writeFileSync directo sobre el archivo final deja
+// una ventana donde, si el proceso muere a la mitad (ej. Render mata el
+// contenedor justo cuando llega un redeploy), el archivo queda truncado a
+// medias -- el próximo JSON.parse revienta y como casi todos los loaders
+// de este archivo tienen un catch(e){} silencioso, se pierde TODO el
+// historial (contratos, cupos de reportes ya enviados, avisos de CSP) sin
+// ningún aviso. Escribir primero a un archivo temporal en el mismo
+// directorio y luego renombrarlo evita ese estado a medias: fs.renameSync
+// es atómico a nivel de sistema de archivos.
+function writeJsonAtomic(filePath, data) {
+  const tmpPath = `${filePath}.tmp-${process.pid}-${Date.now()}`;
+  fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf8');
+  fs.renameSync(tmpPath, filePath);
+}
 
 const KB_FILE = path.join(DATA_DIR, 'knowledge_base.txt');
 
@@ -324,7 +340,7 @@ function getUniqueReply(chatId, candidateReply, fallbackOptions = []) {
 // completamente mudo sin ningun error visible en logs ni alertas.
 let lastTelegramAuthError = null;
 
-function callTelegram(method, data) {
+function callTelegramOnce(method, data) {
   return new Promise((resolve, reject) => {
     const postData = JSON.stringify(data);
     const options = {
@@ -377,6 +393,98 @@ function callTelegram(method, data) {
     req.write(postData);
     req.end();
   });
+}
+
+// callTelegramOnce (arriba) hace UN intento -- si Telegram responde 429
+// (rate limit) o 5xx (caído momentáneamente) o hay un error de red, antes
+// se perdía sin más. callTelegram reintenta esos casos con backoff
+// exponencial reutilizando withRetry (mismo helper que ya usa
+// geminiHelper.js para las llamadas a Gemini, en vez de reimplementarlo).
+// 401/400/403 (token inválido, payload mal formado, bot bloqueado) NO se
+// reintentan -- reintentar no los arregla, y ya los maneja
+// lastTelegramAuthError/el resto del código como corresponde.
+async function callTelegram(method, data) {
+  let lastResult = null;
+  const result = await withRetry(async () => {
+    lastResult = await callTelegramOnce(method, data);
+    if (lastResult && lastResult.ok === false && (lastResult.error_code === 429 || (typeof lastResult.error_code === 'number' && lastResult.error_code >= 500))) {
+      throw new Error(`Telegram ${lastResult.error_code}: ${lastResult.description || 'error transitorio'}`);
+    }
+    return lastResult;
+  }, 3, 500);
+  return result || lastResult || { ok: false, error_code: 0, description: 'callTelegram: fallo de red sin respuesta tras reintentos.' };
+}
+
+// Cola de reintento para mensajes automáticos importantes (reportes de
+// 6/14/22, alertas de cobro, avisos de seguridad). callTelegram ya
+// reintenta fallos transitorios varias veces, pero si Telegram sigue caído
+// más allá de esos reintentos (o el token está roto en ese momento), antes
+// el mensaje se perdía para siempre. sendAdminMessageReliable lo encola en
+// disco en vez de descartarlo, y flushTelegramQueue (llamado desde
+// checkAndTriggerMorningReports, cada ~60s) lo reintenta en cuanto
+// Telegram vuelve a responder.
+const TELEGRAM_QUEUE_FILE = path.join(DATA_DIR, 'telegram_retry_queue.json');
+function loadTelegramQueue() {
+  try {
+    if (fs.existsSync(TELEGRAM_QUEUE_FILE)) {
+      return JSON.parse(fs.readFileSync(TELEGRAM_QUEUE_FILE, 'utf8')) || [];
+    }
+  } catch (e) {}
+  return [];
+}
+function saveTelegramQueue() {
+  try { writeJsonAtomic(TELEGRAM_QUEUE_FILE, telegramRetryQueue); } catch (e) {}
+}
+let telegramRetryQueue = loadTelegramQueue();
+
+// Respaldo opcional: si ADMIN_CHAT_ID se bloquea o se borra, TODAS las
+// alertas automáticas (cobros, seguridad, reportes) dejarían de llegar sin
+// que nadie se entere -- un solo chat hardcodeado no tiene ningún plan B.
+// Si se configura la variable de entorno ADMIN_CHAT_ID_BACKUP (otro chat
+// de Telegram), sendAdminMessageReliable también le manda ahí cuando el
+// envío al chat principal termina fallando tras sus reintentos. Esto NO
+// cambia quién puede EJECUTAR comandos admin -- eso lo sigue decidiendo
+// solo ADMIN_CHAT_ID (ver STRICT ADMIN SECURITY FILTER) -- es únicamente
+// un canal de respaldo para que la alerta se vea en algún lado.
+const ADMIN_CHAT_ID_BACKUP = process.env.ADMIN_CHAT_ID_BACKUP || null;
+
+async function sendAdminMessageReliable(data) {
+  let result;
+  try {
+    result = await callTelegram('sendMessage', data);
+  } catch (e) {
+    result = { ok: false, description: e.message };
+  }
+  if (!result || result.ok !== true) {
+    telegramRetryQueue.push({ data, queuedAt: new Date().toISOString() });
+    if (telegramRetryQueue.length > 50) telegramRetryQueue = telegramRetryQueue.slice(-50);
+    saveTelegramQueue();
+
+    if (ADMIN_CHAT_ID_BACKUP && data.chat_id === ADMIN_CHAT_ID) {
+      callTelegram('sendMessage', { ...data, chat_id: ADMIN_CHAT_ID_BACKUP }).catch(() => {});
+    }
+  }
+  return result;
+}
+
+async function flushTelegramQueue() {
+  if (telegramRetryQueue.length === 0) return;
+  if (lastTelegramAuthError) return; // el token sigue roto -- reintentar ahora solo gastaría tiempo
+  const pending = telegramRetryQueue;
+  telegramRetryQueue = [];
+  saveTelegramQueue();
+  for (const item of pending) {
+    let result;
+    try {
+      result = await callTelegram('sendMessage', item.data);
+    } catch (e) {
+      result = { ok: false, description: e.message };
+    }
+    if (!result || result.ok !== true) {
+      telegramRetryQueue.push(item);
+    }
+  }
+  saveTelegramQueue();
 }
 
 // ================================================================
@@ -1512,8 +1620,31 @@ async function handleWebhookRequest(req, res) {
       let userText = update.message.text || '';
 
       // STRICT ADMIN SECURITY FILTER: Only Chat ID 8337803949 can execute admin commands & intervene
-      if (chatId.toString() === ADMIN_CHAT_ID) {
+      //
+      // El bloque completo de comandos admin de aquí abajo (~15 comandos:
+      // /csp, /visitas_, /respaldototal, /modoresumen, etc.) vive dentro de
+      // este único try -- antes, una excepción no capturada en CUALQUIERA
+      // de ellos podía tumbar el manejo de esa petición del webhook sin
+      // responder nada (Telegram reintenta el mismo update si nunca recibe
+      // 200 OK, así que un bug así podía reenviarse en bucle). El catch de
+      // abajo registra el error y responde 200 igual, y de paso el
+      // check(cmd) de límite de tasa evita que un token/chat comprometido
+      // pueda automatizar comandos costosos (ej. /respaldototal exportando
+      // la base completa) sin ningún freno -- antes solo los visitantes
+      // anónimos tenían límite (checkUserRateLimit).
+      if (chatId.toString() === ADMIN_CHAT_ID) try {
         const cmdLower = userText.toLowerCase().trim();
+
+        if (cmdLower.startsWith('/')) {
+          const adminRate = checkUserRateLimit(`admin-cmd:${chatId}`);
+          if (!adminRate.allowed) {
+            await callTelegram('sendMessage', {
+              chat_id: ADMIN_CHAT_ID,
+              text: `⏳ Vas muy rápido con los comandos -- espera ${adminRate.remainingSec || 'unos'}s y vuelve a intentar.`,
+            });
+            return res.status(200).json({ ok: true });
+          }
+        }
 
         let replyTargetId = null;
         if (update.message.reply_to_message && update.message.reply_to_message.text) {
@@ -2065,6 +2196,15 @@ async function handleWebhookRequest(req, res) {
           });
           return res.status(200).json({ ok: true });
         }
+      } catch (adminCmdErr) {
+        console.error('[ADMIN COMMAND ERROR]', userText, adminCmdErr);
+        sendAdminMessageReliable({
+          chat_id: ADMIN_CHAT_ID,
+          text: `⚠️ El comando falló internamente: ${adminCmdErr.message}\n\nRevisa los logs de Render para más detalle.`,
+        }).catch(() => {});
+        if (!res.headersSent) {
+          return res.status(200).json({ ok: true });
+        }
       }
 
       if (update.message.voice || update.message.audio) {
@@ -2572,11 +2712,7 @@ function loadCspReportsFromDisk() {
 }
 function saveCspReportsToDisk() {
   try {
-    fs.writeFileSync(
-      CSP_REPORTS_FILE,
-      JSON.stringify({ day: cspResetDay, entries: Array.from(seenCspViolations.entries()) }),
-      'utf8'
-    );
+    writeJsonAtomic(CSP_REPORTS_FILE, { day: cspResetDay, entries: Array.from(seenCspViolations.entries()) });
   } catch (e) {}
 }
 
@@ -2597,7 +2733,7 @@ function loadCspHistory() {
 }
 function saveCspHistory() {
   try {
-    fs.writeFileSync(CSP_HISTORY_FILE, JSON.stringify(Array.from(cspHistory.entries())), 'utf8');
+    writeJsonAtomic(CSP_HISTORY_FILE, Array.from(cspHistory.entries()));
   } catch (e) {}
 }
 const cspHistory = loadCspHistory();
@@ -2620,24 +2756,39 @@ function touchCspHistory(fingerprint, directive, blockedUri, documentUri) {
 // se repitió varios días y de repente lleva 3+ días sin volver a aparecer
 // probablemente ya se corrigió -- avisa una sola vez (resolvedNotified) en
 // vez de quedarse callado para siempre o repetir el aviso cada día.
+// Sin tope, cspHistory (a diferencia de seenCspViolations) nunca se
+// resetea solo, así que crecería para siempre. Una vez que un aviso ya se
+// avisó como resuelto y lleva PRUNE_AFTER_DAYS sin volver a aparecer, ya
+// cumplió su propósito (avisar una vez) y se elimina.
+const CSP_HISTORY_PRUNE_AFTER_DAYS = 30;
 function checkResolvedCspViolations() {
   const now = new Date();
   const justResolved = [];
-  for (const h of cspHistory.values()) {
-    if (h.resolvedNotified || h.daysSeen < 2) continue;
+  let pruned = 0;
+  for (const [fingerprint, h] of cspHistory.entries()) {
     const daysSinceLastSeen = Math.floor((now - new Date(h.lastSeenDate)) / (24 * 60 * 60 * 1000));
+    if (h.resolvedNotified) {
+      if (daysSinceLastSeen >= CSP_HISTORY_PRUNE_AFTER_DAYS) {
+        cspHistory.delete(fingerprint);
+        pruned++;
+      }
+      continue;
+    }
+    if (h.daysSeen < 2) continue;
     if (daysSinceLastSeen >= 3) {
       h.resolvedNotified = true;
       justResolved.push(h);
     }
   }
-  if (justResolved.length === 0) return;
+  if (justResolved.length === 0 && pruned === 0) return;
   saveCspHistory();
+  if (pruned > 0) console.log(`[CSP HISTORY PRUNE] ${pruned} aviso(s) resuelto(s) hace ${CSP_HISTORY_PRUNE_AFTER_DAYS}+ días eliminado(s) del historial.`);
+  if (justResolved.length === 0) return;
   let text = `✅ *Avisos de seguridad que ya se corrigieron* ✅\n\nLlevaban varios días repitiéndose y no han vuelto a aparecer en 3 días o más:\n\n`;
   justResolved.forEach((h, i) => {
     text += `${i + 1}. ${describeCspDirective(h.directive)} hacia *${describeCspOrigin(h.blockedUri)}* (se repitió ${h.daysSeen} día(s), la última vez fue el ${h.lastSeenDate})\n`;
   });
-  callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text, parse_mode: 'Markdown' }).catch(() => {});
+  sendAdminMessageReliable({ chat_id: ADMIN_CHAT_ID, text, parse_mode: 'Markdown' }).catch(() => {});
 }
 
 // Traduce el lenguaje técnico del navegador a algo que cualquier persona
@@ -2695,11 +2846,27 @@ let cspResetDay = cspLoaded.day;
 // instante (podía mandar varios mensajes seguidos si un deploy rompía
 // algo), se acumulan aquí y se manda un solo resumen agrupado cada 5
 // minutos (flushCspAlerts, más abajo) -- silencioso si no hay nada nuevo.
-let pendingCspAlerts = [];
+// Se persiste a disco (a diferencia de antes, que vivía solo en memoria)
+// para no perder una alerta si el proceso se reinicia justo antes del
+// flush de los 5 minutos.
+const PENDING_CSP_ALERTS_FILE = path.join(DATA_DIR, 'pending_csp_alerts.json');
+function loadPendingCspAlerts() {
+  try {
+    if (fs.existsSync(PENDING_CSP_ALERTS_FILE)) {
+      return JSON.parse(fs.readFileSync(PENDING_CSP_ALERTS_FILE, 'utf8')) || [];
+    }
+  } catch (e) {}
+  return [];
+}
+function savePendingCspAlerts() {
+  try { writeJsonAtomic(PENDING_CSP_ALERTS_FILE, pendingCspAlerts); } catch (e) {}
+}
+let pendingCspAlerts = loadPendingCspAlerts();
 async function flushCspAlerts() {
   if (pendingCspAlerts.length === 0) return;
   const batch = pendingCspAlerts;
   pendingCspAlerts = [];
+  savePendingCspAlerts();
 
   let text = `🛡️ *Aviso de seguridad del sitio (modo de prueba -- nada se bloqueó)* 🛡️\n\n`;
   if (batch.length === 1) {
@@ -2714,7 +2881,7 @@ async function flushCspAlerts() {
   }
   text += `Esta política de seguridad sigue en *modo de prueba*: a los visitantes no les afectó en nada, es solo un aviso preventivo para revisar antes de activarla en modo estricto.\n\nVan *${seenCspViolations.size}* avisos distintos hoy. Escribe /csp para ver el detalle completo, o ajusta la lista blanca en firebase.json.`;
 
-  await callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text, parse_mode: 'Markdown' }).catch(() => {});
+  await sendAdminMessageReliable({ chat_id: ADMIN_CHAT_ID, text, parse_mode: 'Markdown' }).catch(() => {});
 }
 setInterval(() => { flushCspAlerts().catch(() => {}); }, 5 * 60 * 1000);
 
@@ -2771,6 +2938,7 @@ app.post('/api/csp-report', (req, res) => {
     seenCspViolations.set(fingerprint, entry);
     saveCspReportsToDisk();
     pendingCspAlerts.push(entry);
+    savePendingCspAlerts();
   } catch (e) {}
 });
 
@@ -2797,6 +2965,7 @@ app.delete('/api/admin/csp-reports', (req, res) => {
   }
   seenCspViolations.clear();
   pendingCspAlerts = [];
+  savePendingCspAlerts();
   saveCspReportsToDisk();
   return res.status(200).json({ ok: true });
 });
@@ -2922,6 +3091,16 @@ setTruncationAlertCallback((count) => {
     text: `⚠️ *ALERTA: RESPUESTAS DE IA CORTÁNDOSE* ⚠️\n\nSe detectaron *${count} respuestas cortadas* (MAX_TOKENS) de Gemini en la última hora — clientes podrían estar recibiendo mensajes incompletos a media frase.\n\nRevisa \`maxOutputTokens\`/\`thinkingConfig\` en \`api/geminiHelper.js\` o usa /estado para más contexto.`,
     parse_mode: 'Markdown'
   }).catch(() => {});
+});
+
+// Avisa cuando el circuit breaker de Gemini se abre (dejó de intentar la
+// API tras varios fallos seguidos, para no hacer esperar a cada cliente el
+// timeout completo) y cuando se cierra de nuevo (ya se recuperó solo).
+setCircuitBreakerAlertCallback((state, count) => {
+  const text = state === 'opened'
+    ? `🔴 *IA EN MODO RESPALDO (circuito abierto)* 🔴\n\nGemini falló *${count} veces seguidas* -- el bot dejó de intentar la API por ahora y está respondiendo solo con reglas fijas, para no hacer esperar a cada cliente el timeout completo.\n\nProbará solo por su cuenta cada 5 min. Revisa la cuota/clave en Render → Environment → GEMINI_API_KEY.`
+    : `🟢 *IA RECUPERADA (circuito cerrado)* 🟢\n\nGemini volvió a responder correctamente tras ${count} fallo(s) seguido(s) -- el bot ya está usando la IA real de nuevo, no solo reglas fijas.`;
+  sendAdminMessageReliable({ chat_id: ADMIN_CHAT_ID, text, parse_mode: 'Markdown' }).catch(() => {});
 });
 
 // Health check — confirms OTP routes are alive on Render
@@ -3771,9 +3950,45 @@ app.get('/api/analytics/dashboard', (req, res) => {
   return res.status(200).send(html);
 });
 
+function checkDataDirWritable() {
+  try {
+    const probe = path.join(DATA_DIR, `.write_probe_${process.pid}`);
+    fs.writeFileSync(probe, 'ok');
+    fs.unlinkSync(probe);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Se actualiza en cada ping a /api/keep-alive -- sirve para medir el hueco
+// real entre pings del watchdog externo (ver más abajo).
+let lastKeepAlivePingAt = null;
+const WATCHDOG_GAP_ALERT_SECONDS = 25 * 60;
+
 // Server Keep-Alive Ping Endpoint
 app.get('/api/keep-alive', (req, res) => {
   checkAndTriggerMorningReports();
+
+  const now = Date.now();
+  const secondsSinceLastPing = lastKeepAlivePingAt ? Math.round((now - lastKeepAlivePingAt) / 1000) : null;
+  // El watchdog de GitHub Actions pega aquí cada ~10 min, pero su cron NO
+  // está garantizado (huecos reales de varias horas confirmados el
+  // 2026-08-29 -- ver el commit que agregó el catch-up de reportes). Si el
+  // hueco real es mucho mayor a eso, es señal de que el watchdog dejó de
+  // correr por un buen rato -- no que el servidor esté roto (si está
+  // respondiendo esta misma petición, ya está despierto). Se avisa una
+  // vez por hueco detectado, con el mismo mecanismo confiable que ya usan
+  // los reportes automáticos (sendAdminMessageReliable), no en cada ping.
+  if (secondsSinceLastPing !== null && secondsSinceLastPing >= WATCHDOG_GAP_ALERT_SECONDS) {
+    sendAdminMessageReliable({
+      chat_id: ADMIN_CHAT_ID,
+      text: `🕳️ *Hueco grande en el watchdog externo* 🕳️\n\nPasaron *${Math.round(secondsSinceLastPing / 60)} minutos* sin ningún ping a /api/keep-alive (se espera uno cada ~10 min). El servidor ya está despierto de nuevo, pero durante ese hueco pudo perderse algún reporte automático si cayó justo en la hora exacta.\n\nRevisa el workflow "Brain Branding Watchdog" en GitHub Actions.`,
+      parse_mode: 'Markdown',
+    }).catch(() => {});
+  }
+  lastKeepAlivePingAt = now;
+
   return res.status(200).json({
     ok: true,
     status: 'ONLINE',
@@ -3785,6 +4000,9 @@ app.get('/api/keep-alive', (req, res) => {
     // mudo (chats Y reportes automaticos), no solo si el servidor responde.
     telegramOk: !lastTelegramAuthError,
     telegramError: lastTelegramAuthError,
+    secondsSinceLastPing,
+    dataDirWritable: checkDataDirWritable(),
+    geminiCircuitOpen: getGeminiCircuitState().open,
   });
 });
 
@@ -3815,8 +4033,34 @@ const sentReportSlots = new Set(sentReportSlotsArray);
 function saveSentReportSlotsToDisk() {
   try {
     const list = Array.from(sentReportSlots).slice(-100);
-    fs.writeFileSync(SENT_SLOTS_FILE, JSON.stringify(list, null, 2), 'utf8');
+    writeJsonAtomic(SENT_SLOTS_FILE, list);
   } catch (e) {}
+}
+
+// Antes esta lógica vivía inline en el for del scheduler automático de
+// abajo -- se extrae aquí para poder reusarla también desde
+// /api/admin/force-report (forzar un slot manualmente sin esperar a que
+// el reloj lo alcance, útil para probar cambios sin esperar horas).
+async function sendScheduledVisitsReport(targetH, cdmxDateStr, { late = false, forced = false } = {}) {
+  console.log(`[SCHEDULED 8H REPORT] Disparando reporte automático slot ${targetH}:00 hrs para ${cdmxDateStr}${late ? ' (con retraso)' : ''}${forced ? ' (forzado manualmente)' : ''}`);
+
+  let slotHeader = `☀️ *RESUMEN AUTOMÁTICO DE VISITAS WEB (MATUTINO 6:00 AM)* ☀️`;
+  if (targetH === 14) slotHeader = `🌤️ *RESUMEN AUTOMÁTICO DE VISITAS WEB (VESPERTINO 2:00 PM)* 🌤️`;
+  if (targetH === 22) slotHeader = `🌙 *RESUMEN AUTOMÁTICO DE VISITAS WEB (NOCTURNO 10:00 PM)* 🌙`;
+  if (late) slotHeader += `\n_(recuperado con retraso -- el servidor estaba dormido a la hora exacta)_`;
+  if (forced) slotHeader += `\n_(forzado manualmente vía /api/admin/force-report)_`;
+
+  const reportText = buildDetailedAnalytics8AMReport(visitsLog, slotHeader);
+  await sendAdminMessageReliable({
+    chat_id: ADMIN_CHAT_ID,
+    text: reportText,
+    parse_mode: 'Markdown'
+  }).catch(e => console.error('[8H VISITS REPORT ERROR]', e.message));
+
+  // Enviar también informe de prospectos IA en el slot matutino de las 6:00 AM
+  if (targetH === 6 && typeof sendMorningReport8AM === 'function') {
+    await sendMorningReport8AM().catch(e => console.error('[6AM LEADS REPORT ERROR]', e.message));
+  }
 }
 
 let isReportExecuting = false;
@@ -3845,49 +4089,23 @@ async function checkAndTriggerMorningReports() {
       checkResolvedCspViolations();
     }
 
-    // Horarios de reporte: 6 (6:00 AM), 14 (2:00 PM), 22 (10:00 PM)
+    await flushTelegramQueue().catch((e) => console.error('[TELEGRAM QUEUE FLUSH ERROR]', e.message));
+
+    // Horarios de reporte: 6 (6:00 AM), 14 (2:00 PM), 22 (10:00 PM). La
+    // condición real ("¿ya venció y sigue sin mandarse?") vive en
+    // reportScheduling.js (probada en scripts/test-report-catchup.js) --
+    // aquí solo se decide QUÉ hacer con cada slot que resulte vencido.
     const targetHours = [6, 14, 22];
+    const dueSlots = getDueReportSlots(cdmxHour, targetHours, (targetH) => sentReportSlots.has(`${cdmxDateStr}_slot_${targetH}`));
 
-    for (const targetH of targetHours) {
-      // Render (plan gratuito) se duerme sin tráfico -- si el proceso está
-      // dormido justo a las 06/14/22 en punto, la condición exacta
-      // "cdmxHour === targetH" nunca se cumplía porque nadie corría este
-      // código durante esa hora, y el slot se perdía para siempre (el
-      // watchdog de GitHub Actions despierta el servidor cada ~10 min,
-      // pero su cron NO está garantizado: en la práctica hay huecos de
-      // varias horas). Ahora "cdmxHour >= targetH" recupera cualquier
-      // slot vencido del día en cuanto el proceso vuelve a despertar,
-      // aunque sea tarde -- sentReportSlots sigue evitando reenviar el
-      // mismo slot dos veces.
-      if (cdmxHour >= targetH) {
-        const slotKey = `${cdmxDateStr}_slot_${targetH}`;
+    for (const targetH of dueSlots) {
+      const slotKey = `${cdmxDateStr}_slot_${targetH}`;
+      // Candado síncrono INMEDIATO antes de llamadas asíncronas
+      sentReportSlots.add(slotKey);
+      saveSentReportSlotsToDisk();
 
-        if (!sentReportSlots.has(slotKey)) {
-          // Candado síncrono INMEDIATO antes de llamadas asíncronas
-          sentReportSlots.add(slotKey);
-          saveSentReportSlotsToDisk();
-
-          const isLate = cdmxHour > targetH;
-          console.log(`[SCHEDULED 8H REPORT] Disparando reporte automático slot ${targetH}:00 hrs para ${cdmxDateStr}${isLate ? ' (con retraso)' : ''}`);
-
-          let slotHeader = `☀️ *RESUMEN AUTOMÁTICO DE VISITAS WEB (MATUTINO 6:00 AM)* ☀️`;
-          if (targetH === 14) slotHeader = `🌤️ *RESUMEN AUTOMÁTICO DE VISITAS WEB (VESPERTINO 2:00 PM)* 🌤️`;
-          if (targetH === 22) slotHeader = `🌙 *RESUMEN AUTOMÁTICO DE VISITAS WEB (NOCTURNO 10:00 PM)* 🌙`;
-          if (isLate) slotHeader += `\n_(recuperado con retraso -- el servidor estaba dormido a la hora exacta)_`;
-
-          const reportText = buildDetailedAnalytics8AMReport(visitsLog, slotHeader);
-          await callTelegram('sendMessage', {
-            chat_id: ADMIN_CHAT_ID,
-            text: reportText,
-            parse_mode: 'Markdown'
-          }).catch(e => console.error('[8H VISITS REPORT ERROR]', e.message));
-
-          // Enviar también informe de prospectos IA en el slot matutino de las 6:00 AM
-          if (targetH === 6 && typeof sendMorningReport8AM === 'function') {
-            await sendMorningReport8AM().catch(e => console.error('[6AM LEADS REPORT ERROR]', e.message));
-          }
-        }
-      }
+      const isLate = cdmxHour > targetH;
+      await sendScheduledVisitsReport(targetH, cdmxDateStr, { late: isLate });
     }
 
 
@@ -3919,7 +4137,7 @@ async function checkAndTriggerMorningReports() {
             `📞 *Gestión del Dueño (Andrés R):* \`+52 771 233 9238\`\n\n` +
             `💬 *Haz clic para enviar recordatorio por WhatsApp:* \n[Enviar Mensaje a ${contract.clientName}](${waLink})`;
 
-          await callTelegram('sendMessage', {
+          await sendAdminMessageReliable({
             chat_id: ADMIN_CHAT_ID,
             text: billingMsg,
             parse_mode: 'Markdown'
@@ -3941,6 +4159,70 @@ setInterval(checkAndTriggerMorningReports, 60 * 1000);
 
 // Also run check 5 seconds after server boot / wake up to catch up on missed reports
 setTimeout(checkAndTriggerMorningReports, 5000);
+
+// Dispara un slot de reporte específico ahora mismo, sin esperar a que el
+// reloj lo alcance -- para poder probar cambios al formato del reporte (o
+// recuperar uno que de plano nunca llegó) sin tener que esperar horas.
+// Marca el slot como enviado igual que el automático, así que si el
+// scheduler normal llega más tarde ese mismo día no lo vuelve a mandar.
+app.post('/api/admin/force-report', async (req, res) => {
+  if (!ALR_GOVERNANCE_SECRET || req.query.callerKey !== ALR_GOVERNANCE_SECRET) {
+    return res.status(403).json({ ok: false, error: 'Not authorized.' });
+  }
+  const slot = parseInt(req.query.slot, 10);
+  if (![6, 14, 22].includes(slot)) {
+    return res.status(400).json({ ok: false, error: 'slot debe ser 6, 14 o 22.' });
+  }
+  const cdmxDateStr = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' });
+  const slotKey = `${cdmxDateStr}_slot_${slot}`;
+  const alreadySentToday = sentReportSlots.has(slotKey);
+  sentReportSlots.add(slotKey);
+  saveSentReportSlotsToDisk();
+  try {
+    await sendScheduledVisitsReport(slot, cdmxDateStr, { forced: true });
+    return res.status(200).json({ ok: true, slot, alreadySentToday });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Commit/versión que está corriendo AHORA MISMO en este proceso -- Render
+// expone el hash del commit desplegado vía RENDER_GIT_COMMIT
+// automáticamente. Sirve para confirmar en segundos si un deploy se quedó
+// pegado, sin entrar al dashboard de Render.
+const SERVER_STARTED_AT = new Date().toISOString();
+app.get('/api/version', (req, res) => {
+  return res.status(200).json({
+    ok: true,
+    commit: process.env.RENDER_GIT_COMMIT || null,
+    startedAt: SERVER_STARTED_AT,
+    uptimeSeconds: Math.round(process.uptime()),
+    nodeVersion: process.version,
+  });
+});
+
+// Junta en un solo JSON lo que antes había que consultar por separado
+// (/api/keep-alive, /api/admin/csp-reports, /api/admin/gemini-metrics) --
+// para diagnosticar rápido cuando algo como el bug de los reportes
+// perdidos vuelva a pasar, sin ir endpoint por endpoint.
+app.get('/api/admin/status', (req, res) => {
+  if (!ALR_GOVERNANCE_SECRET || req.query.callerKey !== ALR_GOVERNANCE_SECRET) {
+    return res.status(403).json({ ok: false, error: 'Not authorized.' });
+  }
+  const cdmxDateStr = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' });
+  return res.status(200).json({
+    ok: true,
+    version: { commit: process.env.RENDER_GIT_COMMIT || null, startedAt: SERVER_STARTED_AT, uptimeSeconds: Math.round(process.uptime()) },
+    telegram: { ok: !lastTelegramAuthError, error: lastTelegramAuthError, queuedMessages: telegramRetryQueue.length },
+    gemini: { circuit: getGeminiCircuitState(), metrics: { totalCalls: geminiMetrics.totalCalls, successfulCalls: geminiMetrics.successfulCalls, failedCalls: geminiMetrics.failedCalls } },
+    reportsToday: {
+      date: cdmxDateStr,
+      sent: [6, 14, 22].filter((h) => sentReportSlots.has(`${cdmxDateStr}_slot_${h}`)),
+      pending: [6, 14, 22].filter((h) => !sentReportSlots.has(`${cdmxDateStr}_slot_${h}`)),
+    },
+    csp: { violationsToday: seenCspViolations.size, pendingAlerts: pendingCspAlerts.length, recurringUnresolved: Array.from(cspHistory.values()).filter((h) => h.daysSeen >= 2 && !h.resolvedNotified).length },
+  });
+});
 
 // Permanent SaaS Contracts Database (Disk-backed JSON Persistence)
 // DATA_DIR ya se declaró más arriba (la necesitaba SENT_SLOTS_FILE primero).
@@ -3997,7 +4279,7 @@ function saveContractsToDisk() {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
-    fs.writeFileSync(CONTRACTS_FILE, JSON.stringify(contractsDB, null, 2), 'utf8');
+    writeJsonAtomic(CONTRACTS_FILE, contractsDB);
   } catch(e) {
     console.error('[CONTRACTS DB SAVE ERROR]', e);
   }
