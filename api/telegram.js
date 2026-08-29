@@ -2006,6 +2006,30 @@ async function handleWebhookRequest(req, res) {
           return res.status(200).json({ ok: true });
         }
 
+        if (cmdLower === '/csp' || cmdLower === '/seguridad') {
+          const violations = Array.from(seenCspViolations.values()).sort((a, b) => b.count - a.count);
+          const timeStr = new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
+          let reply = `🛡️ *AVISOS DE SEGURIDAD DEL SITIO (HOY)* 🛡️\n⏰ *Consultado:* ${timeStr}\n\n`;
+          if (violations.length === 0) {
+            reply += `✅ *Ningún aviso nuevo hoy.* La política de seguridad no ha detectado nada fuera de lo permitido.`;
+          } else {
+            reply += `📊 *Total de avisos distintos:* *${violations.length}*\n_(la política sigue en modo de prueba -- nada de esto afectó a los visitantes)_\n\n`;
+            violations.slice(0, 15).forEach((v, i) => {
+              reply += `${i + 1}. ${describeCspDirective(v.directive)} hacia *${describeCspOrigin(v.blockedUri)}* (visto ${v.count}x)\n`;
+            });
+            if (violations.length > 15) reply += `\n_...y ${violations.length - 15} más._`;
+          }
+          const recurring = Array.from(cspHistory.values()).filter((h) => h.daysSeen >= 2 && !h.resolvedNotified);
+          if (recurring.length > 0) {
+            reply += `\n\n📅 *Llevan varios días repitiéndose sin corregirse:*\n`;
+            recurring.slice(0, 10).forEach((h, i) => {
+              reply += `${i + 1}. ${describeCspDirective(h.directive)} hacia *${describeCspOrigin(h.blockedUri)}* (${h.daysSeen} día(s), última vez ${h.lastSeenDate})\n`;
+            });
+          }
+          await callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text: reply, parse_mode: 'Markdown' });
+          return res.status(200).json({ ok: true });
+        }
+
         if (cmdLower === '/respaldototal' || cmdLower === '/backup' || cmdLower === '/descargarbd') {
           const allVisits = loadVisitsFromDisk();
           const jsonStr = JSON.stringify(allVisits, null, 2);
@@ -2556,6 +2580,109 @@ function saveCspReportsToDisk() {
   } catch (e) {}
 }
 
+// A diferencia de seenCspViolations (arriba, se vacía cada medianoche),
+// este registro NO se resetea nunca solo -- es lo que permite avisar
+// cuando un aviso que llevaba varios días repitiéndose por fin deja de
+// aparecer (ver checkResolvedCspViolations más abajo).
+// fingerprint -> { directive, blockedUri, documentUri, firstSeenDate,
+//                  lastSeenDate, daysSeen, resolvedNotified }
+const CSP_HISTORY_FILE = path.join(DATA_DIR, 'csp_violation_history.json');
+function loadCspHistory() {
+  try {
+    if (fs.existsSync(CSP_HISTORY_FILE)) {
+      return new Map(JSON.parse(fs.readFileSync(CSP_HISTORY_FILE, 'utf8')));
+    }
+  } catch (e) {}
+  return new Map();
+}
+function saveCspHistory() {
+  try {
+    fs.writeFileSync(CSP_HISTORY_FILE, JSON.stringify(Array.from(cspHistory.entries())), 'utf8');
+  } catch (e) {}
+}
+const cspHistory = loadCspHistory();
+function touchCspHistory(fingerprint, directive, blockedUri, documentUri) {
+  const today = new Date().toDateString();
+  let h = cspHistory.get(fingerprint);
+  if (!h) {
+    h = { directive, blockedUri, documentUri, firstSeenDate: today, lastSeenDate: today, daysSeen: 1, resolvedNotified: false };
+    cspHistory.set(fingerprint, h);
+  } else {
+    if (h.lastSeenDate !== today) {
+      h.daysSeen++;
+      h.lastSeenDate = today;
+    }
+    h.resolvedNotified = false; // volvió a aparecer -- ya no cuenta como resuelta
+  }
+  saveCspHistory();
+}
+// Corre una vez al día (ver checkAndTriggerMorningReports). Un aviso que
+// se repitió varios días y de repente lleva 3+ días sin volver a aparecer
+// probablemente ya se corrigió -- avisa una sola vez (resolvedNotified) en
+// vez de quedarse callado para siempre o repetir el aviso cada día.
+function checkResolvedCspViolations() {
+  const now = new Date();
+  const justResolved = [];
+  for (const h of cspHistory.values()) {
+    if (h.resolvedNotified || h.daysSeen < 2) continue;
+    const daysSinceLastSeen = Math.floor((now - new Date(h.lastSeenDate)) / (24 * 60 * 60 * 1000));
+    if (daysSinceLastSeen >= 3) {
+      h.resolvedNotified = true;
+      justResolved.push(h);
+    }
+  }
+  if (justResolved.length === 0) return;
+  saveCspHistory();
+  let text = `✅ *Avisos de seguridad que ya se corrigieron* ✅\n\nLlevaban varios días repitiéndose y no han vuelto a aparecer en 3 días o más:\n\n`;
+  justResolved.forEach((h, i) => {
+    text += `${i + 1}. ${describeCspDirective(h.directive)} hacia *${describeCspOrigin(h.blockedUri)}* (se repitió ${h.daysSeen} día(s), la última vez fue el ${h.lastSeenDate})\n`;
+  });
+  callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text, parse_mode: 'Markdown' }).catch(() => {});
+}
+
+// Traduce el lenguaje técnico del navegador a algo que cualquier persona
+// (no solo un programador) entienda al leerlo en Telegram.
+const CSP_DIRECTIVE_LABELS = {
+  'connect-src': 'una conexión de red (el sitio intentó comunicarse con otro servidor)',
+  'script-src': 'la carga de un script (código JavaScript)',
+  'style-src': 'la carga de una hoja de estilos (diseño/CSS)',
+  'img-src': 'la carga de una imagen',
+  'font-src': 'la carga de una fuente tipográfica',
+  'frame-src': 'la carga de un iframe (contenido embebido de otro sitio)',
+  'default-src': 'un recurso sin categoría específica',
+  'base-uri': 'un cambio en la dirección base del documento',
+  'form-action': 'el envío de un formulario',
+};
+function describeCspDirective(directive) {
+  const key = (directive || '').toLowerCase().split(/\s/)[0];
+  return CSP_DIRECTIVE_LABELS[key] || `un recurso de tipo "${directive}"`;
+}
+const KNOWN_DOMAIN_LABELS = [
+  [/(^|\.)google-analytics\.com$/, 'Google Analytics (medición de visitas)'],
+  [/(^|\.)googletagmanager\.com$/, 'Google Tag Manager'],
+  [/^(www\.)?google\.com$/, 'Google (variante alterna de Analytics/Ads)'],
+  [/(^|\.)googleapis\.com$/, 'un servicio de Google (APIs/Fuentes)'],
+  [/(^|\.)gstatic\.com$/, 'contenido estático de Google (fuentes/íconos)'],
+  [/(^|\.)youtube(-nocookie)?\.com$/, 'YouTube (video embebido)'],
+  [/(^|\.)jsdelivr\.net$/, 'jsDelivr (CDN de librerías)'],
+  [/(^|\.)doubleclick\.net$/, 'DoubleClick/Google Ads (publicidad)'],
+  [/(^|\.)facebook\.(com|net)$/, 'Meta/Facebook (píxel o widget social)'],
+  [/(^|\.)onrender\.com$/, 'nuestro propio backend (brain-branding-demo-generator)'],
+  [/^(ipwho\.is|ipapi\.co)$/, 'un servicio de geolocalización por IP'],
+];
+function describeCspOrigin(blockedUri) {
+  if (!blockedUri || blockedUri === 'desconocido') return 'un origen desconocido';
+  if (blockedUri === 'inline') return 'código incrustado directo en la página (inline)';
+  if (blockedUri === 'eval') return 'código generado dinámicamente (eval)';
+  try {
+    const host = new URL(blockedUri).hostname;
+    const known = KNOWN_DOMAIN_LABELS.find(([re]) => re.test(host));
+    return known ? `${known[1]} (${host})` : host;
+  } catch (e) {
+    return blockedUri;
+  }
+}
+
 // fingerprint -> { directive, blockedUri, documentUri, firstSeen, count }
 // Se recarga del disco al arrancar (mismo día) para no perder el conteo
 // del día en cada redeploy -- este proyecto despliega seguido (ver Regla
@@ -2563,6 +2690,34 @@ function saveCspReportsToDisk() {
 const cspLoaded = loadCspReportsFromDisk();
 const seenCspViolations = cspLoaded.map;
 let cspResetDay = cspLoaded.day;
+
+// En vez de mandar un mensaje de Telegram por cada violación nueva al
+// instante (podía mandar varios mensajes seguidos si un deploy rompía
+// algo), se acumulan aquí y se manda un solo resumen agrupado cada 5
+// minutos (flushCspAlerts, más abajo) -- silencioso si no hay nada nuevo.
+let pendingCspAlerts = [];
+async function flushCspAlerts() {
+  if (pendingCspAlerts.length === 0) return;
+  const batch = pendingCspAlerts;
+  pendingCspAlerts = [];
+
+  let text = `🛡️ *Aviso de seguridad del sitio (modo de prueba -- nada se bloqueó)* 🛡️\n\n`;
+  if (batch.length === 1) {
+    const v = batch[0];
+    text += `El sitio intentó hacer ${describeCspDirective(v.directive)} hacia *${describeCspOrigin(v.blockedUri)}*.\nPágina donde ocurrió: \`${v.documentUri}\`\n\n`;
+  } else {
+    text += `Se detectaron *${batch.length} avisos distintos* en los últimos minutos:\n\n`;
+    batch.forEach((v, i) => {
+      text += `${i + 1}. ${describeCspDirective(v.directive)} hacia *${describeCspOrigin(v.blockedUri)}*\n`;
+    });
+    text += `\n`;
+  }
+  text += `Esta política de seguridad sigue en *modo de prueba*: a los visitantes no les afectó en nada, es solo un aviso preventivo para revisar antes de activarla en modo estricto.\n\nVan *${seenCspViolations.size}* avisos distintos hoy. Escribe /csp para ver el detalle completo, o ajusta la lista blanca en firebase.json.`;
+
+  await callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text, parse_mode: 'Markdown' }).catch(() => {});
+}
+setInterval(() => { flushCspAlerts().catch(() => {}); }, 5 * 60 * 1000);
+
 app.post('/api/csp-report', (req, res) => {
   res.status(204).end(); // Responder rápido; el navegador no espera nada.
   try {
@@ -2598,6 +2753,8 @@ app.post('/api/csp-report', (req, res) => {
     }
     const fingerprint = `${directive}|${blockedUri}`;
 
+    touchCspHistory(fingerprint, directive, blockedUri, documentUri);
+
     const existing = seenCspViolations.get(fingerprint);
     if (existing) {
       existing.count++;
@@ -2606,18 +2763,14 @@ app.post('/api/csp-report', (req, res) => {
     }
     if (seenCspViolations.size >= 100) return; // tope de memoria por día
 
-    seenCspViolations.set(fingerprint, {
+    const entry = {
       directive, blockedUri, documentUri,
       firstSeen: new Date().toISOString(),
       count: 1
-    });
+    };
+    seenCspViolations.set(fingerprint, entry);
     saveCspReportsToDisk();
-
-    callTelegram('sendMessage', {
-      chat_id: ADMIN_CHAT_ID,
-      text: `🛡️ *CSP Report-Only: nueva violación detectada* 🛡️\n\nDirectiva: \`${directive}\`\nRecurso bloqueado: \`${blockedUri}\`\nPágina: \`${documentUri}\`\n\nVa ${seenCspViolations.size} distinta(s) hoy. Consulta /api/admin/csp-reports para ver el detalle, o ajusta la CSP en firebase.json antes de quitarle "-Report-Only".`,
-      parse_mode: 'Markdown'
-    }).catch(() => {});
+    pendingCspAlerts.push(entry);
   } catch (e) {}
 });
 
@@ -2631,7 +2784,8 @@ app.get('/api/admin/csp-reports', (req, res) => {
     ok: true,
     resetDay: cspResetDay,
     count: seenCspViolations.size,
-    violations: Array.from(seenCspViolations.values()).sort((a, b) => b.count - a.count)
+    violations: Array.from(seenCspViolations.values()).sort((a, b) => b.count - a.count),
+    history: Array.from(cspHistory.values()).sort((a, b) => b.daysSeen - a.daysSeen)
   });
 });
 
@@ -2642,6 +2796,7 @@ app.delete('/api/admin/csp-reports', (req, res) => {
     return res.status(403).json({ ok: false, error: 'Not authorized.' });
   }
   seenCspViolations.clear();
+  pendingCspAlerts = [];
   saveCspReportsToDisk();
   return res.status(200).json({ ok: true });
 });
@@ -3671,6 +3826,10 @@ let isReportExecuting = false;
 // una sola vez.
 let lastBillingCheckDate = null;
 
+// Corre una vez por día calendario, sin importar a qué hora despierte el
+// proceso (ver checkResolvedCspViolations).
+let lastCspResolvedCheckDay = null;
+
 async function checkAndTriggerMorningReports() {
   if (isReportExecuting) return;
   isReportExecuting = true;
@@ -3681,12 +3840,26 @@ async function checkAndTriggerMorningReports() {
     const hourStr = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Mexico_City', hour: 'numeric', hour12: false }).format(now);
     const cdmxHour = parseInt(hourStr, 10);
 
-    // Horarios exactos de reporte: 6 (6:00 AM), 14 (2:00 PM), 22 (10:00 PM)
+    if (lastCspResolvedCheckDay !== cdmxDateStr) {
+      lastCspResolvedCheckDay = cdmxDateStr;
+      checkResolvedCspViolations();
+    }
+
+    // Horarios de reporte: 6 (6:00 AM), 14 (2:00 PM), 22 (10:00 PM)
     const targetHours = [6, 14, 22];
 
     for (const targetH of targetHours) {
-      // Disparar ÚNICAMENTE durante la hora exacta del slot (ej: 06:xx, 14:xx, 22:xx)
-      if (cdmxHour === targetH) {
+      // Render (plan gratuito) se duerme sin tráfico -- si el proceso está
+      // dormido justo a las 06/14/22 en punto, la condición exacta
+      // "cdmxHour === targetH" nunca se cumplía porque nadie corría este
+      // código durante esa hora, y el slot se perdía para siempre (el
+      // watchdog de GitHub Actions despierta el servidor cada ~10 min,
+      // pero su cron NO está garantizado: en la práctica hay huecos de
+      // varias horas). Ahora "cdmxHour >= targetH" recupera cualquier
+      // slot vencido del día en cuanto el proceso vuelve a despertar,
+      // aunque sea tarde -- sentReportSlots sigue evitando reenviar el
+      // mismo slot dos veces.
+      if (cdmxHour >= targetH) {
         const slotKey = `${cdmxDateStr}_slot_${targetH}`;
 
         if (!sentReportSlots.has(slotKey)) {
@@ -3694,11 +3867,13 @@ async function checkAndTriggerMorningReports() {
           sentReportSlots.add(slotKey);
           saveSentReportSlotsToDisk();
 
-          console.log(`[SCHEDULED 8H REPORT] Disparando reporte automático slot ${targetH}:00 hrs para ${cdmxDateStr}`);
+          const isLate = cdmxHour > targetH;
+          console.log(`[SCHEDULED 8H REPORT] Disparando reporte automático slot ${targetH}:00 hrs para ${cdmxDateStr}${isLate ? ' (con retraso)' : ''}`);
 
           let slotHeader = `☀️ *RESUMEN AUTOMÁTICO DE VISITAS WEB (MATUTINO 6:00 AM)* ☀️`;
           if (targetH === 14) slotHeader = `🌤️ *RESUMEN AUTOMÁTICO DE VISITAS WEB (VESPERTINO 2:00 PM)* 🌤️`;
           if (targetH === 22) slotHeader = `🌙 *RESUMEN AUTOMÁTICO DE VISITAS WEB (NOCTURNO 10:00 PM)* 🌙`;
+          if (isLate) slotHeader += `\n_(recuperado con retraso -- el servidor estaba dormido a la hora exacta)_`;
 
           const reportText = buildDetailedAnalytics8AMReport(visitsLog, slotHeader);
           await callTelegram('sendMessage', {

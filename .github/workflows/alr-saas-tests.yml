@@ -43,3 +43,6 @@ jobs:
 
       - name: Correr suite de humo contra emuladores
         run: npm run test:alr-saas
+
+      - name: Validar que la CSP cubra los dominios externos que el sitio usa
+        run: npm run test:csp
