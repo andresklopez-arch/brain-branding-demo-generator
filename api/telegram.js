@@ -244,8 +244,9 @@ const kb = {
 
 const userStates = {};
 const conversationHistory = {};
-const { loadVisitsFromDisk, saveVisitsToDisk, loadIgnoredIpsFromDisk, saveIgnoredIpsToDisk } = require('./historyStore.js');
+const { loadVisitsFromDisk, saveVisitsToDisk, loadBotVisitsFromDisk, saveBotVisitsToDisk, loadIgnoredIpsFromDisk, saveIgnoredIpsToDisk } = require('./historyStore.js');
 const visitsLog = loadVisitsFromDisk();
+const botVisitsLog = loadBotVisitsFromDisk();
 const ignoredAdminIps = new Set(loadIgnoredIpsFromDisk());
 const notifiedSessionsHighIntent = new Set();
 // visitorHash (IP+dispositivo) -> timestamp de la última alerta de "cliente
@@ -255,7 +256,11 @@ const notifiedSessionsHighIntent = new Set();
 // MISMO dispositivo -- una sola persona abriendo el sitio varias veces en el
 // día generaba una alerta por cada apertura.
 const lastReturningAlertByHash = new Map();
-const RETURNING_ALERT_COOLDOWN_MS = 4 * 60 * 60 * 1000; // 4 horas
+// Configurable via env var por si en campañas de anuncios conviene una
+// ventana distinta (ej. bajarla para ver reingresos más seguido durante un
+// lanzamiento, o subirla si sigue habiendo ruido).
+const RETURNING_ALERT_COOLDOWN_HOURS = parseFloat(process.env.RETURNING_ALERT_COOLDOWN_HOURS) || 4;
+const RETURNING_ALERT_COOLDOWN_MS = RETURNING_ALERT_COOLDOWN_HOURS * 60 * 60 * 1000;
 
 
 function normalizeText(text) {
@@ -1864,8 +1869,8 @@ async function handleWebhookRequest(req, res) {
         }
 
         if (cmdLower === '/exportarvisitas' || cmdLower === '/csvvisitas') {
-          const header = 'Fecha,Hora,Ciudad,Region,Pais,Dispositivo,Origen,Duracion,Scroll,Clics,Recurrente\n';
-          const rows = visitsLog.map(v => `"${v.timestamp || ''}","${v.time || ''}","${truncCsvField(v.city || '')}","${truncCsvField(v.region || '')}","${truncCsvField(v.country || '')}","${truncCsvField(v.device || '')}","${truncCsvField(v.source || '')}","${truncCsvField(v.duration || '')}","${v.scroll || 0}%","${truncCsvField((v.clicks || []).join(';'))}","${v.isReturning ? 'SI' : 'NO'}"`);
+          const header = 'Fecha,Hora,Ciudad,Region,Pais,Dispositivo,Origen,Duracion,Scroll,Clics,Recurrente,Bot\n';
+          const rows = visitsLog.map(v => `"${v.timestamp || ''}","${v.time || ''}","${truncCsvField(v.city || '')}","${truncCsvField(v.region || '')}","${truncCsvField(v.country || '')}","${truncCsvField(v.device || '')}","${truncCsvField(v.source || '')}","${truncCsvField(v.duration || '')}","${v.scroll || 0}%","${truncCsvField((v.clicks || []).join(';'))}","${v.isReturning ? 'SI' : 'NO'}","${(v.isBot || isBotUserAgent(v.device, v.source)) ? 'SI' : 'NO'}"`);
           let csv = header;
           let included = 0;
           for (const row of rows) {
@@ -2110,6 +2115,51 @@ async function handleWebhookRequest(req, res) {
           }
           reply += `\n💬 *Tip:* Escribe /exportarvisitas para descargar el Excel completo.`;
 
+          await callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text: reply, parse_mode: 'Markdown' });
+          return res.status(200).json({ ok: true });
+        }
+
+        if (cmdLower === '/visitantesunicos' || cmdLower === '/unicos') {
+          // Cuenta personas distintas por visitorHash (IP+dispositivo), no
+          // sesiones de pestaña -- un mismo visitante que reabrió el sitio
+          // 5 veces cuenta como 1 aquí, aunque haya generado 5 filas en
+          // visitsLog.
+          const nowMs = Date.now();
+          const cutoff24h = nowMs - (24 * 60 * 60 * 1000);
+          const cutoff7d = nowMs - (7 * 24 * 60 * 60 * 1000);
+
+          const humanVisits = visitsLog.filter(v => !v.isBot && !isBotUserAgent(v.device, v.source));
+          const visits24h = humanVisits.filter(v => { const t = parseVisitTimestamp(v.timestamp); return t > 0 && t >= cutoff24h; });
+          const visits7d = humanVisits.filter(v => { const t = parseVisitTimestamp(v.timestamp); return t > 0 && t >= cutoff7d; });
+
+          const unique24h = new Set(visits24h.map(v => v.visitorHash || v.sessionId)).size;
+          const unique7d = new Set(visits7d.map(v => v.visitorHash || v.sessionId)).size;
+          const returning24h = new Set(visits24h.filter(v => v.isReturning).map(v => v.visitorHash || v.sessionId)).size;
+
+          const timeStr = new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
+          let reply = `👥 *VISITANTES ÚNICOS (POR PERSONA, NO POR SESIÓN)* 👥\n⏰ *Consultado:* ${timeStr}\n\n`;
+          reply += `📊 *Últimas 24h:* *${unique24h}* visitante(s) único(s) — de *${visits24h.length}* visita(s)/sesión(es) registradas\n`;
+          reply += `📈 *Últimos 7 días:* *${unique7d}* visitante(s) único(s) — de *${visits7d.length}* visita(s)/sesión(es) registradas\n`;
+          reply += `🌟 *Recurrentes en 24h:* *${returning24h}* visitante(s)\n\n`;
+          reply += `💬 *Tip:* Si "sesiones" es mucho más alto que "visitantes únicos", significa que pocas personas están recargando/reabriendo el sitio varias veces, no que hay muchos prospectos nuevos.`;
+
+          await callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text: reply, parse_mode: 'Markdown' });
+          return res.status(200).json({ ok: true });
+        }
+
+        if (cmdLower === '/botsfiltrados' || cmdLower === '/bots') {
+          const timeStr = new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
+          let reply = `🤖 *VISITAS FILTRADAS COMO BOT (ÚLTIMAS ${Math.min(botVisitsLog.length, 10)})* 🤖\n⏰ *Consultado:* ${timeStr}\n\n`;
+          reply += `📊 *Total acumulado filtrado:* *${botVisitsLog.length}*\n\n`;
+          if (botVisitsLog.length === 0) {
+            reply += `✅ *No se ha filtrado ninguna visita como bot todavía.*`;
+          } else {
+            botVisitsLog.slice(-10).reverse().forEach((v, i) => {
+              const t = v.timestamp ? new Date(v.timestamp).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }) : 'N/A';
+              reply += `${i + 1}. ${t} — ${v.city || 'México'} — _${v.device || 'Desconocido'}_\n`;
+            });
+            reply += `\n💬 *Tip:* Si ves aquí dispositivos que reconoces como visitantes reales, avisa para ajustar el filtro anti-bot (\`isBotUserAgent\` en api/telegram.js).`;
+          }
           await callTelegram('sendMessage', { chat_id: ADMIN_CHAT_ID, text: reply, parse_mode: 'Markdown' });
           return res.status(200).json({ ok: true });
         }
@@ -3623,19 +3673,25 @@ function checkTrafficSpike(city, device) {
     const visits24h = getActive24hVisits(visitsLog);
     if (visits24h.length < 6) return;
 
-    const visits1h = visits24h.filter(v => {
+    // Contar visitantes ÚNICOS (visitorHash), no sesiones -- una sola
+    // persona reabriendo el sitio varias veces en la misma hora (sessionId
+    // nuevo cada vez) no debe leerse como "pico de tráfico".
+    const uniqueVisitors24h = new Set(visits24h.map(v => v.visitorHash || v.sessionId)).size;
+    const visitors1hSet = new Set();
+    visits24h.forEach(v => {
       const t = parseVisitTimestamp(v.timestamp);
-      return t > 0 && (nowMs - t) <= (60 * 60 * 1000);
-    }).length;
+      if (t > 0 && (nowMs - t) <= (60 * 60 * 1000)) visitors1hSet.add(v.visitorHash || v.sessionId);
+    });
+    const visits1h = visitors1hSet.size;
 
-    const hourlyAvg = visits24h.length / 24;
+    const hourlyAvg = uniqueVisitors24h / 24;
     if (visits1h >= 4 && visits1h >= (hourlyAvg * 2.5)) {
       lastSpikeAlertTime = nowMs;
       const spikePct = (((visits1h - hourlyAvg) / (hourlyAvg || 1)) * 100).toFixed(0);
       callTelegram('sendMessage', {
         chat_id: ADMIN_CHAT_ID,
         text: `⚡ *¡ALERTA DE PICO INUSUAL DE TRÁFICO DETECTADO EN TU WEB!* ⚡\n\n` +
-              `📊 *Visitas en la Última Hora:* *${visits1h} visitas* (+${spikePct}% sobre el promedio histórico)\n` +
+              `📊 *Visitantes Únicos en la Última Hora:* *${visits1h}* (+${spikePct}% sobre el promedio histórico)\n` +
               `📍 *Última Ubicación:* ${city || 'México'}\n` +
               `📱 *Dispositivo:* ${device || 'Móvil'}\n\n` +
               `💬 *Tip:* Escribe /visitas para ver la actividad en tiempo real.`,
@@ -3835,6 +3891,15 @@ app.post('/api/track-visit', async (req, res) => {
       };
       visitsLog.push(record);
       if (visitsLog.length > 1000) visitsLog.shift();
+
+      // Copia aparte de lo que el filtro anti-bot descartó de alertas/hitos,
+      // para poder auditar despues si esta siendo demasiado o poco agresivo
+      // sin tener que revisar el visitsLog completo.
+      if (isBot) {
+        botVisitsLog.push({ visitorHash, device: record.device, source: record.source, city: record.city, region: record.region, timestamp: record.timestamp });
+        if (botVisitsLog.length > 500) botVisitsLog.shift();
+        saveBotVisitsToDisk(botVisitsLog);
+      }
     }
 
     saveVisitsToDisk(visitsLog);

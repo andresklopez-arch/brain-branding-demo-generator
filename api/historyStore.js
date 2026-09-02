@@ -414,6 +414,27 @@ function createDailyVisitsBackup() {
   }
 }
 
+const BOT_VISITS_FILE = path.join(DATA_DIR, 'bot_visits_db.json');
+
+// Copia aparte (no la fuente de verdad de analytics) de las visitas que el
+// filtro anti-bot descartó de las alertas/reportes. Antes se descartaban en
+// silencio -- sin este archivo no había forma de revisar despues si el
+// filtro esta siendo demasiado o poco agresivo.
+function loadBotVisitsFromDisk() {
+  try {
+    if (fs.existsSync(BOT_VISITS_FILE)) {
+      return JSON.parse(fs.readFileSync(BOT_VISITS_FILE, 'utf8')) || [];
+    }
+  } catch (e) {}
+  return [];
+}
+
+function saveBotVisitsToDisk(logs) {
+  try {
+    fs.writeFileSync(BOT_VISITS_FILE, JSON.stringify(logs.slice(-500), null, 2), 'utf8');
+  } catch (e) {}
+}
+
 const IGNORED_IPS_FILE = path.join(DATA_DIR, 'ignored_ips.json');
 
 function loadIgnoredIpsFromDisk() {
@@ -461,6 +482,8 @@ module.exports = {
   saveMetricsToDisk,
   loadVisitsFromDisk,
   saveVisitsToDisk,
+  loadBotVisitsFromDisk,
+  saveBotVisitsToDisk,
   loadIgnoredIpsFromDisk,
   saveIgnoredIpsToDisk,
   purgeOldVisits,
