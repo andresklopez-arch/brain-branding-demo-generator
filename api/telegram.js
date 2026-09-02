@@ -248,6 +248,14 @@ const { loadVisitsFromDisk, saveVisitsToDisk, loadIgnoredIpsFromDisk, saveIgnore
 const visitsLog = loadVisitsFromDisk();
 const ignoredAdminIps = new Set(loadIgnoredIpsFromDisk());
 const notifiedSessionsHighIntent = new Set();
+// visitorHash (IP+dispositivo) -> timestamp de la última alerta de "cliente
+// recurrente" enviada para ese visitante. Antes la alerta se disparaba en
+// cada sesión de pestaña nueva (sessionStorage se resetea al cerrar/reabrir),
+// aunque "isReturning" viniera de localStorage (persiste indefinidamente) del
+// MISMO dispositivo -- una sola persona abriendo el sitio varias veces en el
+// día generaba una alerta por cada apertura.
+const lastReturningAlertByHash = new Map();
+const RETURNING_ALERT_COOLDOWN_MS = 4 * 60 * 60 * 1000; // 4 horas
 
 
 function normalizeText(text) {
@@ -3307,7 +3315,41 @@ function isBotUserAgent(rawDevice = '', rawSource = '') {
   const dev = String(rawDevice || '').toLowerCase();
   const src = String(rawSource || '').toLowerCase();
   if (dev.includes('onrender') || src.includes('onrender')) return false;
-  return /googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|headlesschrome|puppeteer|selenium|wget|curl/i.test(dev + ' ' + src);
+  if (/googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|facebookexternalhit|twitterbot|headlesschrome|puppeteer|selenium|wget|curl/i.test(dev + ' ' + src)) {
+    return true;
+  }
+
+  // Heurística adicional: un "Móvil" reportando resolución en horizontal
+  // (ancho > alto) en la PRIMERA carga es atípico para una persona real --
+  // los navegadores móviles cargan en vertical salvo que el usuario ya haya
+  // girado el teléfono, lo cual no ocurre antes de que se dispare este
+  // evento. Es un patrón común de user-agents de Android falsificados por
+  // headless browsers/scrapers que no se identifican como bot.
+  if (/móvil/i.test(dev)) {
+    const resMatch = dev.match(/\[?(\d+)x(\d+)px\]?/);
+    if (resMatch) {
+      const w = parseInt(resMatch[1], 10);
+      const h = parseInt(resMatch[2], 10);
+      if (w > h) return true;
+    }
+  }
+
+  return false;
+}
+
+// Huella de visitante: IP + cadena de dispositivo (SO, navegador, resolución).
+// No es perfecta (cambia si el visitante cambia de red), pero es muchísimo
+// más estable que sessionId (que se resetea al cerrar la pestaña) para saber
+// si "ya se avisó de este visitante recurrente hace poco".
+function getVisitorHash(clientIp, device) {
+  const raw = `${clientIp || 'unknown-ip'}|${device || 'unknown-device'}`;
+  return crypto.createHash('sha256').update(raw).digest('hex').substring(0, 16);
+}
+
+function countRecentVisitsByHash(visitorHash, windowMs) {
+  if (!visitorHash) return 0;
+  const nowMs = Date.now();
+  return visitsLog.filter(v => v.visitorHash === visitorHash && (nowMs - parseVisitTimestamp(v.timestamp)) <= windowMs).length;
 }
 
 function calculateAverageDuration(visits = []) {
@@ -3760,6 +3802,8 @@ app.post('/api/track-visit', async (req, res) => {
 
     const { sessionId, isReturning, city, region, country, flag, source, device, isp, duration, scroll, clicks } = bodyData || {};
     const nowMs = Date.now();
+    const isBot = isBotUserAgent(device, source);
+    const visitorHash = getVisitorHash(clientIp, device);
 
     // Anti-Duplication Filter: If same session within 15 minutes, update record instead of duplicating
     const existingIndex = visitsLog.findIndex(v => v.sessionId && v.sessionId === sessionId && (nowMs - new Date(v.timestamp).getTime() <= 15 * 60 * 1000));
@@ -3774,6 +3818,8 @@ app.post('/api/track-visit', async (req, res) => {
       const record = {
         sessionId: sessionId || ('sess_' + Date.now()),
         isReturning: !!isReturning,
+        visitorHash,
+        isBot,
         city: city || 'Desconocida',
         region: region || '',
         country: country || 'México',
@@ -3794,33 +3840,40 @@ app.post('/api/track-visit', async (req, res) => {
     saveVisitsToDisk(visitsLog);
 
     // Suggestion 2: High Engagement Alert (> 5 Minutes Browsing)
-    checkHighEngagementVisit(sessionId, city, device, duration);
+    if (!isBot) checkHighEngagementVisit(sessionId, city, device, duration);
 
     // 🎯 Sugerencia 2: Alerta Instantánea de Alta Intención de Compra
-    checkHighIntentVisit(sessionId, city, region, flag, device, clicks);
+    if (!isBot) checkHighIntentVisit(sessionId, city, region, flag, device, clicks);
 
 
     // Suggestion 3: Instant Returning Visitor Alert
-    if (isReturning && existingIndex === -1) {
-      callTelegram('sendMessage', {
-        chat_id: ADMIN_CHAT_ID,
-        text: `🌟 *¡ALERTA DE CLIENTE RECURRENTE EN TU WEB!* 🌟\n\nUn visitante que ya conocía *Brain Branding* acaba de reingresar al sitio web.\n\n📍 *Ubicación:* ${city || 'México'}, ${region || ''} ${flag || '🇲🇽'}\n📱 *Dispositivo:* ${device || 'Móvil'}\n🎯 *Origen:* ${source || 'Directo'}\n⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' })}\n\n💬 *Tip:* Contacta al prospecto si solicita cotización o inicia chat con el bot.`,
-        parse_mode: 'Markdown'
-      }).catch(function(){});
+    // Deduplicado por visitorHash (IP+dispositivo) con cooldown de horas, no
+    // solo por sessionId (que se resetea al cerrar la pestaña) -- evita que
+    // el mismo visitante genere una alerta cada vez que reabre el sitio.
+    if (isReturning && existingIndex === -1 && !isBot) {
+      const lastAlertTs = lastReturningAlertByHash.get(visitorHash) || 0;
+      if (nowMs - lastAlertTs >= RETURNING_ALERT_COOLDOWN_MS) {
+        lastReturningAlertByHash.set(visitorHash, nowMs);
+        const reingresos24h = countRecentVisitsByHash(visitorHash, 24 * 60 * 60 * 1000);
+        callTelegram('sendMessage', {
+          chat_id: ADMIN_CHAT_ID,
+          text: `🌟 *¡ALERTA DE CLIENTE RECURRENTE EN TU WEB!* 🌟\n\nUn visitante que ya conocía *Brain Branding* acaba de reingresar al sitio web.\n\n📍 *Ubicación:* ${city || 'México'}, ${region || ''} ${flag || '🇲🇽'}\n📱 *Dispositivo:* ${device || 'Móvil'}\n🎯 *Origen:* ${source || 'Directo'}\n🔁 *Reingresos en 24h:* ${reingresos24h}\n⏰ *Hora:* ${new Date().toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' })}\n\n💬 *Tip:* Contacta al prospecto si solicita cotización o inicia chat con el bot.`,
+          parse_mode: 'Markdown'
+        }).catch(function(){});
+      }
     }
 
     // Suggestion 1: Spike & First Visit of Day Detector
-    if (existingIndex === -1) {
+    if (existingIndex === -1 && !isBot) {
       checkTrafficSpike(city, device);
       checkFirstVisitOfDay(city, region, flag, device, source);
     }
 
     // Suggestion 2: High Traffic Alert Trigger (Fires when 24h visits reach milestones: 10, 20, 50, 100)
-    // Suggestion 2: High Traffic Alert Trigger (Fires when 24h visits reach milestones: 10, 20, 50, 100)
     const active24hVisits = getActive24hVisits(visitsLog);
     const active24hCount = active24hVisits.length;
 
-    if ([10, 20, 50, 100].includes(active24hCount) && existingIndex === -1) {
+    if ([10, 20, 50, 100].includes(active24hCount) && existingIndex === -1 && !isBot) {
       callTelegram('sendMessage', {
         chat_id: ADMIN_CHAT_ID,
         text: `🔥 *ALTA AFLUENCIA DETECTADA EN EL SITIO WEB* 🔥\n\nEl sitio web de *Brain Branding* acaba de alcanzar un hito de *${active24hCount} visitas únicas* en las últimas 24 horas.\n\n📍 *Último visitante registrado:* ${city || 'México'}, ${region || ''} (${device || 'Móvil'})\n💬 *Tip:* Usa /visitas o /exportarvisitas para ver el informe detallado en Excel.`,
