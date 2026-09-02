@@ -147,6 +147,88 @@ app.post('/api/admin/verify-password', (req, res) => {
   return res.status(200).json({ ok: true });
 });
 
+// El modal de "clave privada" en la home comparaba 'BB2026' EN TEXTO PLANO
+// dentro del navegador (visible incluso en el placeholder del input, sin
+// necesidad de abrir devtools) para dar acceso al hub interno (/portal/,
+// que a su vez enlaza al panel de licencias ALR SaaS). Se reemplaza por el
+// mismo patrón que ADMIN_PASS_HASH arriba: hash por variable de entorno con
+// respaldo, comparado solo aquí en el servidor. La clave anterior quedó
+// expuesta públicamente, así que este hash corresponde a una clave NUEVA.
+const PORTAL_MASTER_HASH = process.env.PORTAL_MASTER_PASSCODE_HASH || "5a93f906626ecdd2a29819ddab051082a28177b9ebeb177d1f29fca2fe322c0d";
+
+let portalPasscodeFailCount = 0;
+let portalPasscodeLockedUntil = 0;
+
+app.get('/api/validate-passcode', (req, res) => {
+  if (Date.now() < portalPasscodeLockedUntil) {
+    const minsLeft = Math.ceil((portalPasscodeLockedUntil - Date.now()) / 60000);
+    return res.status(429).json({ success: false, error: `Bloqueado por intentos fallidos. Reintenta en ${minsLeft} min.` });
+  }
+
+  const hash = String(req.query.hash || '').trim().toLowerCase();
+
+  if (hash && hash === PORTAL_MASTER_HASH) {
+    portalPasscodeFailCount = 0;
+    return res.status(200).json({ success: true, redirectUrl: '/portal/', clientName: 'Brain Branding' });
+  }
+
+  portalPasscodeFailCount++;
+  if (portalPasscodeFailCount >= 5) {
+    portalPasscodeLockedUntil = Date.now() + 15 * 60 * 1000;
+    portalPasscodeFailCount = 0;
+    callTelegram('sendMessage', {
+      chat_id: ADMIN_CHAT_ID,
+      text: '🚨 *ALERTA DE SEGURIDAD — PORTAL PRIVADO* 🚨\n\nSe registraron 5 intentos fallidos consecutivos de clave del portal privado en la web. Acceso bloqueado 15 minutos.',
+      parse_mode: 'Markdown'
+    }).catch(() => {});
+    return res.status(429).json({ success: false, error: 'Demasiados intentos fallidos. Bloqueado 15 minutos.' });
+  }
+
+  return res.status(200).json({ success: false, error: 'Código incorrecto.' });
+});
+
+// Rate limiting por IP para los endpoints públicos de folio de contrato
+// (GET /api/contracts/:code, /accept, /app-status). El folio de 6 dígitos
+// es del mismo espacio que un PIN numérico (1,000,000 combinaciones) y
+// estos endpoints no tenían NINGÚN límite de intentos -- cualquiera podía
+// recorrer todos los folios en minutos y volcar nombre, precios y firma de
+// TODOS los clientes reales, o incluso "aceptar" un contrato ajeno
+// falsificando la firma. El propio frontend (index.html) ya detecta
+// cualquier entrada de 6 dígitos y llama a este endpoint automáticamente,
+// así que la única defensa real posible está aquí en el servidor.
+const contractAccessAttempts = new Map();
+const CONTRACT_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const CONTRACT_RATE_LIMIT_MAX = 8;
+const CONTRACT_RATE_LIMIT_LOCKOUT_MS = 30 * 60 * 1000;
+
+function checkContractRateLimit(ip) {
+  const key = ip || 'unknown';
+  const nowMs = Date.now();
+  let entry = contractAccessAttempts.get(key);
+  if (!entry) {
+    entry = { count: 0, windowStart: nowMs, lockedUntil: 0 };
+    contractAccessAttempts.set(key, entry);
+  }
+  if (entry.lockedUntil && nowMs < entry.lockedUntil) {
+    return { allowed: false, minsLeft: Math.ceil((entry.lockedUntil - nowMs) / 60000) };
+  }
+  if (nowMs - entry.windowStart > CONTRACT_RATE_LIMIT_WINDOW_MS) {
+    entry.count = 0;
+    entry.windowStart = nowMs;
+  }
+  entry.count++;
+  if (entry.count > CONTRACT_RATE_LIMIT_MAX) {
+    entry.lockedUntil = nowMs + CONTRACT_RATE_LIMIT_LOCKOUT_MS;
+    callTelegram('sendMessage', {
+      chat_id: ADMIN_CHAT_ID,
+      text: `🚨 *ALERTA DE SEGURIDAD -- POSIBLE FUERZA BRUTA DE FOLIOS* 🚨\n\nLa IP \`${key}\` superó ${CONTRACT_RATE_LIMIT_MAX} intentos de acceso a folios de contrato en 10 minutos. Bloqueada 30 min.`,
+      parse_mode: 'Markdown'
+    }).catch(() => {});
+    return { allowed: false, minsLeft: 30 };
+  }
+  return { allowed: true };
+}
+
 // Base de conocimiento personalizada del bot — antes el panel admin solo
 // la guardaba en localStorage del navegador y el bot real nunca la leía.
 // GET es público (es contenido de negocio, no un secreto) para que el
@@ -4465,6 +4547,11 @@ app.post('/api/contracts', (req, res) => {
 });
 
 app.get('/api/contracts/:code', (req, res) => {
+  const clientIp = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim();
+  const rl = checkContractRateLimit(clientIp);
+  if (!rl.allowed) {
+    return res.status(429).json({ ok: false, error: `Demasiados intentos. Reintenta en ${rl.minsLeft} min.` });
+  }
   const code = (req.params.code || '').trim();
   const contract = contractsDB[code];
   if (!contract) {
@@ -4474,10 +4561,18 @@ app.get('/api/contracts/:code', (req, res) => {
 });
 
 app.post('/api/contracts/:code/accept', (req, res) => {
+  const clientIp = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim();
+  const rl = checkContractRateLimit(clientIp);
+  if (!rl.allowed) {
+    return res.status(429).json({ ok: false, error: `Demasiados intentos. Reintenta en ${rl.minsLeft} min.` });
+  }
   const code = (req.params.code || '').trim();
   const contract = contractsDB[code];
   if (!contract) {
     return res.status(404).json({ ok: false, error: 'Contrato no encontrado' });
+  }
+  if (contract.status === 'ACEPTADO') {
+    return res.status(409).json({ ok: false, error: 'Este contrato ya fue aceptado previamente.', contract });
   }
 
   const { signatureName, ip, userAgent } = req.body || {};
@@ -4565,6 +4660,11 @@ app.post('/api/contracts/:code/toggle-status', (req, res) => {
 
 // Public App Status Query for Remote ALR SaaS Governance
 app.get('/api/contracts/:code/app-status', (req, res) => {
+  const clientIp = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim();
+  const rl = checkContractRateLimit(clientIp);
+  if (!rl.allowed) {
+    return res.status(429).json({ ok: false, error: `Demasiados intentos. Reintenta en ${rl.minsLeft} min.` });
+  }
   const code = (req.params.code || '').trim();
   const contract = contractsDB[code];
   if (!contract) {

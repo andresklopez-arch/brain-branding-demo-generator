@@ -310,48 +310,55 @@
       return false;
     };
 
+    // Antes estos 3 registros de ejemplo eran datos REALES de un cliente
+    // (nombre completo y tarifas de contrato) -- como este script se sirve
+    // públicamente a cualquier visitante (no solo al admin autenticado),
+    // "Ver código fuente" en la home exponía esa información sin ninguna
+    // autenticación. Reemplazados por datos ficticios; se elimina también
+    // la migración automática que forzaba cualquier folio 423805/763190 a
+    // esos datos reales.
     window.DEFAULT_SEED_CONTRACTS = [
       {
-        code: '763190',
-        clientName: 'Ana Lilia Salazar Jiménez',
-        appName: 'Plataforma SaaS Ana Lilia Salazar Jiménez',
-        date: '2026-08-10',
+        code: '100001',
+        clientName: 'Cliente de Ejemplo Uno',
+        appName: 'Plataforma SaaS Demo',
+        date: '2026-01-01',
         initialPrice: 3500,
         monthlyPrice: 250,
         status: 'PENDIENTE',
         acceptedAt: null,
         appStatus: 'ONLINE',
-        createdAt: '2026-08-10T16:00:00.000Z',
+        createdAt: '2026-01-01T16:00:00.000Z',
         signatureData: null
       },
       {
-        code: '839201',
-        clientName: 'Juan Pérez',
-        appName: 'JuanP',
-        date: '2026-08-10',
+        code: '100002',
+        clientName: 'Cliente de Ejemplo Dos',
+        appName: 'Sistema POS Demo',
+        date: '2026-01-01',
         initialPrice: 5000,
         monthlyPrice: 500,
         status: 'ACEPTADO',
-        acceptedAt: '10/8/2026, 12:43:26 p.m.',
+        acceptedAt: '1/1/2026, 12:43:26 p.m.',
         appStatus: 'ONLINE',
-        createdAt: '2026-08-10T12:40:00.000Z',
+        createdAt: '2026-01-01T12:40:00.000Z',
         signatureData: {
-          signatureName: 'Juan Pérez',
-          sha256Seal: '000000011DF605BC840219C08D7A65B2',
-          timestamp: '2026-08-10T12:43:26.000Z'
+          signatureName: 'Cliente de Ejemplo Dos',
+          sha256Seal: '00000000000000000000000000000000',
+          timestamp: '2026-01-01T12:43:26.000Z'
         }
       },
       {
-        code: '741258',
-        clientName: 'Empresa S.A. de C.V.',
-        appName: 'Sistema POS Taller Don Pepe',
-        date: '2026-08-10',
+        code: '100003',
+        clientName: 'Empresa de Ejemplo S.A. de C.V.',
+        appName: 'Sistema ERP Demo',
+        date: '2026-01-01',
         initialPrice: 4500,
         monthlyPrice: 450,
         status: 'PENDIENTE',
         acceptedAt: null,
         appStatus: 'ONLINE',
-        createdAt: '2026-08-10T11:00:00.000Z',
+        createdAt: '2026-01-01T11:00:00.000Z',
         signatureData: null
       }
     ];
@@ -369,19 +376,7 @@
           localStorage.setItem('brain_branding_contracts', JSON.stringify(list));
           localStorage.setItem('brain_branding_contracts_backup', JSON.stringify(list));
         } else {
-          // Migración automática de 423805 / 763190 para Ana Lilia Salazar Jiménez
           let modified = false;
-          list.forEach(function(c) {
-            if (c && (String(c.code).trim() === '423805' || String(c.code).trim() === '763190')) {
-              c.code = '763190';
-              c.clientName = 'Ana Lilia Salazar Jiménez';
-              c.appName = 'Plataforma SaaS Ana Lilia Salazar Jiménez';
-              c.initialPrice = 3500;
-              c.monthlyPrice = 250;
-              c.date = '2026-08-10';
-              modified = true;
-            }
-          });
           window.DEFAULT_SEED_CONTRACTS.forEach(function(seed) {
             if (!list.some(function(c) { return String(c.code).trim() === seed.code; })) {
               list.push(seed);
@@ -4606,7 +4601,7 @@
       </p>
       
       <div style="display: flex; flex-direction: column; gap: 10px;">
-        <input type="password" id="passcode-input" placeholder="Ingresar clave (Ej: BB2026)" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; text-align: center; font-size: 14.5px; font-weight: 700; letter-spacing: 2px;">
+        <input type="password" id="passcode-input" placeholder="Ingresa tu clave de acceso" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; text-align: center; font-size: 14.5px; font-weight: 700; letter-spacing: 2px;">
         <span id="passcode-error" style="font-size: 12px; color: var(--secondary); display: none;">Código incorrecto. Inténtalo de nuevo.</span>
       </div>
 

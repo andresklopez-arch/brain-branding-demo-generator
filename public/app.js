@@ -639,17 +639,14 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const enteredCode = passcodeInput ? passcodeInput.value.trim() : '';
       if (!enteredCode) return;
-      
-      // Master Passcode logic
-      if (enteredCode.toUpperCase() === 'BB2026') {
-        passcodeAttempts = 0;
-        if (typeof gtag === 'function') {
-          gtag('event', 'unlock_private_portal', { event_category: 'security', event_label: 'Success Master' });
-        }
-        window.location.href = targetPortalUrl;
-        return;
-      }
-      
+
+      // La clave maestra del portal interno ya NO se compara aquí en texto
+      // plano -- antes cualquiera podía leerla directo del código fuente
+      // (de hecho estaba en el propio placeholder del input). Ahora cae al
+      // mismo flujo de abajo: se manda el hash SHA-256 al servidor, y
+      // /api/validate-passcode responde con redirectUrl:'/portal/' si
+      // coincide con PORTAL_MASTER_PASSCODE_HASH.
+
       // Dynamic Passcode API validation
       submitPasscodeBtn.disabled = true;
       if (passcodeError) {
@@ -4959,48 +4956,51 @@ END:VCARD`;
 })();
 
 /* ════════════════ SAAS CONTRACTS MANAGEMENT & VIEWER ENGINE ════════════════ */
+  // Ver el mismo comentario en index.html: estos eran datos reales de un
+  // cliente, expuestos públicamente en JS servido a cualquier visitante.
+  // Reemplazados por datos ficticios de ejemplo.
   const DEFAULT_SEED_CONTRACTS = [
     {
-      code: '763190',
-      clientName: 'Ana Lilia Salazar Jiménez',
-      appName: 'Plataforma SaaS Ana Lilia Salazar Jiménez',
-      date: '2026-08-10',
+      code: '100001',
+      clientName: 'Cliente de Ejemplo Uno',
+      appName: 'Plataforma SaaS Demo',
+      date: '2026-01-01',
       initialPrice: 3500,
       monthlyPrice: 250,
       status: 'PENDIENTE',
       acceptedAt: null,
       appStatus: 'ONLINE',
-      createdAt: '2026-08-10T16:00:00.000Z',
+      createdAt: '2026-01-01T16:00:00.000Z',
       signatureData: null
     },
     {
-      code: '839201',
-      clientName: 'Juan Pérez',
-      appName: 'JuanP',
-      date: '2026-08-10',
+      code: '100002',
+      clientName: 'Cliente de Ejemplo Dos',
+      appName: 'Sistema POS Demo',
+      date: '2026-01-01',
       initialPrice: 5000,
       monthlyPrice: 500,
       status: 'ACEPTADO',
-      acceptedAt: '10/8/2026, 12:43:26 p.m.',
+      acceptedAt: '1/1/2026, 12:43:26 p.m.',
       appStatus: 'ONLINE',
-      createdAt: '2026-08-10T12:40:00.000Z',
+      createdAt: '2026-01-01T12:40:00.000Z',
       signatureData: {
-        signatureName: 'Juan Pérez',
-        sha256Seal: '000000011DF605BC840219C08D7A65B2',
-        timestamp: '2026-08-10T12:43:26.000Z'
+        signatureName: 'Cliente de Ejemplo Dos',
+        sha256Seal: '00000000000000000000000000000000',
+        timestamp: '2026-01-01T12:43:26.000Z'
       }
     },
     {
-      code: '741258',
-      clientName: 'Empresa S.A. de C.V.',
-      appName: 'Sistema POS Taller Don Pepe',
-      date: '2026-08-10',
+      code: '100003',
+      clientName: 'Empresa de Ejemplo S.A. de C.V.',
+      appName: 'Sistema ERP Demo',
+      date: '2026-01-01',
       initialPrice: 4500,
       monthlyPrice: 450,
       status: 'PENDIENTE',
       acceptedAt: null,
       appStatus: 'ONLINE',
-      createdAt: '2026-08-10T11:00:00.000Z',
+      createdAt: '2026-01-01T11:00:00.000Z',
       signatureData: null
     }
   ];
@@ -5022,17 +5022,6 @@ END:VCARD`;
         localStorage.setItem('brain_branding_contracts_backup', JSON.stringify(list));
       } else {
         let modified = false;
-        list.forEach(c => {
-          if (c && (String(c.code).trim() === '423805' || String(c.code).trim() === '763190')) {
-            c.code = '763190';
-            c.clientName = 'Ana Lilia Salazar Jiménez';
-            c.appName = 'Plataforma SaaS Ana Lilia Salazar Jiménez';
-            c.initialPrice = 3500;
-            c.monthlyPrice = 250;
-            c.date = '2026-08-10';
-            modified = true;
-          }
-        });
         DEFAULT_SEED_CONTRACTS.forEach(seed => {
           if (!list.some(c => String(c.code).trim() === seed.code)) {
             list.push(seed);
@@ -5656,50 +5645,16 @@ END:VCARD`;
       });
     }
 
-    // Passcode Gate Modal 5-digit vs 6-digit handling
-    const passcodeModal = document.getElementById('passcode-modal');
-    const passcodeBtn = document.getElementById('submit-passcode-btn');
-    const passcodeClose = document.getElementById('close-passcode-btn');
-    const passcodeInput = document.getElementById('passcode-input');
-    const passcodeErr = document.getElementById('passcode-error');
-
-    const handlePasscodeSubmit = () => {
-      if (!passcodeInput) return;
-      const query = passcodeInput.value.trim();
-      if (!query) return;
-
-      const contracts = getContracts();
-      const matched = contracts.find(c =>
-        String(c.code).trim() === query ||
-        (c.clientPhone && String(c.clientPhone).replace(/\D/g, '').includes(query.replace(/\D/g, ''))) ||
-        (c.clientName && c.clientName.toLowerCase().includes(query.toLowerCase())) ||
-        (c.appName && c.appName.toLowerCase().includes(query.toLowerCase()))
-      );
-
-      if (matched || /^\d{6}$/.test(query)) {
-        if (passcodeModal) passcodeModal.style.display = 'none';
-        if (typeof window.openContractViewer === 'function') {
-          window.openContractViewer(matched ? matched.code : query);
-        }
-      } else if (query.toUpperCase() === 'BB2026' || query.length === 5) {
-        if (passcodeModal) passcodeModal.style.display = 'none';
-        if (typeof window.applyCustomBusinessDemo === 'function') {
-          window.applyCustomBusinessDemo(query);
-        }
-      } else {
-        if (passcodeErr) passcodeErr.style.display = 'block';
-      }
-    };
-
-    if (passcodeBtn) passcodeBtn.addEventListener('click', handlePasscodeSubmit);
-    if (passcodeInput) {
-      passcodeInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handlePasscodeSubmit();
-      });
-    }
-    if (passcodeClose && passcodeModal) {
-      passcodeClose.addEventListener('click', () => passcodeModal.style.display = 'none');
-    }
+    // Este bloque duplicaba (con un segundo addEventListener('click', ...)
+    // sobre el MISMO botón submit-passcode-btn) la lógica que ya maneja
+    // checkPasscode más arriba, y además permitía: (a) abrir el contrato de
+    // cualquier cliente con solo escribir 6 dígitos random -- ahora
+    // protegido en el servidor con rate-limit, pero no correspondía a este
+    // modal de "demostraciones privadas" en absoluto --, y (b) activar
+    // applyCustomBusinessDemo con CUALQUIER texto de exactamente 5
+    // caracteres, sin validar nada. El único camino real y ya soportado
+    // para ver un contrato es el enlace directo con ?contrato=XXXXXX (ver
+    // más abajo), que no pasa por este modal.
 
     // Auto-check URL query parameters for ?contrato=684920 or ?codigo=684920
     const urlParams = new URLSearchParams(window.location.search);
