@@ -712,17 +712,31 @@ const App = {
     }
   },
 
-  // 6. ONBOARDING MODAL
+  // 6. ONBOARDING MODAL (SIEMPRE ACTIVO AL ENTRAR)
   openOnboardingModal() {
     this.onboardingStep = 0;
     this.renderOnboardingCard();
     const modal = document.getElementById('onboardingModal');
-    if (modal) modal.classList.add('active');
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.style.opacity = '1';
+      modal.style.pointerEvents = 'auto';
+      modal.classList.add('active');
+    }
   },
 
   closeOnboardingModal() {
     const modal = document.getElementById('onboardingModal');
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.opacity = '0';
+      modal.style.pointerEvents = 'none';
+      setTimeout(() => {
+        if (!modal.classList.contains('active')) {
+          modal.style.display = 'none';
+        }
+      }, 250);
+    }
   },
 
   nextOnboardingCard() {

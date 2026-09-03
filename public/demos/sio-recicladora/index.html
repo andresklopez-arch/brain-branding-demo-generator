@@ -454,21 +454,34 @@
     </div>
   </div>
 
-  <!-- MODAL: TARJETAS DE INSTRUCCIONES DINÁMICAS -->
-  <div class="modal-overlay" id="onboardingModal">
+  <!-- MODAL: TARJETAS DE INSTRUCCIONES DINÁMICAS (ABIERTO POR DEFECTO AL CARGAR) -->
+  <div class="modal-overlay active" id="onboardingModal" style="display:flex; opacity:1; pointer-events:auto;">
     <div class="modal-content" style="max-width:580px;">
       <div class="modal-header">
         <h3 class="modal-title">💡 Capacidades & Potenciales de tu Software SIO</h3>
         <button class="modal-close-btn" onclick="App.closeOnboardingModal()">&times;</button>
       </div>
       <div class="modal-body">
-        <div id="onboardingCardContent"></div>
+        <div id="onboardingCardContent">
+          <div class="onboarding-card-hero">
+            <div class="onb-icon-wrap">🌐</div>
+            <span class="onb-badge">POTENCIAL #1 • PREDICTOR INTERNACIONAL IA</span>
+            <h3 class="onb-title">Anticipa las Llamadas con Precios Mundiales (LME / COMEX)</h3>
+            <p class="onb-text">El motor de Inteligencia Artificial monitorea la <strong>Bolsa de Metales de Londres (LME)</strong> y Fastmarkets. Te avisa con hasta 72 horas de anticipación si el Cobre o el Acero van a subir o bajar, permitiéndote acaparar material barato o despachar inventario antes de que baje la tarifa.</p>
+            <div class="onb-benefit-box">📈 <strong>Beneficio:</strong> Máxima ganancia especulativa y ventaja competitiva total sobre otros recicladores.</div>
+          </div>
+        </div>
 
         <div class="onboarding-footer-nav">
-          <button class="btn-secondary" id="btnPrevOnboarding" onclick="App.prevOnboardingCard()">
+          <button class="btn-secondary" id="btnPrevOnboarding" style="visibility:hidden;" onclick="App.prevOnboardingCard()">
             ◀ Anterior
           </button>
-          <div class="onboarding-dots" id="onboardingDots"></div>
+          <div class="onboarding-dots" id="onboardingDots">
+            <span class="onb-dot active" onclick="App.goToOnboardingStep(0)"></span>
+            <span class="onb-dot" onclick="App.goToOnboardingStep(1)"></span>
+            <span class="onb-dot" onclick="App.goToOnboardingStep(2)"></span>
+            <span class="onb-dot" onclick="App.goToOnboardingStep(3)"></span>
+          </div>
           <button class="btn-scale-action" id="btnNextOnboarding" style="width:auto; padding:8px 18px;" onclick="App.nextOnboardingCard()">
             Siguiente ➔
           </button>
