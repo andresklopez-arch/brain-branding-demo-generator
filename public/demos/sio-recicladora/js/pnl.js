@@ -3,11 +3,9 @@
    ========================================================================== */
 
 const PnLEngine = {
-  // Calcula el Estado de Resultados según el período seleccionado: 'daily', 'weekly', 'monthly'
   calculate(period = 'daily') {
     const data = window.SIO_DATA || initialData;
     
-    // 1. Ingresos por Ventas al Gran Comprador (Siderúrgica)
     let totalRevenue = 0;
     let totalCostOfGoodsSold = 0;
     let shippedKg = 0;
@@ -18,7 +16,6 @@ const PnLEngine = {
       shippedKg += shipment.shippedKg;
     });
 
-    // Ajuste de escala según período para simulación realista
     let periodMultiplier = 1;
     if (period === 'weekly') periodMultiplier = 2.5;
     if (period === 'monthly') periodMultiplier = 7.8;
@@ -27,8 +24,6 @@ const PnLEngine = {
     const scaledCOGS = totalCostOfGoodsSold * (period === 'daily' ? 0.6 : periodMultiplier * 0.4);
     const grossProfitFromSales = scaledRevenue - scaledCOGS;
 
-    // 2. Impacto de Volatilidad de Precios en Inventario de Patio (Stock Revaluation)
-    // Calcula la ganancia o pérdida no realizada por cambios de cotización del Comprador
     let totalStockRevaluation = 0;
     data.priceChangeHistory.forEach(change => {
       totalStockRevaluation += change.revaluationImpact;
@@ -36,7 +31,6 @@ const PnLEngine = {
 
     const netGrossProfit = grossProfitFromSales + (period === 'daily' ? (totalStockRevaluation * 0.5) : totalStockRevaluation);
 
-    // 3. Gastos Operativos de Patio y Logística
     const op = data.operatingExpenses;
     const freight = (op.freightAndLogistics / 30) * (period === 'daily' ? 1 : period === 'weekly' ? 7 : 30);
     const fuel = (op.fuelAndMachinery / 30) * (period === 'daily' ? 1 : period === 'weekly' ? 7 : 30);
@@ -48,7 +42,6 @@ const PnLEngine = {
     const operatingIncome = netGrossProfit - totalOperatingExpenses;
     const operatingMarginPct = scaledRevenue > 0 ? (operatingIncome / scaledRevenue) * 100 : 0;
 
-    // 4. Rentabilidad por Material
     const materialProfitability = data.materials.map(mat => {
       const spreadT1 = mat.buyerPrice - mat.t1Price;
       const spreadT2 = mat.buyerPrice - mat.t2Price;
@@ -95,7 +88,6 @@ const PnLEngine = {
     };
   },
 
-  // Renderiza la vista de Estado de Resultados en el DOM
   render(period = 'daily') {
     const report = this.calculate(period);
     const container = document.getElementById('pnlReportContainer');
@@ -135,7 +127,6 @@ const PnLEngine = {
         </div>
       </div>
 
-      <!-- DESGLOSE CONTABLE ESTILO ESTADO FINANCIERO -->
       <div class="financial-statement-card">
         <div class="statement-header">
           <div>
@@ -175,7 +166,6 @@ const PnLEngine = {
                 <td class="text-right font-bold text-neon-green">$${report.netGrossProfit.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
               </tr>
 
-              <!-- GASTOS OPERATIVOS -->
               <tr class="st-row-header" style="padding-top: 15px;">
                 <td colspan="2">(-) Gastos Operativos del Centro de Acopio SIO</td>
               </tr>
@@ -204,7 +194,6 @@ const PnLEngine = {
                 <td class="text-right text-rose font-bold">-$${report.expenses.total.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
               </tr>
 
-              <!-- UTILIDAD NETA FINAL -->
               <tr class="st-row-grand-total">
                 <td>
                   <strong>( = ) UTILIDAD NETA OPERATIVA REAL (EBITDA)</strong>
@@ -219,9 +208,8 @@ const PnLEngine = {
         </div>
       </div>
 
-      <!-- RANKING DE RENTABILIDAD POR MATERIAL -->
       <div class="profitability-section">
-        <h4 class="section-subheading">🏆 Ranking de Rentabilidad por Material en Patio</h4>
+        <h4 class="section-subheading" style="font-size:1.05rem; font-weight:800; margin-bottom:12px;">🏆 Ranking de Rentabilidad por Material en Patio</h4>
         <div class="profitability-grid">
           ${report.materialProfitability.slice(0, 4).map(mat => `
             <div class="profit-mini-card">

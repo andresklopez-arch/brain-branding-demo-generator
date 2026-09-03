@@ -9,8 +9,46 @@ const App = {
   currentSimulatedWeight: 0,
   audioCtx: null,
 
+  quickPriceState: {
+    materialId: 'MAT-01',
+    direction: 'up',
+    unit: 'amount',
+    value: 5.0
+  },
+
+  onboardingStep: 0,
+  onboardingCards: [
+    {
+      icon: '⚡',
+      badge: 'POTENCIAL #1 • PRECIOS EN CASCADA',
+      title: 'Protege tu Margen ante Llamadas del Comprador',
+      text: 'Cuando la Siderúrgica llama para cambiar el precio del acero o cobre, Carlos solo presiona <strong>1 botón</strong>. El sistema recalcula en tiempo real todas las tarifas de compra de Nivel 1, 2 y 3, impidiendo que los operadores de báscula paguen de más.',
+      benefit: '💰 <strong>Beneficio:</strong> Cero pérdidas por rezago de precios y protección de margen garantizada.'
+    },
+    {
+      icon: '⚖️',
+      badge: 'POTENCIAL #2 • BÁSCULA DIGITAL & CAJA',
+      title: 'Cero Fugas en Patio y Liquidación Instantánea',
+      text: 'Conexión digital con básculas camioneras (60 Ton) y de plataforma (1 Ton). Captura automática de peso Bruto, descuento de Tara y cálculo de Neto con emisión de <strong>Ticket Digital con Código QR</strong> y sello ambiental CEDES.',
+      benefit: '🔒 <strong>Beneficio:</strong> Eliminación del robo hormiga, pesajes manipulados y descuadre de caja.'
+    },
+    {
+      icon: '📈',
+      badge: 'POTENCIAL #3 • ESTADO DE RESULTADOS (P&L)',
+      title: 'Control Financiero con Efecto por Volatilidad',
+      text: 'Visualiza en tiempo real las ganancias y pérdidas de tu patio (Diario, Semanal y Mensual). El motor calcula automáticamente el <strong>Stock Revaluation</strong> (cuánto dinero ganó o perdió tu inventario acumulado tras un cambio de cotización internacional).',
+      benefit: '📊 <strong>Beneficio:</strong> Visión ejecutiva clara de utilidades netas reales y costo operativo exacto.'
+    },
+    {
+      icon: '🧠',
+      badge: 'POTENCIAL #4 • BRAIN IA & EMBARQUES',
+      title: 'Asistente Predictivo y Arbitraje de Metales',
+      text: 'La Inteligencia Artificial de SIO analiza tus existencias en patio y te avisa el momento óptimo para despachar góndolas a la siderúrgica antes de caídas de precio, auditando además el comportamiento de los recolectores.',
+      benefit: '🚀 <strong>Beneficio:</strong> Negociaciones más inteligentes y máxima rentabilidad por cada tonelada despachada.'
+    }
+  ],
+
   init() {
-    // Cargar datos en memoria reactiva
     window.SIO_DATA = JSON.parse(localStorage.getItem('SIO_DEMO_DATA')) || initialData;
 
     this.renderHeader();
@@ -23,10 +61,17 @@ const App = {
     PnLEngine.render('daily');
 
     this.startLiveScaleStream();
-    console.log('Recicladora SIO Demo inicializada correctamente.');
+
+    if (!sessionStorage.getItem('SIO_ONBOARDING_SEEN')) {
+      setTimeout(() => {
+        this.openOnboardingModal();
+        sessionStorage.setItem('SIO_ONBOARDING_SEEN', 'true');
+      }, 500);
+    }
+
+    console.log('Recicladora SIO Demo inicializada.');
   },
 
-  // Audio sintético para efectos de pesaje y caja registradora
   playSound(type = 'beep') {
     try {
       if (!this.audioCtx) {
@@ -60,9 +105,7 @@ const App = {
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.4);
       }
-    } catch (e) {
-      // Ignorar si el navegador bloquea audio sin interacción previa
-    }
+    } catch (e) {}
   },
 
   renderHeader() {
@@ -112,7 +155,6 @@ const App = {
     }
   },
 
-  // 1. KPI DASHBOARD
   renderKPIs() {
     const data = window.SIO_DATA;
     const pnl = PnLEngine.calculate('daily');
@@ -134,7 +176,6 @@ const App = {
       kpiNetIncome.className = `kpi-value ${pnl.operatingIncome >= 0 ? 'text-neon-green' : 'text-danger'}`;
     }
 
-    // Actualizar ticker de precios
     this.renderPriceTicker();
   },
 
@@ -144,7 +185,7 @@ const App = {
     const data = window.SIO_DATA;
 
     ticker.innerHTML = data.materials.map(m => `
-      <div class="ticker-item">
+      <div class="ticker-item" onclick="App.openQuickPriceModal('${m.id}')" style="cursor:pointer;" title="Clic para ajustar precio rápido">
         <span class="ticker-icon">${m.icon}</span>
         <span class="ticker-name">${m.name.split('(')[0].trim()}:</span>
         <span class="ticker-price">$${m.buyerPrice.toFixed(2)}/kg</span>
@@ -153,7 +194,6 @@ const App = {
     `).join('');
   },
 
-  // 2. MATRIZ DE PRECIOS EN CASCADA
   renderPriceMatrix() {
     const container = document.getElementById('priceMatrixTableBody');
     if (!container) return;
@@ -203,15 +243,15 @@ const App = {
             </div>
           </td>
           <td>
-            <button class="btn-action-flash" onclick="App.quickAdjust('${mat.id}', 1.05)" title="Ajustar +5%">+5%</button>
-            <button class="btn-action-flash" onclick="App.quickAdjust('${mat.id}', 0.95)" title="Ajustar -5%">-5%</button>
+            <button class="btn-action-flash" onclick="App.openQuickPriceModal('${mat.id}')" title="Ajuste Rápido en $ o %">⚡ Ajustar</button>
+            <button class="btn-action-flash" onclick="App.quickAdjust('${mat.id}', 1.05)" title="+5%">+5%</button>
+            <button class="btn-action-flash" onclick="App.quickAdjust('${mat.id}', 0.95)" title="-5%">-5%</button>
           </td>
         </tr>
       `;
     }).join('');
   },
 
-  // Manejo de cambio en precio del Gran Comprador (Cascada Inmediata)
   onBuyerPriceChange(materialId, newPriceStr) {
     const newPrice = parseFloat(newPriceStr);
     if (isNaN(newPrice) || newPrice <= 0) return;
@@ -223,16 +263,14 @@ const App = {
     const oldPrice = mat.buyerPrice;
     mat.buyerPrice = newPrice;
     
-    // Fórmulas en cascada de compra protegiendo márgenes
     mat.t1Price = +(newPrice * (1 - 0.28)).toFixed(2);
     mat.t2Price = +(newPrice * (1 - 0.16)).toFixed(2);
     mat.t3Price = +(newPrice * (1 - 0.08)).toFixed(2);
 
-    // Registro de impacto por inventario en patio
     const impact = (newPrice - oldPrice) * mat.currentStockKg;
     data.priceChangeHistory.unshift({
       timestamp: new Date().toLocaleTimeString('es-MX', {hour: '2-digit', minute: '2-digit'}),
-      trigger: 'Modificación Manual de Carlos (Cascada)',
+      trigger: 'Modificación en Cascada SIO',
       materialId: mat.id,
       materialName: mat.name,
       oldBuyerPrice: oldPrice,
@@ -259,7 +297,267 @@ const App = {
     this.onBuyerPriceChange(materialId, newPrice);
   },
 
-  // 3. SIMULADOR DE LLAMADA DE LA SIDERÚRGICA (FLASH CALL)
+  // CAMBIADOR RÁPIDO DE PRECIOS ($ o %, Subir o Bajar)
+  openQuickPriceModal(materialId = null) {
+    this.playSound('beep');
+    const data = window.SIO_DATA;
+    const select = document.getElementById('qpMaterialSelect');
+    if (!select) return;
+
+    select.innerHTML = `
+      <option value="ALL">⭐ Todos los Materiales (Ajuste Global)</option>
+      ${data.materials.map(m => `
+        <option value="${m.id}" ${materialId === m.id ? 'selected' : ''}>
+          ${m.icon} ${m.name} (Actual: $${m.buyerPrice.toFixed(2)}/kg)
+        </option>
+      `).join('')}
+    `;
+
+    if (materialId) {
+      this.quickPriceState.materialId = materialId;
+    } else {
+      this.quickPriceState.materialId = select.value;
+    }
+
+    this.updateQuickPriceUI();
+    const modal = document.getElementById('quickPriceModal');
+    if (modal) modal.classList.add('active');
+  },
+
+  closeQuickPriceModal() {
+    const modal = document.getElementById('quickPriceModal');
+    if (modal) modal.classList.remove('active');
+  },
+
+  setQuickPriceDirection(dir) {
+    this.quickPriceState.direction = dir;
+    document.querySelectorAll('.qp-dir-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.dir === dir);
+    });
+    this.updateQuickPricePreview();
+  },
+
+  setQuickPriceUnit(unit) {
+    this.quickPriceState.unit = unit;
+    document.querySelectorAll('.qp-unit-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.unit === unit);
+    });
+    const prefix = document.getElementById('qpValuePrefix');
+    if (prefix) prefix.textContent = unit === 'amount' ? '$' : '%';
+    this.updateQuickPricePreview();
+  },
+
+  setQuickPresetValue(val) {
+    const input = document.getElementById('qpValueInput');
+    if (input) {
+      input.value = val;
+      this.quickPriceState.value = parseFloat(val) || 0;
+      this.updateQuickPricePreview();
+    }
+  },
+
+  updateQuickPriceUI() {
+    this.setQuickPriceDirection(this.quickPriceState.direction);
+    this.setQuickPriceUnit(this.quickPriceState.unit);
+    const input = document.getElementById('qpValueInput');
+    if (input) input.value = this.quickPriceState.value;
+    this.updateQuickPricePreview();
+  },
+
+  updateQuickPricePreview() {
+    const data = window.SIO_DATA;
+    const select = document.getElementById('qpMaterialSelect');
+    const input = document.getElementById('qpValueInput');
+    if (!select || !input) return;
+
+    const matId = select.value;
+    const val = parseFloat(input.value) || 0;
+    const isUp = this.quickPriceState.direction === 'up';
+    const isAmount = this.quickPriceState.unit === 'amount';
+
+    const previewBox = document.getElementById('qpPreviewDetails');
+    if (!previewBox) return;
+
+    if (matId === 'ALL') {
+      previewBox.innerHTML = `
+        <div class="qp-preview-item">
+          <span>Acción Global:</span>
+          <strong class="${isUp ? 'text-emerald' : 'text-amber'}">
+            ${isUp ? '▲ AUMENTAR' : '▼ DISMINUIR'} ${isAmount ? `$${val.toFixed(2)} MXN/kg` : `${val}%`} a TODOS los metales
+          </strong>
+        </div>
+        <div class="qp-preview-item">
+          <span>Impacto en Báscula:</span>
+          <span>Sincronización instantánea de los 9 materiales y 3 niveles de compra.</span>
+        </div>
+      `;
+      return;
+    }
+
+    const mat = data.materials.find(m => m.id === matId);
+    if (!mat) return;
+
+    let newBuyerPrice = mat.buyerPrice;
+    if (isAmount) {
+      newBuyerPrice = isUp ? (mat.buyerPrice + val) : Math.max(0.1, mat.buyerPrice - val);
+    } else {
+      newBuyerPrice = isUp ? (mat.buyerPrice * (1 + (val / 100))) : Math.max(0.1, mat.buyerPrice * (1 - (val / 100)));
+    }
+    newBuyerPrice = +newBuyerPrice.toFixed(2);
+
+    const newT1 = +(newBuyerPrice * (1 - 0.28)).toFixed(2);
+    const newT2 = +(newBuyerPrice * (1 - 0.16)).toFixed(2);
+    const newT3 = +(newBuyerPrice * (1 - 0.08)).toFixed(2);
+    const stockImpact = (newBuyerPrice - mat.buyerPrice) * mat.currentStockKg;
+
+    previewBox.innerHTML = `
+      <div class="qp-preview-grid">
+        <div class="qp-prev-col">
+          <div class="qp-prev-lbl">PRECIO COMPRADOR:</div>
+          <div class="qp-prev-val">
+            <span style="text-decoration: line-through; color:#94a3b8; font-size:0.85rem;">$${mat.buyerPrice.toFixed(2)}</span> 
+            ➔ <strong class="${isUp ? 'text-emerald' : 'text-amber'}">$${newBuyerPrice.toFixed(2)}/kg</strong>
+          </div>
+        </div>
+        <div class="qp-prev-col">
+          <div class="qp-prev-lbl">BÁSCULA NIVEL 1 (28% Margen):</div>
+          <div class="qp-prev-val text-sky"><strong>$${newT1.toFixed(2)}/kg</strong> (Margen: +$${(newBuyerPrice - newT1).toFixed(2)})</div>
+        </div>
+        <div class="qp-prev-col">
+          <div class="qp-prev-lbl">BÁSCULA NIVEL 2 (16% Margen):</div>
+          <div class="qp-prev-val text-emerald"><strong>$${newT2.toFixed(2)}/kg</strong> (Margen: +$${(newBuyerPrice - newT2).toFixed(2)})</div>
+        </div>
+        <div class="qp-prev-col">
+          <div class="qp-prev-lbl">BÁSCULA NIVEL 3 (8% Margen):</div>
+          <div class="qp-prev-val text-amber"><strong>$${newT3.toFixed(2)}/kg</strong> (Margen: +$${(newBuyerPrice - newT3).toFixed(2)})</div>
+        </div>
+      </div>
+      <div class="qp-stock-impact ${stockImpact >= 0 ? 'bg-emerald-soft text-emerald' : 'bg-amber-soft text-amber'}">
+        ⚖️ Revalorización de las ${mat.currentStockKg.toLocaleString()} kg en patio: 
+        <strong>${stockImpact >= 0 ? '+' : ''}$${stockImpact.toLocaleString('es-MX', {minimumFractionDigits: 2})} MXN</strong>
+      </div>
+    `;
+  },
+
+  applyQuickPriceChange() {
+    const data = window.SIO_DATA;
+    const select = document.getElementById('qpMaterialSelect');
+    const input = document.getElementById('qpValueInput');
+    if (!select || !input) return;
+
+    const matId = select.value;
+    const val = parseFloat(input.value) || 0;
+    const isUp = this.quickPriceState.direction === 'up';
+    const isAmount = this.quickPriceState.unit === 'amount';
+
+    if (val <= 0) {
+      alert('Por favor ingrese un valor de ajuste mayor a cero.');
+      return;
+    }
+
+    if (matId === 'ALL') {
+      data.materials.forEach(mat => {
+        let newPrice = mat.buyerPrice;
+        if (isAmount) {
+          newPrice = isUp ? (mat.buyerPrice + val) : Math.max(0.1, mat.buyerPrice - val);
+        } else {
+          newPrice = isUp ? (mat.buyerPrice * (1 + (val / 100))) : Math.max(0.1, mat.buyerPrice * (1 - (val / 100)));
+        }
+        mat.buyerPrice = +newPrice.toFixed(2);
+        mat.t1Price = +(newPrice * (1 - 0.28)).toFixed(2);
+        mat.t2Price = +(newPrice * (1 - 0.16)).toFixed(2);
+        mat.t3Price = +(newPrice * (1 - 0.08)).toFixed(2);
+      });
+      this.showToast(`⚡ Todos los metales han sido ${isUp ? 'aumentados' : 'reducidos'} exitosamente.`);
+    } else {
+      const mat = data.materials.find(m => m.id === matId);
+      if (!mat) return;
+
+      let newPrice = mat.buyerPrice;
+      if (isAmount) {
+        newPrice = isUp ? (mat.buyerPrice + val) : Math.max(0.1, mat.buyerPrice - val);
+      } else {
+        newPrice = isUp ? (mat.buyerPrice * (1 + (val / 100))) : Math.max(0.1, mat.buyerPrice * (1 - (val / 100)));
+      }
+      this.onBuyerPriceChange(matId, newPrice);
+    }
+
+    this.saveData();
+    this.closeQuickPriceModal();
+    this.renderPriceMatrix();
+    this.renderKPIs();
+    this.renderScaleForm();
+    PnLEngine.render('daily');
+    this.playSound('cash');
+  },
+
+  // TARJETAS DE INSTRUCCIONES DINÁMICAS (CAPACIDADES & POTENCIALES)
+  openOnboardingModal() {
+    this.onboardingStep = 0;
+    this.renderOnboardingCard();
+    const modal = document.getElementById('onboardingModal');
+    if (modal) modal.classList.add('active');
+  },
+
+  closeOnboardingModal() {
+    const modal = document.getElementById('onboardingModal');
+    if (modal) modal.classList.remove('active');
+  },
+
+  nextOnboardingCard() {
+    if (this.onboardingStep < this.onboardingCards.length - 1) {
+      this.onboardingStep++;
+      this.renderOnboardingCard();
+      this.playSound('beep');
+    } else {
+      this.closeOnboardingModal();
+      this.playSound('cash');
+      this.showToast('🚀 ¡Bienvenido a la demo interactiva de Recicladora SIO!');
+    }
+  },
+
+  prevOnboardingCard() {
+    if (this.onboardingStep > 0) {
+      this.onboardingStep--;
+      this.renderOnboardingCard();
+      this.playSound('beep');
+    }
+  },
+
+  renderOnboardingCard() {
+    const card = this.onboardingCards[this.onboardingStep];
+    const container = document.getElementById('onboardingCardContent');
+    const dotsContainer = document.getElementById('onboardingDots');
+    const btnNext = document.getElementById('btnNextOnboarding');
+    const btnPrev = document.getElementById('btnPrevOnboarding');
+
+    if (!container || !card) return;
+
+    container.innerHTML = `
+      <div class="onboarding-card-hero">
+        <div class="onb-icon-wrap">${card.icon}</div>
+        <span class="onb-badge">${card.badge}</span>
+        <h3 class="onb-title">${card.title}</h3>
+        <p class="onb-text">${card.text}</p>
+        <div class="onb-benefit-box">${card.benefit}</div>
+      </div>
+    `;
+
+    if (dotsContainer) {
+      dotsContainer.innerHTML = this.onboardingCards.map((_, idx) => `
+        <span class="onb-dot ${idx === this.onboardingStep ? 'active' : ''}" onclick="App.goToOnboardingStep(${idx})"></span>
+      `).join('');
+    }
+
+    if (btnPrev) btnPrev.style.visibility = this.onboardingStep === 0 ? 'hidden' : 'visible';
+    if (btnNext) btnNext.innerHTML = this.onboardingStep === this.onboardingCards.length - 1 ? '🚀 Entrar a la Demo' : 'Siguiente ➔';
+  },
+
+  goToOnboardingStep(step) {
+    this.onboardingStep = step;
+    this.renderOnboardingCard();
+  },
+
   openCallSimulatorModal() {
     this.playSound('alert');
     const modal = document.getElementById('flashCallModal');
@@ -292,7 +590,6 @@ const App = {
       message = '📞 Siderúrgica Monterrey: Repunte generalizado +6% en todos los metales. Pizarra y básculas sincronizadas.';
     }
 
-    // Recalcular todos los niveles en cascada
     data.materials.forEach(mat => {
       mat.t1Price = +(mat.buyerPrice * (1 - 0.28)).toFixed(2);
       mat.t2Price = +(mat.buyerPrice * (1 - 0.16)).toFixed(2);
@@ -309,11 +606,9 @@ const App = {
     this.showToast(message, 'success');
   },
 
-  // 4. BÁSCULA DIGITAL & SIMULADOR DE PESAJE EN VIVO
   startLiveScaleStream() {
     if (this.liveScaleInterval) clearInterval(this.liveScaleInterval);
     this.liveScaleInterval = setInterval(() => {
-      // Simular ligeras fluctuaciones de báscula en vivo (ruido digital de celdas de carga)
       const base = this.currentSimulatedWeight || 180;
       const jitter = (Math.random() * 0.4 - 0.2).toFixed(1);
       const displayVal = Math.max(0, +(parseFloat(base) + parseFloat(jitter)).toFixed(1));
@@ -366,7 +661,6 @@ const App = {
     const tare = parseFloat(tareInput.value) || 0;
     const net = Math.max(0, +(gross - tare).toFixed(1));
 
-    // Determinar precio según el nivel del proveedor
     let pricePerKg = mat.t1Price;
     let tierLabel = 'Nivel 1 (28% Margen SIO)';
     if (sup.tier === 'T2') {
@@ -407,12 +701,11 @@ const App = {
   autoTareContainer() {
     this.playSound('beep');
     const gross = parseFloat(document.getElementById('scaleGrossWeight').value) || 0;
-    const tare = +(gross * 0.08).toFixed(1); // 8% de tara estimada por botes/tara
+    const tare = +(gross * 0.08).toFixed(1);
     document.getElementById('scaleTareWeight').value = tare;
     this.updateScaleCalculations();
   },
 
-  // Registrar Liquidación y Pago en Efectivo de Báscula
   processWeighingCheckout() {
     const data = window.SIO_DATA;
     const matSelect = document.getElementById('scaleMaterialSelect');
@@ -440,7 +733,6 @@ const App = {
       return;
     }
 
-    // Crear registro
     const newFolio = `REC-2026-${String(data.recentWeighings.length + 843).padStart(4, '0')}`;
     const newRecord = {
       folio: newFolio,
@@ -458,7 +750,6 @@ const App = {
       scaleType: gross > 1000 ? 'Báscula Camionera 60 Ton' : 'Báscula Plataforma 1 Ton'
     };
 
-    // Actualizar inventario en patio y caja
     mat.currentStockKg += net;
     data.cashOnHand -= totalPayout;
     data.recentWeighings.unshift(newRecord);
@@ -471,7 +762,6 @@ const App = {
     this.openTicketModal(newRecord);
   },
 
-  // 5. MODAL DE TICKET DIGITAL DE BÁSCULA
   openTicketModal(ticket) {
     const data = window.SIO_DATA;
     const modal = document.getElementById('scaleTicketModal');
@@ -528,7 +818,6 @@ const App = {
     window.print();
   },
 
-  // 6. HISTORIAL DE PISAJES RECIENTES
   renderRecentWeighings() {
     const tbody = document.getElementById('recentWeighingsTableBody');
     if (!tbody) return;
@@ -549,7 +838,6 @@ const App = {
     `).join('');
   },
 
-  // 7. EMBARQUES A SIDERÚRGICA
   renderShipments() {
     const container = document.getElementById('shipmentsTableBody');
     if (!container) return;
@@ -627,9 +915,8 @@ const App = {
       status: 'EN_TRÁNSITO_AUTORIZADO'
     };
 
-    // Descontar inventario y sumar efectivo/cuentas por cobrar
     mat.currentStockKg -= shippedKg;
-    data.cashOnHand += totalRevenue * 0.5; // 50% anticipo de siderúrgica
+    data.cashOnHand += totalRevenue * 0.5;
     data.shipmentsToBuyer.unshift(newShipment);
 
     this.saveData();
@@ -641,7 +928,6 @@ const App = {
     this.showToast(`🚚 Góndola despachada con éxito: Folio ${newFolio} (+${grossProfit.toLocaleString('es-MX')} MXN de ganancia)`);
   },
 
-  // 8. BRAIN IA INSIGHTS
   renderAIInsights() {
     const container = document.getElementById('aiInsightsContainer');
     if (!container) return;
@@ -660,7 +946,6 @@ const App = {
     `).join('');
   },
 
-  // 9. PORTAL DEL PROVEEDOR (VISTA DUAL)
   renderProviderPortal() {
     const container = document.getElementById('providerPortalContent');
     if (!container) return;

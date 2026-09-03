@@ -3,14 +3,10 @@
    ========================================================================== */
 
 const BrainAIEngine = {
-  // Genera recomendaciones de IA en tiempo real basadas en patio, cotizaciones y mermas
   getInsights() {
     const data = window.SIO_DATA || initialData;
-    const pnl = PnLEngine.calculate('daily');
-
     const insights = [];
 
-    // 1. Alerta de Oportunidad / Volatilidad
     const copper1 = data.materials.find(m => m.id === 'MAT-01');
     if (copper1) {
       insights.push({
@@ -22,7 +18,6 @@ const BrainAIEngine = {
       });
     }
 
-    // 2. Alerta de Gestión de Patio y Riesgo de Stock
     const steel = data.materials.find(m => m.id === 'MAT-03');
     if (steel && steel.currentStockKg >= 40000) {
       insights.push({
@@ -34,7 +29,6 @@ const BrainAIEngine = {
       });
     }
 
-    // 3. Auditoría de Mermas & Pesaje Inteligente
     insights.push({
       type: 'audit',
       title: '⚖️ Auditoría de Pesaje & Detección de Mermas',
@@ -43,7 +37,6 @@ const BrainAIEngine = {
       text: `Se auditó el pesaje del proveedor <em>Chatarrero El Güero</em> (Folio REC-0841). La relación tara/bruto es consistente (51.0%). Sin indicios de manipulación o impureza fuera de norma.`
     });
 
-    // 4. Estrategia de Margen por Nivel
     insights.push({
       type: 'strategy',
       title: '🧠 Estrategia Dinámica de Márgenes (Modo Cascada)',
@@ -53,28 +46,5 @@ const BrainAIEngine = {
     });
 
     return insights;
-  },
-
-  // Simula el impacto de un cambio hipotético de precios del Gran Comprador
-  simulateSensitivity(materialId, deltaPct) {
-    const data = window.SIO_DATA || initialData;
-    const mat = data.materials.find(m => m.id === materialId);
-    if (!mat) return null;
-
-    const oldPrice = mat.buyerPrice;
-    const newPrice = oldPrice * (1 + (deltaPct / 100));
-    const stockImpact = mat.currentStockKg * (newPrice - oldPrice);
-
-    return {
-      materialName: mat.name,
-      currentStockKg: mat.currentStockKg,
-      oldPrice,
-      newPrice,
-      deltaPct,
-      stockImpact,
-      recommendedT1: newPrice * (1 - 0.28),
-      recommendedT2: newPrice * (1 - 0.16),
-      recommendedT3: newPrice * (1 - 0.08)
-    };
   }
 };

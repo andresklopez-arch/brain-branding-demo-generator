@@ -30,6 +30,9 @@
             🛍️ Portal Proveedores
           </button>
         </div>
+        <button class="btn-onboarding-pill" onclick="App.openOnboardingModal()">
+          💡 Guía de Capacidades
+        </button>
         <button class="btn-secondary" onclick="App.openCallSimulatorModal()">
           📞 Simular Llamada Siderúrgica
         </button>
@@ -50,14 +53,12 @@
       <div style="display:flex; align-items:center; gap:10px;">
         <span style="color:#94a3b8; font-size:0.75rem;">Efectivo en Caja Báscula:</span>
         <strong id="headerCashOnHand" class="text-neon-green">$248,500.00</strong>
-        <button class="flash-call-trigger-btn" onclick="App.openCallSimulatorModal()">
-          ⚡ Ajuste Flash por Llamada
+        <button class="flash-call-trigger-btn" onclick="App.openQuickPriceModal()">
+          ⚡ Cambiar Precios de Inmediato
         </button>
       </div>
     </div>
-    <div class="live-ticker-wrap" id="livePriceTicker">
-      <!-- Ticker dinámico generado por JS -->
-    </div>
+    <div class="live-ticker-wrap" id="livePriceTicker"></div>
   </div>
 
   <!-- 3. MENÚ PRINCIPAL RESPONSIVO -->
@@ -83,7 +84,6 @@
       </button>
     </nav>
 
-    <!-- Menú vista proveedor -->
     <nav class="nav-tabs-bar" id="providerNavTabs" style="display:none;">
       <button class="nav-tab active" data-tab="proveedor-view" onclick="App.switchTab('proveedor-view')">
         <span>📋</span> <span>Pizarra Oficial de Precios al Recolector</span>
@@ -94,9 +94,7 @@
   <!-- 4. CONTENIDO PRINCIPAL -->
   <main class="app-main">
 
-    <!-- ========================================== -->
-    <!-- TAB 1: PANEL GENERAL (DASHBOARD) -->
-    <!-- ========================================== -->
+    <!-- TAB 1: PANEL GENERAL -->
     <div class="tab-pane active" id="tab-dashboard">
       <div class="kpi-grid">
         <div class="kpi-card">
@@ -126,9 +124,14 @@
           <h3 class="section-title">⚖️ Últimos Pesajes & Liquidaciones en Báscula</h3>
           <p class="section-subtitle">Turno actual en patio con desglose de tara y neto</p>
         </div>
-        <button class="btn-secondary" onclick="App.switchTab('bascula')">
-          ➕ Nuevo Pesaje
-        </button>
+        <div style="display:flex; gap:8px;">
+          <button class="flash-call-trigger-btn" style="padding:6px 12px; font-size:0.75rem;" onclick="App.openQuickPriceModal()">
+            ⚡ Ajustar Precios Rápido
+          </button>
+          <button class="btn-secondary" onclick="App.switchTab('bascula')">
+            ➕ Nuevo Pesaje
+          </button>
+        </div>
       </div>
 
       <div class="table-card">
@@ -145,26 +148,27 @@
                 <th class="text-center">TICKET</th>
               </tr>
             </thead>
-            <tbody id="recentWeighingsTableBody">
-              <!-- Renderizado por JS -->
-            </tbody>
+            <tbody id="recentWeighingsTableBody"></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- ========================================== -->
     <!-- TAB 2: MATRIZ DE PRECIOS EN CASCADA -->
-    <!-- ========================================== -->
     <div class="tab-pane" id="tab-precios">
       <div class="section-header">
         <div>
           <h3 class="section-title">⚡ Matriz Dinámica de Precios en Cascada</h3>
           <p class="section-subtitle">Edita el precio de venta que te paga la Siderúrgica y el sistema recalcula automáticamente las tarifas de compra de todos los niveles en la báscula.</p>
         </div>
-        <button class="flash-call-trigger-btn" onclick="App.openCallSimulatorModal()">
-          📞 Simular Llamada de la Siderúrgica
-        </button>
+        <div style="display:flex; gap:8px;">
+          <button class="flash-call-trigger-btn" onclick="App.openQuickPriceModal()">
+            ⚡ Cambiar Precios de Inmediato ($ o %)
+          </button>
+          <button class="btn-secondary" onclick="App.openCallSimulatorModal()">
+            📞 Simular Llamada
+          </button>
+        </div>
       </div>
 
       <div class="matrix-table-card">
@@ -180,17 +184,13 @@
                 <th>AJUSTE RÁPIDO</th>
               </tr>
             </thead>
-            <tbody id="priceMatrixTableBody">
-              <!-- Renderizado por JS -->
-            </tbody>
+            <tbody id="priceMatrixTableBody"></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- ========================================== -->
     <!-- TAB 3: BÁSCULA & LIQUIDACIÓN DIGITAL -->
-    <!-- ========================================== -->
     <div class="tab-pane" id="tab-bascula">
       <div class="section-header">
         <div>
@@ -200,7 +200,6 @@
       </div>
 
       <div class="scale-layout-grid">
-        <!-- Panel Izquierdo: Captura de Báscula -->
         <div class="scale-panel-card">
           <div class="live-scale-display-box">
             <div class="scale-led-title">LECTURA EN VIVO • BÁSCULA DIGITAL EN LÍNEA</div>
@@ -237,7 +236,6 @@
           </div>
         </div>
 
-        <!-- Panel Derecho: Liquidación & Pago -->
         <div class="scale-panel-card">
           <h4 style="font-size:1.05rem; font-weight:800; margin-bottom:14px;">💵 Resumen de Liquidación al Proveedor</h4>
           
@@ -271,9 +269,7 @@
       </div>
     </div>
 
-    <!-- ========================================== -->
     <!-- TAB 4: EMBARQUES A SIDERÚRGICA -->
-    <!-- ========================================== -->
     <div class="tab-pane" id="tab-embarques">
       <div class="section-header">
         <div>
@@ -300,26 +296,18 @@
                 <th>ESTADO</th>
               </tr>
             </thead>
-            <tbody id="shipmentsTableBody">
-              <!-- Renderizado por JS -->
-            </tbody>
+            <tbody id="shipmentsTableBody"></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- ========================================== -->
     <!-- TAB 5: ESTADO DE RESULTADOS (P&L) -->
-    <!-- ========================================== -->
     <div class="tab-pane" id="tab-pnl">
-      <div id="pnlReportContainer">
-        <!-- Renderizado dinámicamente por PnLEngine.render() -->
-      </div>
+      <div id="pnlReportContainer"></div>
     </div>
 
-    <!-- ========================================== -->
     <!-- TAB 6: BRAIN IA ENGINE SIO -->
-    <!-- ========================================== -->
     <div class="tab-pane" id="tab-ai">
       <div class="section-header">
         <div>
@@ -327,26 +315,107 @@
           <p class="section-subtitle">Detección de arbitraje de metales, auditoría de báscula y optimización de márgenes.</p>
         </div>
       </div>
-
-      <div id="aiInsightsContainer">
-        <!-- Renderizado por JS -->
-      </div>
+      <div id="aiInsightsContainer"></div>
     </div>
 
-    <!-- ========================================== -->
     <!-- TAB PROVEEDOR VIEW -->
-    <!-- ========================================== -->
     <div class="tab-pane" id="tab-proveedor-view">
-      <div id="providerPortalContent">
-        <!-- Renderizado por JS -->
-      </div>
+      <div id="providerPortalContent"></div>
     </div>
 
   </main>
 
   <!-- ========================================== -->
-  <!-- MODAL 1: SIMULADOR DE LLAMADA SIDERÚRGICA -->
+  <!-- MODAL: CAMBIADOR RÁPIDO DE PRECIOS ($ o %, Subir/Bajar) -->
   <!-- ========================================== -->
+  <div class="modal-overlay" id="quickPriceModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">⚡ Ajuste Inmediato de Precios SIO</h3>
+        <button class="modal-close-btn" onclick="App.closeQuickPriceModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group-scale">
+          <label class="form-label-scale">1. Seleccionar Artículo / Metal:</label>
+          <select class="form-select-scale" id="qpMaterialSelect" onchange="App.updateQuickPricePreview()"></select>
+        </div>
+
+        <div class="form-group-scale">
+          <label class="form-label-scale">2. ¿Qué deseas hacer con el precio?:</label>
+          <div class="qp-toggle-group">
+            <button class="qp-dir-btn active" data-dir="up" onclick="App.setQuickPriceDirection('up')">
+              ▲ Aumentar Precio
+            </button>
+            <button class="qp-dir-btn" data-dir="down" onclick="App.setQuickPriceDirection('down')">
+              ▼ Disminuir Precio
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group-scale">
+          <label class="form-label-scale">3. Tipo de Ajuste:</label>
+          <div class="qp-toggle-group">
+            <button class="qp-unit-btn active" data-unit="amount" onclick="App.setQuickPriceUnit('amount')">
+              💵 En Dinero ($/kg)
+            </button>
+            <button class="qp-unit-btn" data-unit="percent" onclick="App.setQuickPriceUnit('percent')">
+              📊 En Porcentaje (%)
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group-scale">
+          <label class="form-label-scale">4. Valor del Ajuste:</label>
+          <div class="qp-input-wrapper">
+            <span class="qp-input-prefix" id="qpValuePrefix">$</span>
+            <input type="number" step="0.5" class="qp-input-field" id="qpValueInput" value="5.0" oninput="App.updateQuickPricePreview()">
+          </div>
+          <div class="qp-chips-row">
+            <span style="font-size:0.7rem; color:#94a3b8; align-self:center;">Atajos:</span>
+            <button class="qp-chip-btn" onclick="App.setQuickPresetValue(1.0)">1.0</button>
+            <button class="qp-chip-btn" onclick="App.setQuickPresetValue(2.5)">2.5</button>
+            <button class="qp-chip-btn" onclick="App.setQuickPresetValue(5.0)">5.0</button>
+            <button class="qp-chip-btn" onclick="App.setQuickPresetValue(10.0)">10.0</button>
+            <button class="qp-chip-btn" onclick="App.setQuickPresetValue(15.0)">15.0</button>
+          </div>
+        </div>
+
+        <!-- Vista Previa en Vivo del Impacto -->
+        <div class="qp-preview-box" id="qpPreviewDetails"></div>
+
+        <button class="btn-scale-action" onclick="App.applyQuickPriceChange()">
+          <span>⚡</span> <span>Aplicar Cambio Inmediato a Báscula y Pizarra</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: TARJETAS DE INSTRUCCIONES DINÁMICAS (CAPACIDADES & POTENCIALES) -->
+  <!-- ========================================== -->
+  <div class="modal-overlay" id="onboardingModal">
+    <div class="modal-content" style="max-width:580px;">
+      <div class="modal-header">
+        <h3 class="modal-title">💡 Capacidades & Potenciales de tu Software SIO</h3>
+        <button class="modal-close-btn" onclick="App.closeOnboardingModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="onboardingCardContent"></div>
+
+        <div class="onboarding-footer-nav">
+          <button class="btn-secondary" id="btnPrevOnboarding" onclick="App.prevOnboardingCard()">
+            ◀ Anterior
+          </button>
+          <div class="onboarding-dots" id="onboardingDots"></div>
+          <button class="btn-scale-action" id="btnNextOnboarding" style="width:auto; padding:8px 18px;" onclick="App.nextOnboardingCard()">
+            Siguiente ➔
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SIMULADOR DE LLAMADA SIDERÚRGICA -->
   <div class="modal-overlay" id="flashCallModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -378,9 +447,7 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- MODAL 2: TICKET DIGITAL DE PESAJE -->
-  <!-- ========================================== -->
+  <!-- MODAL: TICKET DIGITAL DE PESAJE -->
   <div class="modal-overlay" id="scaleTicketModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -388,9 +455,7 @@
         <button class="modal-close-btn" onclick="App.closeTicketModal()">&times;</button>
       </div>
       <div class="modal-body">
-        <div id="ticketPrintArea">
-          <!-- Renderizado de ticket -->
-        </div>
+        <div id="ticketPrintArea"></div>
         <div style="display:flex; gap:10px; margin-top:16px;">
           <button class="btn-scale-action" onclick="App.printTicket()">
             🖨️ Imprimir Ticket
@@ -403,9 +468,7 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- MODAL 3: NUEVO EMBARQUE -->
-  <!-- ========================================== -->
+  <!-- MODAL: NUEVO EMBARQUE -->
   <div class="modal-overlay" id="newShipmentModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -437,7 +500,6 @@
     <div style="margin-top:4px; color:#64748b;">Desarrollado con IA por Brain Branding (brainbranding.com.mx)</div>
   </footer>
 
-  <!-- SCRIPTS -->
   <script src="js/data.js"></script>
   <script src="js/pnl.js"></script>
   <script src="js/ai-engine.js"></script>
