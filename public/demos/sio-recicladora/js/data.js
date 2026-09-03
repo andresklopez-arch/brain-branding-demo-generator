@@ -12,17 +12,7 @@ const demoRegistry = {
     createdDate: "2026-09-03",
     expirationDays: 90,
     welcomeTitle: "¡Bienvenido Carlos a la Demo de Recicladora SIO con Inteligencia en Precios e IA!",
-    welcomeText: "Diseñada a la medida para acaparadores de chatarra y metales. Controla en 1 clic los cambios de precio de la siderúrgica en cascada, agiliza el pesaje en báscula y visualiza tu Estado de Resultados en tiempo real con impacto por volatilidad."
-  },
-  // NIP de Pedro (Fábrica de Lámparas)
-  "84927": {
-    clientId: "pedro-lamparas",
-    clientName: "Pedro",
-    businessName: "Fábrica de Lámparas Pedro",
-    createdDate: "2026-08-08",
-    expirationDays: 90,
-    welcomeTitle: "¡Bienvenido Pedro a la Demo de Lámparas con IA!",
-    welcomeText: "Control de producción e inventario de lámparas."
+    welcomeText: "Diseñada a la medida para acaparadores de chatarra y metales. Controla en 1 clic los cambios de precio de la siderúrgica en cascada, agiliza el pesaje en báscula, proyecta precios internacionales con IA, comanda precios por WhatsApp/Telegram y sincroniza en tiempo real la pantalla LED de tu patio."
   }
 };
 
@@ -36,6 +26,43 @@ const initialData = {
   currency: "MXN",
   cashOnHand: 248500.00,
   
+  // MERCADOS INTERNACIONALES (LME, COMEX, FASTMARKETS)
+  internationalMarkets: [
+    {
+      symbol: "LME-CU",
+      name: "Cobre LME (London Metal Exchange)",
+      priceUSDPerTon: 9840.00,
+      priceMXNPerKg: 186.96,
+      trend24h: "+3.8%",
+      forecast72h: "ALCISTA (▲ +4.5%)",
+      confidence: "94%",
+      impactLocal: "Aumento inminente de la Siderúrgica en Cobre de 1ra y 2da (+4.00 a +7.00 MXN/kg)",
+      actionSuggested: "Acaparar Cobre en patio y elevar precio en báscula antes de la llamada."
+    },
+    {
+      symbol: "FM-STEEL",
+      name: "Acero Chatarra HMS 1/2 (Fastmarkets)",
+      priceUSDPerTon: 365.00,
+      priceMXNPerKg: 6.93,
+      trend24h: "-2.4%",
+      forecast72h: "BAJISTA (▼ -3.2%)",
+      confidence: "88%",
+      impactLocal: "Posible reducción del precio de compra de la Siderúrgica Monterrey (-0.30 a -0.50 MXN/kg)",
+      actionSuggested: "Despachar góndolas de acero acumuladas hoy mismo para asegurar tarifa actual."
+    },
+    {
+      symbol: "COMEX-AL",
+      name: "Aluminio Primario COMEX NY",
+      priceUSDPerTon: 2480.00,
+      priceMXNPerKg: 47.12,
+      trend24h: "+1.9%",
+      forecast72h: "ESTABLE / LIGERO ALZA (▲ +1.5%)",
+      confidence: "91%",
+      impactLocal: "Estabilidad de precio con tendencia a subir +$1.00/kg en Perfil y Bote.",
+      actionSuggested: "Mantener margen del 28% en Nivel 1."
+    }
+  ],
+
   supplierTiers: [
     {
       id: "T1",
@@ -77,7 +104,8 @@ const initialData = {
       avgCostPerKg: 123.50,
       minStockAlert: 1000,
       icon: "⚡",
-      colorTag: "#f97316"
+      colorTag: "#f97316",
+      intlBenchmark: "LME-CU"
     },
     {
       id: "MAT-02",
@@ -92,7 +120,8 @@ const initialData = {
       avgCostPerKg: 110.20,
       minStockAlert: 800,
       icon: "🟤",
-      colorTag: "#b45309"
+      colorTag: "#b45309",
+      intlBenchmark: "LME-CU"
     },
     {
       id: "MAT-03",
@@ -107,7 +136,8 @@ const initialData = {
       avgCostPerKg: 4.25,
       minStockAlert: 15000,
       icon: "🏗️",
-      colorTag: "#64748b"
+      colorTag: "#64748b",
+      intlBenchmark: "FM-STEEL"
     },
     {
       id: "MAT-04",
@@ -122,7 +152,8 @@ const initialData = {
       avgCostPerKg: 28.10,
       minStockAlert: 2000,
       icon: "🪟",
-      colorTag: "#0ea5e9"
+      colorTag: "#0ea5e9",
+      intlBenchmark: "COMEX-AL"
     },
     {
       id: "MAT-05",
@@ -137,7 +168,8 @@ const initialData = {
       avgCostPerKg: 23.40,
       minStockAlert: 1500,
       icon: "🥤",
-      colorTag: "#38bdf8"
+      colorTag: "#38bdf8",
+      intlBenchmark: "COMEX-AL"
     },
     {
       id: "MAT-06",
@@ -152,7 +184,8 @@ const initialData = {
       avgCostPerKg: 76.80,
       minStockAlert: 500,
       icon: "🛎️",
-      colorTag: "#d97706"
+      colorTag: "#d97706",
+      intlBenchmark: "LME-CU"
     },
     {
       id: "MAT-07",
@@ -167,7 +200,8 @@ const initialData = {
       avgCostPerKg: 15.90,
       minStockAlert: 1000,
       icon: "🔋",
-      colorTag: "#ef4444"
+      colorTag: "#ef4444",
+      intlBenchmark: "LME-PB"
     },
     {
       id: "MAT-08",
@@ -182,7 +216,8 @@ const initialData = {
       avgCostPerKg: 21.30,
       minStockAlert: 1000,
       icon: "🍴",
-      colorTag: "#94a3b8"
+      colorTag: "#94a3b8",
+      intlBenchmark: "FM-STEEL"
     },
     {
       id: "MAT-09",
@@ -197,7 +232,8 @@ const initialData = {
       avgCostPerKg: 1.72,
       minStockAlert: 8000,
       icon: "📦",
-      colorTag: "#a16207"
+      colorTag: "#a16207",
+      intlBenchmark: "LOCAL"
     }
   ],
 
@@ -337,6 +373,26 @@ const initialData = {
       deltaBuyer: "-$0.40/kg",
       revaluationImpact: -18720.00,
       impactType: "PÉRDIDA_STOCK"
+    }
+  ],
+
+  // TELEGRAM / WHATSAPP BOT CHAT LOG
+  botMessages: [
+    {
+      id: "MSG-01",
+      sender: "bot",
+      time: "15:30",
+      text: "🚨 <strong>Alerta IA Mercados Internacionales:</strong> El Cobre en la Bolsa de Metales de Londres (LME) subió <strong>+3.8% hoy</strong>. Se proyecta que tu Comprador Mayorista elevará el precio de compra en aprox. 2 horas (+4.00 a +7.00 MXN/kg).",
+      actions: [
+        { label: "⚡ Subir Cobre +$5.00", cmd: "adjust_copper_up" },
+        { label: "🛡️ Proteger Báscula", cmd: "sync_protect" }
+      ]
+    },
+    {
+      id: "MSG-02",
+      sender: "bot",
+      time: "15:42",
+      text: "🤖 <strong>Bot SIO:</strong> Puedes enviarme comandos directos como: <code>/precio cobre +5</code>, <code>/bajar acero 0.40</code> o <code>/status patio</code> para sincronizar la báscula y la pantalla LED de inmediato sin llamar al cajero."
     }
   ]
 };

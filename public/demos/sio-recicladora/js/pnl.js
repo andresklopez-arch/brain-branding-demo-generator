@@ -207,31 +207,6 @@ const PnLEngine = {
           </table>
         </div>
       </div>
-
-      <div class="profitability-section">
-        <h4 class="section-subheading" style="font-size:1.05rem; font-weight:800; margin-bottom:12px;">🏆 Ranking de Rentabilidad por Material en Patio</h4>
-        <div class="profitability-grid">
-          ${report.materialProfitability.slice(0, 4).map(mat => `
-            <div class="profit-mini-card">
-              <div class="profit-header">
-                <span class="mat-icon">${mat.icon}</span>
-                <div>
-                  <div class="profit-name">${mat.name}</div>
-                  <div class="profit-stock">${mat.currentStockKg.toLocaleString()} kg en patio</div>
-                </div>
-              </div>
-              <div class="profit-metric-row">
-                <span>Spread Promedio:</span>
-                <strong class="text-emerald">+$${mat.avgSpreadPerKg.toFixed(2)}/kg</strong>
-              </div>
-              <div class="profit-metric-row">
-                <span>Utilidad Potencial:</span>
-                <strong class="text-neon-green">$${mat.potentialYardProfit.toLocaleString('es-MX', {maximumFractionDigits: 0})}</strong>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
     `;
   }
 };

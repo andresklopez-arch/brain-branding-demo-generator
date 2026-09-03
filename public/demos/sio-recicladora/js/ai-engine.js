@@ -1,5 +1,5 @@
 /* ==========================================================================
-   BRAIN IA ENGINE - INTELIGENCIA ARTIFICIAL PARA RECICLADORA SIO
+   BRAIN IA ENGINE - INTELIGENCIA ARTIFICIAL Y PREDICTOR INTERNACIONAL
    ========================================================================== */
 
 const BrainAIEngine = {
@@ -7,42 +7,40 @@ const BrainAIEngine = {
     const data = window.SIO_DATA || initialData;
     const insights = [];
 
-    const copper1 = data.materials.find(m => m.id === 'MAT-01');
-    if (copper1) {
-      insights.push({
-        type: 'opportunity',
-        title: '⚡ Oportunidad de Arbitraje en Cobre de 1ra',
-        badge: 'ALTA RENTABILIDAD',
-        color: '#f97316',
-        text: `El Cobre de 1ra tiene un spread de compra-venta de <strong>+$43.12/kg</strong> en Nivel 1. Con las 3.8 Toneladas en patio, despachar hoy a la Siderúrgica consolidaría una utilidad neta estimada de <strong>$116,500 MXN</strong> antes de posibles ajustes del mercado internacional.`
-      });
-    }
-
-    const steel = data.materials.find(m => m.id === 'MAT-03');
-    if (steel && steel.currentStockKg >= 40000) {
-      insights.push({
-        type: 'warning',
-        title: '🏗️ Saturación de Patio en Acero Pesado (46.8 Ton)',
-        badge: 'ACCIÓN REQUERIDA',
-        color: '#f59e0b',
-        text: `El stock de Acero Mixto supera el 85% de capacidad de patio. La IA recomienda programar <strong>2 góndolas de 25 Toneladas</strong> con la Siderúrgica Monterrey hoy mismo para liberar espacio y asegurar el precio de $5.40/kg.`
-      });
-    }
-
+    // 1. Predictor Internacional LME Cobre
     insights.push({
-      type: 'audit',
-      title: '⚖️ Auditoría de Pesaje & Detección de Mermas',
-      badge: 'SISTEMA PROTEGIDO',
-      color: '#10b981',
-      text: `Se auditó el pesaje del proveedor <em>Chatarrero El Güero</em> (Folio REC-0841). La relación tara/bruto es consistente (51.0%). Sin indicios de manipulación o impureza fuera de norma.`
+      type: 'market_lme',
+      title: '🌐 Predictor Internacional IA • Bolsa de Londres (LME Cobre)',
+      badge: 'PROYECCIÓN ALCISTA (+4.5%)',
+      color: '#f97316',
+      text: `El algoritmo de IA correlaciona la subida de <strong>$9,840 USD/Ton</strong> en Londres (+3.8% hoy) con el costo de reposición de la Siderúrgica Monterrey. <strong>Pronóstico 72h:</strong> La Siderúrgica subirá su oferta de compra en Cobre de 1ra entre <strong>+$4.00 y +$7.00 MXN/kg</strong>. <em>Recomendación:</em> Elevar compra en patio para acaparar volumen antes que la competencia.`
     });
 
+    // 2. Predictor Internacional Fastmarkets Acero
     insights.push({
-      type: 'strategy',
-      title: '🧠 Estrategia Dinámica de Márgenes (Modo Cascada)',
-      badge: 'OPTIMIZACIÓN ACTIVA',
+      type: 'market_steel',
+      title: '📉 Predictor Internacional IA • Chatarra Ferrosa HMS (Fastmarkets)',
+      badge: 'ALERTA BAJISTA (-3.2%)',
+      color: '#f59e0b',
+      text: `El índice Fastmarkets reporta saturación de inventario en molinos del norte. La IA estima un <strong>88% de probabilidad</strong> de que el Acero Mixto baje de $5.40 a <strong>$5.00/kg</strong> en los próximos 2 días. <em>Recomendación:</em> Despachar las 46.8 Toneladas de patio de inmediato.`
+    });
+
+    // 3. Bot Remoto WhatsApp / Telegram
+    insights.push({
+      type: 'remote_bot',
+      title: '📲 Control Remoto por WhatsApp & Telegram en Vivo',
+      badge: 'BOT AUTÓNOMO ACTIVO',
       color: '#38bdf8',
-      text: `El algoritmo de cascada mantiene protegidos tus márgenes mínimos: <strong>28% (N1)</strong>, <strong>16% (N2)</strong> y <strong>8% (N3)</strong>. Cualquier llamada entrante de la siderúrgica recalculará en menos de 100ms las tarifas de la báscula.`
+      text: `Carlos puede enviar <code>/precio cobre +5</code> o <code>/bajar acero 0.50</code> desde su celular mientras viaja o está fuera de oficina. El sistema actualiza en <strong>menos de 100ms</strong> la báscula del cajero y la Pantalla LED de patio sin necesidad de hacer llamadas telefónicas.`
+    });
+
+    // 4. Auditoría de Báscula
+    insights.push({
+      type: 'audit',
+      title: '⚖️ Auditoría de Celdas de Carga & Prevención de Mermas',
+      badge: 'SISTEMA PROTEGIDO',
+      color: '#10b981',
+      text: `La IA analiza las lecturas en tiempo real de las celdas de carga digitales (60 Ton y 1 Ton). No se detectan anomalías de tara manipulada ni descuadre entre peso bruto y neto liquidado.`
     });
 
     return insights;

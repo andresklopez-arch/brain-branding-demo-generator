@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Recicladora SIO | Sistema de Precios Dinámicos & Báscula IA</title>
-  <meta name="description" content="Demo interactiva para Recicladora SIO. Matriz de precios en cascada ante llamadas de siderúrgica, báscula y estado de resultados diario.">
+  <title>Recicladora SIO | Precios Dinámicos, IA Predictiva & Báscula</title>
+  <meta name="description" content="Demo interactiva para Recicladora SIO. Predictor internacional LME, bot de WhatsApp/Telegram, pantalla LED de patio y PnL en tiempo real.">
   <meta name="author" content="Brain Branding AI Enterprise">
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -34,7 +34,7 @@
           💡 Guía de Capacidades
         </button>
         <button class="btn-secondary" onclick="App.openCallSimulatorModal()">
-          📞 Simular Llamada Siderúrgica
+          📞 Simular Llamada
         </button>
         <a href="https://brainbranding.com.mx" class="btn-secondary" style="text-decoration:none;">
           🌐 Brain Branding
@@ -48,10 +48,10 @@
     <div class="connection-banner-inner">
       <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
         <span class="status-badge-live"><span class="pulse-dot"></span> BÁSCULAS CONECTADAS (60 Ton & 1 Ton)</span>
-        <span class="status-badge-live" style="border-color:#38bdf8; color:#38bdf8;"><span class="pulse-dot" style="background:#38bdf8;"></span> ENLACE SIDERÚRGICA: ACTIVO</span>
+        <span class="status-badge-live" style="border-color:#38bdf8; color:#38bdf8;"><span class="pulse-dot" style="background:#38bdf8;"></span> ENLACE LME & COMEX: ACTIVO</span>
       </div>
       <div style="display:flex; align-items:center; gap:10px;">
-        <span style="color:#94a3b8; font-size:0.75rem;">Efectivo en Caja Báscula:</span>
+        <span style="color:#94a3b8; font-size:0.75rem;">Caja Báscula:</span>
         <strong id="headerCashOnHand" class="text-neon-green">$248,500.00</strong>
         <button class="flash-call-trigger-btn" onclick="App.openQuickPriceModal()">
           ⚡ Cambiar Precios de Inmediato
@@ -67,8 +67,17 @@
       <button class="nav-tab active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
         <span>📊</span> <span>Panel General</span>
       </button>
+      <button class="nav-tab" data-tab="intl" onclick="App.switchTab('intl')">
+        <span>🌐</span> <span>Predictor Metales LME (IA)</span> <span class="nav-tab-badge">72h Forecast</span>
+      </button>
       <button class="nav-tab" data-tab="precios" onclick="App.switchTab('precios')">
         <span>⚡</span> <span>Matriz de Precios en Cascada</span> <span class="nav-tab-badge">1-Clic</span>
+      </button>
+      <button class="nav-tab" data-tab="bot" onclick="App.switchTab('bot')">
+        <span>📲</span> <span>Bot WhatsApp / Telegram</span> <span class="nav-tab-badge" style="background:#38bdf8; color:#042f2e;">Remoto</span>
+      </button>
+      <button class="nav-tab" data-tab="tv-screen" onclick="App.switchTab('tv-screen')">
+        <span>📺</span> <span>Pantalla LED de Patio (TV)</span>
       </button>
       <button class="nav-tab" data-tab="bascula" onclick="App.switchTab('bascula')">
         <span>⚖️</span> <span>Báscula & Liquidación</span>
@@ -77,7 +86,7 @@
         <span>🚚</span> <span>Embarques a Siderúrgica</span>
       </button>
       <button class="nav-tab" data-tab="pnl" onclick="App.switchTab('pnl')">
-        <span>📈</span> <span>Estado de Resultados (P&L)</span> <span class="nav-tab-badge" style="background:#10b981; color:#042f2e;">Volatilidad</span>
+        <span>📈</span> <span>Estado de Resultados (P&L)</span>
       </button>
       <button class="nav-tab" data-tab="ai" onclick="App.switchTab('ai')">
         <span>🧠</span> <span>Brain IA Engine SIO</span>
@@ -154,12 +163,23 @@
       </div>
     </div>
 
-    <!-- TAB 2: MATRIZ DE PRECIOS EN CASCADA -->
+    <!-- TAB 2: PREDICTOR INTERNACIONAL LME (IA) -->
+    <div class="tab-pane" id="tab-intl">
+      <div class="section-header">
+        <div>
+          <h3 class="section-title">🌐 Predictor Internacional de Metales con IA</h3>
+          <p class="section-subtitle">Monitoreo en tiempo real de London Metal Exchange (LME) y Fastmarkets con proyección de precios de compra local a 72 horas.</p>
+        </div>
+      </div>
+      <div class="intl-markets-grid" id="intlMarketsGrid"></div>
+    </div>
+
+    <!-- TAB 3: MATRIZ DE PRECIOS EN CASCADA -->
     <div class="tab-pane" id="tab-precios">
       <div class="section-header">
         <div>
           <h3 class="section-title">⚡ Matriz Dinámica de Precios en Cascada</h3>
-          <p class="section-subtitle">Edita el precio de venta que te paga la Siderúrgica y el sistema recalcula automáticamente las tarifas de compra de todos los niveles en la báscula.</p>
+          <p class="section-subtitle">Edita el precio de venta de la Siderúrgica y el sistema recalcula en tiempo real las tarifas en báscula protegiendo tus márgenes.</p>
         </div>
         <div style="display:flex; gap:8px;">
           <button class="flash-call-trigger-btn" onclick="App.openQuickPriceModal()">
@@ -177,10 +197,10 @@
             <thead>
               <tr>
                 <th>MATERIAL / METAL</th>
-                <th>PRECIO VENTA COMPRADOR (SIDERÚRGICA)</th>
-                <th>NIVEL 1 (MENUDEO - 28% MARGEN)</th>
-                <th>NIVEL 2 (CAMIONETERO - 16% MARGEN)</th>
-                <th>NIVEL 3 (INDUSTRIAL - 8% MARGEN)</th>
+                <th>PRECIO VENTA SIDERÚRGICA</th>
+                <th>NIVEL 1 (MENUDEO - 28%)</th>
+                <th>NIVEL 2 (CAMIONETERO - 16%)</th>
+                <th>NIVEL 3 (INDUSTRIAL - 8%)</th>
                 <th>AJUSTE RÁPIDO</th>
               </tr>
             </thead>
@@ -190,7 +210,53 @@
       </div>
     </div>
 
-    <!-- TAB 3: BÁSCULA & LIQUIDACIÓN DIGITAL -->
+    <!-- TAB 4: BOT TELEGRAM / WHATSAPP SIMULATOR -->
+    <div class="tab-pane" id="tab-bot">
+      <div class="section-header">
+        <div>
+          <h3 class="section-title">📲 Control Remoto por WhatsApp & Telegram</h3>
+          <p class="section-subtitle">Ajusta los precios de tu báscula y patio enviando comandos desde tu celular estés donde estés.</p>
+        </div>
+      </div>
+
+      <div class="bot-simulator-wrapper">
+        <div class="bot-simulator-header">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="font-size:22px;">🤖</div>
+            <div>
+              <strong style="font-size:0.9rem; color:#fff;">Brain Bot SIO • Enlace Remoto</strong>
+              <div style="font-size:0.7rem; color:#34d399;">● En línea • Telegram / WhatsApp Gateway</div>
+            </div>
+          </div>
+          <span class="status-badge-live" style="font-size:0.65rem;">SYNC ACTIVO</span>
+        </div>
+
+        <div class="bot-chat-body" id="botChatContainer"></div>
+
+        <div class="bot-input-bar">
+          <input type="text" class="bot-input-field" id="botCommandInput" placeholder="Ej: /precio cobre +5 o /bajar acero 0.40" onkeypress="if(event.key === 'Enter') App.sendBotCommand()">
+          <button class="btn-bot-send" onclick="App.sendBotCommand()">Enviar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: PANTALLA LED DE PATIO (TV) -->
+    <div class="tab-pane" id="tab-tv-screen">
+      <div class="section-header">
+        <div>
+          <h3 class="section-title">📺 Pizarra Digital & Pantalla LED de Patio (Modo TV)</h3>
+          <p class="section-subtitle">Diseñada para monitores de alto brillo en la entrada de báscula. Se actualiza automáticamente cuando cambias cualquier precio.</p>
+        </div>
+        <button class="flash-call-trigger-btn" onclick="App.openQuickPriceModal()">
+          ⚡ Probar Cambio Flash en TV
+        </button>
+      </div>
+
+      <div class="tv-flash-banner" id="tvFlashBanner"></div>
+      <div id="tvScreenContent"></div>
+    </div>
+
+    <!-- TAB 6: BÁSCULA & LIQUIDACIÓN DIGITAL -->
     <div class="tab-pane" id="tab-bascula">
       <div class="section-header">
         <div>
@@ -269,7 +335,7 @@
       </div>
     </div>
 
-    <!-- TAB 4: EMBARQUES A SIDERÚRGICA -->
+    <!-- TAB 7: EMBARQUES A SIDERÚRGICA -->
     <div class="tab-pane" id="tab-embarques">
       <div class="section-header">
         <div>
@@ -302,12 +368,12 @@
       </div>
     </div>
 
-    <!-- TAB 5: ESTADO DE RESULTADOS (P&L) -->
+    <!-- TAB 8: ESTADO DE RESULTADOS (P&L) -->
     <div class="tab-pane" id="tab-pnl">
       <div id="pnlReportContainer"></div>
     </div>
 
-    <!-- TAB 6: BRAIN IA ENGINE SIO -->
+    <!-- TAB 9: BRAIN IA ENGINE SIO -->
     <div class="tab-pane" id="tab-ai">
       <div class="section-header">
         <div>
@@ -325,9 +391,8 @@
 
   </main>
 
-  <!-- ========================================== -->
-  <!-- MODAL: CAMBIADOR RÁPIDO DE PRECIOS ($ o %, Subir/Bajar) -->
-  <!-- ========================================== -->
+  <!-- MODALES -->
+  <!-- MODAL: CAMBIADOR RÁPIDO DE PRECIOS -->
   <div class="modal-overlay" id="quickPriceModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -380,19 +445,16 @@
           </div>
         </div>
 
-        <!-- Vista Previa en Vivo del Impacto -->
         <div class="qp-preview-box" id="qpPreviewDetails"></div>
 
         <button class="btn-scale-action" onclick="App.applyQuickPriceChange()">
-          <span>⚡</span> <span>Aplicar Cambio Inmediato a Báscula y Pizarra</span>
+          <span>⚡</span> <span>Aplicar Cambio Inmediato a Báscula, TV y Pizarra</span>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- MODAL: TARJETAS DE INSTRUCCIONES DINÁMICAS (CAPACIDADES & POTENCIALES) -->
-  <!-- ========================================== -->
+  <!-- MODAL: TARJETAS DE INSTRUCCIONES DINÁMICAS -->
   <div class="modal-overlay" id="onboardingModal">
     <div class="modal-content" style="max-width:580px;">
       <div class="modal-header">
@@ -415,7 +477,7 @@
     </div>
   </div>
 
-  <!-- MODAL: SIMULADOR DE LLAMADA SIDERÚRGICA -->
+  <!-- MODAL: SIMULADOR DE LLAMADA -->
   <div class="modal-overlay" id="flashCallModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -424,13 +486,13 @@
       </div>
       <div class="modal-body">
         <p style="font-size:0.85rem; color:#cbd5e1; margin-bottom:16px;">
-          El comprador mayorista actualiza las cotizaciones de compra. Selecciona el escenario para ver cómo el sistema ajusta la báscula y recalcula el Estado de Resultados en <strong>menos de 1 segundo</strong>:
+          El comprador mayorista actualiza las cotizaciones de compra. Selecciona el escenario para ver cómo el sistema ajusta la báscula y la pantalla LED de patio en <strong>menos de 1 segundo</strong>:
         </p>
 
         <div style="display:flex; flex-direction:column; gap:12px;">
           <button class="btn-secondary" style="padding:14px; text-align:left;" onclick="App.applySimulatedCall('copper_up')">
             <strong class="text-emerald">⚡ Cobre de 1ra sube +$8.00/kg</strong>
-            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Pasa a $162.00/kg. Aumenta margen y revaloriza stock en patio.</div>
+            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Pasa a $162.00/kg. Aumenta margen y sincroniza la TV de patio.</div>
           </button>
 
           <button class="btn-secondary" style="padding:14px; text-align:left;" onclick="App.applySimulatedCall('steel_down')">

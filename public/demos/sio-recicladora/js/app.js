@@ -19,32 +19,32 @@ const App = {
   onboardingStep: 0,
   onboardingCards: [
     {
-      icon: '⚡',
-      badge: 'POTENCIAL #1 • PRECIOS EN CASCADA',
-      title: 'Protege tu Margen ante Llamadas del Comprador',
-      text: 'Cuando la Siderúrgica llama para cambiar el precio del acero o cobre, Carlos solo presiona <strong>1 botón</strong>. El sistema recalcula en tiempo real todas las tarifas de compra de Nivel 1, 2 y 3, impidiendo que los operadores de báscula paguen de más.',
-      benefit: '💰 <strong>Beneficio:</strong> Cero pérdidas por rezago de precios y protección de margen garantizada.'
+      icon: '🌐',
+      badge: 'POTENCIAL #1 • PREDICTOR INTERNACIONAL IA',
+      title: 'Anticipa las Llamadas con Precios Mundiales (LME / COMEX)',
+      text: 'El motor de Inteligencia Artificial monitorea la <strong>Bolsa de Metales de Londres (LME)</strong> y Fastmarkets. Te avisa con hasta 72 horas de anticipación si el Cobre o el Acero van a subir o bajar, permitiéndote acaparar material barato o despachar inventario antes de que baje la tarifa.',
+      benefit: '📈 <strong>Beneficio:</strong> Máxima ganancia especulativa y ventaja competitiva total sobre otros recicladores.'
     },
     {
-      icon: '⚖️',
-      badge: 'POTENCIAL #2 • BÁSCULA DIGITAL & CAJA',
-      title: 'Cero Fugas en Patio y Liquidación Instantánea',
-      text: 'Conexión digital con básculas camioneras (60 Ton) y de plataforma (1 Ton). Captura automática de peso Bruto, descuento de Tara y cálculo de Neto con emisión de <strong>Ticket Digital con Código QR</strong> y sello ambiental CEDES.',
-      benefit: '🔒 <strong>Beneficio:</strong> Eliminación del robo hormiga, pesajes manipulados y descuadre de caja.'
+      icon: '📲',
+      badge: 'POTENCIAL #2 • BOT DE WHATSAPP / TELEGRAM',
+      title: 'Control de Precios Remoto sin Llamar al Cajero',
+      text: 'Recibe alertas instantáneas en tu celular y cambia precios respondiendo al Bot de Telegram/WhatsApp con comandos directos como <code>/precio cobre +5</code>. La báscula se actualiza al milisegundo sin que el operador de mostrador cometa errores.',
+      benefit: '⚡ <strong>Beneficio:</strong> Cero fuga de dinero por rezago de precios y control total desde la palma de tu mano.'
+    },
+    {
+      icon: '📺',
+      badge: 'POTENCIAL #3 • PANTALLA LED DE PATIO EN VIVO',
+      title: 'Pizarra Digital en TV para Proveedores y Báscula',
+      text: 'Conecta cualquier pantalla o Smart TV en el área de descarga. Cuando cambias un precio (desde la web o por Telegram), la pantalla LED de patio se actualiza en <strong>tiempo real con animación brillante</strong>, transmitiendo máxima transparencia a los recolectores.',
+      benefit: '💎 <strong>Beneficio:</strong> Imagen corporativa de alto nivel y fidelización de proveedores camioneros e industriales.'
     },
     {
       icon: '📈',
-      badge: 'POTENCIAL #3 • ESTADO DE RESULTADOS (P&L)',
-      title: 'Control Financiero con Efecto por Volatilidad',
-      text: 'Visualiza en tiempo real las ganancias y pérdidas de tu patio (Diario, Semanal y Mensual). El motor calcula automáticamente el <strong>Stock Revaluation</strong> (cuánto dinero ganó o perdió tu inventario acumulado tras un cambio de cotización internacional).',
-      benefit: '📊 <strong>Beneficio:</strong> Visión ejecutiva clara de utilidades netas reales y costo operativo exacto.'
-    },
-    {
-      icon: '🧠',
-      badge: 'POTENCIAL #4 • BRAIN IA & EMBARQUES',
-      title: 'Asistente Predictivo y Arbitraje de Metales',
-      text: 'La Inteligencia Artificial de SIO analiza tus existencias en patio y te avisa el momento óptimo para despachar góndolas a la siderúrgica antes de caídas de precio, auditando además el comportamiento de los recolectores.',
-      benefit: '🚀 <strong>Beneficio:</strong> Negociaciones más inteligentes y máxima rentabilidad por cada tonelada despachada.'
+      badge: 'POTENCIAL #4 • ESTADO DE RESULTADOS & BÁSCULA IA',
+      title: 'P&L Diario con Efecto por Volatilidad de Inventario',
+      text: 'Captura de peso digital en báscula con emisión de tickets con código QR y un Estado de Resultados que mide cuánto dinero ganas cada día y el valor exacto de revalorización de tu stock en patio.',
+      benefit: '💰 <strong>Beneficio:</strong> Visión financiera exacta de utilidades netas y cero robo hormiga.'
     }
   ],
 
@@ -58,6 +58,9 @@ const App = {
     this.renderRecentWeighings();
     this.renderShipments();
     this.renderAIInsights();
+    this.renderInternationalMarkets();
+    this.renderTelegramBotMessages();
+    this.renderTVScreen();
     PnLEngine.render('daily');
 
     this.startLiveScaleStream();
@@ -69,7 +72,7 @@ const App = {
       }, 500);
     }
 
-    console.log('Recicladora SIO Demo inicializada.');
+    console.log('Recicladora SIO Demo V2 Inicializada con Éxito.');
   },
 
   playSound(type = 'beep') {
@@ -129,11 +132,16 @@ const App = {
       PnLEngine.render('daily');
     } else if (tabId === 'ai') {
       this.renderAIInsights();
+      this.renderInternationalMarkets();
     } else if (tabId === 'precios') {
       this.renderPriceMatrix();
     } else if (tabId === 'dashboard') {
       this.renderKPIs();
       this.renderRecentWeighings();
+    } else if (tabId === 'tv-screen') {
+      this.renderTVScreen();
+    } else if (tabId === 'bot') {
+      this.renderTelegramBotMessages();
     }
   },
 
@@ -194,6 +202,44 @@ const App = {
     `).join('');
   },
 
+  // 1. PREDICTOR INTERNACIONAL IA
+  renderInternationalMarkets() {
+    const container = document.getElementById('intlMarketsGrid');
+    if (!container) return;
+    const data = window.SIO_DATA;
+
+    container.innerHTML = data.internationalMarkets.map(m => `
+      <div class="intl-market-card">
+        <div class="intl-header">
+          <div>
+            <span class="intl-symbol">${m.symbol}</span>
+            <h4 class="intl-name">${m.name}</h4>
+          </div>
+          <span class="intl-badge ${m.trend24h.startsWith('+') ? 'badge-up' : 'badge-down'}">${m.trend24h} (24h)</span>
+        </div>
+        <div class="intl-price-row">
+          <div>
+            <div class="intl-lbl">COTIZACIÓN GLOBAL:</div>
+            <div class="intl-val">$${m.priceUSDPerTon.toLocaleString()} USD/Ton</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="intl-lbl">EQUIVALENTE MXN:</div>
+            <div class="intl-val text-emerald">$${m.priceMXNPerKg.toFixed(2)} /kg</div>
+          </div>
+        </div>
+        <div class="intl-forecast-box">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="font-size:0.75rem; color:#94a3b8;">Proyección IA (72h): <strong>${m.forecast72h}</strong></span>
+            <span style="font-size:0.75rem; color:#38bdf8; font-weight:bold;">Fiabilidad: ${m.confidence}</span>
+          </div>
+          <p style="font-size:0.8rem; color:#cbd5e1; margin-bottom:6px;">${m.impactLocal}</p>
+          <div class="intl-action-tag">💡 ${m.actionSuggested}</div>
+        </div>
+      </div>
+    `).join('');
+  },
+
+  // 2. MATRIZ DE PRECIOS EN CASCADA
   renderPriceMatrix() {
     const container = document.getElementById('priceMatrixTableBody');
     if (!container) return;
@@ -211,7 +257,7 @@ const App = {
               <span class="mat-icon">${mat.icon}</span>
               <div>
                 <strong>${mat.name}</strong>
-                <div class="mat-cat-tag">${mat.category} • Stock: ${mat.currentStockKg.toLocaleString()} kg</div>
+                <div class="mat-cat-tag">${mat.category} • Benchmark: <span class="text-sky">${mat.intlBenchmark}</span></div>
               </div>
             </div>
           </td>
@@ -252,7 +298,7 @@ const App = {
     }).join('');
   },
 
-  onBuyerPriceChange(materialId, newPriceStr) {
+  onBuyerPriceChange(materialId, newPriceStr, source = 'Web Panel') {
     const newPrice = parseFloat(newPriceStr);
     if (isNaN(newPrice) || newPrice <= 0) return;
 
@@ -270,7 +316,7 @@ const App = {
     const impact = (newPrice - oldPrice) * mat.currentStockKg;
     data.priceChangeHistory.unshift({
       timestamp: new Date().toLocaleTimeString('es-MX', {hour: '2-digit', minute: '2-digit'}),
-      trigger: 'Modificación en Cascada SIO',
+      trigger: `Modificación (${source})`,
       materialId: mat.id,
       materialName: mat.name,
       oldBuyerPrice: oldPrice,
@@ -284,9 +330,11 @@ const App = {
     this.renderPriceMatrix();
     this.renderKPIs();
     this.renderScaleForm();
+    this.renderTVScreen();
     PnLEngine.render('daily');
-    this.playSound('beep');
-    this.showToast(`⚡ Precios actualizados en cascada para ${mat.name}`);
+    this.playSound('cash');
+    this.flashTVScreenUpdate(mat.name, newPrice);
+    this.showToast(`⚡ ${mat.name} actualizado a $${newPrice.toFixed(2)}/kg por ${source}. Pantalla TV y Báscula sincronizadas.`);
   },
 
   quickAdjust(materialId, factor) {
@@ -294,10 +342,10 @@ const App = {
     const mat = data.materials.find(m => m.id === materialId);
     if (!mat) return;
     const newPrice = +(mat.buyerPrice * factor).toFixed(2);
-    this.onBuyerPriceChange(materialId, newPrice);
+    this.onBuyerPriceChange(materialId, newPrice, 'Ajuste Rápido');
   },
 
-  // CAMBIADOR RÁPIDO DE PRECIOS ($ o %, Subir o Bajar)
+  // 3. CAMBIADOR RÁPIDO DE PRECIOS ($ o %)
   openQuickPriceModal(materialId = null) {
     this.playSound('beep');
     const data = window.SIO_DATA;
@@ -386,10 +434,6 @@ const App = {
             ${isUp ? '▲ AUMENTAR' : '▼ DISMINUIR'} ${isAmount ? `$${val.toFixed(2)} MXN/kg` : `${val}%`} a TODOS los metales
           </strong>
         </div>
-        <div class="qp-preview-item">
-          <span>Impacto en Báscula:</span>
-          <span>Sincronización instantánea de los 9 materiales y 3 niveles de compra.</span>
-        </div>
       `;
       return;
     }
@@ -433,7 +477,7 @@ const App = {
         </div>
       </div>
       <div class="qp-stock-impact ${stockImpact >= 0 ? 'bg-emerald-soft text-emerald' : 'bg-amber-soft text-amber'}">
-        ⚖️ Revalorización de las ${mat.currentStockKg.toLocaleString()} kg en patio: 
+        ⚖️ Revalorización de patio: 
         <strong>${stockImpact >= 0 ? '+' : ''}$${stockImpact.toLocaleString('es-MX', {minimumFractionDigits: 2})} MXN</strong>
       </div>
     `;
@@ -479,7 +523,7 @@ const App = {
       } else {
         newPrice = isUp ? (mat.buyerPrice * (1 + (val / 100))) : Math.max(0.1, mat.buyerPrice * (1 - (val / 100)));
       }
-      this.onBuyerPriceChange(matId, newPrice);
+      this.onBuyerPriceChange(matId, newPrice, 'Ajuste Rápido Web');
     }
 
     this.saveData();
@@ -487,11 +531,182 @@ const App = {
     this.renderPriceMatrix();
     this.renderKPIs();
     this.renderScaleForm();
+    this.renderTVScreen();
     PnLEngine.render('daily');
     this.playSound('cash');
   },
 
-  // TARJETAS DE INSTRUCCIONES DINÁMICAS (CAPACIDADES & POTENCIALES)
+  // 4. BOT DE TELEGRAM / WHATSAPP SIMULATOR
+  renderTelegramBotMessages() {
+    const container = document.getElementById('botChatContainer');
+    if (!container) return;
+    const data = window.SIO_DATA;
+
+    container.innerHTML = data.botMessages.map(msg => `
+      <div class="chat-bubble ${msg.sender === 'user' ? 'bubble-user' : 'bubble-bot'}">
+        <div class="chat-header-info">
+          <span>${msg.sender === 'user' ? '👤 Carlos (Administrador)' : '🤖 Brain Bot SIO'}</span>
+          <span class="chat-time">${msg.time}</span>
+        </div>
+        <div class="chat-text">${msg.text}</div>
+        ${msg.actions ? `
+          <div class="chat-actions-row">
+            ${msg.actions.map(act => `
+              <button class="btn-chat-action" onclick="App.handleBotAction('${act.cmd}')">${act.label}</button>
+            `).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `).join('');
+    container.scrollTop = container.scrollHeight;
+  },
+
+  sendBotCommand() {
+    const input = document.getElementById('botCommandInput');
+    if (!input || !input.value.trim()) return;
+
+    const raw = input.value.trim();
+    const data = window.SIO_DATA;
+    const timeNow = new Date().toLocaleTimeString('es-MX', {hour: '2-digit', minute: '2-digit'});
+
+    data.botMessages.push({
+      id: `MSG-${Date.now()}`,
+      sender: "user",
+      time: timeNow,
+      text: raw
+    });
+
+    input.value = '';
+    this.renderTelegramBotMessages();
+    this.playSound('beep');
+
+    setTimeout(() => {
+      this.processBotNLP(raw, timeNow);
+    }, 600);
+  },
+
+  processBotNLP(cmd, timeNow) {
+    const data = window.SIO_DATA;
+    const lower = cmd.toLowerCase();
+
+    if (lower.includes('cobre') && (lower.includes('+') || lower.includes('subir') || lower.includes('5'))) {
+      const copper = data.materials.find(m => m.id === 'MAT-01');
+      if (copper) {
+        const newPrice = copper.buyerPrice + 5.0;
+        this.onBuyerPriceChange('MAT-01', newPrice, 'Bot Telegram');
+        data.botMessages.push({
+          id: `MSG-${Date.now()}`,
+          sender: "bot",
+          time: timeNow,
+          text: `✅ <strong>Comando Ejecutado:</strong> Cobre 1ra elevado a <strong>$${newPrice.toFixed(2)}/kg</strong> (+5.00). Báscula Nivel 1 actualizada a $${copper.t1Price.toFixed(2)} y Pantalla LED de Patio sincronizada.`
+        });
+      }
+    } else if (lower.includes('acero') && (lower.includes('-') || lower.includes('bajar') || lower.includes('0.40') || lower.includes('0.50'))) {
+      const steel = data.materials.find(m => m.id === 'MAT-03');
+      if (steel) {
+        const newPrice = 5.00;
+        this.onBuyerPriceChange('MAT-03', newPrice, 'Bot WhatsApp');
+        data.botMessages.push({
+          id: `MSG-${Date.now()}`,
+          sender: "bot",
+          time: timeNow,
+          text: `🛡️ <strong>Báscula Protegida:</strong> Acero Mixto ajustado a <strong>$5.00/kg</strong> (-0.40). El cajero ya no podrá liquidar al precio anterior.`
+        });
+      }
+    } else if (lower.includes('status') || lower.includes('patio')) {
+      const totalStock = data.materials.reduce((s, m) => s + m.currentStockKg, 0);
+      data.botMessages.push({
+        id: `MSG-${Date.now()}`,
+        sender: "bot",
+        time: timeNow,
+        text: `📊 <strong>Status de Patio SIO:</strong> Stock Total: <strong>${(totalStock/1000).toFixed(1)} Ton</strong> | Efectivo en Caja Báscula: <strong>$${data.cashOnHand.toLocaleString('es-MX')} MXN</strong> | Pantalla LED: <strong>En línea</strong>.`
+      });
+    } else {
+      data.botMessages.push({
+        id: `MSG-${Date.now()}`,
+        sender: "bot",
+        time: timeNow,
+        text: `🤖 <strong>Bot SIO:</strong> Comando recibido. Prueba con: <code>/precio cobre +5</code> o <code>/bajar acero 0.40</code>.`
+      });
+    }
+
+    this.renderTelegramBotMessages();
+    this.playSound('cash');
+  },
+
+  handleBotAction(cmd) {
+    if (cmd === 'adjust_copper_up') {
+      this.processBotNLP('subir cobre +5', new Date().toLocaleTimeString('es-MX', {hour: '2-digit', minute: '2-digit'}));
+    } else if (cmd === 'sync_protect') {
+      this.processBotNLP('proteger bascula acero -0.40', new Date().toLocaleTimeString('es-MX', {hour: '2-digit', minute: '2-digit'}));
+    }
+  },
+
+  // 5. PANTALLA LED DE PATIO (TV MONITOR EN VIVO)
+  renderTVScreen() {
+    const container = document.getElementById('tvScreenContent');
+    if (!container) return;
+    const data = window.SIO_DATA;
+
+    container.innerHTML = `
+      <div class="tv-screen-board">
+        <div class="tv-board-header">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div class="tv-logo">♻️ SIO</div>
+            <div>
+              <h2 class="tv-title">PIZARRA OFICIAL DE COMPRA EN BÁSCULA</h2>
+              <div class="tv-sub">RECICLADORA SIO • CEDES I AI • TIEMPO REAL</div>
+            </div>
+          </div>
+          <div class="tv-live-badge">
+            <span class="pulse-dot"></span> EN VIVO: ${new Date().toLocaleTimeString('es-MX')}
+          </div>
+        </div>
+
+        <div class="tv-price-grid">
+          ${data.materials.map(m => `
+            <div class="tv-price-card" id="tv-card-${m.id}">
+              <div class="tv-card-top">
+                <span class="tv-mat-icon">${m.icon}</span>
+                <span class="tv-mat-name">${m.name}</span>
+              </div>
+              <div class="tv-prices-row">
+                <div class="tv-price-box">
+                  <span class="tv-lbl">N1 (Menudeo):</span>
+                  <span class="tv-price-val text-sky">$${m.t1Price.toFixed(2)}</span>
+                </div>
+                <div class="tv-price-box">
+                  <span class="tv-lbl">N2 (Frecuente):</span>
+                  <span class="tv-price-val text-emerald">$${m.t2Price.toFixed(2)}</span>
+                </div>
+                <div class="tv-price-box">
+                  <span class="tv-lbl">N3 (Industrial):</span>
+                  <span class="tv-price-val text-amber">$${m.t3Price.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="tv-footer-ticker">
+          ⚖️ PAGO INMEDIATO EN EFECTIVO • BÁSCULAS CALIBRADAS CERTIFICADAS • CONTROL AMBIENTAL CEDES
+        </div>
+      </div>
+    `;
+  },
+
+  flashTVScreenUpdate(matName, newPrice) {
+    const flashEl = document.getElementById('tvFlashBanner');
+    if (flashEl) {
+      flashEl.innerHTML = `⚡ <strong>PANTALLA DE PATIO ACTUALIZADA:</strong> ${matName} cotizando a $${newPrice.toFixed(2)}/kg`;
+      flashEl.classList.add('active');
+      setTimeout(() => {
+        flashEl.classList.remove('active');
+      }, 4000);
+    }
+  },
+
+  // 6. ONBOARDING MODAL
   openOnboardingModal() {
     this.onboardingStep = 0;
     this.renderOnboardingCard();
@@ -558,6 +773,7 @@ const App = {
     this.renderOnboardingCard();
   },
 
+  // 7. SIMULADOR DE LLAMADA SIDERÚRGICA
   openCallSimulatorModal() {
     this.playSound('alert');
     const modal = document.getElementById('flashCallModal');
@@ -578,7 +794,7 @@ const App = {
       const copper2 = data.materials.find(m => m.id === 'MAT-02');
       if (copper1) copper1.buyerPrice = 162.00;
       if (copper2) copper2.buyerPrice = 145.00;
-      message = '📞 Siderúrgica Monterrey: Cobre 1ra subió a $162.00/kg (+8.00). Precios de compra en báscula actualizados en cascada.';
+      message = '📞 Siderúrgica Monterrey: Cobre 1ra subió a $162.00/kg (+8.00). Precios en báscula y Pantalla LED sincronizados.';
     } else if (scenarioType === 'steel_down') {
       const steel = data.materials.find(m => m.id === 'MAT-03');
       if (steel) steel.buyerPrice = 5.00;
@@ -601,11 +817,13 @@ const App = {
     this.renderPriceMatrix();
     this.renderKPIs();
     this.renderScaleForm();
+    this.renderTVScreen();
     PnLEngine.render('daily');
     this.playSound('cash');
     this.showToast(message, 'success');
   },
 
+  // 8. BÁSCULA DIGITAL
   startLiveScaleStream() {
     if (this.liveScaleInterval) clearInterval(this.liveScaleInterval);
     this.liveScaleInterval = setInterval(() => {
