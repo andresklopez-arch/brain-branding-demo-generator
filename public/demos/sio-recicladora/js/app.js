@@ -8,6 +8,8 @@ const App = {
   liveScaleInterval: null,
   currentSimulatedWeight: 0,
   audioCtx: null,
+  enteredPin: '',
+  bannerTimer: null,
 
   quickPriceState: {
     materialId: 'MAT-01',
@@ -49,14 +51,6 @@ const App = {
   ],
 
   init() {
-    // 1. Guardián de Sesión Estricto (Redirige al Teclado de PIN si no hay sesión)
-    const authNip = sessionStorage.getItem('BB_AUTH_NIP');
-    const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (!authNip && !isLocalDev) {
-      window.location.href = '../index.html';
-      return;
-    }
-
     window.SIO_DATA = JSON.parse(localStorage.getItem('SIO_DEMO_DATA')) || initialData;
 
     this.renderHeader();
@@ -72,13 +66,181 @@ const App = {
     PnLEngine.render('daily');
 
     this.startLiveScaleStream();
+    this.bindKeypadEvents();
 
-    // 2. Speech y Tarjetas de Capacidades SIEMPRE activas en cada visita
+    // Comprobar si hay sesión activa para pedir NIP de seguridad
+    const sessionActive = sessionStorage.getItem('BB_SIO_UNLOCKED');
+    if (!sessionActive) {
+      this.showPinGate();
+    } else {
+      this.unlockApp(false);
+    }
+
+    console.log('Recicladora SIO Demo V2 - Menú Unificado & Control de Seguridad Inicializado.');
+  },
+
+  showPinGate() {
+    this.enteredPin = '';
+    this.updatePinDots();
+    const gate = document.getElementById('pinGateOverlay');
+    if (gate) {
+      gate.style.display = 'flex';
+      gate.classList.add('active');
+    }
+  },
+
+  bindKeypadEvents() {
+    document.addEventListener('keydown', (e) => {
+      const gate = document.getElementById('pinGateOverlay');
+      if (!gate || gate.style.display === 'none') return;
+
+      if (e.key >= '0' && e.key <= '9') {
+        this.addPinDigit(e.key);
+      } else if (e.key === 'Backspace') {
+        this.deletePinDigit();
+      } else if (e.key === 'Escape') {
+        this.clearPin();
+      }
+    });
+  },
+
+  addPinDigit(d) {
+    if (this.enteredPin.length < 5) {
+      this.enteredPin += d;
+      this.playSound('beep');
+      this.updatePinDots();
+
+      if (this.enteredPin.length === 5) {
+        setTimeout(() => this.verifyPin(), 180);
+      }
+    }
+  },
+
+  deletePinDigit() {
+    if (this.enteredPin.length > 0) {
+      this.enteredPin = this.enteredPin.slice(0, -1);
+      this.playSound('beep');
+      this.updatePinDots();
+    }
+  },
+
+  clearPin() {
+    this.enteredPin = '';
+    this.playSound('beep');
+    this.updatePinDots();
+  },
+
+  updatePinDots() {
+    const dots = document.querySelectorAll('.pin-dot');
+    dots.forEach((dot, idx) => {
+      if (idx < this.enteredPin.length) {
+        dot.classList.add('filled');
+      } else {
+        dot.classList.remove('filled');
+      }
+    });
+
+    const statusEl = document.getElementById('pinStatusMsg');
+    if (statusEl) {
+      if (this.enteredPin.length === 0) {
+        statusEl.textContent = 'Ingresa el NIP de 5 dígitos (51934)';
+        statusEl.style.color = '#94a3b8';
+      } else {
+        statusEl.textContent = `Dígitos ingresados: ${this.enteredPin.length}/5`;
+        statusEl.style.color = '#38bdf8';
+      }
+    }
+  },
+
+  verifyPin() {
+    if (this.enteredPin === '51934') {
+      sessionStorage.setItem('BB_SIO_UNLOCKED', 'true');
+      sessionStorage.setItem('BB_AUTH_NIP', '51934');
+      this.unlockApp(true);
+    } else {
+      this.playSound('alert');
+      const card = document.querySelector('.pin-card');
+      if (card) {
+        card.classList.add('shake');
+        setTimeout(() => card.classList.remove('shake'), 400);
+      }
+      const statusEl = document.getElementById('pinStatusMsg');
+      if (statusEl) {
+        statusEl.textContent = '❌ NIP incorrecto. Intenta con: 51934';
+        statusEl.style.color = '#ef4444';
+      }
+      setTimeout(() => {
+        this.clearPin();
+      }, 700);
+    }
+  },
+
+  unlockApp(isFirstTime = true) {
+    const gate = document.getElementById('pinGateOverlay');
+    if (gate) {
+      gate.classList.remove('active');
+      setTimeout(() => { gate.style.display = 'none'; }, 300);
+    }
+
+    this.playSound('cash');
+
+    // 1. Iniciar temporizador de 3 segundos para auto-ocultar el banner superior de la imagen 2
+    this.startBannerAutoHideTimer();
+
+    // 2. Voz de bienvenida y speech
+    this.speakWelcomeSpeech();
+
+    // 3. Abrir siempre el tutorial dinámico (Onboarding)
     setTimeout(() => {
       this.openOnboardingModal();
-    }, 400);
+    }, 450);
+  },
 
-    console.log('Recicladora SIO Demo V2 Inicializada con Guardián de Seguridad Activo.');
+  lockSession() {
+    sessionStorage.removeItem('BB_SIO_UNLOCKED');
+    this.showPinGate();
+    this.showToast('🔒 Sesión bloqueada por seguridad de patio.');
+  },
+
+  startBannerAutoHideTimer() {
+    if (this.bannerTimer) clearTimeout(this.bannerTimer);
+    this.bannerTimer = setTimeout(() => {
+      this.collapseTopBanner();
+    }, 3000);
+  },
+
+  collapseTopBanner() {
+    const banner = document.getElementById('topBrandingBanner');
+    if (banner) {
+      banner.classList.add('auto-hidden');
+    }
+  },
+
+  toggleTopBanner() {
+    const banner = document.getElementById('topBrandingBanner');
+    if (banner) {
+      banner.classList.toggle('auto-hidden');
+    }
+  },
+
+  speakWelcomeSpeech() {
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance("Bienvenido Carlos a la plataforma de Recicladora SIO. Control de precios internacionales, báscula y margen en cascada activo.");
+        utterance.lang = 'es-MX';
+        utterance.rate = 1.05;
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {}
+    }
+  },
+
+  scrollNav(direction) {
+    const container = document.getElementById('adminNavTabs');
+    if (container) {
+      const scrollAmount = 180 * direction;
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
   },
 
   playSound(type = 'beep') {
@@ -319,17 +481,19 @@ const App = {
     mat.t2Price = +(newPrice * (1 - 0.16)).toFixed(2);
     mat.t3Price = +(newPrice * (1 - 0.08)).toFixed(2);
 
-    const impact = (newPrice - oldPrice) * mat.currentStockKg;
+    const delta = newPrice - oldPrice;
+    const revaluation = delta * mat.currentStockKg;
+
     data.priceChangeHistory.unshift({
-      timestamp: new Date().toLocaleTimeString('es-MX', {hour: '2-digit', minute: '2-digit'}),
-      trigger: `Modificación (${source})`,
+      timestamp: new Date().toLocaleString('es-MX', {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'}),
+      trigger: `${source} (Siderúrgica)`,
       materialId: mat.id,
       materialName: mat.name,
       oldBuyerPrice: oldPrice,
       newBuyerPrice: newPrice,
-      deltaBuyer: `${newPrice >= oldPrice ? '+' : ''}$${(newPrice - oldPrice).toFixed(2)}/kg`,
-      revaluationImpact: impact,
-      impactType: impact >= 0 ? 'GANANCIA_STOCK' : 'PÉRDIDA_STOCK'
+      deltaBuyer: `${delta >= 0 ? '+' : ''}$${delta.toFixed(2)}/kg`,
+      revaluationImpact: revaluation,
+      impactType: revaluation >= 0 ? 'GANANCIA_STOCK' : 'PÉRDIDA_STOCK'
     });
 
     this.saveData();
@@ -337,45 +501,45 @@ const App = {
     this.renderKPIs();
     this.renderScaleForm();
     this.renderTVScreen();
+    this.flashTVScreenUpdate(mat.name, newPrice);
     PnLEngine.render('daily');
     this.playSound('cash');
-    this.flashTVScreenUpdate(mat.name, newPrice);
-    this.showToast(`⚡ ${mat.name} actualizado a $${newPrice.toFixed(2)}/kg por ${source}. Pantalla TV y Báscula sincronizadas.`);
+    this.showToast(`⚡ Precio actualizado para ${mat.name}: $${newPrice.toFixed(2)}/kg (Báscula N1: $${mat.t1Price.toFixed(2)})`);
   },
 
-  quickAdjust(materialId, factor) {
+  quickAdjust(matId, multiplier) {
     const data = window.SIO_DATA;
-    const mat = data.materials.find(m => m.id === materialId);
-    if (!mat) return;
-    const newPrice = +(mat.buyerPrice * factor).toFixed(2);
-    this.onBuyerPriceChange(materialId, newPrice, 'Ajuste Rápido');
+    const mat = data.materials.find(m => m.id === matId);
+    if (mat) {
+      const newPrice = +(mat.buyerPrice * multiplier).toFixed(2);
+      this.onBuyerPriceChange(matId, newPrice, 'Ajuste Rápido %');
+    }
   },
 
-  // 3. CAMBIADOR RÁPIDO DE PRECIOS ($ o %)
-  openQuickPriceModal(materialId = null) {
-    this.playSound('beep');
-    const data = window.SIO_DATA;
+  // 3. CAMBIADOR RÁPIDO DE PRECIOS MODAL
+  openQuickPriceModal(defaultMatId = null) {
+    const modal = document.getElementById('quickPriceModal');
+    if (!modal) return;
+
     const select = document.getElementById('qpMaterialSelect');
-    if (!select) return;
-
+    const data = window.SIO_DATA;
+    
     select.innerHTML = `
-      <option value="ALL">⭐ Todos los Materiales (Ajuste Global)</option>
+      <option value="ALL">🌐 TODOS LOS MATERIALES (Ajuste Global)</option>
       ${data.materials.map(m => `
-        <option value="${m.id}" ${materialId === m.id ? 'selected' : ''}>
+        <option value="${m.id}" ${m.id === defaultMatId ? 'selected' : ''}>
           ${m.icon} ${m.name} (Actual: $${m.buyerPrice.toFixed(2)}/kg)
         </option>
       `).join('')}
     `;
 
-    if (materialId) {
-      this.quickPriceState.materialId = materialId;
-    } else {
-      this.quickPriceState.materialId = select.value;
+    if (defaultMatId) {
+      this.quickPriceState.materialId = defaultMatId;
+      select.value = defaultMatId;
     }
 
-    this.updateQuickPriceUI();
-    const modal = document.getElementById('quickPriceModal');
-    if (modal) modal.classList.add('active');
+    this.updateQuickPricePreview();
+    modal.classList.add('active');
   },
 
   closeQuickPriceModal() {
@@ -396,8 +560,13 @@ const App = {
     document.querySelectorAll('.qp-unit-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.unit === unit);
     });
+
     const prefix = document.getElementById('qpValuePrefix');
     if (prefix) prefix.textContent = unit === 'amount' ? '$' : '%';
+
+    const input = document.getElementById('qpValueInput');
+    if (input) input.value = unit === 'amount' ? '5.0' : '5';
+
     this.updateQuickPricePreview();
   },
 
@@ -405,17 +574,8 @@ const App = {
     const input = document.getElementById('qpValueInput');
     if (input) {
       input.value = val;
-      this.quickPriceState.value = parseFloat(val) || 0;
       this.updateQuickPricePreview();
     }
-  },
-
-  updateQuickPriceUI() {
-    this.setQuickPriceDirection(this.quickPriceState.direction);
-    this.setQuickPriceUnit(this.quickPriceState.unit);
-    const input = document.getElementById('qpValueInput');
-    if (input) input.value = this.quickPriceState.value;
-    this.updateQuickPricePreview();
   },
 
   updateQuickPricePreview() {
@@ -712,7 +872,7 @@ const App = {
     }
   },
 
-  // 6. ONBOARDING MODAL (SIEMPRE ACTIVO AL ENTRAR)
+  // 6. ONBOARDING MODAL
   openOnboardingModal() {
     this.onboardingStep = 0;
     this.renderOnboardingCard();
@@ -1018,28 +1178,29 @@ const App = {
         </div>
 
         <div class="ticket-body">
-          <div class="t-row"><span>PROVEEDOR:</span> <strong>${ticket.supplierName}</strong></div>
-          <div class="t-row"><span>TARIFA:</span> <span>${ticket.tier}</span></div>
-          <div class="t-row"><span>MATERIAL:</span> <strong>${ticket.materialName}</strong></div>
+          <div class="t-row"><span>PROVEEDOR:</span><strong>${ticket.supplierName}</strong></div>
+          <div class="t-row"><span>TARIFA / NIVEL:</span><strong>${ticket.tier}</strong></div>
+          <div class="t-row"><span>EQUIPO:</span><span>${ticket.scaleType}</span></div>
           <div class="ticket-divider">--------------------------------</div>
-          <div class="t-row"><span>PESO BRUTO:</span> <span>${ticket.grossWeightKg.toLocaleString()} kg</span></div>
-          <div class="t-row"><span>TARA / DESCUENTO:</span> <span>-${ticket.tareWeightKg.toLocaleString()} kg</span></div>
-          <div class="t-row highlight-t"><span>PESO NETO:</span> <strong>${ticket.netWeightKg.toLocaleString()} kg</strong></div>
-          <div class="t-row"><span>PRECIO APLICADO:</span> <strong>$${ticket.pricePerKg.toFixed(2)} / kg</strong></div>
+          <div class="t-row"><span>MATERIAL:</span><strong>${ticket.materialName}</strong></div>
+          <div class="t-row"><span>PESO BRUTO:</span><span>${ticket.grossWeightKg.toFixed(1)} kg</span></div>
+          <div class="t-row"><span>TARA:</span><span>${ticket.tareWeightKg.toFixed(1)} kg</span></div>
+          <div class="t-row font-bold"><span>PESO NETO:</span><span class="text-sky">${ticket.netWeightKg.toFixed(1)} kg</span></div>
+          <div class="t-row"><span>PRECIO/KG:</span><span>$${ticket.pricePerKg.toFixed(2)} MXN</span></div>
           <div class="ticket-divider">================================</div>
-          <div class="t-row total-t">
+          <div class="t-row ticket-total-row">
             <span>TOTAL LIQUIDADO:</span>
-            <span class="payout-amount">$${ticket.totalPayout.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
+            <strong class="text-emerald">$${ticket.totalPayout.toLocaleString('es-MX', {minimumFractionDigits: 2})} MXN</strong>
           </div>
-          <div class="t-row"><span>FORMA DE PAGO:</span> <span>${ticket.status}</span></div>
+          <div class="ticket-status-badge">● PAGO EN EFECTIVO AUTORIZADO</div>
         </div>
 
         <div class="ticket-footer">
-          <div class="qr-mock">
-            <div class="qr-box">QR VERIFICADO • SIO AI</div>
+          <div>RECIBÍ DE CONFORMIDAD</div>
+          <div class="ticket-sign-line"></div>
+          <div style="font-size:0.65rem; color:#94a3b8; margin-top:6px;">
+            SISTEMA DIGITAL SIO • VERIFICADO POR CEDES
           </div>
-          <div class="ticket-legend">Certificado de Pesaje Conforme a Normativa Ambiental</div>
-          <div class="ticket-thanks">¡Gracias por contribuir al reciclaje industrial!</div>
         </div>
       </div>
     `;
@@ -1056,55 +1217,20 @@ const App = {
     window.print();
   },
 
-  renderRecentWeighings() {
-    const tbody = document.getElementById('recentWeighingsTableBody');
-    if (!tbody) return;
-    const data = window.SIO_DATA;
-
-    tbody.innerHTML = data.recentWeighings.slice(0, 6).map(w => `
-      <tr>
-        <td><strong>${w.folio}</strong><br><small class="text-slate">${w.timestamp}</small></td>
-        <td>${w.supplierName}<br><span class="badge badge-tier">${w.tier}</span></td>
-        <td><strong>${w.materialName}</strong></td>
-        <td>${w.netWeightKg.toLocaleString()} kg</td>
-        <td>$${w.pricePerKg.toFixed(2)}</td>
-        <td class="text-right font-bold text-emerald">$${w.totalPayout.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
-        <td class="text-center">
-          <button class="btn-sm-print" onclick='App.openTicketModal(${JSON.stringify(w)})' title="Ver Ticket">🖨️</button>
-        </td>
-      </tr>
-    `).join('');
-  },
-
-  renderShipments() {
-    const container = document.getElementById('shipmentsTableBody');
-    if (!container) return;
-    const data = window.SIO_DATA;
-
-    container.innerHTML = data.shipmentsToBuyer.map(s => `
-      <tr>
-        <td><strong>${s.folio}</strong><br><small class="text-slate">${s.date}</small></td>
-        <td>${s.buyerName}</td>
-        <td><strong>${s.materialName}</strong></td>
-        <td>${(s.shippedKg / 1000).toFixed(1)} Ton (${s.shippedKg.toLocaleString()} kg)</td>
-        <td>$${s.salePricePerKg.toFixed(2)}/kg</td>
-        <td>$${s.totalRevenue.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
-        <td class="text-right text-neon-green font-bold">+$${s.grossProfit.toLocaleString('es-MX', {minimumFractionDigits: 2})} (${s.marginPct}%)</td>
-        <td><span class="badge badge-success">${s.status}</span></td>
-      </tr>
-    `).join('');
-  },
-
+  // 9. GESTIÓN DE EMBARQUES
   openNewShipmentModal() {
-    const matSelect = document.getElementById('shipmentMaterialSelect');
-    if (matSelect) {
-      const data = window.SIO_DATA;
-      matSelect.innerHTML = data.materials.map(m => `
-        <option value="${m.id}">${m.name} (Stock en patio: ${m.currentStockKg.toLocaleString()} kg)</option>
-      `).join('');
-    }
     const modal = document.getElementById('newShipmentModal');
-    if (modal) modal.classList.add('active');
+    const select = document.getElementById('shipmentMaterialSelect');
+    const data = window.SIO_DATA;
+    if (!modal || !select) return;
+
+    select.innerHTML = data.materials.map(m => `
+      <option value="${m.id}">
+        ${m.icon} ${m.name} (Stock: ${(m.currentStockKg/1000).toFixed(1)} Ton • Venta: $${m.buyerPrice.toFixed(2)}/kg)
+      </option>
+    `).join('');
+
+    modal.classList.add('active');
   },
 
   closeNewShipmentModal() {
@@ -1114,35 +1240,40 @@ const App = {
 
   dispatchShipment() {
     const data = window.SIO_DATA;
-    const matId = document.getElementById('shipmentMaterialSelect').value;
-    const tons = parseFloat(document.getElementById('shipmentTonsInput').value) || 0;
-    const shippedKg = tons * 1000;
+    const select = document.getElementById('shipmentMaterialSelect');
+    const tonsInput = document.getElementById('shipmentTonsInput');
+    if (!select || !tonsInput) return;
+
+    const matId = select.value;
+    const tons = parseFloat(tonsInput.value) || 0;
+    const kg = tons * 1000;
+
+    if (tons <= 0) {
+      alert('Ingrese un tonelaje válido.');
+      return;
+    }
 
     const mat = data.materials.find(m => m.id === matId);
-    if (!mat || shippedKg <= 0) {
-      alert('Por favor ingrese un tonelaje válido.');
+    if (!mat) return;
+
+    if (kg > mat.currentStockKg) {
+      alert(`⚠️ Stock insuficiente en patio. Solo tienes ${(mat.currentStockKg/1000).toFixed(1)} Ton disponibles.`);
       return;
     }
 
-    if (shippedKg > mat.currentStockKg) {
-      alert(`⚠️ Stock insuficiente en patio. Stock disponible: ${mat.currentStockKg.toLocaleString()} kg.`);
-      return;
-    }
-
-    const totalRevenue = +(shippedKg * mat.buyerPrice).toFixed(2);
-    const totalCost = +(shippedKg * mat.avgCostPerKg).toFixed(2);
+    const totalRevenue = kg * mat.buyerPrice;
+    const totalCost = kg * mat.avgCostPerKg;
     const freightCost = 4500.00;
-    const grossProfit = +(totalRevenue - totalCost - freightCost).toFixed(2);
-    const marginPct = +((grossProfit / totalRevenue) * 100).toFixed(2);
+    const grossProfit = totalRevenue - totalCost - freightCost;
+    const marginPct = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
-    const newFolio = `EMB-SIO-${String(data.shipmentsToBuyer.length + 95).padStart(3, '0')}`;
     const newShipment = {
-      folio: newFolio,
+      folio: `EMB-SIO-${String(data.shipmentsToBuyer.length + 95).padStart(3, '0')}`,
       date: new Date().toISOString().split('T')[0],
       buyerName: data.buyerName,
       materialId: mat.id,
       materialName: mat.name,
-      shippedKg: shippedKg,
+      shippedKg: kg,
       salePricePerKg: mat.buyerPrice,
       totalRevenue: totalRevenue,
       avgCostPerKg: mat.avgCostPerKg,
@@ -1150,38 +1281,81 @@ const App = {
       freightCost: freightCost,
       grossProfit: grossProfit,
       marginPct: marginPct,
-      status: 'EN_TRÁNSITO_AUTORIZADO'
+      status: "EN_TRÁNSITO_AUTORIZADO"
     };
 
-    mat.currentStockKg -= shippedKg;
-    data.cashOnHand += totalRevenue * 0.5;
+    mat.currentStockKg -= kg;
     data.shipmentsToBuyer.unshift(newShipment);
 
     this.saveData();
-    this.playSound('cash');
     this.closeNewShipmentModal();
     this.renderKPIs();
     this.renderShipments();
     PnLEngine.render('daily');
-    this.showToast(`🚚 Góndola despachada con éxito: Folio ${newFolio} (+${grossProfit.toLocaleString('es-MX')} MXN de ganancia)`);
+    this.playSound('cash');
+    this.showToast(`🚚 Góndola ${newShipment.folio} despachada a Siderúrgica: +$${grossProfit.toLocaleString('es-MX', {maximumFractionDigits: 0})} Ganancia`);
+  },
+
+  renderShipments() {
+    const container = document.getElementById('shipmentsTableBody');
+    if (!container) return;
+    const data = window.SIO_DATA;
+
+    container.innerHTML = data.shipmentsToBuyer.map(s => `
+      <tr>
+        <td><strong>${s.folio}</strong><br><span style="font-size:0.7rem; color:#94a3b8;">${s.date}</span></td>
+        <td>${s.buyerName}</td>
+        <td>${s.materialName}</td>
+        <td><strong>${(s.shippedKg / 1000).toFixed(1)} Ton</strong> (${s.shippedKg.toLocaleString()} kg)</td>
+        <td>$${s.salePricePerKg.toFixed(2)}/kg</td>
+        <td class="text-emerald font-mono">$${s.totalRevenue.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+        <td class="text-right font-mono font-bold ${s.grossProfit >= 0 ? 'text-neon-green' : 'text-danger'}">
+          +$${s.grossProfit.toLocaleString('es-MX', {minimumFractionDigits: 2})}
+          <div style="font-size:0.68rem; color:#94a3b8;">Margen: ${s.marginPct.toFixed(1)}%</div>
+        </td>
+        <td><span class="badge ${s.status.includes('PAGADO') ? 'badge-success' : 'badge-warning'}">${s.status}</span></td>
+      </tr>
+    `).join('');
+  },
+
+  renderRecentWeighings() {
+    const container = document.getElementById('recentWeighingsTableBody');
+    if (!container) return;
+    const data = window.SIO_DATA;
+
+    container.innerHTML = data.recentWeighings.map(w => `
+      <tr>
+        <td><strong>${w.folio}</strong><br><span style="font-size:0.7rem; color:#94a3b8;">${w.timestamp}</span></td>
+        <td>${w.supplierName} <span class="badge badge-tier">${w.tier}</span></td>
+        <td>${w.materialName}</td>
+        <td><strong>${w.netWeightKg.toFixed(1)} kg</strong> <span style="font-size:0.68rem; color:#94a3b8;">(B: ${w.grossWeightKg} | T: ${w.tareWeightKg})</span></td>
+        <td>$${w.pricePerKg.toFixed(2)}/kg</td>
+        <td class="text-right font-mono font-bold text-emerald">$${w.totalPayout.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+        <td class="text-center">
+          <button class="btn-sm-print" onclick="App.openTicketModal(${JSON.stringify(w).replace(/"/g, '&quot;')})">🖨️ Ver</button>
+        </td>
+      </tr>
+    `).join('');
   },
 
   renderAIInsights() {
     const container = document.getElementById('aiInsightsContainer');
     if (!container) return;
+    const insights = BrainAIEngine.generateInsights();
 
-    const insights = BrainAIEngine.getInsights();
-    container.innerHTML = insights.map(item => `
-      <div class="ai-insight-card" style="border-left: 4px solid ${item.color};">
-        <div class="ai-card-header">
-          <h4 class="ai-card-title">${item.title}</h4>
-          <span class="ai-badge" style="background: ${item.color}22; color: ${item.color}; border: 1px solid ${item.color}44;">
-            ${item.badge}
-          </span>
-        </div>
-        <div class="ai-card-body">${item.text}</div>
+    container.innerHTML = `
+      <div class="ai-insights-grid">
+        ${insights.map(item => `
+          <div class="ai-card" style="border-left: 4px solid ${item.color};">
+            <div class="ai-card-header">
+              <h4 style="color:#fff; font-size:0.95rem;">${item.title}</h4>
+              <span class="badge" style="background:${item.color}22; color:${item.color}; border: 1px solid ${item.color};">${item.badge}</span>
+            </div>
+            <p style="font-size:0.83rem; color:#cbd5e1; margin-top:8px; line-height:1.4;">${item.text}</p>
+          </div>
+        `).join('')}
       </div>
-    `).join('');
+    `;
   },
 
   renderProviderPortal() {
@@ -1191,44 +1365,42 @@ const App = {
 
     container.innerHTML = `
       <div class="provider-hero">
-        <h2>🛍️ Portal de Proveedores & Recolectores • SIO</h2>
-        <p>Consulta en tiempo real la pizarra de precios oficial y el historial de tus entregas certificadas.</p>
+        <div class="provider-badge">♻️ CENTRO DE ACOPIO SIO • TARIFAS VIGENTES</div>
+        <h2>Precios de Compra de Metales al Recolector</h2>
+        <p>Precios oficiales por kilogramo actualizados al instante con báscula calibrada y pago en efectivo inmediato.</p>
       </div>
 
-      <div class="provider-price-grid">
+      <div class="provider-matrix-grid">
         ${data.materials.map(m => `
-          <div class="provider-price-card">
-            <div class="p-icon">${m.icon}</div>
-            <div class="p-name">${m.name}</div>
-            <div class="p-tier-prices">
-              <div class="p-price-box">
-                <span class="p-label">Nivel 1 (Menudeo):</span>
-                <strong class="p-val text-sky">$${m.t1Price.toFixed(2)}/kg</strong>
-              </div>
-              <div class="p-price-box">
-                <span class="p-label">Nivel 2 (Camionetero):</span>
-                <strong class="p-val text-emerald">$${m.t2Price.toFixed(2)}/kg</strong>
-              </div>
-              <div class="p-price-box">
-                <span class="p-label">Nivel 3 (Industrial):</span>
-                <strong class="p-val text-amber">$${m.t3Price.toFixed(2)}/kg</strong>
+          <div class="provider-card">
+            <div class="provider-card-header">
+              <span class="provider-icon">${m.icon}</span>
+              <div>
+                <h4 class="provider-mat-name">${m.name}</h4>
+                <div class="provider-cat">${m.category}</div>
               </div>
             </div>
-            <div class="p-badge-eco">✅ Pago Inmediato en Efectivo</div>
+            <div class="provider-price-tag">
+              <div class="p-lbl">PAGO EN BÁSCULA:</div>
+              <div class="p-val">$${m.t1Price.toFixed(2)} <span style="font-size:0.8rem; color:#94a3b8;">/ ${m.unit}</span></div>
+            </div>
+            <div class="provider-tier-desc">
+              Tarifa Menudeo (Nivel 1). Para lotes industriales (>1 Ton) consulta precio preferencial de hasta <strong>$${m.t3Price.toFixed(2)}/kg</strong>.
+            </div>
           </div>
         `).join('')}
       </div>
     `;
   },
 
-  showToast(msg, type = 'info') {
+  showToast(message, type = 'info') {
     const toast = document.getElementById('appToast');
     if (!toast) return;
-    toast.textContent = msg;
-    toast.className = `app-toast active ${type}`;
+    toast.innerHTML = message;
+    toast.classList.add('active');
     setTimeout(() => {
       toast.classList.remove('active');
-    }, 4000);
+    }, 4500);
   },
 
   saveData() {

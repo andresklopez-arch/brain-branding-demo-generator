@@ -1,22 +1,25 @@
 /* ==========================================================================
-   BRAIN IA ENGINE - INTELIGENCIA ARTIFICIAL Y PREDICTOR INTERNACIONAL
+   BRAIN IA ENGINE & RECOMENDACIONES PREDICTIVAS - RECICLADORA SIO
    ========================================================================== */
 
 const BrainAIEngine = {
-  getInsights() {
+  generateInsights() {
     const data = window.SIO_DATA || initialData;
     const insights = [];
 
-    // 1. Predictor Internacional LME Cobre
-    insights.push({
-      type: 'market_lme',
-      title: '🌐 Predictor Internacional IA • Bolsa de Londres (LME Cobre)',
-      badge: 'PROYECCIÓN ALCISTA (+4.5%)',
-      color: '#f97316',
-      text: `El algoritmo de IA correlaciona la subida de <strong>$9,840 USD/Ton</strong> en Londres (+3.8% hoy) con el costo de reposición de la Siderúrgica Monterrey. <strong>Pronóstico 72h:</strong> La Siderúrgica subirá su oferta de compra en Cobre de 1ra entre <strong>+$4.00 y +$7.00 MXN/kg</strong>. <em>Recomendación:</em> Elevar compra en patio para acaparar volumen antes que la competencia.`
-    });
+    // 1. Oportunidad de Arbitraje Cobre
+    const copper = data.materials.find(m => m.id === 'MAT-01');
+    if (copper) {
+      insights.push({
+        type: 'opportunity',
+        title: '⚡ Oportunidad de Arbitraje IA • Cobre de 1ra',
+        badge: 'ALERTA LME +3.8%',
+        color: '#10b981',
+        text: `La Bolsa de Metales de Londres cotiza a $9,840 USD/Ton. Tu precio de venta actual ($154.00 MXN) tiene margen de subir a <strong>$162.00 MXN</strong>. Si elevas tu compra Nivel 1 a $116.00/kg captarás el 70% del cobre de los competidores locales manteniendo un <strong>margen bruto del 28%</strong>.`
+      });
+    }
 
-    // 2. Predictor Internacional Fastmarkets Acero
+    // 2. Riesgo Acero Chatarra
     insights.push({
       type: 'market_steel',
       title: '📉 Predictor Internacional IA • Chatarra Ferrosa HMS (Fastmarkets)',

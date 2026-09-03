@@ -186,23 +186,65 @@ const PnLEngine = {
                 <td class="text-right text-slate">-$${report.expenses.utilities.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
               </tr>
               <tr class="st-row-sub">
-                <td style="padding-left: 24px;">• Mermas Operativas / Tierra & Impurezas Descontadas</td>
+                <td style="padding-left: 24px;">• Merma / Desecho Inerte No Recuperable</td>
                 <td class="text-right text-slate">-$${report.expenses.scrapWaste.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
               </tr>
-              <tr class="st-row-sub font-semibold">
-                <td style="padding-left: 24px;">(=) Total Gastos de Operación</td>
-                <td class="text-right text-rose font-bold">-$${report.expenses.total.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+              <tr class="st-row-total">
+                <td>(=) Total Gastos de Operación</td>
+                <td class="text-right font-bold text-rose">-$${report.expenses.total.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
               </tr>
 
-              <tr class="st-row-grand-total">
+              <tr class="st-row-grand-total ${isPositive ? 'bg-emerald-gradient' : 'bg-rose-gradient'}">
                 <td>
-                  <strong>( = ) UTILIDAD NETA OPERATIVA REAL (EBITDA)</strong>
-                  <div style="font-size: 11px; color: #94a3b8; font-weight: normal;">Rendimiento del negocio listo para reinversión / retiro</div>
+                  <strong>(=) UTILIDAD NETA OPERATIVA (EBITDA SIO)</strong>
+                  <div style="font-size: 0.72rem; opacity: 0.85;">Margen Operativo sobre Ventas: ${report.operatingMarginPct.toFixed(1)}%</div>
                 </td>
-                <td class="text-right font-bold text-neon-green" style="font-size: 1.35rem;">
+                <td class="text-right font-bold ${isPositive ? 'text-neon-green' : 'text-danger'}" style="font-size: 1.25rem;">
                   $${report.operatingIncome.toLocaleString('es-MX', {minimumFractionDigits: 2})}
                 </td>
               </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="table-card" style="margin-top: 24px;">
+        <div class="section-header" style="padding: 16px 20px 0 20px;">
+          <div>
+            <h3 class="section-title">📊 Desglose de Rentabilidad por Material en Patio</h3>
+            <p class="section-subtitle">Stock actual valuado contra spread promedio de compra vs venta siderúrgica</p>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>MATERIAL</th>
+                <th>INVENTARIO</th>
+                <th>PRECIO VENTA</th>
+                <th>SPREAD MARGEN MEDIO</th>
+                <th>MARGEN %</th>
+                <th class="text-right">VALOR PATIO</th>
+                <th class="text-right">UTILIDAD POTENCIAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${report.materialProfitability.map(m => `
+                <tr>
+                  <td>
+                    <div class="mat-cell">
+                      <span class="mat-icon">${m.icon}</span>
+                      <strong>${m.name}</strong>
+                    </div>
+                  </td>
+                  <td><strong>${m.currentStockKg.toLocaleString()} kg</strong></td>
+                  <td>$${m.buyerPrice.toFixed(2)}/kg</td>
+                  <td class="text-emerald">+$${m.avgSpreadPerKg.toFixed(2)}/kg</td>
+                  <td><span class="badge badge-success">${m.marginPct.toFixed(1)}%</span></td>
+                  <td class="text-right font-mono">$${(m.currentStockKg * m.buyerPrice).toLocaleString('es-MX', {maximumFractionDigits: 0})}</td>
+                  <td class="text-right font-mono font-bold text-neon-green">+$${m.potentialYardProfit.toLocaleString('es-MX', {maximumFractionDigits: 0})}</td>
+                </tr>
+              `).join('')}
             </tbody>
           </table>
         </div>

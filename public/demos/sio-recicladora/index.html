@@ -10,9 +10,11 @@
 </head>
 <body>
 
-  <!-- 1. HUB HEADER -->
-  <header class="hub-header" id="hubHeader">
-    <div class="hub-header-content">
+  <!-- ========================================== -->
+  <!-- 1. BANNER SUPERIOR DE MARCA (IMAGEN 2 - AUTOOCULTA A LOS 3 SEGUNDOS) -->
+  <!-- ========================================== -->
+  <div class="top-branding-banner" id="topBrandingBanner">
+    <div class="top-branding-content">
       <div class="hub-brand">
         <div class="hub-logo-icon">♻️</div>
         <div>
@@ -20,8 +22,25 @@
           <div class="hub-sub">brainbranding.com.mx/demos • Cliente: <strong id="headerClientName">Carlos (SIO)</strong> • <span class="text-emerald">Licencia Ambiental I AI - CEDES</span></div>
         </div>
       </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-secondary" onclick="App.openOnboardingModal()">💡 Guía Rápida</button>
+        <button class="btn-lock" onclick="App.lockSession()">🔒 Bloquear</button>
+      </div>
+    </div>
+  </div>
 
-      <div class="hub-actions">
+  <!-- ========================================== -->
+  <!-- 2. MENÚ UNIFICADO COMPACTO Y MODERNO FIJO (STICKY HEADER) -->
+  <!-- ========================================== -->
+  <header class="unified-fixed-header" id="unifiedFixedHeader">
+    
+    <!-- FILA 1: BARRA DE CONTROL PRINCIPAL ULTRA-COMPACTA -->
+    <div class="unified-controls-row">
+      <div class="controls-left">
+        <div class="brand-badge-mini" onclick="App.toggleTopBanner()" title="Clic para mostrar/ocultar información de Recicladora SIO">
+          ♻️ SIO
+        </div>
+
         <div class="role-switcher">
           <button class="role-btn active" data-role="admin" onclick="App.switchRole('admin')">
             ⚡ Admin Patio
@@ -30,38 +49,39 @@
             🛍️ Proveedores
           </button>
         </div>
-        <button class="btn-onboarding-pill" onclick="App.openOnboardingModal()">
-          💡 Guía
-        </button>
-        <button class="btn-secondary" onclick="App.openCallSimulatorModal()">
-          📞 Simular Llamada
-        </button>
-      </div>
-    </div>
-  </header>
 
-  <!-- 2. CONNECTION BANNER & LIVE TICKER -->
-  <div class="connection-banner">
-    <div class="connection-banner-inner">
-      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <span class="status-badge-live"><span class="pulse-dot"></span> BÁSCULAS (60T & 1T)</span>
         <span class="status-badge-live" style="border-color:#38bdf8; color:#38bdf8;"><span class="pulse-dot" style="background:#38bdf8;"></span> LME & COMEX: ACTIVO</span>
       </div>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span style="color:#94a3b8; font-size:0.72rem;">Caja:</span>
-        <strong id="headerCashOnHand" class="text-neon-green" style="font-size:0.8rem;">$248,500.00</strong>
-        <button class="flash-call-trigger-btn" onclick="App.openQuickPriceModal()">
+
+      <div class="controls-right">
+        <div class="cash-pill">
+          <span>Caja:</span>
+          <strong id="headerCashOnHand">$248,500.00</strong>
+        </div>
+
+        <button class="btn-adjust-quick" onclick="App.openQuickPriceModal()">
           ⚡ Ajustar Precios
+        </button>
+
+        <button class="btn-secondary" onclick="App.openCallSimulatorModal()">
+          📞 Simular Llamada
+        </button>
+
+        <button class="btn-secondary" onclick="App.openOnboardingModal()">
+          💡 Guía
+        </button>
+
+        <button class="btn-lock" onclick="App.lockSession()" title="Bloquear y exigir NIP 51934">
+          🔒 Salir
         </button>
       </div>
     </div>
-    <div class="live-ticker-wrap" id="livePriceTicker"></div>
-  </div>
 
-  <!-- 3. MENÚ PRINCIPAL RESPONSIVO CON CINTA DE ÍCONOS NAVEGABLES -->
-  <div class="main-nav-wrapper">
-    <div class="nav-scroll-wrapper">
+    <!-- FILA 2: CINTA DE ÍCONOS NAVEGABLES CON SCROLL Y FLECHAS DE GUÍA -->
+    <div class="unified-nav-row">
       <button class="nav-scroll-arrow" onclick="App.scrollNav(-1)" title="Desplazar a la izquierda">◀</button>
+      
       <nav class="nav-tabs-bar" id="adminNavTabs">
         <button class="nav-tab active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
           <span>📊</span> <span>Panel General</span>
@@ -73,7 +93,7 @@
           <span>⚡</span> <span>Precios Cascada</span> <span class="nav-tab-badge">1-Clic</span>
         </button>
         <button class="nav-tab" data-tab="bot" onclick="App.switchTab('bot')">
-          <span>📲</span> <span>Bot WhatsApp/Telegram</span>
+          <span>📲</span> <span>Bot Telegram/WhatsApp</span>
         </button>
         <button class="nav-tab" data-tab="tv-screen" onclick="App.switchTab('tv-screen')">
           <span>📺</span> <span>Pantalla LED TV</span>
@@ -91,17 +111,65 @@
           <span>🧠</span> <span>Brain IA</span>
         </button>
       </nav>
+
+      <nav class="nav-tabs-bar" id="providerNavTabs" style="display:none;">
+        <button class="nav-tab active" data-tab="proveedor-view" onclick="App.switchTab('proveedor-view')">
+          <span>📋</span> <span>Pizarra Oficial de Precios al Recolector</span>
+        </button>
+      </nav>
+
       <button class="nav-scroll-arrow" onclick="App.scrollNav(1)" title="Desplazar a la derecha">▶</button>
     </div>
 
-    <nav class="nav-tabs-bar" id="providerNavTabs" style="display:none; padding:4px 0;">
-      <button class="nav-tab active" data-tab="proveedor-view" onclick="App.switchTab('proveedor-view')">
-        <span>📋</span> <span>Pizarra Oficial de Precios al Recolector</span>
-      </button>
-    </nav>
+    <!-- FILA 3: LIVE PRICE TICKER STRIP -->
+    <div class="unified-ticker-row">
+      <div class="live-ticker-wrap" id="livePriceTicker"></div>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- 3. PIN ACCESS GATE OVERLAY (CONTROL DE SEGURIDAD EN RECARGA / DIRECTO) -->
+  <!-- ========================================== -->
+  <div class="pin-gate-overlay" id="pinGateOverlay">
+    <div class="pin-card">
+      <div class="pin-gate-badge">🔐 CONTROL DE SEGURIDAD • SIO</div>
+      <h2 class="pin-title">Recicladora SIO Demo</h2>
+      <p class="pin-desc">Ingresa tu NIP confidencial de 5 dígitos para acceder al sistema inteligente de báscula y precios.</p>
+
+      <div class="pin-dots-container">
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+      </div>
+
+      <div class="pin-status-msg" id="pinStatusMsg">Ingresa el NIP de 5 dígitos (51934)</div>
+
+      <div class="pin-keypad">
+        <button class="keypad-btn" onclick="App.addPinDigit('1')">1</button>
+        <button class="keypad-btn" onclick="App.addPinDigit('2')">2</button>
+        <button class="keypad-btn" onclick="App.addPinDigit('3')">3</button>
+        <button class="keypad-btn" onclick="App.addPinDigit('4')">4</button>
+        <button class="keypad-btn" onclick="App.addPinDigit('5')">5</button>
+        <button class="keypad-btn" onclick="App.addPinDigit('6')">6</button>
+        <button class="keypad-btn" onclick="App.addPinDigit('7')">7</button>
+        <button class="keypad-btn" onclick="App.addPinDigit('8')">8</button>
+        <button class="keypad-btn" onclick="App.addPinDigit('9')">9</button>
+        <button class="keypad-btn" style="color:#ef4444;" onclick="App.clearPin()">C</button>
+        <button class="keypad-btn" onclick="App.addPinDigit('0')">0</button>
+        <button class="keypad-btn" style="color:#f59e0b;" onclick="App.deletePinDigit()">⌫</button>
+      </div>
+
+      <div style="font-size:0.7rem; color:#64748b;">
+        NIP Asignado a Carlos: <strong>51934</strong> • Teclado físico o táctil
+      </div>
+    </div>
   </div>
 
+  <!-- ========================================== -->
   <!-- 4. CONTENIDO PRINCIPAL -->
+  <!-- ========================================== -->
   <main class="app-main">
 
     <!-- TAB 1: PANEL GENERAL -->
@@ -135,7 +203,7 @@
           <p class="section-subtitle">Turno actual en patio con desglose de tara y neto</p>
         </div>
         <div style="display:flex; gap:8px;">
-          <button class="flash-call-trigger-btn" style="padding:6px 12px; font-size:0.75rem;" onclick="App.openQuickPriceModal()">
+          <button class="btn-adjust-quick" onclick="App.openQuickPriceModal()">
             ⚡ Ajustar Precios Rápido
           </button>
           <button class="btn-secondary" onclick="App.switchTab('bascula')">
@@ -183,7 +251,7 @@
           <p class="section-subtitle">Edita el precio de venta de la Siderúrgica y el sistema recalcula en tiempo real las tarifas en báscula protegiendo tus márgenes.</p>
         </div>
         <div style="display:flex; gap:8px;">
-          <button class="flash-call-trigger-btn" onclick="App.openQuickPriceModal()">
+          <button class="btn-adjust-quick" onclick="App.openQuickPriceModal()">
             ⚡ Cambiar Precios de Inmediato ($ o %)
           </button>
           <button class="btn-secondary" onclick="App.openCallSimulatorModal()">
@@ -248,7 +316,7 @@
           <h3 class="section-title">📺 Pizarra Digital & Pantalla LED de Patio (Modo TV)</h3>
           <p class="section-subtitle">Diseñada para monitores de alto brillo en la entrada de báscula. Se actualiza automáticamente cuando cambias cualquier precio.</p>
         </div>
-        <button class="flash-call-trigger-btn" onclick="App.openQuickPriceModal()">
+        <button class="btn-adjust-quick" onclick="App.openQuickPriceModal()">
           ⚡ Probar Cambio Flash en TV
         </button>
       </div>
@@ -392,7 +460,9 @@
 
   </main>
 
+  <!-- ========================================== -->
   <!-- MODALES -->
+  <!-- ========================================== -->
   <!-- MODAL: CAMBIADOR RÁPIDO DE PRECIOS -->
   <div class="modal-overlay" id="quickPriceModal">
     <div class="modal-content">
@@ -455,34 +525,21 @@
     </div>
   </div>
 
-  <!-- MODAL: TARJETAS DE INSTRUCCIONES DINÁMICAS (ABIERTO POR DEFECTO AL CARGAR) -->
-  <div class="modal-overlay active" id="onboardingModal" style="display:flex; opacity:1; pointer-events:auto;">
+  <!-- MODAL: TARJETAS DE INSTRUCCIONES DINÁMICAS (ONBOARDING) -->
+  <div class="modal-overlay" id="onboardingModal">
     <div class="modal-content" style="max-width:580px;">
       <div class="modal-header">
         <h3 class="modal-title">💡 Capacidades & Potenciales de tu Software SIO</h3>
         <button class="modal-close-btn" onclick="App.closeOnboardingModal()">&times;</button>
       </div>
       <div class="modal-body">
-        <div id="onboardingCardContent">
-          <div class="onboarding-card-hero">
-            <div class="onb-icon-wrap">🌐</div>
-            <span class="onb-badge">POTENCIAL #1 • PREDICTOR INTERNACIONAL IA</span>
-            <h3 class="onb-title">Anticipa las Llamadas con Precios Mundiales (LME / COMEX)</h3>
-            <p class="onb-text">El motor de Inteligencia Artificial monitorea la <strong>Bolsa de Metales de Londres (LME)</strong> y Fastmarkets. Te avisa con hasta 72 horas de anticipación si el Cobre o el Acero van a subir o bajar, permitiéndote acaparar material barato o despachar inventario antes de que baje la tarifa.</p>
-            <div class="onb-benefit-box">📈 <strong>Beneficio:</strong> Máxima ganancia especulativa y ventaja competitiva total sobre otros recicladores.</div>
-          </div>
-        </div>
+        <div id="onboardingCardContent"></div>
 
         <div class="onboarding-footer-nav">
           <button class="btn-secondary" id="btnPrevOnboarding" style="visibility:hidden;" onclick="App.prevOnboardingCard()">
             ◀ Anterior
           </button>
-          <div class="onboarding-dots" id="onboardingDots">
-            <span class="onb-dot active" onclick="App.goToOnboardingStep(0)"></span>
-            <span class="onb-dot" onclick="App.goToOnboardingStep(1)"></span>
-            <span class="onb-dot" onclick="App.goToOnboardingStep(2)"></span>
-            <span class="onb-dot" onclick="App.goToOnboardingStep(3)"></span>
-          </div>
+          <div class="onboarding-dots" id="onboardingDots"></div>
           <button class="btn-scale-action" id="btnNextOnboarding" style="width:auto; padding:8px 18px;" onclick="App.nextOnboardingCard()">
             Siguiente ➔
           </button>
