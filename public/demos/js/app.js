@@ -146,6 +146,9 @@ const App = {
         this.failedAttempts = 0;
         
         if (tenant.redirectUrl) {
+          sessionStorage.setItem("BB_AUTH_NIP", this.enteredPin);
+          sessionStorage.setItem("BB_AUTH_CLIENT", tenant.clientId || "");
+          sessionStorage.setItem("BB_AUTH_TIMESTAMP", Date.now().toString());
           setTimeout(() => {
             window.location.href = tenant.redirectUrl;
           }, 300);

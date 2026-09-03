@@ -49,6 +49,14 @@ const App = {
   ],
 
   init() {
+    // 1. Guardián de Sesión Estricto (Redirige al Teclado de PIN si no hay sesión)
+    const authNip = sessionStorage.getItem('BB_AUTH_NIP');
+    const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!authNip && !isLocalDev) {
+      window.location.href = '../index.html';
+      return;
+    }
+
     window.SIO_DATA = JSON.parse(localStorage.getItem('SIO_DEMO_DATA')) || initialData;
 
     this.renderHeader();
@@ -65,14 +73,12 @@ const App = {
 
     this.startLiveScaleStream();
 
-    if (!sessionStorage.getItem('SIO_ONBOARDING_SEEN')) {
-      setTimeout(() => {
-        this.openOnboardingModal();
-        sessionStorage.setItem('SIO_ONBOARDING_SEEN', 'true');
-      }, 500);
-    }
+    // 2. Speech y Tarjetas de Capacidades SIEMPRE activas en cada visita
+    setTimeout(() => {
+      this.openOnboardingModal();
+    }, 400);
 
-    console.log('Recicladora SIO Demo V2 Inicializada con Éxito.');
+    console.log('Recicladora SIO Demo V2 Inicializada con Guardián de Seguridad Activo.');
   },
 
   playSound(type = 'beep') {
