@@ -24,21 +24,18 @@
       <div class="hub-actions">
         <div class="role-switcher">
           <button class="role-btn active" data-role="admin" onclick="App.switchRole('admin')">
-            ⚡ Modo Administración Patio
+            ⚡ Admin Patio
           </button>
           <button class="role-btn" data-role="proveedor" onclick="App.switchRole('proveedor')">
-            🛍️ Portal Proveedores
+            🛍️ Proveedores
           </button>
         </div>
         <button class="btn-onboarding-pill" onclick="App.openOnboardingModal()">
-          💡 Guía de Capacidades
+          💡 Guía
         </button>
         <button class="btn-secondary" onclick="App.openCallSimulatorModal()">
           📞 Simular Llamada
         </button>
-        <a href="https://brainbranding.com.mx" class="btn-secondary" style="text-decoration:none;">
-          🌐 Brain Branding
-        </a>
       </div>
     </div>
   </header>
@@ -46,54 +43,58 @@
   <!-- 2. CONNECTION BANNER & LIVE TICKER -->
   <div class="connection-banner">
     <div class="connection-banner-inner">
-      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-        <span class="status-badge-live"><span class="pulse-dot"></span> BÁSCULAS CONECTADAS (60 Ton & 1 Ton)</span>
-        <span class="status-badge-live" style="border-color:#38bdf8; color:#38bdf8;"><span class="pulse-dot" style="background:#38bdf8;"></span> ENLACE LME & COMEX: ACTIVO</span>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span class="status-badge-live"><span class="pulse-dot"></span> BÁSCULAS (60T & 1T)</span>
+        <span class="status-badge-live" style="border-color:#38bdf8; color:#38bdf8;"><span class="pulse-dot" style="background:#38bdf8;"></span> LME & COMEX: ACTIVO</span>
       </div>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <span style="color:#94a3b8; font-size:0.75rem;">Caja Báscula:</span>
-        <strong id="headerCashOnHand" class="text-neon-green">$248,500.00</strong>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="color:#94a3b8; font-size:0.72rem;">Caja:</span>
+        <strong id="headerCashOnHand" class="text-neon-green" style="font-size:0.8rem;">$248,500.00</strong>
         <button class="flash-call-trigger-btn" onclick="App.openQuickPriceModal()">
-          ⚡ Cambiar Precios de Inmediato
+          ⚡ Ajustar Precios
         </button>
       </div>
     </div>
     <div class="live-ticker-wrap" id="livePriceTicker"></div>
   </div>
 
-  <!-- 3. MENÚ PRINCIPAL RESPONSIVO -->
+  <!-- 3. MENÚ PRINCIPAL RESPONSIVO CON CINTA DE ÍCONOS NAVEGABLES -->
   <div class="main-nav-wrapper">
-    <nav class="nav-tabs-bar" id="adminNavTabs">
-      <button class="nav-tab active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
-        <span>📊</span> <span>Panel General</span>
-      </button>
-      <button class="nav-tab" data-tab="intl" onclick="App.switchTab('intl')">
-        <span>🌐</span> <span>Predictor Metales LME (IA)</span> <span class="nav-tab-badge">72h Forecast</span>
-      </button>
-      <button class="nav-tab" data-tab="precios" onclick="App.switchTab('precios')">
-        <span>⚡</span> <span>Matriz de Precios en Cascada</span> <span class="nav-tab-badge">1-Clic</span>
-      </button>
-      <button class="nav-tab" data-tab="bot" onclick="App.switchTab('bot')">
-        <span>📲</span> <span>Bot WhatsApp / Telegram</span> <span class="nav-tab-badge" style="background:#38bdf8; color:#042f2e;">Remoto</span>
-      </button>
-      <button class="nav-tab" data-tab="tv-screen" onclick="App.switchTab('tv-screen')">
-        <span>📺</span> <span>Pantalla LED de Patio (TV)</span>
-      </button>
-      <button class="nav-tab" data-tab="bascula" onclick="App.switchTab('bascula')">
-        <span>⚖️</span> <span>Báscula & Liquidación</span>
-      </button>
-      <button class="nav-tab" data-tab="embarques" onclick="App.switchTab('embarques')">
-        <span>🚚</span> <span>Embarques a Siderúrgica</span>
-      </button>
-      <button class="nav-tab" data-tab="pnl" onclick="App.switchTab('pnl')">
-        <span>📈</span> <span>Estado de Resultados (P&L)</span>
-      </button>
-      <button class="nav-tab" data-tab="ai" onclick="App.switchTab('ai')">
-        <span>🧠</span> <span>Brain IA Engine SIO</span>
-      </button>
-    </nav>
+    <div class="nav-scroll-wrapper">
+      <button class="nav-scroll-arrow" onclick="App.scrollNav(-1)" title="Desplazar a la izquierda">◀</button>
+      <nav class="nav-tabs-bar" id="adminNavTabs">
+        <button class="nav-tab active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
+          <span>📊</span> <span>Panel General</span>
+        </button>
+        <button class="nav-tab" data-tab="intl" onclick="App.switchTab('intl')">
+          <span>🌐</span> <span>Predictor LME</span> <span class="nav-tab-badge">72h</span>
+        </button>
+        <button class="nav-tab" data-tab="precios" onclick="App.switchTab('precios')">
+          <span>⚡</span> <span>Precios Cascada</span> <span class="nav-tab-badge">1-Clic</span>
+        </button>
+        <button class="nav-tab" data-tab="bot" onclick="App.switchTab('bot')">
+          <span>📲</span> <span>Bot WhatsApp/Telegram</span>
+        </button>
+        <button class="nav-tab" data-tab="tv-screen" onclick="App.switchTab('tv-screen')">
+          <span>📺</span> <span>Pantalla LED TV</span>
+        </button>
+        <button class="nav-tab" data-tab="bascula" onclick="App.switchTab('bascula')">
+          <span>⚖️</span> <span>Báscula & Liquidación</span>
+        </button>
+        <button class="nav-tab" data-tab="embarques" onclick="App.switchTab('embarques')">
+          <span>🚚</span> <span>Embarques</span>
+        </button>
+        <button class="nav-tab" data-tab="pnl" onclick="App.switchTab('pnl')">
+          <span>📈</span> <span>Estado P&L</span>
+        </button>
+        <button class="nav-tab" data-tab="ai" onclick="App.switchTab('ai')">
+          <span>🧠</span> <span>Brain IA</span>
+        </button>
+      </nav>
+      <button class="nav-scroll-arrow" onclick="App.scrollNav(1)" title="Desplazar a la derecha">▶</button>
+    </div>
 
-    <nav class="nav-tabs-bar" id="providerNavTabs" style="display:none;">
+    <nav class="nav-tabs-bar" id="providerNavTabs" style="display:none; padding:4px 0;">
       <button class="nav-tab active" data-tab="proveedor-view" onclick="App.switchTab('proveedor-view')">
         <span>📋</span> <span>Pizarra Oficial de Precios al Recolector</span>
       </button>

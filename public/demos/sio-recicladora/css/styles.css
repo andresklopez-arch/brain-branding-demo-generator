@@ -103,19 +103,19 @@ body {
 .role-switcher {
   background: #0f172a;
   border: 1px solid var(--border-color);
-  padding: 3px;
-  border-radius: 20px;
-  display: flex;
+  padding: 2px;
+  border-radius: 12px;
+  display: inline-flex;
 }
 
 .role-btn {
   background: transparent;
   border: none;
   color: var(--text-muted);
-  padding: 5px 12px;
-  border-radius: 16px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 9px;
+  font-size: 0.62rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -123,7 +123,7 @@ body {
 .role-btn.active {
   background: var(--emerald-500);
   color: #042f2e;
-  box-shadow: 0 2px 8px var(--emerald-glow);
+  box-shadow: 0 1px 6px var(--emerald-glow);
 }
 
 .btn-secondary {
@@ -131,8 +131,9 @@ body {
   color: #e2e8f0;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  padding: 6px 12px;
-  font-size: 0.8rem;
+  padding: 4px 9px;
+  font-size: 0.72rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -146,14 +147,14 @@ body {
   background: rgba(56, 189, 248, 0.15);
   color: #38bdf8;
   border: 1px solid #38bdf8;
-  border-radius: 20px;
-  padding: 6px 14px;
-  font-size: 0.78rem;
+  border-radius: 14px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
   font-weight: 800;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   transition: all 0.2s;
 }
 
@@ -167,8 +168,8 @@ body {
 .connection-banner {
   background: linear-gradient(90deg, #064e3b, #0f172a, #064e3b);
   border-bottom: 1px solid rgba(16, 185, 129, 0.3);
-  padding: 8px 20px;
-  font-size: 0.8rem;
+  padding: 6px 16px;
+  font-size: 0.76rem;
 }
 
 .connection-banner-inner {
@@ -178,25 +179,25 @@ body {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .status-badge-live {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   background: rgba(16, 185, 129, 0.15);
   border: 1px solid var(--emerald-500);
   color: var(--emerald-400);
-  padding: 3px 10px;
-  border-radius: 20px;
+  padding: 2px 8px;
+  border-radius: 16px;
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
 }
 
 .pulse-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   background: var(--emerald-400);
   border-radius: 50%;
   animation: pulse 1.5s infinite;
@@ -212,15 +213,15 @@ body {
   background: linear-gradient(135deg, #10b981, #059669);
   color: #042f2e;
   border: none;
-  border-radius: 20px;
-  padding: 6px 14px;
-  font-size: 0.8rem;
+  border-radius: 16px;
+  padding: 4px 11px;
+  font-size: 0.74rem;
   font-weight: 800;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
-  box-shadow: 0 0 14px var(--emerald-glow);
+  gap: 5px;
+  box-shadow: 0 0 10px var(--emerald-glow);
   transition: transform 0.15s ease;
 }
 
@@ -232,20 +233,20 @@ body {
   overflow-x: auto;
   white-space: nowrap;
   display: flex;
-  gap: 16px;
-  padding: 6px 0;
+  gap: 12px;
+  padding: 4px 0;
   scrollbar-width: thin;
 }
 
 .ticker-item {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   background: #1e293b;
   border: 1px solid #334155;
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
 }
 
 .ticker-price {
@@ -255,70 +256,111 @@ body {
 
 .ticker-tag {
   color: var(--text-muted);
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   background: #0f172a;
-  padding: 1px 6px;
+  padding: 1px 5px;
   border-radius: 4px;
 }
 
-/* MAIN NAV */
+/* MAIN NAV BAR CON SCROLL VISIBLE Y FLECHAS DE GUÍA */
 .main-nav-wrapper {
-  background: var(--bg-secondary);
+  background: #0a0f1d;
   border-bottom: 1px solid var(--border-color);
-  padding: 6px 20px;
+  padding: 6px 12px;
   position: sticky;
-  top: 65px;
+  top: 60px;
   z-index: 990;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
 }
 
-.nav-tabs-bar {
+.nav-scroll-wrapper {
   max-width: 1400px;
   margin: 0 auto;
   display: flex;
+  align-items: center;
+  position: relative;
   gap: 6px;
+}
+
+.nav-scroll-arrow {
+  background: #1e293b;
+  border: 1px solid var(--border-color);
+  color: var(--emerald-400);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.65rem;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.nav-scroll-arrow:hover {
+  background: var(--emerald-500);
+  color: #042f2e;
+}
+
+.nav-tabs-bar {
+  display: flex;
+  gap: 5px;
   overflow-x: auto;
-  scrollbar-width: none;
+  scroll-behavior: smooth;
+  padding: 2px 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #10b981 #111827;
+  flex: 1;
 }
 
 .nav-tabs-bar::-webkit-scrollbar {
-  display: none;
+  height: 4px;
+}
+
+.nav-tabs-bar::-webkit-scrollbar-thumb {
+  background: var(--emerald-500);
+  border-radius: 4px;
 }
 
 .nav-tab {
-  background: transparent;
-  border: 1px solid transparent;
+  background: #111827;
+  border: 1px solid #334155;
   color: var(--text-muted);
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
-  font-size: 0.82rem;
-  font-weight: 600;
-  display: flex;
+  padding: 5px 10px;
+  border-radius: 16px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .nav-tab:hover {
   color: #fff;
-  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--emerald-500);
+  background: #1e293b;
 }
 
 .nav-tab.active {
-  background: #1e293b;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35));
   color: var(--emerald-400);
-  border-color: rgba(16, 185, 129, 0.4);
-  box-shadow: inset 0 -2px 0 var(--emerald-500);
+  border-color: var(--emerald-500);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
 }
 
 .nav-tab-badge {
   background: var(--amber-500);
   color: #0f172a;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 800;
-  padding: 1px 5px;
-  border-radius: 10px;
+  padding: 1px 4px;
+  border-radius: 8px;
 }
 
 /* MAIN CONTENT */
