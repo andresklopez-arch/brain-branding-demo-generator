@@ -73,6 +73,18 @@ const demoRegistry = {
     welcomeText: "Despídete del papel preimpreso, las fugas de dinero y los reportes tardíos. Controla tu boletaje en ruta con impresión térmica y visión artificial IA en tiempo real."
   },
 
+  // NIP de Carlos (Recicladora SIO - Chatarra & Metales)
+  "51934": {
+    clientId: "carlos-sio",
+    clientName: "Carlos",
+    businessName: "Recicladora SIO - Servicios Industriales Otay",
+    createdDate: "2026-09-03",
+    expirationDays: 90,
+    redirectUrl: "sio-recicladora/index.html",
+    welcomeTitle: "¡Bienvenido Carlos a la Demo de Recicladora SIO con Inteligencia en Precios e IA!",
+    welcomeText: "Diseñada a la medida para acaparadores de chatarra y metales. Controla en 1 clic los cambios de precio de la siderúrgica en cascada, agiliza el pesaje en báscula y visualiza tu Estado de Resultados en tiempo real con impacto por volatilidad."
+  },
+
   // NIP de Carlos (Demo Distribuidora Logística)
   "91823": {
     clientId: "carlos-logistica",

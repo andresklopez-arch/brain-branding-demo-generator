@@ -1,0 +1,15 @@
+{
+  "763190": {
+    "code": "763190",
+    "clientName": "Ana Lilia",
+    "appName": "Plataforma SaaS Ana Lilia",
+    "date": "2026-08-10",
+    "initialPrice": 3500,
+    "monthlyPrice": 250,
+    "status": "PENDIENTE",
+    "acceptedAt": null,
+    "appStatus": "ONLINE",
+    "createdAt": "2026-08-10T16:00:00.000Z",
+    "signatureData": null
+  }
+}

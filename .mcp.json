@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "hermes": {
+      "command": "C:\\Users\\andre\\AppData\\Local\\hermes\\bin\\hermes.exe",
+      "args": ["mcp", "serve"]
+    }
+  }
+}
